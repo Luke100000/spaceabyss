@@ -1,0 +1,213 @@
+*****************************************
+NAMES ARRAY - We can put this directly into npc_dev.js -> spawnNpc
+*****************************************
+
+['Aganon','Azrael','Cheris','Dezken','Encaledus','Ethra','Farosh','Grax','Grum','Gruss','Hish','Hiul','Issash','Kirix',
+    'Kujen','Kwuga','Laru','Liozh','Mak','Mikodez','Nur','Okik','Olo','Raasek','Rahal','Remi','Rhoden','Rosk','Sissix','Tkrit','Tokamak','Toum']
+
+
+
+
+*****************************************
+GENERAL WORDS AND PHRASES
+*****************************************
+
+
+Ablative shielding
+Aegean
+air lock
+Alloys
+Alpha
+Ambi - Ambi cells. Ambi, found in everything. Weaving around/in matter. difficult to extract. Easier to gather
+    where matter is already being ripped apart. Black hole.
+Antihydrogen fuel
+Antimatter generator
+Anti-matter weaponry
+Array
+artificial mentation
+assembler
+Atometallurgics
+Bacterial Paste
+Bio machinergy
+Bioengineering
+Bomb - timed bombs. body suicide bombs
+Border Guard
+Brain burning
+Brain Jack
+Brain Swarm
+Carapace
+Carrion glass
+Catastrophe gun
+Cellular growth accelerant
+Charging field
+Chimeric
+Clockmaker
+Clockwork
+Coaxium
+Collection hoppers
+Conjoiner
+Construct
+Corrosive dust
+Crime syndicate
+Cryptobiotic
+Crystaline adamantium
+Crystal cables
+Crystal computers
+Crystal-magnetic
+Cybernetic
+Cybrid
+Data Segment
+Decontamination flash
+Dermis
+disassemblers
+disruptor mine ( and a delayed version )
+Dredge
+Earthmind (Gaimind, Biomind?)
+Electric Tears
+Electrostatic lattice
+Electronic Destabilizer
+Emerald
+Energy Barrier
+Executable
+Exoden
+Exosuit
+Explosion fist. Batteries, explosion cores
+Fuel pump
+Fullerene nanomesh
+Gene targetter - Damage over time. No effect on MLM
+Genetic algorithm viruses
+Geno
+Germ bomb
+Ghost patch
+God stone
+Golden palace-city
+Goliath
+Greenware
+Greek mythology
+Halcyon
+Hardware
+Hestra Seeds
+Hexarchate
+High transcendence
+Hijacker boys
+Hydrocarbons - tubes attached to Phaeton's body reformed themselves into water and diamond plates
+Hydrofarm
+Hyperdiamond
+Hyperfuel
+Ice Sharks?
+Imubot patrolling bloodstream
+Invariant ice shield
+ium
+ite
+jungle crystal
+Kedirium
+Ketling
+Landmine
+Largeware
+Lexicon Primary
+Life particles
+Living-wood
+Machinery of empire
+Magnets (strong)
+Maw
+Mechanistic
+Medbot
+Mek - A cup of mek
+Metal endoskeleton (Terminator!)
+Metaltape
+Microcircuitry
+Microplasmic
+Mimetic poly alloy
+Mind Palace
+Mines (the exploding kind)
+Mutaplasmid
+Nanites
+Nanoassembly vat
+Nanologic
+Nanotechnic
+Neptiunian polymer armor. Like statues of blue glass
+Neural Architectures
+Neural link
+Neural nanomaterial
+Neural patch
+Neurocircuitry
+Neuro-interface socket
+Neuroform
+Neurotechnology
+Neurowash
+Neutronium
+Nexus
+Noware
+Oecumene
+Particle beam
+Pepper Puffs
+Personal shield generator
+Phantasm
+Planetary Patrol
+Plasma bolt
+Plate Armor
+Polymimetic
+Prime
+Protein shell
+Pulse Gun
+Quelin Enforcer
+Quentin
+Railgun
+Receiver node
+Responsive polymer
+Rocket launcher
+Scrap
+Scrub fuel
+Seeds
+Semiliquid space-armor
+Servitor
+Shield grid
+Simulacrum
+Skimmer drone
+Smallware
+Software
+Spaceborn
+Spores
+Spun Diamond
+Stabglass
+Strata Group
+Syntax driving light
+Subdermal implants
+Superalloy
+Supercargo
+Synthetic
+Synthviral
+Techport
+Tek (tech)
+Temerity
+Tertiary-Stage Conflict
+Tertiary synapse router
+Thermal regulator
+Toxic
+Virtual Memory
+Voidborne
+Waste steam
+Weather-eaters
+Wetware
+Xeno
+
+
+
+
+*****************************************
+MONSTERS
+*****************************************
+
+Flame-slug
+Hunter Killer
+Eel enemy
+Voidmoth
+Enforcer
+Guardhawk
+Black enemies with green faces.
+Velvet worm. Uses glue guns to capture prey.
+Leaf cutter ants using leaves to make fungus gardens
+Parasitic fungus - Cortyceps fungus
+
+Sea urchin
+Singularity Drone

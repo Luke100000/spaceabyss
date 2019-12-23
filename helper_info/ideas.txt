@@ -1,0 +1,1096 @@
+
+
+HACKING. THE VIEW I HAVEN'T MADE YET! Need a way to enter into virtual realm
+
+
+There's a high fail chance for complex things. Manufacturing skill helps. Certain monsters drop blueprints that will
+ 99% the success rate of manufacturing the item. Not really sure how I would want to implement blueprints. One time use?
+ X times use?
+
+Biogrove planets can be our gaia type planets. Have a tree of life (think of a cooler name) npc spawn and have an AI at the bottom
+    level of the planet. Tree of life NPC would follow NPCs on other planets controlling them/things
+
+Quirks for AIs. Like the idea of an AI that gets focused/obsessed on a particular thing. Clockmaker builds clocks.
+
+I don't hate the idea of planets and other super large things taking up multiple tiles. Really no idea how I would code that
+    though
+
+Maybe have a super attack on a crazy long cooldown. Mob psycho 100, Goku going all out, etc
+
+Could have an artist npc that only produces a couple of art pieces. Could be paintings or a cool neon statue.
+    No effect other than being limited. Decorate captains quarters, sign of power.
+
+Rare items with a limited number that can exist in the galaxy at any given time. Think Star Darts
+
+Piracy/Bounty system
+    Could have identity documents that get used when visiting a spaceport. Otherwise spaceport interations would have
+        a record of you being there that a mercenary could obtain.
+
+    If a player attacks things on a corporation planet, the CEO puts a bounty on the player's head
+
+    Players could put bounties on other players. NPCs could put bounties on players.
+
+Objects that get better with age. Kind of like wine. Kids were watching a show and they ate 1,000 year old eggs.
+
+Eventually want to make water something more than... nothing. Tail instead of legs on a body if you wanted
+
+Flesh planet type. The whole planet is a massive organism. Pinks an flesh colors
+
+Super polluted planet. Needs drugs to stay healthy. Snow.
+
+Researching system is pretty basic. Wouldn't be a bad idea to expand on it.
+
+Body switching skill. Have a negative effect after switching bodies that people slowly get used too.
+
+Could have really high levels of addiction affect the player instead of just the body
+
+Group some npcs into houses. The idea of powerful houses, being from a powerful house. Offers some protection. Could even have different npc houses
+    fight each other. Lots of neat lore in children growing up with a lot of power already, and still aiming for even more.
+
+Bringing bugs/diseases onboard ships. To do it really complicated, would need airlokcs, dcontamination chambers, all sorts of stuff
+    Could have a plant type that attaches a bug/spore to a player that would activate once on a ship/station
+
+Need a solution for monsters attacking for 0 damage. Probably shouldn't give equal skill to a player attacking
+    a big monster, and another player attacking an iron wall.
+
+Black Cubes with a double helix gold crown on top. COuld be the first Nulrom. Judge. Could spawn on Inferno planets like Slagcell for now.
+    Not sure Nulroms should auto attack
+
+For Voonmilk, should have a Matriarch Voon.
+
+Abilities for weapons. So far one of the common things that makes combat in MMOs a little more interesting, is the spells/abilities
+    attached to weapons. We could test doing something similar. Give a user something to manage during combat.
+
+    Some abilities could wear down an item.
+
+    Hull welder: turn up the heat or something. Knife, hard stab. Mimetic arm, a pierce.
+
+Thought-Virus. In golden age, something you could buy to permanently alter your thoughts. Always happy, but it's not real happiness.
+
+Armor white as ice
+
+Crystal vein/river deep in the mountain worlds
+
+Avrana Kern ends up being a vindictive AI. Always enough processing power to put down someone. Showing their dead body location when she analyses their plan and sees its faults.
+
+Mercenary/fighter type npc that levels up and goes after bounties
+
+Switching space battles to object attack object. Need to make sure that the ships's coord id is changed when the player
+    moves their ship, and battle linkers in galaxy are added as object v object
+
+Energy shapes living in the north poloar magnetospher of the sun. From the book The Golden Age
+
+Neptunian guys in large ice armor to keep their super modified brains near absolute zero.
+    It was neat how they communicated. With the extra brain speed/power they attach appendixes to everything. The word I has an appendix that contains
+        his whole life.
+
+We want things like a race attacking another race. But inevitably, someone will win/destroy the other. So have some base
+    level triggers that we can modify to shift balances
+
+Could have temporary bodies. Ephemeral, transient bodies that are built just to do something really well, for a short amount of time.
+    Could purchase from NPCs, or even make them.
+
+
+Implementing the market linkers, the bidding linkers, etc.
+    Gotta get merchant npcs bidding on these things too
+
+
+
+Allow a player to rent out tiles that they own. So Cadian can build a building on the azure planet, and rent out rooms.
+    Players could bid on the rooms - highest bidder gets it. Probably would make sense to grandfather in the price/month
+    that rooms go for. 5th of every ACTUAL human month.
+    Would require that planet_coords have a.... owner_room_id and a renting_player_id ? Owner would create a room/space to rent,
+    name it, etc.
+    Things I think I need for the tables:
+        planet_coords:
+            area_id
+        areas:
+            id
+            name
+            owner_id
+            description
+            renting_player_id
+            rent
+        bidding_linkers: ( would be fun for this to work like Ebay. The price is like 5 credits/month higher than the 2nd highest bid )
+            area_id
+            max_price
+
+
+Try to have two visuals for the walls - one specifically if there is a wall under it
+    Could test with ship walls pretty easily.
+
+    CURRENTLY SEMI-TESTED. HAVE TODO IN client_functions_dev.php in mapAddObjectType
+
+
+Could add hacking via inserting hidden virus rules into objects
+
+#really not sure I want to code this :p
+For cosmetic objects vs functional ones, one day we could have the cosmetics displaying normally,
+    and the functional ones when the player goes into combat. Think a nano mesh smart armor that instantly surrounds
+    the player, or is normally see through or whatever
+
+
+When a player interacts with an NPC, it can modify their relationship linker with that NPC. Having a really good
+    relationship with an NPC could let you have them join your ship
+
+
+
+
+Eventually it would be neat to have the slaves on Slaver planet actually doing something. Harvesting something. Would actually collect it, and have the slaver masters
+    come by and take it
+
+Self propgating deleters or self populatin corruptors. Could have machine worlds fight back with events like these
+    when someone establishes an AI on them
+
+Planets should have weather. Rain. Snow. Desert Storms. Effects should be light and nice, so that players don't just disable them. Meteors fallings. Taullerian fragments could
+    show up. Idea behind it is waking up in Stardew valley and things have changed. It makes the world feel alive.
+    More insects and other little things that show up sometimes on planets. Snails, butterflies, etc
+
+Flesh style planet. The whole planet is a massive organism. Pinks and flesh colors. Gooey.
+
+Ocean of nanobots. Nanobots producing waste heat/steam
+
+Waste disposal on corporation planets
+
+Could have different npc densities based on the planet type. Lots of npcs on corporation planets. Maybe quite a few
+multi level buildings with different corporations, CEOs, and guards. Have a CEO npc that spawns a
+building and guards and some treasure. Have player take it out
+
+Event that spawns seeds that grow into monsters that spawn other seeds -> monsters. A planetary scale infection
+
+Potentially have a research result window. Would show the result of the research instead of a message that it failed. Could be turned off.
+
+Could have a nanobot collection point like the thiol geyser. Nanobots keeping the planet ecology stable. Or could be an event. Instead of a normal
+    dust storm, a nanobot storm to put the planet tile back
+
+Machines that replicate and build more machines. I know I put this somewhere before. Invasion.
+    Could have an organic system do this too
+
+Semi transparent creatures. Slug with brain showing
+
+Ships being able to protect other ships
+
+Space sentries. Objects that protect an area of space
+
+On the idea of Biogrove planets or others changing if they are conquered - we could also  use that flag to spawn an Atkins type
+    savior for them
+
+Energy shapes living on the sun.
+
+Heat or ice resistant body or armor type
+
+Super polluted planet. Could maybe tie into Corporation planets, and have NPCs using most of their money for drugs just to stay alive.
+    Could have an NPC corp that manufacturs the medicine and gets rich off of it.
+
+We should be able to get the ranged attack thing to follow the player. We should be able to base it off of the phaser example
+    and have it disappear once it gets to the player. At least have some homing options.
+
+Would be really neat to have a medical NPC that would let you use their
+    advanced auto doc for a price. ECONOMY!!!!!!! I could potentially add that in via rules. Would maybe need to add a cost to certain rules. Auto doc has a rule
+    that allows all players to use it, but at a cost of 100 credits.
+
+Elevators for quick vertical movement in tall buildings.
+
+The game could have broken derelict ships that spawn with a monster or two inside, and spawn all damaged
+    Hell, we could do the same thing with a space station and since it's dockable, the player could explore it
+    Seems logical that we would let the player explore the ship before trying to claim it
+        Our code really doesn't support that yet.
+
+More advanced types of ships could have floors (materials that they are made of) that have a higher complexity, and are harder to repair.
+    Mechanic NPCs
+
+General ship attack/defense
+
+Quasar/Black Hole
+
+Power Knife
+
+
+
+Curiosity as an aspect of certain NPCs, monsters, races, AIs, etc
+
+Bioluminescent plants. Glowing underground
+
+Organic ships. Like flying int he mouth of a whale. A modified one with an exoskeleton and plants growing inside for the air.
+
+POTENTIAL HACKING TYPE:
+    Go to attack an AI. Slowly adds more and more, stronger and stronger constructs. You can jump to a different spot in... memory? to avoid,
+        but that uses some of your energy from your hacking skill, and now you have less left. More advanced AIs find you faster. AI could search each
+        square in the location the player jumps to. As you jump you run out of energy. AI closing in, taking you out.
+
+
+Science vessel could come with an advanced research station or two. Something that you would otherwise have trouble manufacturing at a low level.
+
+Ecology! Things like eggs needing certain conditions to hatch. grows_into_xxxx but with a condition. Needs something to activate.
+
+*ACTUALLY - For now lets not mess with this. I know I keep coming back to it, but not sure I love the implementation.
+*For safe spots in space, not sure if I want an entirely different floor type, or I could just color the floor type differently (tint/hue shift/whatever)
+*    For the object type giving off this protection area - we would want it to be pretty obvious. An object type where the only rule type is to protect
+*    everyone.
+
+I like the idea of information that can be lost, or is particularly hard to obtain. Just not really sure how to implement thing in the world, since
+    high tech means that most information is freely available. Possible things would be an advanced type of information that codes itself to the
+    DNA of the host. Almost like a virus-thought, but with some neat benefit. If the body dies, so does it. To get this knowledge you would either
+    need to obtain it yourself, or buy a body that contains it.
+
+Attacking Overhaul
+
+    Range and Melee for monsters. One large issue is that for melee, the monster would need to be able to get close to the player
+    Need to think of an figure out range and melee for monsters
+
+    Maybe some neat way of crafting viruses to attack MLM things
+
+    Damage Types:
+        Thought Virus
+
+    Separate attacks out into each thing equipped - for players, npcs, and objects
+
+    For ships, have multiple lasers each show up - and for the defense, need multiple shields to absorb the impact.
+        The idea is to have a bunch of lasers firing from different points on the ship, and a bunch of little shield icons.
+
+Could have monsters that are mostly invisible until they attack. Could tie into attack animations.
+
+Unique planet types. First one would be a Slaver Homeworld. Gold.
+
+Odd shaped space stations. Hourglasses, Gold palaces, etc. Would be a neat thing to tie into monetization.
+
+Doctor npc that charges for equips.
+
+Replicating machines. Could have the machine world do stuff like that sometimes.
+
+Server bot. Lady legs. Sexy. Just a try above them. NPC or monster? Servant style NPC
+
+Need some negative effect when switching bodies a lot. Negative effect will slowly decrease as the body switching level increases
+
+Having a pirate engine in your mind, hacking shared throughts. Looking for loopholes.
+
+Helping biogrove planets. Hurting biogrove planets via AI dust and stuff. The idea that Biogrove planets, and the things
+    that make them up, are at conflict with AI type things.
+
+Feeding/helping one thing, and having a big effect because a bunch of seemingly unconnected things, are connected.
+    Most common version of this is like watering a flower, and all the flowers in the area grow.
+
+
+There's a group of very peaceful AIs. Players that are not confrontational, don't like the rat race, can have an AI protect them from other players.
+But there are heavy conditions for it. They can't have attacked someone else. They can remove the AI protection, but it results in their stats and level
+being reduced to when they got the protection. A life bond with a powerful, peaceful AI.
+
+
+
+
+***************** UNSORTED IDEAS ****************************************************************************
+
+backpacks - I really like the different colored backpacks from Tibia. For the inventory, we could have
+    backbacks open new windows like in Tibia
+
+We could do a similar things for the different tabs for equipment/management/etc. Make those buttons
+    that view/hide divs in the side that the user can open/close.
+    Would be neat to let users re-size them - but really not sure about how to do that.
+
+Spider silk seque ship material. Ship material that can be manipulated, changed.
+
+Worms that make silk. Or a metal silk. Feed them and they produce valuable material. Farm the worms.
+
+On corporation worlds, have a life force extractor npc that players can go to. Get paid credits for giving
+    some of their life force to the NPC.
+    Players would also be able to build these machines/stations.
+
+Npc auto doc
+
+Different bullet types - or at least different gun types. Explode on impact, area of effect type stuff.
+
+Small homing discs that chop off bits
+Small homing discs that are timed bombs
+
+Energy shields
+
+Just in general - use more variety in shapes. Circles, squares, rectangles, discs, triangles, etc.
+    Look up 'shapes'
+
+Mechs on machine worlds
+
+Monsters that eat things to get stronger. Think demons or something. Could take a baby/weak version of that
+    to a planet you don't like - feed it things - maybe even npcs - and make it stronger.
+
+Slave npcs in corporations. Those types of corps would like you if you bring them a body to enslave.
+    Could have the same idea with shady corporations that use life force. Give them a body to extract all the force
+        out of them
+
+
+Neutronium
+
+Power a nervous system from a heart like a black hole
+
+Energy Baton
+
+Matrix. Slaves. Promised neverland. Slave farm implementation.
+
+Have things spawn underground that can be salvaged. Have derelict space ships and satellites in space that can be salvaged.
+    Could have some that 'crash' and are salvagable on the surface too.
+
+Radiation weapons with area of effect. Could potentially radiate a floor tile for some amount of time.
+
+
+Pickled food - we could have artisan food types
+
+Storm generator
+
+
+Have npcs from different races. An MLM npc that wants to gain CPU power, gets stronger as a result. Improves MLM standing.
+
+
+
+NPC likes and dislikes. Favorite food or something
+
+
+Need to disallow is_stairs and is_hole on ship
+
+The idea of allowing players to advance different bugs. Add intelligence to one. Think of uplifting.
+
+The idea of things like water. A river. it's something that can be worked with, modified, re routed. But the system
+    itself can't be stopped. It's too large.
+
+Could have a bug race take over a planet. Would require players to get the planet back. They could even show up
+    in a spaceship and slowly move towards a planet. Massive bug colony infestation.
+    One of the ways we could get this to work is that the colony wouldn't replenish. For an easy one.
+    Add things like larva nests and other things so the bugs can spread for a more difficult infestation.
+
+We need some balancing mechanic that lets different races ebb and flow. Can't have bugs take over everything. We could
+    have spawn rates increase or decrease based on the number of planets they have. Have savior type events when
+    the race's planets are few or none.
+
+Poisoned food. Giving someone poisoned food.
+
+
+Electricity-based organisms
+
+
+We could have bodies that are unequipped slowly decay. Players could build healing tiles to counteract this effect
+So you switch bodies, the old one being on a healing tile you've built - and it stays fine
+
+No non admin building or replacing floors on azure planets. Gotta test all this
+    Might want to make it rule based. (So the AI's rules)
+    Same thing with destroying. Allow harvesting, but not destroying
+    So to get wood from a tree on an azure planet you would need to harvest a seed and plant it elsewhere
+
+
+??? Matter Converter (how about to start it just converts shit to credits?)
+
+Need some more active healing things. Sci fi version of potions.
+
+
+
+Equipping a pan or something to increase cooking skill. Could have a whole body just for cooking up things
+    Eyes that see the temperature of things. Many hands
+
+Viruses that consume crops. Eventually mutate.
+
+Weeds that grow and spread.
+
+Algae to energy conversion. Drew an algae cube
+
+
+
+Would be neat to have different bodies have different healing rates and base HP values. Rock would heal slowly but have more initial HP.
+    Humans and MLM would heal pretty fast. MLM probably faster. On this point, need to change the player's current hp when they switch bodies
+
+Could have body types that have different limitations. Maybe a body type that isn't hurt by fire tiles, or a body type that
+    can't go a normal planet. Not sure this would be the most fun distinction to code in. The idea is having a body
+    that is adapt in Space. People growing in 0 gravity would be longer, elegant and willowy.
+
+
+
+
+
+
+
+Would be neat to maybe have a kind of stasis that a body could be put into. Healing tile + some sort of extractor for energy.
+    A living battery. I generally like the idea of having a clone/slave
+    So we made a life extractor - converting hp to money on corporation worlds. I guess for this we need a
+        healing floor + stasis extractor that converts hp to energy, and some way of getting that energy out?
+
+Add crashed Meteorite events and processing finds.
+
+Monsters should be able to grow into other monsters over time (Carnivorous Plant Baby -> Carnivorous Plant)
+
+We are switching player energy to body energy. Did that in some places, but I know there are more places we should do that
+
+
+
+
+To facilitate the alpha, admins should be able to place beacons on planets that they are ready to re-generate. The beacon should give
+    players a week to kill it. If it's not killed, the reset will happen. Might work well to keep progress moving forward, but
+    give players some flexibility
+
+Would be neat to have monsters able to spawn other monsters. This,
+combined with monsters growing, could really let a plague loose on a planet
+
+With addictions and switching bodies, we could have effects pass onto the player themselves if things get bad enough
+    Additions could start with the body, but a high level one will impact the player as well.
+    There should be some effects from switching a body too much as well. Lose a sense of self, or even just
+    a timer for having some negatives to attack and defense.
+
+Suns. I would want the tiles around the sun to to damage over time. A sufficiently strong shielded ship or station
+    could live in this damaging area.
+
+Nebulae in space (and other things of this type). Would make it more interesting
+
+Photovoltaic plants for energy generation
+
+Decide if we want to do weapon accuracy in addition to the distance mechanic we have.
+    Positives is that it adds another level of competency
+    Downsides is it's a layer of complexity
+    I sort of enjoy the idea of having someone equip a super complex weapon and hurting themselves - but IDK if that
+    would be fun/work.
+
+Thinking that hacking would be more of an end game thing. AIs would be really quick and good at it. Could start with
+    just letting a player stand next to a terminal or a large chair, and once they move to the next screen, the AI kills them.
+
+We could have an augment type that get more powerful the longer you are in a specific body. Would reset when you move
+    to a different body. Might be useful on Cadian too.
+
+Skin black like space with stars and planets embroidered on it
+
+Admin commands. Maybe /admin-place object_type object_type_id coord_type coord_id
+    Or something like that *shrugs*
+
+Need to add skill to manufacturing things. Same with auto docs. Same with research. Failure % chance for harder stuff. Need to make
+    sure we increase skills, and that players get better over time. We could either just use the skill, or we could
+    have more advanced manufacturers/auto docs/research stations. Probably should start out with just skill based.
+
+
+
+
+I think that a mobile healing station is a neat idea. Potentially let players equip stuff that would heal players next to them,
+    or maybe have a deployable nano-med field that would heal in a certain area.
+
+Rat farmer on corporation worlds
+
+
+Have Cadian energy tick always
+
+Giant worms that dig through just about anything, then go back to the surface, scrunch up, and launch the shit out of massive boulders at distant planets
+
+Have ships able to bet set on some sort of autopilot - use this as a way to move large things like stations over huge amounts of time
+    Also lets us make space more distant
+
+Maybe have a thievery skill/points. Could either have it build up points and decay over time
+    (and have AIs not allow thieves on their planets potentially) Or we could make it a skill. I kind of like the idea
+    of it decaying over time. Potentially have unmonitored areas, where hostile acts aren't seen
+
+
+Could potentially have planet events based on ownership. Machine planets that are owned by a player could spawn a nanobot swarm that attempts to take the planet back
+
+Biogrove planets could get really angry/strange when their world tree is destroyed, and it tries to grow another one
+
+
+Should be able to do an injection that increases manufacturing/research/food processing skills but for a very high addiction chance and penalty.
+    Think of burning through a body's brain to make it operate at 200% for a bit of time.
+    Should also have augments for these types of things
+
+
+Allow drop linkers (death linkers) to do things like spread an infection.
+
+
+Let players extract/convert their body energy for batteries and such
+
+
+Take our player relationship linker and expand its functionality to have scenarios where players can access things based
+    on whether the race likes them. The first, most obvious example of races that wouldn't like each other would be MLM and
+    Vueg
+
+     Slagcells just like devestation
+
+Could stagger monster and object animation times based on their ID/index or something.
+
+
+
+Slaves on the slaver planet should be NPCs that could be liberated. Have a job of mining iron depoists, and actually have them interact with the iron deposists
+
+Have more asteroids with more complexities. more mineral types, harder to mine
+
+Currently we have functions:
+    calculatePlayerAttack
+    calculatePlayerDefense
+    calculatePlayerStats
+
+    All of which do different things. Player attack depends on range. Defense will depend on a bunch of stuff too,
+    so maybe we change calculatePlayerStats to calculatePlayerHp or something like that?
+
+
+
+Let player add rules to defense drones
+Prevent dropping within one tile of spaceport. We are using the can_build_on flag - need a tile type surrounding the spaceport
+Prevent monsters from moving on walls and the player (This might be an underground only problem. Check planet level)
+
+implement AOE effects. bombs!
+
+deprecate world.addObjectToPlanetCoord in favorite of main.updateCoordGeneric
+
+bonuses and negatives for different body types
+
+
+
+I think the little pod before the player glitch is the coord receiving the player's ship object before the player moves
+    Need to think of conditions when we draw the pod. Should we just not draw the ship at all if it's the player's ship id?
+    Since we are drawing the player.
+
+Crystal spiders attacking with their fangs, or their legs. Depending on the attack, there's a possibility for more damage
+    relate it to the actual monster type
+
+salvage skill - salvaging things spawn on planets, - maybe derelict ships in space that you walk on too
+    salvaged materials could be based on what it takes to assemble that object. Uses the object's complexity.
+    Maximum amount players should be able to salvage is 1/2.
+    e.g. 10 batteries. Max salvage is 5 batteries. Need to beat complexity check by 5 to get all of that. Otherwise you get
+        the difference between the complexity check and your level
+    Salvaging needs to take longer than attacking the object
+
+
+I want to play around with the idea of having a view attached to the socket/player. Checking coord id's, ship_coord_ids, etc is kind of a pain
+
+
+Ship laser should use energy. Ship railgun should use syntite. Let players place batteries into the energy storage object type
+    Should always take more energy to attack than to defend. Attacking with laser is more expensive energy wise than defending with shield
+
+    There needs to be some gain from multiple shield generators. Maybe each shield generator takes some time to effectively neutralize
+        incoming damage.
+
+    So a minimum ship shield for defense would require a shield generator, energy storage, and the player to have seeded the energy storage with batteries
+
+Need to send new monster hp to the room
+Need to show battle effects from other players
+
+
+More body options - and check to see that body effects happen
+
+
+Need a way to convert body energy/hp to batteries. Or just let players do that with a lot of algae
+
+Could have a metal associated with the Taullerans. Virtalite, Virtualite, Virite.
+
+RADIATION!!!!!! Damage Type Too. Monster types could either be really sensitive to it, very strong to it, or it could
+    actually make them more powerful.
+    Radiation meds
+
+We can have slerm live in water based ships - like the octopuses in the children of ruin but - slerm!
+    Spaceships full of water. Octopuses.
+
+Add in an airlock type of tile for ships
+
+Ai daemons should decay over time
+TOO MANY KICK PLANTS
+
+Separating out planets more would definitely be good
+    Spaceports could be larger and have portals on them leading to nearby planets - at least for some beginning planets.
+    Not quite sure how to make that all work, and not have Cadian just own all the planets
+
+    We could have NPCs that keep a basic portal system running
+
+Airlocks on spaceships
+
+we have an enslaved_to_player_id on npcs.
+    I kind of want the slaver to go around to other places, and enslave npcs. He would probably need to be an npc to do that.
+        npcs do need races. npcs would need an enslaved_by_npc_id. I don't generally think that we would want all that
+        kind of stuff added to monsters. Being able to enslave. idk.
+
+We could do works_for_player_id for when players offer npcs jobs
+
+
+
+Could have multiple tiers of storage objects, manufacturers, etc.
+    Higher level ones could have rules attached to them. Smart Crate or something. So the default is just effectively a box.
+    More advanced ones could have security levels that people can try and work through, if they are bad people.
+
+
+
+How to put a desert storm effect on a tile
+    Add effect_id to a planet coord?
+
+
+There are two scenarios that I would like to have when converting things.
+1. Batteries -> Energy. Always. Easy
+2. For the Crashed Meteorite I would like to have different possible outcomes.
+    So just have multiple conversion linkers with the same input - and then different outputs with different chances
+
+crabs on shallow water tiles
+deep water tiles
+
+crystal carapace
+
+Increasing a player -> NPC relationship to possibly get them to work for you.
+Drugging the NPC and forcing them to work for you.
+Draw injection
+    Need to make some items that you equip get used up. Parasites, injections, logic bombs, ACTUAL bombs
+
+Could potentially have something like an injection gun too. Converting/healing via a substance to fill charges
+
+
+Keep messing with 3.17+ and see if a version that shows up on phones is viable
+
+
+Lets see if we can combine give with something else. trade? Not sure we really use trade
+But we will have players giving and trading things with npcs, as well as other players
+I kind of thing that it should probably all go into a trade system, but with one side just being empty for 'giving'.
+    LOOK INTO IT!
+
+Chance for enslaving should go up when HP is small. (POKEBALL :p)
+Ways of making a slave:
+    Mind hacking for machines
+Parasite for organics
+
+Add a merchant npc spot in the spaceport. We want a cook npc type that turns basics into food, and sells at a price.
+    Would need to acquire items from a merchant or get them
+
+
+WHEN WE ARE A SHIP THAT IS DOCKABLE, AND WE MOVE, WE NEED OUR UPDATED LOCATION SENT TO PLAYERS DOCKED ON US (PRETTY SURE WE STILL NEED TO DO THIS)
+    movement.moveGalaxy at bottom
+
+
+Research the forge and the manufacturer to get access to the next levels of them - which should allow you to queue up things to build,
+    as well as giving a slight bonus.
+    Could even have different types of high level manufacturers/forges. Ones that are slow, but give an increase to the skill,
+    and ones that are simply faster, or let you queue things up.
+
+SALVAGE
+    Makes sense that someone who looks at something and doesn't know what it is, wouldn't be able to find much.
+    So makes sense that we could have more of things, and/or more advanced things at higher salvage levels
+
+    create table salvage_linkers(id int unsigned not null auto_increment primary key, object_type_id int,
+        salvaged_object_type_id int, salvaged_amount int, complexity int, rarity int, created_at datetime, updated_at datetime);
+
+    Goal is to spawn a derelict, damaged alien ship via an event. Uses at least exodium for it's structure - so a low level can't do
+        anymore more than try and salvage it. Maybe with enough salvaged ones, a player could repair it.
+
+    Space Debris (need a better name - broken satellites and things) - add in some basic salvage linkers
+
+
+Area of effect stuff - really want safe areas in space as we make space larger
+
+SAFE ZONE BEACONS IN SPACE
+
+
+
+Some kind of label or tint thing for crates and other things that hold other things
+
+
+Cooking body - octopus with lots of legs
+Manufacturing body - scientist
+
+
+
+Take a page out of nature and have ecosystems where multiple things rely on each other.
+
+
+Slerm armor that's good against corrosive stuff
+
+Radiation knife. Need to come up with a radiation material
+
+Genetweak
+Redreed. A smoked substance.
+
+Eventually we need something like a cloning vat to be only able to fit one body at a time. Don't really want 100x bodies in a cloning vat,
+    or in a crate or something.
+
+        Got me thinking about space issues. Maybe down the road have a cloning vat put the finished body in a tile around it or something?
+            output_placement_locations ? (inventory, tiles_around ). Idk.
+
+
+Attempt to see if we can have a couple of wall sizes - one for when there is a wall under it.
+    I would want to time drawing the tile before and after the extra lookup
+
+
+Really need to give players more body options. Insect like one. Lizard like one. (INSPIRED DAVID)
+
+Stims that do a higher attack and defense increase, but subtract HP
+Nanobot patch that heals large amounts of hp at a time
+
+Would be neat to have a nanobot cloud with a visible effect. Dual purpose healing + blocking some of the damage
+
+Organics that rely on machines to move.
+Could do slerm in a treaded cart
+
+eevberry
+
+Have a more advanced type of chitin armor that is chitin combined with something else more difficult to find
+
+Could have an admin page that pushed generic settings to the server. npcs_active true/false (making this secure would need some sort of private key)
+
+
+On the slaver planet, integrate the idea we had for convict planets. We could have a ruling NPC. Prometheus/Emperor style npc that rules over
+    things. The event on the slaver/convict planet could be that their lords go around collecting money from the slaves/convicts.
+    Would be neat for NPCs to have lineage. Offspring. Powerful NPC houses/guilds. Would be able to control a planet themselves.
+    Empress/CEO/etc. High end NPCs should have guards, their own rooms. Thing stronghold, placace, tower.
+    Eventually would be really neat for them to have friends/foes.
+
+    Eventually have NPCs kidnap, mutate, enslave other NPCs
+
+
+
+For the Taullerans, think bubbles.
+
+Allow players to expand their ships? Allow ships to have multiple levels?
+
+Shields
+
+I thought it was neat that Polity agents needed a drug to keep their security clearance up. Not sure I would want to
+    implement something like that, but you could use it as a way to give temporary passes to players in certain areas.
+    E.g. an exclusive space station and this dose gives you access to it for an hour. Or even base a whole faction on the drug.
+
+
+Players should naturally discover how to build a next level body as part of the beginning steps. Blueprint?
+
+Slerm bodies
+
+Multiple auto attack types on objects. Auto attack objects (player built), Auto attack players
+    (or just add in the attacking player objects into the existing stuff )
+
+shipyards, abandoned pods, etc - need to decay at some rate.
+For the shipyard, the decay condition would be if it's not active, and has a coord_id.
+For the pod, it would be that it is abandoned (no player id)
+
+
+Potentially have control over slaves wane with time if they don't see you, or you don't re-up their control stuff.
+
+
+I wonder if I want to start implementing some more sort of economy. Nothing crazy, maybe NPCs needing food, and a
+    merchant type NPC to travel around selling food. Merchant, farmer, mercenary. Should be lots of job types,
+    but everything players should be able to do much better.
+
+Hestra seeds
+
+
+For cosmetics....
+    Having a cosmetic body makes a lot of sense - nanobots that instantly conform to the situation.
+    Not sure about how to do this with ships. For ships.... skins... makes more sense, but that would be
+        much more situational
+    cosmetic_body_id
+    cosmetic_ship_id
+    body_skin_id?
+    ship_skin_id?
+
+
+If a monster moves on stairs/hole, it should move up/down
+
+Make sure AI Daemons decay after a while
+
+Potentially have limits to the # of things one object can spawn. SO many acid flies
+
+Default state of things like manufacturers usable by anyone
+
+NPC Job: Fuel merchant. Ship Dealer
+
+Eating monster cells to change a body
+
+Volcano that puts lava flows on tiles
+
+Statis. Floor type - things won't decay in in
+
+Gestation chamber
+
+Synthbio replicator
+Smart matter
+Dyson statites
+Diamondoid processing nodes
+Cold quantum condensates
+Holeship
+Darkship gravity ripples
+Quantum packets
+Gamma-ray lasers to supply holeships with fresh singularities
+
+Exotic matter
+Quark
+Gluon
+Hadron
+Condensed matter
+
+Slagcell monster type who's tears are blood. COnstantly puts new sadnesses in its brain. Sadnesses from others even. Darkest
+    thoughts, seeing the brokeness of humanity. Skin raw, torn. The tears sting. Deserves the pain.
+
+Bit rot - radiation induced dementia for machines
+Brain dump
+A slave controller
+Lamashtu
+Lilith
+Haldane
+Tau Ceti
+Micrometeroroid defenses
+Electrostatic radiation deflector
+Mechanocytes
+
+Plasmonic
+Nueral core
+Soul chip
+Machines having a system to rebuild. In 'Bit Rot' by CHarles Stross, the machines want pure matrials after a cosmic ray
+    encounter to help heal. Primitive functions first. So the highly damaged have no concience.
+    In terms of a gameplay element - could have very strong and hostile monster or npc that actually turns logical
+        if they receive enough machine material to fix themselves.
+
+Neutron shield
+Predator cities
+Acid baths
+Solipsism - that everything outside your mind could be unreal
+AI wetware
+ginkgo tree
+plasma slug
+Diamond drop flies put into a drink. Once inside, takes carbon from blood to assemble gates and interrupts in nervous system
+Creatures of godlike power and infantile rage
+Inviligators
+Promethean
+
+Idomenes
+Lilimariah
+Pyrrha
+Azaiel
+
+Angel like creatures
+Nerve toxin
+
+Nano assemblers pulling carbon, hydrogen, and oxides out of the air to create an armor. Black diamond armor
+Sentry-shield
+Numbus? Like a shielded area?
+
+World-Minds
+Star-Minds
+
+Hypno-narcotics
+Neurochemicals ( Neuroxhemicals? )
+
+Cameras as potential minimaps/windows. Players could check on a location. AIs could let the player do it at will for energy
+
+Temple soldier
+Ruel with a super slow animation rate. So slow you almost don't see it. Living statue.
+
+Using black hole as power source.
+Superconducting ring
+Electromagnetically accelerated
+Beam riding passenger carriers
+Golden vacuum armor
+Kinetic penetrator
+City with a shell of rock, iron, and ice
+Antiproton beams
+Muon accelerators
+Fission-pumped gamma-ray lasers
+Cryoprotectorants - used to cool/preserve brain
+
+Potentially open up the idea of fees for portals that someone else owns - or have a base set on some of the core worlds that
+    provides income to Cadian
+
+Giant upside down trees in the water.
+Towers are bones. Trees of bone. Calcium hydroxyapatite. Root canopy a digestive orgon. Using solvents to dissolve and absorb other things
+
+Positron activation scan
+Heavily engineered humans for specific purposes. Amazing at oceangoing
+
+Warmind
+Hundreds of eyes on stalks like fruit
+
+Flowers growing out of zero g bubbles of water
+    Along this line - some thing that can literally only ever exist in zero g. Flower growing in a literal bubble of water would be crazy frazile.
+
+    Archons of the dilemma prison
+
+Smartmatter
+Transparent comet ice walls on a ship
+AIs having different avatars. Butterflies. Other things
+
+Stranglet bomb
+Highway meso-particles
+Light mill beams
+Proteomic computers
+Computronium in bones
+Bladeship
+Q-dot. Quantum dot.
+Sapphire ship structure
+Root access to a body
+Engineer-of-Souls
+Ships with small suns in them
+Mind steganography
+The Proust effect
+Exomemory
+Sythbio vat
+
+Atom beam
+Time as a currency
+Privacy as currenty - gevulot
+Entaglement ring
+Biodrone
+Synthbio drone
+
+Elodie
+Isidore
+Lindstrom
+Sebastian
+Andre
+Cryptarch
+Tall and skinny spacer/belt people.
+Recursive memory virus
+Q-gun. Quantum gun.
+
+Flying machine bugs with syringes. Large green or red bodies of fluid.
+
+Maze city. Streets that change. Might only ever find a specific shop one time. Doors that only open if you are something, or were in love. Tiles warping around.
+
+Slave-mind
+Neutrino link
+Metacortex
+Ghostgun
+Quantum umbilical
+Smartcoral
+Entire castle that's a robot
+Spidercab
+
+Floating city with a trash city underneath it.
+    Thought about coding it a little. Portal/elevator from the bottom to the top. Could have a wealth-based rule to gate it
+
+
+Nanoseed
+Xuexue
+
+Celestial Doctor - could have titles associated with skill levels.
+Transcranial magnetic simulator
+Drugware
+
+SubAIs in charge of specific advanced things. Gogols (minds) in Quantum Thief. Could harvest NPC minds to make items stronger?
+
+Combat fog
+Tellirium
+Heavy gravity around a trapped singularity. Could affect movement speed
+
+Chemical bot
+Synthbio brain
+Tempmatter - cheap walls and things that decay over time
+
+One of the races should be tiny
+
+In The Quantum Thief, people serve time as quaiet. Helping the city move, terraforming, etc. They are turned into things
+    with all different sizes suited to their task. From a skyscraper size to ant size.
+
+Synthbio bacteria
+
+Metal insects
+
+Brain worm
+
+Smart chitin armor?
+Metacortex
+Linear accelerator firing semi-autonomous coherent payloads
+Nanomissile
+
+Programmable matter
+Programmable matter layer under epidermis becomes armor, harder than diamond
+Fusion reactor in a thigh
+Disassembler tendrils shooting out of fingers
+Could have salvaging tendrils too
+
+Skin cleaning itself after a battle. Flaking off the bloody bits
+
+I really want the slaves on slaver planets to salvage stuff. Need the damn slaver to head to a corporation planet, abduct a npc (ideally a junkie),
+    and have it head back to the slaver planet and salvage falling stuff.
+    Could potentially combine the slaver planet with the high wealth/trash city underneath planet stuff
+
+Q-dots: artificial atoms capable of assuming many different properties
+
+Slaves could also have alchemy devices that convert their life energy + sand/whatever into useful output
+
+Data fortress
+Deep net
+
+Subdermal systems with a rebooting process. Active for like a minute, takes much longer time to reboot
+
+Molecular machines]]Synthbio repair organisms
+Stealth fog/blinding cloud. Lowering accuracy
+
+Potentially let players require a fee to land on their planet
+
+
+    I think I want to keep on expanding out NPCs - I like the idea of a mind control monster spawning on slaver planets,
+        the slaver npc harvesting some of that, and then going to the corporation world to enslave someone with the items equipped
+
+        We have the 'control' damage type
+
+        When NPCs are low on health they should try and run to a spaceport, and eat there, or then try to head to an azure planet and heal up there.
+
+        It might be easier for me as a player to initially try the enslaving steps, and just build it out so it works if an npc is doing it too
+
+    Make sure npc maggot farmers are are spawning on corporation planets
+        and unfulfilled ones are turning into junkies
+
+
+    How about a maggot farmer with no goal - happy to just do his maggot farming stuff
+    But a maggot farmer with a goal job, will slowly get sad about not fulfilling that goal.
+        Maggot farmer that isn't selling any maggots will eventually use a local life force extractor to get a payment, and
+            that leaves a chance of getting addicted to it.
+
+        Player should be able to get addicted to them too
+
+    make slavers an npc that flies to corporation planets, enslaves junkies, and brings them back to slaver planet
+
+    We want to also be able to ask npcs to work for us
+
+
+Thinking dust
+Diamond brain
+Crystal brain
+
+A trapped god
+Synthbio nanodoc
+
+Multipurpose cannon
+Diamond Ship
+Quark-gluon plasma missle
+Microton AM warheads
+
+Could have a monster looking portal as an event. Basically make a portal, but it looks like a huge monster mouth. Transports you to 'inside the monster' (Could just be a ship in the code )
+
+Spacetime foam
+Engineer-of-souls
+Diamond sphere eating matter and energy from the sun itself
+
+Supercritical fluid
+
+Planet so hot the rocks melt, evaporate, and rain down
+
+Planet that is frozen for a long period of time, then thaws. The things on it are adapted to hibernate/dehydrate for many years at a time
+
+Reactionless surge drive
+
+Negative matter
+Black hole drive
+Star drive - partial dyson sphere around a sun, directing the output
+Monsters that get stronger with each battle
+
+Light saber tech. High temperature ionized plasma in a magnetic bottle. Project the plasma + magnetic field to throw a plasma bolt. Plasma torpedo. Plasma spike.
+
+Ships cloaking. Defense drones that attack monsters ( just need to add a rule I think ) and monsters that attack objects
+
+I like the idea of void power
+
+Metaviral spawn
+
+
+
+***************** END UNSORTED IDEAS ************************************************************************
+
+
+
+
+***************** MAYBE IDEAS AND GENERALLY NEAT THOUGHTS ***************************************************
+
+?Avengers used a whole star for forging
+
+Multi consciousness. Global. Self was plants, animals, a whole ecosystem feeling and thinkng in different ways
+
+Story of an intelligent virus that in the span of nanoseconds, replicated, realized there was a bigger world out there,
+    had a small civilization, made unique art, and language.
+
+Killing other players could stain your soul. Could lose skills to wipe the memory of it.
+    In general I don't love the idea of punishing PVP too much. Still think it's an interesting thought
+
+
+The option of a player being in the game world, but basically being an observer. Followed by an AI that protected the player.
+    Restricted from building, hurting other players, and a bunch of other stuff. Would have to lock down things like
+    inventory transfer - but then you have issues along the lines of someone using that to safely get monster loot,
+    and transferring (even via dropping on the ground) the look to get to a normal player.
+
+
+************** USED IDEAS THAT WE ARE SAVING FOR WHATEVER REASON *****************

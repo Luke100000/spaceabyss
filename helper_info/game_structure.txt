@@ -1,0 +1,682 @@
+HP / Attack / EXP Ratio
+
+100 / * 0.05 / * 0.1
+10 / .5 / 1
+e.g. 100 HP, 5 Attack, 10 Exp
+
+*****************************************
+************ MATERIAL TREE ****************
+*****************************************
+
+Common Material Endings: ite, ium, ine, asm, tite, tine, er, ak
+
+Constium, Constite, Atite, Atium, Exodium, Exodite, Emerite, Emerium, Emertine, Cyite, Cyium, Cytite, Cytine, Cyak, Mechite, Mechium, Mechtine, Mechak
+Mimite, Mimium, Mimtite, Mimtine, Neurite, Neurium, Neurtine, Neurak, Polyite, Polyium, Polyine, Simuite, Simuium, Simutine, Simutite
+Subite, Subium, Subtite, Subtine, Synite, Synium, Synasm, Syntite, Syntine, Temite, Temium, Tettite, Tettine, Territe, Terrine, Tertine, Tertite
+Titite, Titium, Titasm, Titine, Tkrite, Tkium, Tokite, Tokium, Tokine, Toktite, Electite, Electium, Electine, Electite, Dredite, Dredium, Dredtite, Dredine,
+Hexite, Hexium, Hexine, Hextite, Hextine, Lexite, Lexium, Lextite, Lextine, Dezite, Dezium, Dezine, Deztite, Deztine, Shuite, Shuium, Shuine, Mikite, Mikium,
+Miktite, Miktine, Nexite, Nexium, Nexine, Nextite, Nextine
+
+Territe:
+    Obtained Via: Iron Deposits, Asteroids
+    Complexity: 2
+    Easiest way to obtain: Mine asteroid in your pod. 0 danger or difficulty
+
+
+
+    Syntite:
+        Requirements:
+            Territe must be researched
+        Complexity: 6
+        Obtained Via:
+            Territe + Nano Bonder in a forge
+        Easiest way to obtain: Just processing. Takes a tiny amount of skill, but is trivial
+
+
+        Gold:
+            Mostly used as an additive for non-conducting, or non corrosion properties.
+
+
+        Plasteel:
+            Complexity: 14
+            Obtained Via: Syntite + AIFragment (Complexity 14) in Forge
+
+
+
+        Exodium:
+            Obtained Via: More difficult deposits and monsters
+            Complexity: 12
+            Easiest way to obtain: On slaver planets at -2. Slaver guards are on the level
+                with 400 HP, 20 Attack
+
+            Refined Exodium
+
+
+    Exoskeleton Fragment
+
+        Chitin
+            High resistance to corrosive, blunt
+            Obtained Via: Voon, other bugs
+            Complexity: 4
+            Easiest way to obtain: Crystal Spiders on mountain worlds. 100 HP 5 Attack
+
+
+        Keratin
+
+
+            Living-wood
+
+
+
+            Silk
+
+                        Spun Diamond
+
+
+    Thiol:
+        Obtained Via: Thiol deposits on acid planets
+        Complexity: 15
+        Easiest way to obtain: Thiol deposits on acid planets. 500 HP 25 Attack
+
+
+
+            Glass
+                Stabglass
+                    Carrion glass
+
+            Neutronium
+
+
+            Diamond
+                Hyperdiamond
+
+
+
+                    Crystal
+                        Obtained Via: Crystal Deposits, Ruel
+                        Complexity: 22
+                        Easiest way to obain: Mountain level -2. Crystal Guard. 1000 HP 50 Attack
+
+
+                    jungle crystal
+
+                        Crystadmantium (Crystonium):
+                            Description:    Stable artificial elements, the continent of stability, above atomic weight 900.
+                                            Requires tons of energy to produce. Not found in nature. Chrysadmantium.
+                                            Even a star can't melt it. Built one atam at a time in a supercollider.
+                            Requirements:
+                                Crystals must be researched
+                            Complexity: 102
+                            Obtained Via:
+                                Crystal + Nanite Mesh in forge (might want to make a more advanced forge). Takes FOREVER.
+                                HIGH COMPLEXITY
+
+
+******* ENERGY SOURCES ********
+Battery
+
+    Power Cell
+
+        Diamond Cell (Battery?)
+
+            Crystal Cell (Battery?)
+
+
+
+Nano Bonder
+    Obtained Via: Easy monsters
+    Requirements: None
+
+    Nanite Mesh
+        Requirements:
+            Researched Nano Bonder
+        Obtained Via:
+            Nano Bonder + AIFragment (Complexity 14) in Forge
+
+AI Fragment:
+    Obtained Via: AI Dust (Complexity 14) and Crystals (Complexity 22) in a Forge
+
+
+
+Potential Materials:
+    Quickmatter ( We are having basic territe things turn into
+
+
+*****************************************
+****************** ARMOR EQUIPMENT TREE  *************************
+*****************************************
+
+Territe Armor:
+    Description:    Just shaped ore
+    Complexity: 2
+    Requirements:
+        Research Territe
+
+    Easiest way to obtain:
+        Just mine some territe and turn it into armor
+
+
+Chitin Armor:
+    Description:    Really hard pieces of exoskeleton put together.
+    Complexity: 4
+    Requirements:
+        Chitin
+
+    Easiest way to obtain:
+        Kill some Crystal Spiders on Mountain worlds. No complexity requirements
+
+
+    Keratin plating
+
+
+Syntite Armor:
+    Description: Armor made from Syntite
+    Complexity: 8
+
+Exodium Armor:
+    Description:     Advanced metal integration allows for better defensive power
+    Complexity: 14
+    Requirements:
+        Exodium
+    Easiest way to obtain:
+        Survive slaver guards on slaver planets
+
+
+Nano-Exodium:
+    Description:    Advanced metalurgy combined with some AI elements.
+    Complexity: 40
+    Requirements:
+        Exodium
+        AI Dust or maybe AI Fragments
+
+Regen-Exodium:
+    Description: Exodium armor with self repairing abilities, making it incredibly durable
+    Complexity: 24
+    Requirements:
+        Exodium
+        AIFragment
+        Batteries
+
+
+Plasteel
+    Description:    More powerful nanite mix, with some AI elements give this armor a slight intelligence.
+                    Improved defensive capabilites due to interpretting the combat situation and adjusting accordingly
+    Complexity: 30
+    Requirements:
+        Plasteel
+        Nanite Mesh
+
+
+
+
+
+
+
+Crystadmantium
+    Description:    Highly unnatural strong atomic element. Build slowly atom by atom
+    Complexity: 100
+    Requirements:
+        Crystadmantium
+        Nanite Mesh
+
+
+
+Equipment sets I'm not sure about :
+Power (Think Power armor)
+Nanite
+gravity armor? electro magnetic armor?
+
+
+AUGMENTS
+    Augments for manufacturing, research, and auto doc.
+    Augments for hp, attack, and defense
+
+
+
+
+*****************************************
+******************** WEAPON TREE *************************
+*****************************************
+
+
+PLAYER WEAPONS
+
+Just your fists is the most basic
+
+MELEE **********
+
+Quick Matter Knife
+
+    Hull Welder
+        Plasma Torch
+            Heat Lance
+
+    Mimetic Arm
+
+Laser Wire
+
+Stabbing fist. Requires parts from spiked enemy + titanium. Could be from an urchin type monster
+
+
+Prion Attack (Radiation?)
+
+Diamond Claw
+
+RANGE **********************
+
+
+Bolt Thrower
+
+Laser Gun
+    Megawatt Laser Gun
+
+Laser Rifle
+    Megawatt Laser Rifle
+
+
+
+
+
+Flame thrower
+    Damage Type: heat
+
+Blaster
+Blaster Rifle
+
+
+Pulse Pistol
+Pulse Rifle
+
+Gauss rifle
+
+Energy Disk
+
+Electromagnetic coil gun
+
+Plasma Pistol
+Plasma Rifle
+
+Railgun
+
+Antimatter Rifle
+
+Airborne Code Injectors
+
+Hack Dust
+
+Microtearer
+
+Atom Piercer
+
+Graviblaster
+
+Pyrorifle
+
+Chiller
+
+Icer Pistol
+
+Volt Rifle
+
+
+
+EXPLOSIVE **************
+
+shorted battery pack
+corrupted battery pack
+
+nukes - planet buster , planet driver
+
+Stardriller
+
+
+
+DEFENSIVE ITEMS
+
+Force Shield
+
+
+STATION WEAPONS
+
+    Station Railgun
+
+    Station Las Cannon
+
+
+
+POSSIBLE WEAPONS
+
+
+Fusion Weapons
+Gravity weapons
+Liquid Hydrogen Weapons
+proton pack
+Chrysalis gun
+Erasure Cannon
+Black ice viruses
+
+
+
+
+
+
+*****************************************
+******************** CONSUMABLES / STATUS CHANGERS ***************************
+*****************************************
+
+Addiction levels: none, slight, moderate, heavy
+
+Algae puffs
+
+
+AIDust:
+    Obtained Via: Growth deposits on desert planets
+    Positive Effects: +4 HP, +2 attack, +2 defense
+    Addiction chance: 25%
+    Negative Effects: -16 HP per addiction level for 2x normal duration
+
+Algae:
+    Obtained Via: Algae Pad
+    Positive Effects: +1 HP
+    Addiction Chance: 0%
+
+
+Beer
+
+Bioplast
+
+
+Circuit:
+    Obtained Via: Circuit Deposit, Monsters
+    Positive Effects: +1 HP
+    Addiction Chance: 0%
+
+CNS Stim:
+    Obtained Via:
+        Coffee Bean In Food Processor
+    Requirements:
+        ? I Feel like the player should need to research coffee beans first. Maybe not.
+    Positive Effects: +1 attack, +1 defense while active
+    Addiction Chance: 5%
+    Negative Effects: -1 attack, -1 defense, -1 HP per addiction level for 2x normal duration.
+
+
+Coffee:
+    Obtained Via: Coffee Plant
+    Positive Effects: +2 HP, +2 Attack
+    Addiction Chance: 1%
+    Negative Effects: -2 attack per addiction level for 2x normal duration
+
+
+Combat Utility Fog
+
+Cricket Crunch
+
+Cup of Noodles
+
+Nano Bandage:
+    Obtained Via: Unknown so far.
+    Positive Effects: +2 HP
+    Addiction Chance: 0%
+    Duration: 50 ticks
+
+
+Protein Aspic
+
+Regen Bots:
+    Obtained Via: Unknown so far.
+    Positive Effects: +10 HP
+    Addiction Chance: 0%
+    Duration: 10 ticks
+
+Spice (turned spice into ai dust... but we already had an ai dust.... ):
+    Obtained Via: Spice Deposit
+    Positive Effects: +2 HP, +1 attack, +1 defense while active
+    Addiction Chance: 10%
+    Negative Effects: -1 attack, -1 defense, -2 HP per addiction level for 2x normal duration.
+
+Salve:
+    Obtained Via: Life Herb
+    Research Required: Life Herb
+    Positive Effects: +5 HP
+    Addiction Chance: 0%
+
+Smash. Drug
+
+Tea
+
+Voonfruit
+
+Voonmilk
+
+Wine
+    Smart-wine
+
+Yeast Steak
+
+
+
+
+
+
+
+
+
+Possible Consumables
+    Nano-Virus (Currently that's a monster name). High defense.
+    Nano-Bacteria. High attack
+
+
+
+*****************************************
+************************** PLAYER BODIES ***************************
+*****************************************
+
+
+Standard Human Body
+
+    Reinforced Human Body
+        Small bonus across the board. Body with a modified muscle structure to increase attack quickness, defense,
+           and vitality.
+
+        Smart Reinforced Human Body
+            Body with exodium augmented bones, nanobots, and the modified muscle structure.
+
+
+            Mech Suit
+                You still want to be human, but being surrounded by layers of hardenex exodium isn't going to hurt
+
+
+
+MLM Body
+    Small bonus to hp, attack, defense.
+    Strong to: physical attacks
+    Weak to: piercing, hacking damage type
+
+
+Slerm Body
+    Bonus to HP, negative to attack
+    Regen as standard?
+    Weak to electric attacks
+
+
+Ruel Body
+    High bonus to HP and defense
+    Slow as butt
+
+
+Slagcell
+    High bonus to attack. High negatives to hp and defense. Glass cannons of suffering
+
+
+
+
+
+*****************************************
+************************** SHIPS ***************************
+*****************************************
+
+References:
+    https://tvtropes.org/pmwiki/pmwiki.php/Main/StandardSciFiFleet
+    https://www.reddit.com/r/worldbuilding/comments/4l7lvb/what_spaceship_classes_does_your_scifi_world_have/
+
+PLAYER SHIPS
+
+FREE
+    TIER 1 - Territe, Batteries, Chitin
+        TIER 2 - Syntite, Batteries, Keratin
+            TIER 3 - Exodium, Power cells, Living Wood, Silk
+                TIER 4 - Refined Exodium, Power Cells,
+                    TIER 5 - Diamond
+                        TIER 6 - Spun Diamond
+                            TIER 7 - HyperDiamond
+                                TIER 8 - Crystal
+                                    TIER 9 - Crystadmantium (Crystonium)
+
+
+Pod ( drawn )
+
+    Mining ( drawn )
+
+    Cargo Ship ( drawn )
+
+                Freighter ( have image idea )
+
+
+
+        Cutter ( have image idea ) Movement speed: 500 10 Batteries 10 Circuits 20 Exodium
+
+
+            Lancer
+            Striker
+                Corvette
+                Destroyer ( have image idea )
+                Frigate ( have image idea )
+
+                    Cruiser
+                        Dreadnought
+                        Battlecruiser
+                            Supercruiser
+
+            Silk Ship
+                        Spun Diamond Silk Ship
+
+
+    Science Vessel
+
+
+
+
+    Fighter
+
+    Shuttle (have image drawn )
+
+        Yacht
+
+            Royal Cruiser (have image idea)
+
+        Light Sail Ship (Lighthugger)
+
+
+            Carrier
+                            Colony Ship
+                                Worldship
+                                Stardome
+                                Cityship
+                                    Star Fortress - Tier 9
+
+NPC SHIPS
+    Prisonship
+    Knightship
+    Slavership
+
+
+Light Sail Ship (Lighthugger?)
+Ramscoops. There is stuff in space. In the 'interstellar medium'. Would be neat to have ships
+    slowly accrue some material if they are a certain type of ship
+Cutter
+Pinnace (Don't like how it sounds verbally. PENIS)
+Starliner
+
+Homestead ship
+Generation ship
+Starship
+Transport ship
+Yacht
+
+
+*****************************************
+**************************** NPCS ***************************
+*****************************************
+
+NPC spawns with a starter job. Has a chance to pull next job desire. Dream job.
+    Every time an NPC gets a job, has a... 10% change to drop back to a previous job tier,
+    a 50% chance of wanting to move up, and the rest is just staying that forever.
+
+    or just a job to job linker. Job Z <---> Job A <----> Job B
+
+    Jobs should have structures linked to them
+
+    Jobs have a structure. NPC, once they get a job, they work on getting the requirements for that structure
+
+    Once they have that structure, it should lead them to having enough of something for the next job, if that's what they want
+
+    npcActions
+        spawnNpc
+            Create NPC with starter job
+            Possibly give dream job
+            Place in galaxy
+
+        performNpcTask
+
+        setNpcTask
+            If we want to build a structure, but it's not built - we go through the requirements,
+            trying to get to a point where we can build it
+
+            If we have a structure, we see if we have a dream job, and if we meet those requirements
+
+
+
+
+
+
+Current job
+Dream job
+
+
+Algae Farmer - Algaeist
+Doctor
+Forager (just moves around, seeing if it's on a tile that can be harvested)
+Life Extractor
+Junkie
+Maggot Farmer
+Mercenary
+Merchant
+Salvager
+Slave
+
+Some algae farmer on a peaceful plant is going to have more of a chance of going into other collection, peacful things than
+    an NPC that started as a Maggot Farmer on a busy and unequal Corporation planet
+
+
+    Algae Farmer - Algaeist
+Slave   <-
+        -> Salvager
+        -> Mercenary (low chance)
+        -> Doctor
+        -> Merchant
+            -> CEO
+            -> King
+
+    Maggot Farmer
+Slave   <-
+Junkie  <-
+        -> Life Extractor (higher chance)
+        -> Mercenary (higher chance)
+        -> Merchant
+        -> Doctor
+            -> CEO
+            -> King
+
+
+    Slaver

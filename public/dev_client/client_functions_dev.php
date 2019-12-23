@@ -1,0 +1,8806 @@
+<script type="text/javascript">
+
+
+
+    //      data:   x   |   y   |   damage_amount   |   damage_types   |   was_damaged_type   |   damage_source_type   |
+    //              damage_source_id
+    function addEffect(data) {
+
+
+        let scene_game = game.scene.getScene('sceneGame');
+
+        if(data.damage_types && data.damage_types.length > 0) {
+            for(let i = 0; i < data.damage_types.length; i++ ) {
+
+
+
+                // Blocked Effect - trying drawing it first so any attack effects show over it
+                if(typeof data.damage_amount !== 'undefined' && data.damage_amount === 0 && data.was_damaged_type === 'hp') {
+
+                    if(blocked_effect_sprite === false) {
+                        blocked_effect_sprite = scene_game.add.sprite(data.x + 32, data.y + 32, 'blocked-effect');
+                        blocked_effect_sprite.setDepth(10);
+                        blocked_effect_sprite.anims.play('blocked-effect');
+                    } else {
+                        blocked_effect_sprite.x = data.x + 32;
+                        blocked_effect_sprite.y = data.y + 32;
+                        blocked_effect_sprite.setVisible(true);
+                        blocked_effect_sprite.setDepth(10);
+                        blocked_effect_sprite.anims.play('blocked-effect');
+                    }
+                } else if(data.damage_types[i] === 'addiction') {
+                    if(addiction_sprite === false) {
+                        addiction_sprite = scene_game.add.sprite(data.x + 32, data.y, 'addiction-effect');
+                        //fire_attack_sprite.on('animationcomplete', fireCompleteCallback, this);
+                        addiction_sprite.anims.play('addiction-effect');
+                    } else {
+                        addiction_sprite.x = data.x + 32;
+                        addiction_sprite.y = data.y;
+                        addiction_sprite.setVisible(true);
+                        addiction_sprite.anims.play('addiction-effect');
+                    }
+                } else if(data.damage_types[i] === 'explosion') {
+
+                    let found_sprite = false;
+                    let found_sprite_index = -1;
+                    // see if we have a range sprite that isn't visible
+                    for(let i = 0; i < explosion_sprites.length; i++) {
+                        if(!found_sprite && explosion_sprites[i].visible === false) {
+                            found_sprite = true;
+                            found_sprite_index = i;
+                        }
+                    }
+
+                    // Lets add another sprite to the game!
+                    if(!found_sprite) {
+
+                        let new_sprite_index = explosion_sprites.push(scene_game.add.sprite(data.x + 32, data.y + 64, 'explosion')) - 1;
+                        explosion_sprites[new_sprite_index].anims.play('explosion-effect');
+
+                    } else {
+
+                        explosion_sprites[found_sprite_index].x = data.x + 32;
+                        explosion_sprites[found_sprite_index].y = data.y + 32;
+                        explosion_sprites[found_sprite_index].setVisible(true);
+                        explosion_sprites[found_sprite_index].play('explosion-effect');
+                    }
+
+                } else if(data.damage_types[i] === 'decay') {
+
+                    if(addiction_sprite === false) {
+                        addiction_sprite = scene_game.add.sprite(data.x + 32, data.y, 'addiction-effect');
+                        //fire_attack_sprite.on('animationcomplete', fireCompleteCallback, this);
+                        addiction_sprite.anims.play('addiction-effect');
+                    } else {
+                        addiction_sprite.x = data.x + 32;
+                        addiction_sprite.y = data.y;
+                        addiction_sprite.setVisible(true);
+                        addiction_sprite.anims.play('addiction-effect');
+                    }
+                } else if(data.damage_types[i] === 'healing') {
+                    // TODO healing stuff
+                }
+
+                // Lets see how the range framework stuff works like this
+                else if(data.damage_types[i] === 'laser' && data.attacker_x !== -100) {
+
+                    let found_range_sprite = false;
+                    let found_range_sprite_index = -1;
+                    // see if we have a range sprite that isn't visible
+                    for(let i = 0; i < range_sprites.length; i++) {
+                        if(!found_range_sprite && range_sprites[i].visible === false) {
+                            found_range_sprite = true;
+                            found_range_sprite_index = i;
+                        }
+                    }
+
+                    let destination_x = data.x + 32;
+                    let destination_y = data.y + 32;
+
+                    // Lets add another range sprite to the game!
+                    if(!found_range_sprite) {
+
+                        let new_range_sprite_index = range_sprites.push(scene_game.add.sprite(data.attacker_x + 32, data.attacker_y + 64, 'laser')) - 1;
+                        range_sprites[new_range_sprite_index].x = data.attacker_x + 32;
+                        range_sprites[new_range_sprite_index].y = data.attacker_y + 64;
+                        scene_game.physics.add.existing(range_sprites[new_range_sprite_index], false);
+
+                        scene_game.physics.moveTo(range_sprites[new_range_sprite_index], data.x, data.y, 800);
+                        range_sprites[new_range_sprite_index].destination_x = data.x;
+                        range_sprites[new_range_sprite_index].destination_y = data.y;
+                        range_sprites[new_range_sprite_index].rotation = Phaser.Math.Angle.Between(data.attacker_x, data.attacker_y, data.x, data.y) - 45;
+
+                    } else {
+
+                        // RECYCLING TO SAVE THE EARTH!
+
+                        range_sprites[found_range_sprite_index].x = data.attacker_x + 32;
+                        range_sprites[found_range_sprite_index].y = data.attacker_y + 64;
+                        range_sprites[found_range_sprite_index].setVisible(true);
+                        scene_game.physics.moveTo(range_sprites[found_range_sprite_index], data.x, data.y, 800);
+                        range_sprites[found_range_sprite_index].destination_x = data.x;
+                        range_sprites[found_range_sprite_index].destination_y = data.y;
+                        range_sprites[found_range_sprite_index].rotation = Phaser.Math.Angle.Between(data.attacker_x, data.attacker_y, data.x, data.y) - 45;
+
+                    }
+
+                }  else if(data.damage_types[i] === 'mining' || data.damage_types[i] === 'salvaging') {
+
+                    if(mining_sprite === false) {
+                        mining_sprite = scene_game.add.sprite(data.x + 32, data.y + 32, 'mining');
+                        //fire_attack_sprite.on('animationcomplete', fireCompleteCallback, this);
+                        mining_sprite.anims.play('mining');
+                    } else {
+                        mining_sprite.x = data.x + 32;
+                        mining_sprite.y = data.y + 32;
+                        mining_sprite.setVisible(true);
+                        mining_sprite.anims.play('mining');
+                    }
+
+                } else if(data.damage_types[i] === 'repairing') {
+
+                    console.log("damage source type was repairing. data.x,y: " + data.x + "," + data.y);
+
+                    if(repairing_sprite === false) {
+                        repairing_sprite = scene_game.add.sprite(data.x + 32, data.y + 32, 'repairing');
+                        //fire_attack_sprite.on('animationcomplete', fireCompleteCallback, this);
+                        repairing_sprite.anims.play('repairing');
+                    } else {
+                        repairing_sprite.x = data.x + 32;
+                        repairing_sprite.y = data.y;
+                        repairing_sprite.setVisible(true);
+                        repairing_sprite.anims.play('repairing');
+                    }
+
+                }
+                // Lets just have the melee as the default
+                else {
+
+                    if(melee_effect_sprite === false) {
+                        melee_effect_sprite = scene_game.add.sprite(data.x + 32, data.y, 'melee-effect');
+                        //fire_attack_sprite.on('animationcomplete', fireCompleteCallback, this);
+                        melee_effect_sprite.anims.play('melee-effect');
+                    } else {
+                        melee_effect_sprite.x = data.x + 32;
+                        melee_effect_sprite.y = data.y;
+                        melee_effect_sprite.setVisible(true);
+                        melee_effect_sprite.anims.play('melee-effect');
+                    }
+
+                }
+
+
+                /*
+                else {
+                    if(fire_attack_sprite === false) {
+                        fire_attack_sprite = scene_game.add.sprite(data.x + 32, data.y, 'fire_attack');
+                        //fire_attack_sprite.on('animationcomplete', fireCompleteCallback, this);
+                        fire_attack_sprite.anims.play('fire_attack');
+                    } else {
+                        fire_attack_sprite.x = data.x + 32;
+                        fire_attack_sprite.y = data.y;
+                        fire_attack_sprite.setVisible(true);
+                        fire_attack_sprite.anims.play('fire_attack');
+                    }
+                }
+
+                */
+
+
+            }
+        }
+
+
+        if(data.was_damaged_type === 'energy') {
+            if(energy_effect_sprite === false) {
+                energy_effect_sprite = scene_game.add.sprite(data.x + 32, data.y + 32, 'energy-effect');
+                energy_effect_sprite.anims.play('energy-effect');
+            } else {
+                energy_effect_sprite.x = data.x + 32;
+                energy_effect_sprite.y = data.y + 32;
+                energy_effect_sprite.setVisible(true);
+                energy_effect_sprite.anims.play('energy-effect');
+            }
+        }
+
+
+    }
+
+    // data:    x   |   y   |   damage_amount   |   was_damaged_type   |   damage_source_type  |   damage_types
+    function addInfoNumber(data) {
+        let scene_game = game.scene.getScene('sceneGame');
+
+        // Testing performance with this off
+        let info_number_index = info_numbers.push({ 'amount': data.damage_amount, 'was_damaged_type': data.was_damaged_type, 'pixels_moved': 0}) - 1;
+
+        let fill = '#6982f4';
+
+        // For things like healing and repairing, they should be the only entry in the damage_types array
+        if(data.damage_types && (data.damage_types[0] === "repairing" || data.damage_types[0] === 'mining') ) {
+            fill = '#6982f4';
+        } else if(data.damage_types && data.damage_types[0] === 'healing' ) {
+            fill = '#34f425';
+        } else if(data.was_damaged_type === "hp") {
+            fill = '#f44242';
+        } else if(data.damage_amount <= 0) {
+            fill = '#969696';
+        }
+
+
+        // lets randomize the starting x/y a bit
+        let starting_x = getRandomIntInclusive(-32, 32);
+        let starting_y = getRandomIntInclusive(0, 32);
+
+
+        info_numbers[info_number_index].text = scene_game.add.text(data.x + starting_x, data.y - starting_y,
+            data.damage_amount, { fontSize: 24,
+                padding: { x: 10, y: 5},
+                fill: fill});
+
+        info_numbers[info_number_index].text.setFontStyle('bold');
+    }
+
+    /*
+    //  damage_amount   |   damage_type   |   defender_type   |   defender_id   |   attacker_type   |   attacker_id   |
+    //  calculating_range   |   x   |   y
+    function addInfoNumber(data) {
+        // lets do a info number (damage!) too!
+        let scene_game = game.scene.getScene('sceneGame');
+
+        //console.log("AddInfoNumber data: ");
+        //console.log(data);
+        //console.log("data.damage_source_type: " + data.damage_source_type);
+
+
+        // Addictions are a bit different since the source is the player
+        if(data.damage_source_type === 'addiction' || data.attacker_type === 'addiction') {
+
+            if(addiction_sprite === false) {
+                addiction_sprite = scene_game.add.sprite(data.x + 32, data.y, 'mining');
+                //fire_attack_sprite.on('animationcomplete', fireCompleteCallback, this);
+                addiction_sprite.anims.play('addiction-effect');
+            } else {
+                addiction_sprite.x = data.x + 32;
+                addiction_sprite.y = data.y;
+                addiction_sprite.setVisible(true);
+                addiction_sprite.anims.play('addiction-effect');
+            }
+
+        } else if(data.damage_type === 'energy' || data.was_damaged_type === "energy") {
+            console.log("Energy! Should show shield");
+            if(energy_effect_sprite === false) {
+                energy_effect_sprite = scene_game.add.sprite(data.x + 32, data.y + 32, 'energy-effect');
+                energy_effect_sprite.anims.play('energy-effect');
+            } else {
+                energy_effect_sprite.x = data.x + 32;
+                energy_effect_sprite.y = data.y + 32;
+                energy_effect_sprite.setVisible(true);
+                energy_effect_sprite.anims.play('energy-effect');
+            }
+        } else if(data.damage_source_type === 'healing' || data.attacker_type === 'healing') {
+
+
+
+        }
+        else if(data.damage_source_type === 'repairing') {
+            console.log("damage source type was repairing. data.x,y: " + data.x + "," + data.y);
+
+            if(repairing_sprite === false) {
+                repairing_sprite = scene_game.add.sprite(data.x + 32, data.y + 32, 'repairing');
+                //fire_attack_sprite.on('animationcomplete', fireCompleteCallback, this);
+                repairing_sprite.anims.play('repairing');
+            } else {
+                repairing_sprite.x = data.x + 32;
+                repairing_sprite.y = data.y;
+                repairing_sprite.setVisible(true);
+                repairing_sprite.anims.play('repairing');
+            }
+
+        }
+        else if(data.damage_type === 'hp' || data.was_damaged_type === 'hp') {
+
+            if(data.damage_amount === 0) {
+
+                if(blocked_effect_sprite === false) {
+                    blocked_effect_sprite = scene_game.add.sprite(data.x + 32, data.y + 32, 'blocked-effect');
+                    blocked_effect_sprite.anims.play('blocked-effect');
+                } else {
+                    blocked_effect_sprite.x = data.x + 32;
+                    blocked_effect_sprite.y = data.y + 32;
+                    blocked_effect_sprite.setVisible(true);
+                    blocked_effect_sprite.anims.play('blocked-effect');
+                }
+
+            } else {
+                if(melee_effect_sprite === false) {
+                    melee_effect_sprite = scene_game.add.sprite(data.x + 32, data.y + 32, 'melee-effect');
+                    melee_effect_sprite.anims.play('melee-effect');
+                } else {
+                    melee_effect_sprite.x = data.x + 32;
+                    melee_effect_sprite.y = data.y + 32;
+                    melee_effect_sprite.setVisible(true);
+                    melee_effect_sprite.anims.play('melee-effect');
+                }
+            }
+
+
+        } else if(data.damage_type === 'mining' || data.damage_type === 'salvaging') {
+
+            if(mining_sprite === false) {
+                mining_sprite = scene_game.add.sprite(data.x + 32, data.y + 32, 'mining');
+                //fire_attack_sprite.on('animationcomplete', fireCompleteCallback, this);
+                mining_sprite.anims.play('mining');
+            } else {
+                mining_sprite.x = data.x + 32;
+                mining_sprite.y = data.y + 32;
+                mining_sprite.setVisible(true);
+                mining_sprite.anims.play('mining');
+            }
+
+        }
+        else {
+            console.log("Displaying default fire sprite!");
+            if(fire_attack_sprite === false) {
+                fire_attack_sprite = scene_game.add.sprite(data.x + 32, data.y, 'fire_attack');
+                //fire_attack_sprite.on('animationcomplete', fireCompleteCallback, this);
+                fire_attack_sprite.anims.play('fire_attack');
+            } else {
+                fire_attack_sprite.x = data.x + 32;
+                fire_attack_sprite.y = data.y;
+                fire_attack_sprite.setVisible(true);
+                fire_attack_sprite.anims.play('fire_attack');
+            }
+        }
+
+        //console.log("Calculating range: " + data.calculating_range);
+
+        // Lets start to limit how often the range thing shows to only when its applicable
+        if(data.damage_source_type !== "healing" && data.attacker_type !== "healing" && data.damage_type !== 'mining' &&
+            data.damage_type !== 'salvaging' && data.damage_source_type !== 'repairing' &&
+            data.damage_source_type !== 'addiction' && data.attacker_type !== 'addiction' &&
+            data.damage_source_type !== 'floor' && data.attacker_type !== 'floor' && data.calculating_range !== 1) {
+
+            //console.log("Emitting a range sprite. data.attacker_type: " + data.attacker_type);
+
+            let attacker_x = 0;
+            let attacker_y = 0;
+
+
+            // we need to add the range sprite at the attacker location
+            if(data.attacker_type === 'monster') {
+                let coord_index = planet_coords.findIndex(function(obj) { return obj && obj.monster_id === parseInt(data.attacker_id); });
+                if(coord_index !== -1) {
+                    attacker_x = tileToPixel(planet_coords[coord_index].tile_x);
+                    attacker_y = tileToPixel(planet_coords[coord_index].tile_y);
+                }
+            } else if(data.attacker_type === 'object') {
+                let object_index = objects.findIndex(function(obj) { return obj && obj.id === parseInt(data.attacker_id); });
+                if(object_index !== -1) {
+
+                    if(objects[object_index].coord_id) {
+
+                        let coord_index = coords.findIndex(function(obj) { return obj && obj.id === objects[object_index].coord_id; });
+                        if(coord_index !== -1) {
+                            attacker_x = tileToPixel(coords[coord_index].tile_x);
+                            attacker_y = tileToPixel(coords[coord_index].tile_y);
+                            //console.log("set attacker x,y: " + attacker_x + "," + attacker_y);
+                        }
+
+                    } else if(objects[object_index].planet_coord_id) {
+                        let coord_index = planet_coords.findIndex(function(obj) { return obj && obj.object_id === parseInt(data.attacker_id); });
+                        if(coord_index !== -1) {
+                            attacker_x = tileToPixel(planet_coords[coord_index].tile_x);
+                            attacker_y = tileToPixel(planet_coords[coord_index].tile_y);
+                        }
+                    } else if(objects[object_index].ship_coord_id) {
+                        let coord_index = ship_coords.findIndex(function(obj) { return obj && obj.object_id === parseInt(data.attacker_id); });
+                        if(coord_index !== -1) {
+                            attacker_x = tileToPixel(ship_coords[coord_index].tile_x);
+                            attacker_y = tileToPixel(ship_coords[coord_index].tile_y);
+                        }
+                    }
+                }
+            } else if(data.attacker_type === 'player') {
+                let player_index = players.findIndex(function(obj) { return obj && obj.id === parseInt(data.attacker_id); });
+                if(player_index !== -1) {
+                    if(players[player_index].planet_coord_id) {
+                        let coord_index = planet_coords.findIndex(function(obj) { return obj && obj.player_id === parseInt(data.attacker_id); });
+                        if(coord_index !== -1) {
+                            attacker_x = tileToPixel(planet_coords[coord_index].tile_x);
+                            attacker_y = tileToPixel(planet_coords[coord_index].tile_y);
+                        }
+                    } else if(players[player_index].ship_coord_id) {
+                        let coord_index = ship_coords.findIndex(function(obj) { return obj && obj.player_id === parseInt(data.attacker_id); });
+                        if(coord_index !== -1) {
+                            attacker_x = tileToPixel(ship_coords[coord_index].tile_x);
+                            attacker_y = tileToPixel(ship_coords[coord_index].tile_y);
+                        }
+                    }
+                }
+            }
+
+            //console.log("Starting range sprite x,y at: " + attacker_x + "," + attacker_y);
+
+
+            // and have it move towards the defender
+            let defender_x = 0;
+            let defender_y = 0;
+            if(data.defender_type === 'monster') {
+                let coord_index = planet_coords.findIndex(function(obj) { return obj && obj.monster_id === parseInt(data.defender_id); });
+                if(coord_index !== -1) {
+                    defender_x = tileToPixel(planet_coords[coord_index].tile_x);
+                    defender_y = tileToPixel(planet_coords[coord_index].tile_y);
+                }
+            } else if(data.defender_type === 'object') {
+                let object_index = objects.findIndex(function(obj) { return obj && obj.id === parseInt(data.defender_id); });
+                if(object_index !== -1) {
+
+                    if(objects[object_index].coord_id) {
+                        let coord_index = coords.findIndex(function(obj) { return obj && obj.object_id === parseInt(data.defender_id); });
+                        if(coord_index !== -1) {
+                            defender_x = tileToPixel(coords[coord_index].tile_x);
+                            defender_y = tileToPixel(coords[coord_index].tile_y);
+                        }
+                    } else if(objects[object_index].planet_coord_id) {
+                        let coord_index = planet_coords.findIndex(function(obj) { return obj && obj.object_id === parseInt(data.defender_id); });
+                        if(coord_index !== -1) {
+                            defender_x = tileToPixel(planet_coords[coord_index].tile_x);
+                            defender_y = tileToPixel(planet_coords[coord_index].tile_y);
+                        }
+                    } else if(objects[object_index].ship_coord_id) {
+                        let coord_index = ship_coords.findIndex(function(obj) { return obj && obj.object_id === parseInt(data.defender_id); });
+                        if(coord_index !== -1) {
+                            defender_x = tileToPixel(ship_coords[coord_index].tile_x);
+                            defender_y = tileToPixel(ship_coords[coord_index].tile_y);
+                        }
+                    }
+                }
+            } else if(data.defender_type === 'player') {
+                let player_index = players.findIndex(function(obj) { return obj && obj.id === parseInt(data.defender_id); });
+                if(player_index !== -1) {
+                    if(players[player_index].planet_coord_id) {
+                        let coord_index = planet_coords.findIndex(function(obj) { return obj && obj.player_id === parseInt(data.defender_id); });
+                        if(coord_index !== -1) {
+                            defender_x = tileToPixel(planet_coords[coord_index].tile_x);
+                            defender_y = tileToPixel(planet_coords[coord_index].tile_y);
+                            //console.log("Set defender x,y to: " + defender_x + ", " + defender_y);
+                        }
+                    } else if(players[player_index].ship_coord_id) {
+                        let coord_index = ship_coords.findIndex(function(obj) { return obj && obj.player_id === parseInt(data.defender_id); });
+                        if(coord_index !== -1) {
+                            defender_x = tileToPixel(ship_coords[coord_index].tile_x);
+                            defender_y = tileToPixel(ship_coords[coord_index].tile_y);
+                        }
+                    }
+                }
+            }
+
+
+
+
+            let found_range_sprite = false;
+            let found_range_sprite_index = -1;
+            // see if we have a range sprite that isn't visible
+            for(let i = 0; i < range_sprites.length; i++) {
+                if(!found_range_sprite && range_sprites[i].visible === false) {
+                    found_range_sprite = true;
+                    found_range_sprite_index = i;
+                }
+            }
+
+            let destination_x = defender_x + 32;
+            let destination_y = defender_y + 32;
+
+            // Lets add another range sprite to the game!
+            if(!found_range_sprite) {
+
+
+                //console.log("Creating new ranged sprite. So far we have needed at most : " + range_sprites.length + " range sprites at one time");
+
+                //let new_range_sprite_index = range_sprites.push(scene_game.add.sprite(attacker_x + 32, attacker_y + 64, 'range-spritesheet')) - 1;
+                let new_range_sprite_index = range_sprites.push(scene_game.add.sprite(attacker_x + 32, attacker_y + 64, 'laser')) - 1;
+                //range_sprites[new_range_sprite_index].anims.play('range-effect');
+                range_sprites[new_range_sprite_index].x = attacker_x + 32;
+                range_sprites[new_range_sprite_index].y = attacker_y + 64;
+                scene_game.physics.add.existing(range_sprites[new_range_sprite_index], false);
+                //game.physics.enable(range_sprite, Phaser.Physics.ARCADE);
+
+
+                scene_game.physics.moveTo(range_sprites[new_range_sprite_index], destination_x, destination_y, 800);
+                //scene_game.physics.moveTo(range_sprites[new_range_sprite_index], destination_x, destination_y, 400);
+                range_sprites[new_range_sprite_index].destination_x = destination_x;
+                range_sprites[new_range_sprite_index].destination_y = destination_y;
+                //console.log("Created new range sprite. Going from x,y: " + range_sprites[new_range_sprite_index].x + "," + range_sprites[new_range_sprite_index].y +
+                //    " to: " + range_sprites[new_range_sprite_index].destination_x + "," + range_sprites[new_range_sprite_index].destination_y);
+                //game.physics.arcade.moveToObject(laser_current, monster.monster_image, 200, 200);
+
+                let attacker_point = new Phaser.Geom.Point(attacker_x, attacker_y);
+                let defender_point = new Phaser.Geom.Point(defender_x, defender_y);
+                range_sprites[new_range_sprite_index].rotation = Phaser.Math.Angle.Between(attacker_x, attacker_y, defender_x, defender_y) - 45;
+                //range_sprites[new_range_sprite_index].rotation = Phaser.Math.Angle.BetweenPoints(attacker_point, defender_point);
+            } else {
+
+                //console.log("Using old range sprite");
+                // RECYCLING TO SAVE THE EARTH!
+
+                range_sprites[found_range_sprite_index].x = attacker_x + 32;
+                range_sprites[found_range_sprite_index].y = attacker_y + 64;
+                range_sprites[found_range_sprite_index].setVisible(true);
+                //range_sprites[found_range_sprite_index].anims.play('range-effect');
+                scene_game.physics.moveTo(range_sprites[found_range_sprite_index], destination_x, destination_y, 800);
+                //scene_game.physics.moveTo(range_sprites[found_range_sprite_index], destination_x, destination_y, 400);
+                range_sprites[found_range_sprite_index].destination_x = destination_x;
+                range_sprites[found_range_sprite_index].destination_y = destination_y;
+                //console.log("Created recycled range sprite. Going from x,y: " + range_sprites[found_range_sprite_index].x + "," + range_sprites[found_range_sprite_index].y +
+                //    " to: " + range_sprites[found_range_sprite_index].destination_x + "," + range_sprites[found_range_sprite_index].destination_y);
+
+                let attacker_point = new Phaser.Geom.Point(attacker_x, attacker_y);
+                let defender_point = new Phaser.Geom.Point(defender_x, defender_y);
+                range_sprites[found_range_sprite_index].rotation = Phaser.Math.Angle.Between(attacker_x, attacker_y, defender_x, defender_y) - 45;
+                //range_sprites[found_range_sprite_index].rotation = Phaser.Math.Angle.BetweenPoints(attacker_point, defender_point);
+            }
+
+
+        } else {
+            //console.log("Not drawing range sprite");
+            //console.log(data);
+        }
+
+
+
+
+
+        let info_number_index = info_numbers.push({ 'amount': data.damage_amount, 'was_damaged_type': data.damage_type, 'pixels_moved': 0}) - 1;
+
+        let fill = '#6982f4';
+
+        if(data.damage_source_type === "repairing") {
+            fill = '#6982f4';
+        }
+        else if(data.damage_type === "hp" && (data.damage_source_type === 'healing' || data.attacker_type === "healing") ) {
+            fill = '#34f425';
+        } else if(data.damage_type === "hp") {
+            fill = '#f44242';
+        } else if(data.damage_amount <= 0) {
+            fill = '#969696';
+        }
+
+
+        // lets randomize the starting x/y a bit
+        let starting_x = getRandomIntInclusive(-32, 32);
+        let starting_y = getRandomIntInclusive(0, 32);
+
+
+        info_numbers[info_number_index].text = scene_game.add.text(data.x + starting_x, data.y - starting_y,
+            data.damage_amount, { fontSize: 24,
+                padding: { x: 10, y: 5},
+                fill: fill});
+
+        info_numbers[info_number_index].text.setFontStyle('bold');
+
+    }
+    */
+
+
+    function addPlayer(player_index, player_info) {
+
+
+
+        // If the player we just added is us, always show us :D
+        if(client_player_id && players[player_index].id === client_player_id) {
+            console.log("Just got information for the client's player!");
+
+            client_player_index = player_index;
+            if(!players[client_player_index].sprite) {
+                createPlayerSprite(client_player_index);
+
+                let client_player_info = getPlayerInfo(client_player_index);
+
+                if(client_player_info.coord && players[client_player_index].sprite) {
+
+                    players[client_player_index].sprite.x = client_player_info.coord.tile_x & tile_size;
+                    players[client_player_index].sprite.y = client_player_info.coord.tile_y & tile_size;
+
+                    console.log("Following our player");
+                    camera.startFollow(players[client_player_index].sprite);
+                }
+
+            }
+
+
+
+        } else if(player_info.coord === false || client_player_info.coord === false) {
+            if(player_info.coord === false) {
+                //console.log("Could not get player info");
+            }
+
+            if(client_player_info.coord === false) {
+                console.log("Could not get client_player_info");
+            }
+
+        } else if(shouldDraw(client_player_info.coord, player_info.coord)) {
+
+            console.log("Have another player we should draw. New player");
+            if(!players[player_index].sprite) {
+
+                createPlayerSprite(player_index);
+            }
+            movePlayerInstant(player_index, player_info.coord.tile_x * tile_size + tile_size / 2, player_info.coord.tile_y * tile_size + tile_size / 2);
+
+
+
+        } else {
+            console.log("Not drawing this player");
+        }
+
+        redrawBars();
+
+        // It's also possible that once we got a player, we now know that an object is a current ship of that player.
+        // If that player has a coord id, we should not draw it
+        if(players[player_index].coord_id) {
+            let ship_index = objects.findIndex(function(obj) { return obj && obj.id === players[player_index].ship_id });
+            if(ship_index !== -1) {
+                console.log("Already had a ship object, but didn't know if was an active ship. Now we know it's the active ship of a player in the galaxy");
+                let coord_index = coords.findIndex(function(obj) { return obj && obj.id === objects[ship_index].coord_id; });
+                if(coord_index !== -1) {
+                    console.log("Cleared out the ship");
+                    map.putTileAt(-1, coords[coord_index].tile_x, coords[coord_index].tile_y, false, 'layer_object');
+                }
+            }
+        }
+
+        setPlayerMoveDelay(player_index);
+
+    }
+
+    function animateFloor(planet_coord_id) {
+        // see if we already have an animated object
+        let animation_index = animations.findIndex(function(obj) { return obj && obj.planet_coord_id === planet_coord_id; });
+
+        if(animation_index !== -1) {
+            return;
+        }
+
+        animations.push({ 'planet_coord_id': planet_coord_id, 'current_frame': 1 });
+
+
+    }
+
+    function animateObject(object) {
+        // see if we already have an animated object
+        let animation_index = animations.findIndex(function(obj) { return obj && obj.object_id === object.id; });
+
+        if(animation_index !== -1) {
+            return;
+        }
+
+        let object_type_index = object_types.findIndex(function(obj) { return obj && obj.id === object.object_type_id; });
+
+        if(object_types[object_type_index].frame_count === 1) {
+            console.log("%c Can't animate object type with one frame", log_warning);
+            return false;
+        }
+
+        animations.push({ 'object_id': object.id, 'current_frame': 1 });
+
+
+    }
+
+    function clearTiles(direction) {
+        /*
+        if(direction == 'up') {
+
+            var y = user_player.player_image.y - 3;
+            for(var x = user_player.player_image.x - (show_cols / 2) - 2; x < user_player.player_image.x + show_cols / 2 + 2; x++ ) {
+
+                let tileX = layer_floor.getTileX(x);
+                let tileY = layer_floor.getTileY(y);
+
+
+                map.putTileAt(20, tileX, tileY, null, 'layer_object');
+            }
+        }
+        */
+    }
+
+    function createMonsterSprite(monster_index) {
+
+        if(monsters[monster_index].sprite) {
+            return true;
+        }
+
+        //console.log("In craeteMonsterSprite");
+        let new_texture_key = false;
+        let new_texture_animation_key = false;
+
+
+        let scene_game = game.scene.getScene('sceneGame');
+
+        let monster_type_index = monster_types.findIndex(function(obj) {
+            return obj && obj.id === monsters[monster_index].monster_type_id });
+
+        new_texture_key = urlName(monster_types[monster_type_index].name);
+        new_texture_animation_key = new_texture_key + "-animation";
+        //console.log("Setting texture/animation to: " + new_texture_key + " , " + new_texture_animation_key);
+
+        if(!monsters[monster_index].sprite) {
+            monsters[monster_index].sprite = scene_game.add.sprite(-1000,-1000, new_texture_key);
+            monsters[monster_index].sprite.anims.play(new_texture_animation_key);
+
+            // and move it to where it needs to be
+            let monster_info = getMonsterInfo(monster_index);
+
+            monsters[monster_index].sprite_x_offset = 0;
+            monsters[monster_index].sprite_y_offset = 0;
+
+            if(new_texture_key === "slaver-guard") {
+                monsters[monster_index].sprite_y_offset = -6;
+            }
+
+            if(monster_info.coord) {
+                monsters[monster_index].sprite.x = monster_info.coord.tile_x * tile_size + tile_size / 2 + monsters[monster_index].sprite_x_offset;
+                monsters[monster_index].sprite.y = monster_info.coord.tile_y * tile_size + tile_size / 2 + monsters[monster_index].sprite_y_offset;
+            }
+
+        }
+
+    }
+
+    function createNpcSprite(npc_index) {
+
+
+
+        console.log("In createNpcSprite for npc id: " + npcs[npc_index].id);
+
+
+        //console.log("In craeteMonsterSprite");
+
+
+        let new_texture_key = 'npc';
+        let new_texture_animation_key = "npc-animation";
+
+
+        let scene_game = game.scene.getScene('sceneGame');
+
+
+        // If the npc has a ship, the viewing player is in the galaxy view, we draw the ship!
+        if(current_view === 'galaxy') {
+
+            // Npc has a specific ship
+            if(npcs[npc_index].ship_id) {
+                let ship_index = objects.findIndex(function(obj) { return obj && obj.id === npcs[npc_index].ship_id; });
+
+                if(ship_index === -1) {
+                    socket.emit('request_object_info', {'object_id': npcs[npc_index].ship_id });
+                } else {
+                    let ship_type_index = object_types.findIndex(function(obj) { return obj && obj.id === objects[ship_index].object_type_id; });
+                    if(ship_type_index !== -1) {
+                        new_texture_key = 'bug-ship';
+                        new_texture_animation_key = 'bug-ship-animation';
+                    }
+                }
+            }
+            // We're gonna fake it a little and just draw their pod
+            else {
+                new_texture_key = 'npc-pod';
+                new_texture_animation_key = 'npc-pod-animation';
+            }
+
+        }
+
+
+        // Straight create
+        if(!npcs[npc_index].sprite) {
+            console.log("Creating npc sprite with new_texture_key: " + new_texture_key);
+            npcs[npc_index].sprite = scene_game.add.sprite(-1000,-1000, new_texture_key);
+            npcs[npc_index].sprite.anims.play(new_texture_animation_key);
+
+            if(npcs[npc_index].current_hp !== npcs[npc_index].max_hp) {
+                redrawBars();
+            }
+        }
+        // Update
+        else if(npcs[npc_index].sprite.texture.key !== new_texture_key) {
+            console.log("Updating npc sprite with new_texture_key: " + new_texture_key);
+            npcs[npc_index].sprite.setTexture(new_texture_key);
+            npcs[npc_index].sprite.anims.play(new_texture_animation_key);
+        }
+
+
+        // and move it to where it needs to be
+        let npc_info = getNpcInfo(npc_index);
+
+        npcs[npc_index].sprite_x_offset = 0;
+        npcs[npc_index].sprite_y_offset = 0;
+
+        if(new_texture_key === "npc") {
+            npcs[npc_index].sprite_y_offset = -6;
+        }
+
+        if(npc_info.coord) {
+            npcs[npc_index].sprite.x = npc_info.coord.tile_x * tile_size + tile_size / 2 + npcs[npc_index].sprite_x_offset;
+            npcs[npc_index].sprite.y = npc_info.coord.tile_y * tile_size + tile_size / 2 + npcs[npc_index].sprite_y_offset;
+            console.log("Have coord for npc. Drew at x,y: " + npcs[npc_index].sprite.x + "," + npcs[npc_index].sprite.y);
+        } else {
+            console.log("Drew npc at -1000,-1000 :(");
+        }
+
+
+    }
+
+
+    function createPlayerSprite(player_index) {
+
+        if(typeof player_index === 'undefined' || player_index === -1) {
+            return false;
+        }
+
+        // If the player isn't in the same room/level as us, there's no need to try creating their sprite
+        // Player isn't even logged in right now
+        if(players[player_index].planet_coord_id === 0 && players[player_index].ship_coord_id === 0 && players[player_index].coord_id === 0) {
+            return false;
+        }
+
+        let new_texture_key = false;
+        let new_texture_animation_key = false;
+        let new_movement_display = 'flip';
+        let new_sprite_x_offset = 0;
+        let new_sprite_y_offset = 0;
+
+
+        let scene_game = game.scene.getScene('sceneGame');
+
+        if(current_view === 'galaxy') {
+            // figure out what ship we have
+            let ship_index = objects.findIndex(function(obj) { return obj && obj.id === players[player_index].ship_id; });
+
+            if(ship_index === -1) {
+                //console.log("%c at time of creating the player id: " + players[player_index].id + " sprite, we don't have the player's ship object",  log_warning);
+                socket.emit('request_object_info', { 'object_id': players[player_index].ship_id, 'source': 'createPlayerSprite' });
+                return false;
+            }
+
+            if(objects[ship_index].object_type_id === 238) {
+                new_texture_key = 'player-cargo-ship';
+                new_texture_animation_key = 'player-cargo-ship-down-animation';
+                //new_movement_display = 'rotate';
+
+            } else if(objects[ship_index].object_type_id === 114) {
+                new_texture_key = 'player-pod';
+                new_texture_animation_key = 'player-pod-animation';
+
+            } else if(objects[ship_index].object_type_id === 212) {
+                new_texture_key = 'player-cutter';
+                new_texture_animation_key = 'player-cutter-down-animation';
+                //new_movement_display = 'rotate';
+            }  else if(objects[ship_index].object_type_id === 239) {
+                new_texture_key = 'player-mining-ship';
+                new_texture_animation_key = 'player-mining-ship-down-animation';
+                //new_movement_display = 'rotate';
+            } else if(objects[ship_index].object_type_id === 233) {
+                new_texture_key = 'player-shuttle';
+                new_texture_animation_key = 'player-shuttle-down-animation';
+                //new_movement_display = 'rotate';
+            }  else if(objects[ship_index].object_type_id === 155) {
+                new_texture_key = 'player-space-station';
+                new_texture_animation_key = 'player-space-station-animation';
+                new_movement_display = 'flip';
+                new_sprite_x_offset = 32;
+                new_sprite_y_offset = 32;
+            } else {
+                // DEFAULT!!!!!!!
+                console.log("%c Using Default Ship Display", log_warning);
+                new_texture_key = 'player-pod';
+                new_texture_animation_key = 'player-pod-animation';
+            }
+
+            console.log("New texture key: " + new_texture_key);
+
+        } else if(current_view === 'planet' || current_view === 'ship') {
+            //console.log("View is planet or ship");
+            let body_index = objects.findIndex(function(obj) { return obj && obj.id === players[player_index].body_id; });
+
+            if(body_index === -1) {
+                //console.log("%c at time of creating the player id: " + players[player_index].id + " sprite, we don't have the player's " +
+                //    "body object id: " + players[player_index].body_id + ". Requesting it",  log_warning);
+                socket.emit('request_object_info', { 'object_id': players[player_index].body_id });
+                return false;
+            }
+
+            if(objects[body_index].object_type_id === 110) {
+                new_texture_key = 'player-human';
+                new_texture_animation_key = 'player-human-idle-animation';
+                new_sprite_y_offset = -6;
+            }
+            if(objects[body_index].object_type_id === 142) {
+                new_texture_key = 'player-ruel';
+                new_texture_animation_key = 'player-ruel-idle-animation';
+            }
+            else if(objects[body_index].object_type_id === 108) {
+                new_texture_key = 'player-mlm';
+                new_texture_animation_key = 'player-mlm-idle-animation';
+            } else {
+                console.log("%c Using Default Body Display to draw player " + players[player_index].id, log_warning);
+                // DEFAULT!
+                new_texture_key = 'player-human';
+                new_texture_animation_key = 'player-human-idle-animation';
+                new_sprite_y_offset = -6;
+            }
+
+        } else {
+            console.log("%c at time of creating the player sprite, we don't have a current view",  log_warning);
+            //players[player_index].sprite = scene_game.add.sprite(-1000,-1000,'player-pod');
+            //players[player_index].sprite.anims.play('player-pod-animation');
+        }
+
+        if(new_texture_key === false) {
+            return false;
+        }
+
+        // We get to create it
+        if(!players[player_index].sprite ) {
+
+            players[player_index].sprite = scene_game.add.sprite(-1000,-1000, new_texture_key);
+            players[player_index].sprite.anims.play(new_texture_animation_key);
+
+            // just created it, try to move it to where it needs to be
+            let player_info = getPlayerInfo(player_index);
+            if(player_info.coord) {
+                players[player_index].sprite.x = player_info.coord.tile_x * tile_size + tile_size / 2 + new_sprite_x_offset;
+                players[player_index].sprite.y = player_info.coord.tile_y * tile_size + tile_size / 2 + new_sprite_y_offset;
+            } else {
+                console.log("%c Created a player sprite but HAVE NO IDEA WHERE TO PUT IT!", log_warning);
+                console.log("Player id: " + players[player_index].id + " coord_id, ship_coord_id: " + players[player_index].coord_id + "," + players[player_index].ship_coord_id);
+            }
+
+            if(client_player_id && players[player_index].id === client_player_id) {
+                camera.startFollow(players[player_index].sprite);
+            }
+
+            players[player_index].movement_display = new_movement_display;
+            players[player_index].sprite_x_offset = new_sprite_x_offset;
+            players[player_index].sprite_y_offset = new_sprite_y_offset;
+
+            setPlayerMoveDelay(player_index);
+        }
+        // Just a switch!
+        else if(players[player_index].sprite.texture.key !== new_texture_key) {
+            console.log("Switching texture for player id: " + players[player_index].id);
+            players[player_index].sprite.setTexture(new_texture_key);
+            players[player_index].sprite.anims.play(new_texture_animation_key);
+
+            let player_info = getPlayerInfo(player_index);
+            if(player_info.coord) {
+                players[player_index].sprite.x = player_info.coord.tile_x * tile_size + tile_size / 2 + new_sprite_x_offset;
+                players[player_index].sprite.y = player_info.coord.tile_y * tile_size + tile_size / 2 + new_sprite_y_offset;
+            }
+            players[player_index].movement_display = new_movement_display;
+            players[player_index].sprite_x_offset = new_sprite_x_offset;
+            players[player_index].sprite_y_offset = new_sprite_y_offset;
+            players[player_index].sprite.angle = 0;
+
+            setPlayerMoveDelay(player_index);
+        }
+
+
+        /*
+        console.log("At end: sprite texture key: ");
+        if(players[player_index].sprite) {
+            console.log(players[player_index].sprite.texture);
+            console.log(players[player_index].sprite.texture.key);
+            console.log(players[player_index].sprite.texture['key']);
+        } else {
+            console.log("No sprite yet");
+        }
+        */
+
+
+        if(players[player_index].sprite) {
+            try {
+                players[player_index].sprite.setDepth(5);
+                //players[player_index].sprite.depth = 5;
+            } catch(error) {
+                console.log("%c Error setting player sprite depth: " + error, log_danger);
+            }
+
+        }
+
+
+    }
+
+    function destroyNpcSprite(npc) {
+
+        if(!npc) {
+            return false;
+        }
+
+        //console.log("Called destroyPlayerSprite");
+
+        if(npc.sprite) {
+            console.log("Destroying sprite for npc id: " + npc.id);
+            npc.sprite.destroy();
+            npc.sprite = false;
+        }
+
+        npc.sprite = false;
+        npc.destination_x = false;
+        npc.destination_y = false;
+    }
+
+    function destroyPlayerSprite(player) {
+
+        if(!player) {
+            console.log("%c No valid player sent into destroyPlayerSprite", log_warning);
+        }
+
+        //console.log("Called destroyPlayerSprite");
+
+        if(player.sprite) {
+
+            player.sprite.destroy();
+            player.sprite = false;
+        }
+
+        player.sprite = false;
+        player.destination_x = false;
+        player.destination_y = false;
+    }
+
+    function displayClickObject(object_id) {
+        let object_index = objects.findIndex(function(obj) { return obj && obj.id === object_id; });
+
+        if(object_index === -1) {
+            //console.log("Requesting object info");
+            socket.emit('request_object_info', { 'object_id': object_id });
+            return false;
+        }
+
+
+        let object_type_index = object_types.findIndex(function(obj) { return obj && obj.id === objects[object_index].object_type_id; });
+
+        if(object_type_index === -1) {
+            console.log("%c Could not find an object type for object id: " + objects[object_index].id, log_warning);
+            return false;
+        }
+
+        $('#coord_data').append(object_types[object_type_index].name + "<br>");
+
+
+        if(objects[object_index].energy) {
+            $('#coord_data').append("Energy: " + objects[object_index].energy + "<br>");
+        }
+
+        if(objects[object_index].player_id) {
+            let player_index = players.findIndex(function(obj) { return obj && obj.id === objects[object_index].player_id; });
+            if(player_index !== -1) {
+                $('#coord_data').append("&nbsp;&nbsp;Owned By Player " + players[player_index].name + "<br>");
+
+            } else {
+                socket.emit('request_player_info', { 'player_id': objects[object_index].player_id });
+            }
+
+            // In the case of an object owned by a player, and being a ship - there's a potential for an AI and rules
+            if(objects[object_index].ai_id) {
+
+                let ai_index = objects.findIndex(function(obj) { return obj && obj.id === objects[object_index].ai_id });
+
+                if(ai_index !== -1) {
+                    $('#coord_data').append("&nbsp;&nbsp;An AI Is Present<br>");
+
+
+                    // get any AI Rules
+                    rules.forEach(function(rule) {
+                        if(rule.object_id === objects[ai_index].id) {
+                            $('#coord_data').append("&nbsp;&nbsp;&nbsp;&nbsp;AI Rule: " + displayRule(rule.rule) + " <br>");
+                        }
+                    });
+                } else {
+                    $('#coord_data').append("&nbsp;&nbsp;Need AI Data<br>");
+                    socket.emit('request_object_info', { 'object_id': objects[object_index].ai_id });
+                }
+            }
+        }
+
+        if(objects[object_index].npc_id) {
+            $('#coord_data').append("&nbsp;&nbsp;Owned By NPC ID: " + objects[object_index].npc_id);
+        }
+
+        if(debug_mode) {
+            $('#coord_data').append("&nbsp;&nbsp;Object ID: " + object_id + "<br>");
+            $('#coord_data').append("&nbsp;&nbsp;Has inventory: " + objects[object_index].has_inventory + "<br>");
+
+            $('#coord_data').append("&nbsp;&nbsp;Current HP: " + objects[object_index].current_hp + "<br>");
+
+            if(objects[object_index].energy > 0) {
+                $('#coord_data').append("&nbsp;&nbsp;Energy: " + objects[object_index].energy + "<br>");
+            }
+
+            if(object_types[object_type_index].spawns_object_type_id) {
+                let spawned_object_type_index = object_types.findIndex(function(obj) { return obj &&
+                    obj.id === object_types[object_type_index].spawns_object_type_id; });
+
+                if(spawned_object_type_index !== -1) {
+                    $('#coord_data').append("&nbsp;&nbsp;Spawns " + object_types[spawned_object_type_index].name + "<br>");
+                }
+            }
+
+            if(objects[object_index].spawned_event_id) {
+                $('#coord_data').append("&nbsp;&nbsp;Spawned Event ID:" + objects[object_index].spawned_event_id + "<br>");
+            }
+
+
+        }
+
+
+        if(object_types[object_type_index].is_ship && !objects[object_index].player_id && !objects[object_index].npc_id) {
+            $('#coord_data').append("This ship has been abandoned");
+        }
+
+
+    }
+
+    function displayClickPlanet(planet_id) {
+        let planet_index = planets.findIndex(function(obj) { return obj && obj.id === planet_id; });
+        if(planet_index === -1) {
+            $('#coord_data').append("No planet info<br>");
+        } else {
+            $('#coord_data').append("<strong>" + planets[planet_index].name + "</strong><br>");
+
+            let planet_type_index = planet_types.findIndex(function(obj) { return obj && obj.id === planets[planet_index].planet_type_id; });
+            if(planet_type_index !== -1) {
+                $('#coord_data').append("&nbsp;&nbsp;Type: " + planet_types[planet_type_index].name + "<br>");
+            } else {
+                $('#coord_data').append("Unknown planet type<br>");
+            }
+
+            if(debug_mode) {
+                $('#coord_data').append("&nbsp;&nbsp;ID: " + planet_id + "<br>");
+                $('#coord_data').append("&nbsp;&nbsp;Type ID: " + planet_types[planet_type_index].id + "<br>");
+            }
+
+            if(planets[planet_index].player_id) {
+                let player_index = players.findIndex(function(obj) { return obj && obj.id === planets[planet_index].player_id; });
+
+                if(player_index !== -1) {
+                    $('#coord_data').append("&nbsp;&nbsp;Owned By Player: " + players[player_index].name + "<br>");
+                } else {
+                    $('#coord_data').append("&nbsp;&nbsp;Owned By Player Id: " + planets[planet_index].player_id + "<br>");
+                }
+            } else {
+                $('#coord_data').append("No owner");
+            }
+
+            if(planets[planet_index].ai_id) {
+                // see if we have the player
+
+
+
+                // see if there is an AI on the planet
+                let ai_index = objects.findIndex(function(obj) { return obj && obj.id === planets[planet_index].ai_id; });
+
+                if(ai_index !== -1) {
+                    $('#coord_data').append("&nbsp;&nbsp;An AI Is Present<br>");
+
+
+                    // get any AI Rules
+                    rules.forEach(function(rule) {
+                        if(rule.object_id === objects[ai_index].id) {
+                            $('#coord_data').append("&nbsp;&nbsp;&nbsp;&nbsp;AI Rule: " + displayRule(rule.rule) + " <br>");
+                        }
+                    });
+                } else {
+                    $('#coord_data').append("&nbsp;&nbsp;Need AI Data<br>");
+                    socket.emit('request_object_info', { 'object_id': planets[planet_index].ai_id });
+                }
+
+
+
+
+            } else {
+                $('#coord_data').append("&nbsp;&nbsp;No AI");
+            }
+
+
+        }
+    }
+
+    function displayRule(rule_text) {
+
+        if(rule_text === "attack_all_players") {
+            return "<span class='tag is-danger'>Attack All Players <i class=\"fas fa-swords\"></i></span>";
+        } else if(rule_text === 'protect_all_players') {
+            return "<span class='tag is-success'>Protect All Players  <i class=\"fas fa-shield-check\"></i></span>";
+        } else if(rule_text === 'protect_creator_property') {
+            return "Protect Creator Property";
+        } else if(rule_text === 'protect_all_npcs') {
+            return "Protect All NPCs";
+        } else if(rule_text === 'building_no_others') {
+            return "Only Owner Can Build";
+        } else if(rule_text === 'floor_no_others') {
+            return "Only Owner Can Replace Floors";
+        }
+
+        return rule_text;
+    }
+
+    // We don't actually draw players in this
+    function drawCoord(type, coord) {
+
+        // We might get coords before we have a player - if that's happening just always draw them
+        if(client_player_index !== -1) {
+
+            let show_coord = false;
+
+
+            if(type === 'planet' && players[client_player_index].planet_coord_id) {
+                // make sure the level is the same
+                let player_coord_index = planet_coords.findIndex(function(obj) { return obj && obj.id === players[client_player_index].planet_coord_id; });
+
+                // We don't actually have our planet coord yet, just draw things
+                if(player_coord_index === -1) {
+                    show_coord = true;
+                } else if(coord.level === planet_coords[player_coord_index].level) {
+                    show_coord = true;
+                }
+
+            }
+
+            if(type === 'galaxy' && current_view === 'galaxy') {
+                show_coord = true;
+            }
+
+            if(type === 'ship' && players[client_player_index].ship_coord_id) {
+                show_coord = true;
+            }
+
+
+            if(!show_coord) {
+                return false;
+            }
+        }
+
+
+
+
+        // The Floor!
+        if(coord.floor_type_id) {
+
+            let floor_type_index = floor_types.findIndex(function(obj) { return obj && obj.id === coord.floor_type_id; });
+
+            if(floor_type_index !== -1) {
+                mapAddFloor(coord.floor_type_id, coord.tile_x, coord.tile_y);
+
+                if(floor_types[floor_type_index].is_animated) {
+                    if(type === 'planet') {
+                        animateFloor(coord.id)
+                    }
+
+                }
+            }
+
+
+
+
+        } else {
+            map.putTileAt(-1, coord.tile_x, coord.tile_y, false, 'layer_floor');
+        }
+
+
+        // The Object!
+        let object_index = 1;
+        let draw_object = true;
+
+
+        if(coord.object_id) {
+            //console.log("Coord has object id: " + coord.object_id);
+            object_index = objects.findIndex(function(obj) { return obj && obj.id === coord.object_id; });
+
+            if(object_index === -1) {
+                draw_object = false;
+                socket.emit('request_object_info', { 'object_id': coord.object_id });
+
+            } else if(client_player_index !== -1 && objects[object_index].id === players[client_player_index].ship_id) {
+
+                // don't draw the player's ship
+                //console.log("Our ship.Not drawing");
+
+            }
+            else {
+
+                // we also don't draw it here if it's the active ship of another player, and we are both on the galaxy view
+                let other_player_index = players.findIndex(function(obj) { return obj && obj.ship_id === coord.object_id; });
+
+                if(other_player_index !== -1) {
+                    draw_object = false;
+                }
+
+                // we also don't draw it here if it's the active ship of an npc in the galaxy
+                let npc_index = npcs.findIndex(function(obj) { return obj && obj.ship_id === coord.object_id; });
+                if(npcs[npc_index] && !npcs[npc_index].planet_coord_id) {
+                    draw_object = false;
+                }
+
+                // Not someone's active ship. Draw it
+                if(draw_object) {
+
+                    //console.log("Drawing object id: " + objects[object_index].id);
+                    mapAddObject(objects[object_index]);
+                }
+                // Someone's active ship, but we are in the galaxy view and they aren't. ( So we won't be drawing the player's sprite)
+                else if(current_view === 'galaxy' && other_player_index !== -1 && players[other_player_index].ship_coord_id) {
+                    //console.log("Drawing object id: " + objects[object_index].id);
+                    mapAddObject(objects[object_index]);
+                } else {
+                    //console.log("Other player's id: " + players[other_player_index].id + " ship, and they are in the galaxy " +
+                    //    "view too. coord id: " + players[other_player_index].coord_id);
+                }
+
+
+            }
+        } else if(coord.belongs_to_object_id) {
+
+        }
+        else if(coord.object_type_id) {
+
+            mapAddObjectType(coord.object_type_id, coord.tile_x, coord.tile_y);
+        } else {
+            map.putTileAt(-1, coord.tile_x, coord.tile_y, false, 'layer_object');
+        }
+
+        // A planet!
+        if(coord.planet_id && coord.planet_id !== 0 && current_view === 'galaxy') {
+            //console.log("Drawing planet. coord type: " + type + " coord id: " + coord.id);
+
+            let planet_index = planets.findIndex(function(obj) { return obj && obj.id === coord.planet_id; });
+
+            if(planet_index === -1) {
+
+
+                socket.emit('request_planet_info', { 'planet_id': coord.planet_id });
+
+            } else {
+
+                let planet_type_index = planet_types.findIndex(function(obj) { return obj && obj.id === planets[planet_index].planet_type_id; });
+
+                // see if we have an origin display linker for this planet
+                let origin_linker_index = planet_type_display_linkers.findIndex(function(obj) { return obj &&
+                    obj.planet_type_id === planet_types[planet_type_index].id && obj.position_x === 0 &&
+                    obj.position_y === 0; });
+
+                if(origin_linker_index !== -1) {
+                    map.putTileAt(planet_type_display_linkers[origin_linker_index].game_file_index,
+                        coord.tile_x, coord.tile_y, false, 'layer_object');
+                } else {
+                    map.putTileAt(planet_types[planet_type_index].game_file_index,
+                        coord.tile_x, coord.tile_y, false, 'layer_object');
+                }
+
+
+
+            }
+
+        } else if(coord.belongs_to_planet_id > 0 && current_view === 'galaxy') {
+            //console.log("Drawing coord with belongs to planet id: " + coord.belongs_to_planet_id);
+
+            let planet_index = planets.findIndex(function(obj) { return obj && obj.id === coord.belongs_to_planet_id; });
+
+            if(planet_index === -1) {
+
+
+                socket.emit('request_planet_info', { 'planet_id': coord.belongs_to_planet_id });
+                return;
+            }
+
+            // find the origin planet coord
+            let origin_coord_index = coords.findIndex(function(obj) { return obj && obj.planet_id === coord.belongs_to_planet_id; });
+            if(origin_coord_index === -1) {
+                console.log("Don't have origin for planet yet");
+                return;
+            }
+
+
+            // get the x and y difference, and see what display linker we use
+            let x_difference = coord.tile_x - coords[origin_coord_index].tile_x;
+            let y_difference = coord.tile_y - coords[origin_coord_index].tile_y;
+
+            let display_linker_index = planet_type_display_linkers.findIndex(function(obj) { return obj &&
+                obj.planet_type_id === planets[planet_index].planet_type_id && obj.position_x === x_difference &&
+                obj.position_y === y_difference; });
+
+            if(display_linker_index === -1) {
+                console.log("Could not find a display linker that matched position x,y: " + x_difference + "," + y_difference);
+                return false;
+            }
+
+            // TODO we need to listen to the layer of the linker. Could just be a display linker
+            //console.log("Adding " + planet_type_display_linkers[display_linker_index].game_file_index + " at coord");
+            map.putTileAt(planet_type_display_linkers[display_linker_index].game_file_index,
+                coord.tile_x, coord.tile_y, false, planet_type_display_linkers[display_linker_index].layer);
+
+
+        }
+
+    }
+
+
+    function drawSalvageBar(salvaging_linker_index) {
+
+        if(!salvaging_linkers[salvaging_linker_index]) {
+            return false;
+        }
+
+        console.log("Have salvaging linker in redrawBars");
+        // get the object
+        let object_index = objects.findIndex(function(obj) { return obj && obj.id === salvaging_linkers[salvaging_linker_index].object_id; });
+
+        if(object_index === -1) {
+            return false;
+        }
+
+        // objects currently only have hp . So we have to compare the object hp with the object type hp
+        let object_type_index = object_types.findIndex(function(obj) { return obj && obj.id === objects[object_index].object_type_id; });
+
+        if(object_type_index === -1) {
+            console.log("Could not get object type");
+            return false;
+        }
+
+        let object_info = getObjectInfo(object_index);
+
+        if(object_info.coord === false) {
+            console.log("Could not find coord for object");
+            return false;
+        }
+
+
+
+        let drawing_x = object_info.coord.tile_x * tile_size;
+        let drawing_y = (object_info.coord.tile_y * tile_size) + tile_size - 16;
+
+
+
+        let salvaged_percent = Math.floor(Math.abs(salvaging_linkers[salvaging_linker_index].hp_left / object_types[object_type_index].hp * 100 - 100));
+
+        if(salvaged_percent === 0) {
+            salvaged_percent = 1;
+        }
+
+
+        //console.log("Got map coord HP percent as: " + map_coords[i].hp_percent);
+
+        // some simple colour changing to make it look like a health bar
+
+        // Blue bar for salvaging
+        graphics.fillStyle(0x4287f5);
+
+
+        let hp_bar_length = 64 * salvaged_percent / 100;
+
+
+        let rect = new Phaser.Geom.Rectangle(drawing_x, drawing_y, hp_bar_length, 8);
+        graphics.fillRectShape(rect);
+    }
+
+
+    function fireCompleteCallback(animation, frame) {
+        console.log("in fireCompleteCallback");
+        this.destroy();
+        //console.log("Destroyed fire sprite (done animating)");
+        //sprite.anims.play('fire_attack');
+    }
+
+
+    // We take in what the player has researched, and we show things that are assembled via things the player has researched
+    function generateDiscoveryDisplay(object_type_id) {
+
+        let object_type_index = object_types.findIndex(function(obj) { return obj && obj.id === parseInt(object_type_id); });
+
+        $('#discoveries').empty();
+
+        let html_string = "";
+        html_string += "<div class='message is-success message-inline' style='margin-top:10px;'><div class='message-body'>";
+
+        html_string += "<strong>Discoveries from researching " + object_types[object_type_index].name  + ":</strong><br>";
+
+
+        let can_assemble_object_types = object_types.filter(object_type => object_type.is_assembled);
+
+        if(can_assemble_object_types && can_assemble_object_types.length > 0) {
+
+            can_assemble_object_types.forEach(function(object_type) {
+
+                // get the assembly linkers
+                let assembly_linkers = object_type_assembly_linkers.filter(linker => linker.required_for_object_type_id === object_type.id);
+
+                if(assembly_linkers.length === 0) {
+                    return false;
+                }
+
+
+                let researched_all_items = true;
+                let has_applicable_linker = false;
+
+
+                if(player_research_linkers.length === 0) {
+                    researched_all_items = false;
+                }
+
+                for(let assembly_linker of assembly_linkers) {
+
+                    if(assembly_linker.object_type_id === object_types[object_type_index].id) {
+                        has_applicable_linker = true;
+                    }
+
+                    let assembly_object_type = object_types.findIndex(function(obj) { return obj && obj.id === assembly_linker.object_type_id; });
+                    let researched_this_item = false;
+
+
+                    for(let research_linker of player_research_linkers) {
+                        if(research_linker.object_type_id === assembly_linker.object_type_id
+                            && research_linker.researches_completed >= object_types[assembly_object_type].research_times_required) {
+                            researched_this_item = true;
+                        }
+                    }
+
+                    if(!researched_this_item) {
+                        researched_all_items = false;
+                    }
+                }
+
+                // It's also possible that this object type has a required_research_object_type_id
+                if(object_type.required_research_object_type_id === object_types[object_type_index].id) {
+
+                    html_string += printDiscovery(object_type, assembly_linkers);
+                } else {
+                    if(!researched_all_items || !has_applicable_linker) {
+                        return false;
+                    }
+
+                    // show the assembly
+
+                    html_string += printDiscovery(object_type, assembly_linkers);
+
+                    //$('#discoveries').append(generateAssemblyListItem(object_type, object_type_assembly_linkers));
+                }
+
+
+
+            });
+        }
+
+
+        html_string += "</div></div>";
+        $('#discoveries').append(html_string);
+
+    }
+
+    function generateEatingLinkerDisplay() {
+        //console.log("In generateEatingLinkerDisplay");
+
+        $('#eating_data').empty();
+
+        let player_index = players.findIndex(function(obj) { return obj && obj.id === player_id; });
+        let body_index = objects.findIndex(function(obj) { return obj && obj.id === players[player_index].body_id; });
+        let body_type_index = object_types.findIndex(function(obj) { return obj && obj.id === objects[body_index].object_type_id; });
+
+        let active_count = 0;
+        for(let eating_linker of eating_linkers) {
+            if(eating_linker && eating_linker.player_id === client_player_id) {
+                active_count++;
+            }
+        }
+
+        if(active_count === 0) {
+            return;
+        }
+
+        let html_string = "";
+
+        html_string += "<div class='message is-success message-inline'><div class='message-body'><i class='fas fa-cookie-bite'></i>";
+
+        eating_linkers.forEach(function(eating_linker) {
+            if(eating_linker && eating_linker.player_id === player_id) {
+
+                let race_eating_linker_index = race_eating_linkers.findIndex(function(obj) { return obj &&
+                    obj.race_id === object_types[body_type_index].race_id && obj.object_type_id === eating_linker.eating_object_type_id; });
+
+                if(race_eating_linker_index !== -1) {
+                    let object_type_index = object_types.findIndex(function(obj) { return obj && obj.id === eating_linker.eating_object_type_id; });
+
+                    // If we have the player's body, we can get the race eating linker
+
+
+
+                    html_string += " " + object_types[object_type_index].name;
+
+                    if(race_eating_linkers[race_eating_linker_index].hp) {
+                        html_string += " +" + race_eating_linkers[race_eating_linker_index].hp + "<i class=\"fad fa-heart\"></i> ";
+                    }
+
+                    if(race_eating_linkers[race_eating_linker_index].attack) {
+                        html_string += " +" + race_eating_linkers[race_eating_linker_index].attack + "<i class=\"fas fa-swords\"></i></span> ";
+                    }
+
+                    if(race_eating_linkers[race_eating_linker_index].defense) {
+                        html_string += " +" + race_eating_linkers[race_eating_linker_index].defense + "<i class=\"fad fa-shield-alt\"></i> ";
+                    }
+
+                    html_string += " " + eating_linker.ticks_completed +
+                        "/" + race_eating_linkers[race_eating_linker_index].tick_count + "<br>";
+                } else {
+                    console.log("Couldn't find race eating linker for this eating linker");
+                }
+
+
+            }
+        });
+
+        html_string += "</div></div>";
+
+        $('#eating_data').append(html_string);
+    }
+
+    function generateFactionDisplay() {
+
+        if(!$("#faction").is(":visible")) {
+            return false;
+        }
+
+        if(client_player_index === -1) {
+            return false;
+        }
+
+        $('#faction').empty();
+
+
+
+        let html_string = "";
+
+        // Allow them to create a faction or join one
+        if(!players[client_player_index].faction_id) {
+            html_string += "<form action='#'>";
+            html_string += "<input type=\"text\" name=\"faction_name\">";
+            html_string += "<input onclick=\"submitCreateFaction(); return false;\" type=\"submit\" value=\"Create Faction\">";
+            html_string += "</form>";
+        }
+
+        html_string += "<br>Top Factions:<br>";
+
+        // Show the players the top factions
+        factions.forEach(function(faction) {
+            html_string += faction.name + ": " + faction.player_count + " members<br>";
+        });
+
+        // TODO Let them join a faction by ID
+
+
+        $('#faction').append(html_string);
+    }
+
+    // Shows all our stuff
+    function generatePlayerInfoDisplay() {
+
+        if(!$("#player_stats").is(":visible")) {
+            return false;
+        }
+
+        // Don't have the player yet
+        if(client_player_index === -1) {
+            return false;
+        }
+
+        $('#player_stats').empty();
+
+        let html_string = "";
+
+        html_string += "<div class='message message-inline'><div class='message-body'>";
+
+        // If we are in the galaxy view, we want to show data about our ship above our player info, since that's the HP that will be
+        let ship_index = objects.findIndex(function(obj) { return obj && obj.id === players[client_player_index].ship_id });
+        if(ship_index !== -1) {
+
+            let ship_object_type_index = object_types.findIndex(function(obj) { return obj && obj.id === objects[ship_index].object_type_id; });
+
+            html_string += "Ship Current HP: " + objects[ship_index].current_hp + "<br>";
+            html_string += "Ship Max HP: " + object_types[ship_object_type_index].hp + "<br>";
+
+        } else {
+            //console.log("Unable to find player ship. Requesting it");
+            socket.emit('request_object_info', {'object_id': players[client_player_index].ship_id});
+        }
+
+        html_string += "Current HP: " + players[client_player_index].current_hp + "<br>";
+        html_string += "Max HP: " + players[client_player_index].max_hp + "<br>";
+        html_string += "Name: " + players[client_player_index].name + "<br>";
+        html_string += "Exp: " + players[client_player_index].exp + "<br>";
+        html_string += "Level: " + players[client_player_index].level + "<br>";
+        html_string += "Attack: <br>";
+
+
+        // We calculate the attack and defense on the fly.... I guess. We are
+        // changing it a lot right now.
+        // Default player stats is 5 attack range one (hitting with hands)
+        let attack_ranges = [];
+        attack_ranges[1] = 5;
+
+
+        // for generating and showing our attack, we need to actually grab equipment linkers
+        equipment_linkers.forEach(function(equipment_linker) {
+            if(equipment_linker.player_id === players[client_player_index].id) {
+                let object_type_index = object_types.findIndex(function(obj) { return obj && obj.id === equipment_linker.object_type_id; });
+
+                if(object_type_index !== -1) {
+                    if(object_types[object_type_index].attack_strength) {
+
+                        for(let i = 1; i < 6; i++) {
+                            if(object_types[object_type_index].min_attack_range >= i
+                                && object_types[object_type_index].max_attack_range <= i) {
+                                attack_ranges[i] += object_types[object_type_index].attack_strength;
+                                //console.log("Adding attack: " + object_types[object_type_index].attack_strength +
+                                //    " to attack range: " + i);
+                            }
+                        }
+                    }
+                } else {
+                    console.log("Have equipment linker we couldn't find object type for. Equipment linker id: " + equipment_linker.id);
+                }
+
+            }
+        });
+
+        for(let i = 0; i < 6; i++) {
+            if(attack_ranges[i]) {
+                if(attack_ranges[i] && attack_ranges[i] > 0) {
+                    html_string += "Attack at range: " + i + ": " + attack_ranges[i] + "<br>";
+
+                }
+            }
+        }
+
+        // Defense can be a little simpler and just stack
+        let defense = 1;
+        let defense_level = 1 + Math.floor(level_modifier * Math.sqrt(players[client_player_index].defending_skill_points));
+
+        // For now we are just letting the level = the starting defense. Potentially going to make this more flexible
+        defense = defense_level;
+
+        equipment_linkers.forEach(function(equipment_linker) {
+            if(equipment_linker.player_id === players[client_player_index].id && equipment_linker.body_id === players[client_player_index].body_id) {
+                let object_type_index = object_types.findIndex(function(obj) { return obj && obj.id === equipment_linker.object_type_id; });
+                if(object_type_index !== -1 && object_types[object_type_index].defense > 0) {
+                    //console.log("Equipment is adding defense: " + object_types[object_type_index].defense);
+                    defense += object_types[object_type_index].defense;
+                }
+
+            }
+        });
+
+
+        html_string += "Defending Skill Points: " + players[client_player_index].defending_skill_points + "<br>";
+        html_string += "Defense: " + defense + "<br>";
+
+
+        // get the player body
+        let body_index = objects.findIndex(function(obj) { return obj && obj.id === players[client_player_index].body_id; });
+
+        if(body_index !== -1) {
+            html_string += "Body Energy: " + objects[body_index].energy + "<br>";
+
+        }
+
+        html_string += "</div></div>";
+        html_string += "<div class='message message-inline'><div class='message-body'>";
+
+        html_string += "<strong>Battle Skills</strong><br>";
+
+
+        // CONTROL
+        html_string += "Control (Enslaving) : " + players[client_player_index].control_skill_points + "<br>";
+        let control_level = 1 + Math.floor(level_modifier * Math.sqrt(players[client_player_index].control_skill_points));
+        html_string += "&nbsp;&nbsp;Level: " + control_level;
+
+        if(control_level > 1) {
+            let additional_damage = control_level - 1;
+            html_string += " +" + additional_damage + " <i class=\"fas fa-swords\"></i><br>";
+
+        }
+
+        html_string += "<br>";
+
+        // CORROSIVE
+        html_string += "Corrosive : " + players[client_player_index].corrosive_skill_points;
+        let corrosive_level = 1 + Math.floor(level_modifier * Math.sqrt(players[client_player_index].corrosive_skill_points));
+        html_string += "&nbsp;&nbsp;Level: " + corrosive_level;
+
+        if(corrosive_level > 1) {
+            let additional_damage = corrosive_level - 1;
+            html_string += " +" + additional_damage + " <i class=\"fas fa-swords\"></i>";
+
+        }
+
+        html_string += "<br>";
+
+
+        // ELECTRIC
+        html_string += "Electric : " + players[client_player_index].electric_skill_points + "<br>";
+        let electric_level = 1 + Math.floor(level_modifier * Math.sqrt(players[client_player_index].electric_skill_points));
+        html_string += "&nbsp;&nbsp;Level: " + electric_level;
+
+        if(electric_level > 1) {
+            let additional_damage = electric_level - 1;
+            html_string += " +" + additional_damage + " <i class=\"fas fa-swords\"></i>";
+
+        }
+
+        html_string += "<br>";
+
+        // FREEZE
+
+
+        // HACKING
+        html_string += "Hacking: " + players[client_player_index].hacking_skill_points;
+        // lets start doing some client side level stuff just to see how it shows
+        let hacking_level = 1 + Math.floor(level_modifier * Math.sqrt(players[client_player_index].hacking_skill_points));
+
+        html_string += " Level: " + hacking_level;
+
+        if(hacking_level > 1) {
+            let additional_damage = hacking_level - 1;
+            html_string += " <span class='tag is-success'>+" + additional_damage + "  <i class=\"fas fa-swords\"></i></span>";
+
+        }
+        html_string += "<br>";
+
+        // HEAT
+
+        // GRAVITY
+
+        // LASER
+        html_string += "Laser Skill: " + players[client_player_index].laser_skill_points + "<br>";
+        let laser_level = 1 + Math.floor(level_modifier * Math.sqrt(players[client_player_index].laser_skill_points));
+        html_string += "&nbsp;&nbsp;Level: " + laser_level;
+        if(laser_level > 1) {
+            let additional_damage = laser_level - 1;
+            html_string += " +" + additional_damage + " Damage";
+
+        }
+
+        html_string += "<br>";
+
+        // MELEE
+        html_string += "Melee: " + players[client_player_index].melee_skill_points;
+        // lets start doing some client side level stuff just to see how it shows
+        let melee_level = 1 + Math.floor(level_modifier * Math.sqrt(players[client_player_index].melee_skill_points));
+
+        html_string += " Level: " + melee_level;
+
+        if(melee_level > 1) {
+            let additional_damage = melee_level - 1;
+            html_string += " <span class='tag is-success'>+" + additional_damage + "  <i class=\"fas fa-swords\"></i></span>";
+
+        }
+        html_string += "<br>";
+
+
+
+        // PIERCING
+
+
+        // PLASMA
+        html_string += 'Plasma Skill: ' + players[client_player_index].plasma_skill_points + '<br>';
+
+        // POISON
+
+
+        // RADIATION
+
+
+        html_string += "</div></div>";
+
+
+
+
+
+
+        /******************* LIFE SKILLS *******************************/
+        html_string += "<div class='message message-inline'><div class='message-body'>";
+
+        html_string += "<strong>Life Skills</strong><br>";
+        html_string += "Farming Skill: " + players[client_player_index].farming_skill_points + "<br>";
+        html_string += "Cooking Skill: " + players[client_player_index].cooking_skill_points + "<br>";
+
+
+        // MANUFACTURING
+        html_string += "Manufacturing Skill: " + players[client_player_index].manufacturing_skill_points + "<br>";
+        let manufacturing_level = 1 + Math.floor(difficult_level_modifier * Math.sqrt(players[client_player_index].manufacturing_skill_points));
+        html_string += "&nbsp;&nbsp;Level: " + manufacturing_level;
+        if(manufacturing_level > 1) {
+            let additional_damage = manufacturing_level - 1;
+            html_string += " +" + additional_damage + " Ability";
+
+        }
+        html_string += "<br>";
+
+
+
+        // MINING
+        html_string += 'Mining Skill: ' + players[client_player_index].mining_skill_points + '<br>';
+
+        let mining_level = 1 + Math.floor(level_modifier * Math.sqrt(players[client_player_index].mining_skill_points));
+        html_string += '&nbsp;&nbsp;Level: ' + mining_level;
+        if(mining_level > 1) {
+            let additional_damage = mining_level - 1;
+            html_string += ' +' + additional_damage + ' Ability';
+        }
+        html_string += "<br>";
+
+
+        // RESEARCHING
+        html_string += 'Researching Skill: ' + players[client_player_index].researching_skill_points + '<br>';
+
+        let researching_level = 1 + Math.floor(difficult_level_modifier * Math.sqrt(players[client_player_index].researching_skill_points));
+        html_string += '&nbsp;&nbsp;Level: ' + researching_level;
+
+        if(researching_level > 1) {
+            let additional_damage = researching_level - 1;
+            html_string += ' +' + additional_damage + ' Ability';
+
+        }
+        html_string += "<br>";
+
+
+        // REPAIRING
+        html_string += 'Repairing Skill: ' + players[client_player_index].repairing_skill_points + '<br>';
+
+        let repairing_level = 1 + Math.floor(level_modifier * Math.sqrt(players[client_player_index].repairing_skill_points));
+        html_string += '&nbsp;&nbsp;Level: ' + repairing_level;
+
+        if(repairing_level > 1) {
+            let additional_damage = repairing_level - 1;
+            html_string += ' +' + additional_damage + ' Ability';
+
+        }
+        html_string += "<br>";
+
+
+        // SALVAGING
+        html_string += 'Salvaging Skill: ' + players[client_player_index].salvaging_skill_points + '<br>';
+        let salvaging_level = 1 + Math.floor(level_modifier * Math.sqrt(players[client_player_index].salvaging_skill_points));
+        html_string += '&nbsp;&nbsp;Level: ' + salvaging_level;
+
+        if(salvaging_level > 1) {
+            let additional_damage = salvaging_level - 1;
+            html_string += ' +' + additional_damage + ' Ability';
+
+        }
+        html_string += "<br>";
+
+        // SURGERY
+        html_string += 'Surgery Skill: ' + players[client_player_index].surgery_skill_points + '<br>';
+
+        let surgery_level = 1 + Math.floor(difficult_level_modifier * Math.sqrt(players[client_player_index].surgery_skill_points));
+        html_string += '&nbsp;&nbsp;Level: ' + surgery_level;
+
+        if(surgery_level > 1) {
+            let additional_damage = surgery_level - 1;
+            html_string += ' +' + additional_damage + ' Ability';
+
+        }
+        html_string += "<br>";
+
+
+
+        html_string += "</div></div>";
+
+        $('#player_stats').append(html_string);
+
+    }
+
+    function generateRelationshipDisplay() {
+
+        if(!$("#relationships").is(":visible")) {
+            return false;
+        }
+
+        $('#relationships').empty();
+
+        for(let linker of player_relationship_linkers) {
+
+            if(linker.race_id) {
+                let race_index = races.findIndex(function(obj) { return obj && obj.id === linker.race_id; });
+
+                let adding_string = "<div id='player_relationship_linker_" + linker.id + "'>";
+
+                adding_string += races[race_index].name + ": " + linker.score;
+
+                adding_string += "</div>";
+
+
+                $('#relationships').append(adding_string);
+            }
+
+
+
+        }
+    }
+
+    function generateResearchDisplay() {
+
+        if(!$("#research").is(":visible")) {
+            return false;
+        }
+
+        $('#research').empty();
+
+        let adding_string = "";
+
+        adding_string += "<div class='message is-dark message-inline'><div class='message-body'>";
+
+        for(let linker of player_research_linkers) {
+
+            let research_object_type_index = object_types.findIndex(function(obj) { return obj && obj.id === linker.object_type_id; });
+
+            adding_string += "<div id='player_research_linker_" + linker.id + "'>";
+
+            adding_string += object_types[research_object_type_index].name + ": Completed " + linker.researches_completed;
+            adding_string += "/" + object_types[research_object_type_index].research_times_required;
+
+            if(linker.researches_completed >= object_types[research_object_type_index].research_times_required) {
+                adding_string += "<button class='button is-default is-small' " +
+                    "id='showdiscoveries_" + object_types[research_object_type_index].id + "'" +
+                    " object_type_id='" + object_types[research_object_type_index].id + "'>Show Discoveries</button>";
+            }
+
+            adding_string += "</div>";
+
+        }
+
+        adding_string += "</div></div>";
+
+        $('#research').append(adding_string);
+    }
+
+    function getMonsterInfo(monster_index) {
+
+        let coord_index = -1;
+        let scope = false;
+        let coord = false;
+
+        if(monsters[monster_index].coord_id) {
+            coord_index = coords.findIndex(function(obj) { return obj && obj.id === monsters[monster_index].coord_id; });
+            if(coord_index !== -1) {
+                scope = "galaxy";
+                coord = coords[coord_index];
+            }
+        }
+
+        if(monsters[monster_index].planet_coord_id) {
+
+            coord_index = planet_coords.findIndex(function(obj) { return obj && obj.id === monsters[monster_index].planet_coord_id; });
+            if(coord_index !== -1) {
+                scope = "planet";
+                coord = planet_coords[coord_index];
+            }
+
+        } else if(monsters[monster_index].ship_coord_id) {
+            coord_index = ship_coords.findIndex(function(obj) { return obj && obj.id === monsters[monster_index].ship_coord_id; });
+            if(coord_index !== -1) {
+                scope = "ship";
+                coord = ship_coords[coord_index];
+            }
+        }
+
+        return { 'coord_index': coord_index, 'coord': coord, 'scope': scope };
+    }
+
+    function getNpcInfo(npc_index) {
+
+        let coord_index = -1;
+        let scope = false;
+        let coord = false;
+
+        if(npcs[npc_index].coord_id) {
+            console.log("Npc is on galaxy coord id: " + npcs[npc_index].coord_id);
+            coord_index = coords.findIndex(function(obj) { return obj && obj.id === npcs[npc_index].coord_id; });
+            if(coord_index !== -1) {
+                console.log("Found it");
+                scope = "galaxy";
+                coord = coords[coord_index];
+            } else {
+                console.log("Couldn't find it");
+            }
+        }
+
+        if(npcs[npc_index].planet_coord_id) {
+
+            coord_index = planet_coords.findIndex(function(obj) { return obj && obj.id === npcs[npc_index].planet_coord_id; });
+            if(coord_index !== -1) {
+                scope = "planet";
+                coord = planet_coords[coord_index];
+            }
+
+        } else if(npcs[npc_index].ship_coord_id) {
+            coord_index = ship_coords.findIndex(function(obj) { return obj && obj.id === npcs[npc_index].ship_coord_id; });
+            if(coord_index !== -1) {
+                scope = "ship";
+                coord = ship_coords[coord_index];
+            }
+        }
+
+        return { 'coord_index': coord_index, 'coord': coord, 'scope': scope };
+    }
+
+    function getObjectInfo(object_index) {
+
+        if(object_index === -1) {
+            return false;
+        }
+
+        let coord_index = -1;
+        let scope = false;
+        let coord = false;
+
+        if(objects[object_index].coord_id) {
+            coord_index = coords.findIndex(function(obj) { return obj && obj.id === objects[object_index].coord_id; });
+            if(coord_index !== -1) {
+                scope = "galaxy";
+                coord = coords[coord_index];
+            }
+        }
+
+        if(objects[object_index].planet_coord_id) {
+
+            coord_index = planet_coords.findIndex(function(obj) { return obj && obj.id === objects[object_index].planet_coord_id; });
+            if(coord_index !== -1) {
+                scope = "planet";
+                coord = planet_coords[coord_index];
+            }
+
+        } else if(objects[object_index].ship_coord_id) {
+            coord_index = ship_coords.findIndex(function(obj) { return obj && obj.id === objects[object_index].ship_coord_id; });
+            if(coord_index !== -1) {
+                scope = "ship";
+                coord = ship_coords[coord_index];
+            }
+        }
+
+        return { 'coord_index': coord_index, 'coord': coord, 'scope': scope };
+    }
+
+    function getPlayerInfo(player_index) {
+
+        let coord_index = -1;
+        let scope = false;
+        let coord = false;
+
+        if(!players[player_index] || typeof player_index === 'undefined' || player_index === -1) {
+            return { 'coord_index': coord_index, 'coord': coord, 'scope': scope };
+        }
+
+        if(players[player_index].ship_coord_id) {
+            coord_index = ship_coords.findIndex(function(obj) { return obj && obj.id === players[player_index].ship_coord_id; });
+            if(coord_index !== -1) {
+                scope = "ship";
+                coord = ship_coords[coord_index];
+            }
+        } else if(players[player_index].coord_id) {
+            coord_index = coords.findIndex(function(obj) { return obj && obj.id === players[player_index].coord_id; });
+            if(coord_index !== -1) {
+                scope = "galaxy";
+                coord = coords[coord_index];
+            }
+        } else if(players[player_index].planet_coord_id) {
+
+            coord_index = planet_coords.findIndex(function(obj) { return obj && obj.id === players[player_index].planet_coord_id; });
+            if(coord_index !== -1) {
+                scope = "planet";
+                coord = planet_coords[coord_index];
+            }
+
+        }
+
+        return { 'coord_index': coord_index, 'coord': coord, 'scope': scope };
+    }
+
+
+    function getPlayerObjectTypeIndex(showing_player) {
+
+        let player_object_type_index = -1;
+        if(current_view === 'galaxy') {
+            //console.log("Player's ship id: " + showing_player.ship_id);
+            // SHIP!!
+            let player_ship_index = objects.findIndex(function(obj) { return obj && obj.id === showing_player.ship_id; });
+            if(player_ship_index !== -1) {
+                player_object_type_index = object_types.findIndex(function(obj) { return obj && obj.id === objects[player_ship_index].object_type_id; });
+            } else {
+                //console.log("%c Did not find ship in our objects. Requesting info for object id: " + showing_player.ship_id, log_warning);
+                socket.emit('request_object_info', { object_id: showing_player.ship_id });
+            }
+        } else {
+            // BODY!!
+            let player_body_index = objects.findIndex(function(obj) { return obj && obj.id === showing_player.body_id; });
+
+            if(player_body_index !== -1) {
+                player_object_type_index = object_types.findIndex(function(obj) { return obj && obj.id === objects[player_body_index].object_type_id; });
+
+
+            } else {
+                console.log("%c Did not find body in our objects. Requesting info for object id: " + showing_player.body_id, log_warning);
+                socket.emit('request_object_info', { object_id: showing_player.body_id });
+            }
+        }
+
+        return player_object_type_index;
+    }
+
+    function generateAirlockDisplay() {
+
+
+        console.log("In generateAirlockDisplay");
+
+        $('#launch').empty();
+
+
+        let client_ship_index = objects.findIndex(function(obj) { return obj && obj.id === players[client_player_index].ship_id; });
+
+        if(client_ship_index === -1) {
+            console.log("Could not find client's ship. Requesting it");
+            socket.emit('request_object_info', { 'object_id': players[client_player_index].ship_id });
+        }
+
+
+        let ship_coord_index = ship_coords.findIndex(function(obj) { return obj && obj.id === players[client_player_index].ship_coord_id; });
+
+
+        if(client_ship_index === -1 || ship_coord_index === -1) {
+            airlock_display_needs_regeneration = true;
+        } else {
+            // We need to update our client_player_info
+            client_player_info = getPlayerInfo(client_player_index);
+        }
+
+        if(client_ship_index !== -1 && ship_coord_index !== -1 && ship_coords[ship_coord_index].ship_id === objects[client_ship_index].id) {
+            $('#launch').append('<button class="button is-success" id="viewchange" newview="galaxy"><i class="fad fa-stars"></i> Back To Galaxy</button>');
+
+            // If we are just on our own ship, and it's not a dockable ship, the only option is to head back to the galaxy view
+            let client_ship_type_index = object_types.findIndex(function(obj) { return obj.id === objects[client_ship_index].object_type_id; });
+            if(!object_types[client_ship_type_index].is_dockable) {
+                return;
+            }
+        } else {
+            $('#launch').append('<button class="button is-success" id="viewchange" newview="galaxy"><i class="fad fa-rocket"></i> Launch With Current Ship</button>');
+        }
+
+
+
+        for(let object of objects) {
+            if(object) {
+                if(object.player_id === client_player_id && object.docked_at_object_id) {
+                    console.log("Have that object id: " + object.id + " is docked at: " + object.docked_at_object_id);
+                }
+            }
+
+        }
+
+
+        // show the docked ships the player has here
+        let docked_ships = objects.filter(obj => obj.player_id === client_player_id && obj.docked_at_object_id === client_player_info.coord.ship_id);
+
+        let has_pod = false;
+
+        if(docked_ships.length > 0) {
+            console.log("Player has at least one ship docked at this station");
+
+
+            docked_ships.forEach(function(ship) {
+
+
+                let html_string = showDockedShip(ship);
+
+
+                $('#launch').append(html_string);
+
+                if(ship.object_type_id === 114) {
+                    has_pod = true;
+                }
+            });
+        }
+
+        // we should only let the player have one pod at a spaceport
+        if(!has_pod) {
+            $('#launch').append('<button class="button is-default" id="buy_pod" object_type_id="114">Buy A Pod</button>');
+        }
+
+        // If we own the station, we can switch to that too
+        if(ship_coord_index !== -1) {
+            let on_ship_index = objects.findIndex(function(obj) { return obj && obj.id === ship_coords[ship_coord_index].ship_id; });
+
+            if(on_ship_index !== -1) {
+                if(objects[on_ship_index].player_id === client_player_id) {
+
+                    //console.log("Player owns the ship they are docked at id: " + objects[on_ship_index].id);
+
+                    // The station is already our current ship
+                    if(objects[on_ship_index].id === players[client_player_index].ship_id) {
+                        $('#launch').append("<span class='tag is-success'>Station Is Current Ship</span>");
+                    }
+                    // we can switch to the station
+                    else {
+
+                        if(debug_mode) {
+                            $('#launch').append("Ship ID: " + objects[on_ship_index].id);
+                        }
+
+                        if(objects[on_ship_index].name) {
+                            $('#launch').append(" " + objects[on_ship_index].name + " ");
+                        }
+
+                        $('#launch').append("<button id='switchship_" + objects[on_ship_index].id + "' object_id='" +
+                            objects[on_ship_index].id + "' class='button is-warning is-small'>Switch To Station</button>");
+                    }
+
+
+                }
+            }
+        }
+
+    }
+
+    function generateSpaceportDisplay() {
+
+
+        // Don't generate this if we are in the galaxy view
+        if(current_view === 'galaxy') {
+            return false;
+        }
+
+        let client_player_info = getPlayerInfo(client_player_index);
+
+        if(!client_player_info.coord) {
+            spaceport_display_needs_regeneration = true;
+            return false;
+        }
+
+        if(client_player_info.coord.floor_type_id === 11) {
+
+            let html_string = "";
+
+
+            $('#launch').empty();
+
+            html_string += "<div class='white-text'>";
+            html_string += "<button class='button is-success' id='viewchange' newview='galaxy'>" +
+                "<i class='fad fa-rocket'></i>&nbsp; Launch From Planet With Current Ship</button><br>";
+
+
+
+
+
+            // show the docked ships the player has here
+            let docked_ships = objects.filter(obj => obj.player_id === client_player_id && obj.docked_at_planet_id === client_player_info.coord.planet_id);
+
+            let has_pod = false;
+
+            if(docked_ships.length > 0) {
+                //console.log("Player has at least one ship docked at this planet");
+
+
+                docked_ships.forEach(function(ship) {
+
+                    html_string += showDockedShip(ship);
+
+
+
+                    if(ship.object_type_id === 114) {
+                        has_pod = true;
+                    }
+                });
+            }
+
+            // we should only let the player have one pod at a spaceport
+            if(!has_pod) {
+                html_string += "<button class='button is-default' id='buy_pod' object_type_id='114'>Buy A Pod</button>";
+            }
+
+            html_string += "</div>";
+
+            $('#launch').append(html_string);
+        } else {
+
+            $('#launch').empty();
+        }
+    }
+
+    function getRandomIntInclusive(min, max) {
+        min = Math.ceil(min);
+        max = Math.floor(max);
+        return Math.floor(Math.random() * (max - min + 1)) + min; //The maximum is inclusive and the minimum is inclusive
+    }
+
+    function pointerDownDesktop(pointer, pointerTileX, pointerTileY) {
+
+
+        if(pointer.leftButtonDown()) {
+
+
+            $('#click_menu').empty();
+            $('#click_menu').hide();
+
+            // NEW SYSTEM
+            $('#coord_data').empty();
+            $('#coord_data').attr('class', 'message is-info');
+            $('#coord_data').attr('style', 'display:inline-block; margin-top:10px; padding:10px;');
+
+
+
+            let coord_index = -1;
+            let temp_coord = false;
+            let coord_tile_x = false;
+            let coord_tile_y = false;
+
+            if(current_view === 'ship') {
+                coord_index = ship_coords.findIndex(function(obj) { return obj && obj.tile_x === pointerTileX && obj.tile_y === pointerTileY; });
+                if(coord_index !== -1) {
+
+                    if(admin_drawing_floor_type_id) {
+                        socket.emit('admin_drawing_floor_data', {'ship_coord_id': ship_coords[coord_index].id, 'floor_type_id': admin_drawing_floor_type_id });
+                        return false;
+                    }
+
+                    temp_coord = ship_coords[coord_index];
+                    coord_tile_x = ship_coords[coord_index].tile_x;
+                    coord_tile_y = ship_coords[coord_index].tile_y;
+                }
+
+            } else if(current_view === 'galaxy') {
+                coord_index = coords.findIndex(function(obj) { return obj && obj.tile_x === pointerTileX && obj.tile_y === pointerTileY; });
+                if(coord_index !== -1) {
+
+                    if(admin_drawing_floor_type_id) {
+                        socket.emit('admin_drawing_floor_data', {'coord_id': coords[coord_index].id, 'floor_type_id': admin_drawing_floor_type_id });
+                        return false;
+                    }
+                    temp_coord = coords[coord_index];
+                    coord_tile_x = coords[coord_index].tile_x;
+                    coord_tile_y = coords[coord_index].tile_y;
+                }
+
+
+            } else if(current_view === 'planet') {
+
+                let player_index = players.findIndex(function(obj) { return obj && obj.id === player_id; });
+                let player_info = getPlayerInfo(player_index);
+
+
+                coord_index = planet_coords.findIndex(function(obj) { return obj && obj.tile_x === pointerTileX &&
+                    obj.tile_y === pointerTileY && obj.level === player_info.coord.level; });
+
+                if(coord_index !== -1) {
+
+                    if(admin_drawing_floor_type_id) {
+                        socket.emit('admin_drawing_floor_data', {'planet_coord_id': planet_coords[coord_index].id, 'floor_type_id': admin_drawing_floor_type_id });
+                        return false;
+                    }
+                    temp_coord = planet_coords[coord_index];
+                    coord_tile_x = planet_coords[coord_index].tile_x;
+                    coord_tile_y = planet_coords[coord_index].tile_y;
+
+                }
+            }
+
+            if(temp_coord) {
+
+
+
+
+                $('#coord_data').append("<strong>" + temp_coord.tile_x + "," + temp_coord.tile_y + "</strong>");
+                if(debug_mode) {
+                    $("#coord_data").append(" ID: " + temp_coord.id);
+                }
+
+                $('#coord_data').append("<br>");
+
+
+                if(temp_coord.planet_id && current_view === 'galaxy') {
+
+                    displayClickPlanet(temp_coord.planet_id);
+
+
+                } else if(temp_coord.belongs_to_planet_id) {
+
+                    displayClickPlanet(temp_coord.belongs_to_planet_id);
+
+
+                    if(debug_mode) {
+                        $('#coord_data').append("Belongs to planet id: " + temp_coord.belongs_to_planet_id + "<br>");
+                    }
+                }
+
+                if(temp_coord.monster_id) {
+
+
+                    let monster_index = monsters.findIndex(function(obj) { return obj && obj.id === temp_coord.monster_id; });
+                    if(monster_index !== -1) {
+
+                        let monster_type_index = monster_types.findIndex(function(obj) { return obj && obj.id === monsters[monster_index].monster_type_id; });
+
+                        if(monster_type_index !== -1) {
+
+                            $('#coord_data').append("Monster " + monster_types[monster_type_index].name + "<br>");
+                            if(debug_mode) {
+                                $('#coord_data').append("&nbsp;&nbsp;ID: " + monsters[monster_index].id + "<br>");
+                                $('#coord_data').append("&nbsp;&nbsp;Monster Type ID: " + monster_types[monster_type_index].id + "<br>");
+                                if(monsters[monster_index].spawned_event_id) {
+                                    $('#coord_data').append("&nbsp;&nbsp;Spawned Event ID:" + monsters[monster_index].spawned_event_id + "<br>");
+                                }
+                            }
+
+
+                        }
+                    } else if(debug_mode) {
+                        $('#coord_data').append("Coord has monster id " + temp_coord.monster_id + " but we don't have this monster<br>");
+                    }
+                } else if(temp_coord.belongs_to_monster_id) {
+                    if(debug_mode) {
+                        $('#coord_data').append("Belongs to monster id: " + temp_coord.belongs_to_monster_id + "<br>");
+                    }
+                }
+
+
+                if(temp_coord.object_id) {
+
+                    displayClickObject(temp_coord.object_id);
+
+
+                } else if(temp_coord.belongs_to_object_id) {
+
+                    displayClickObject(temp_coord.belongs_to_object_id);
+                    if(debug_mode) {
+                        $('#coord_data').append("Belongs to object id: " + temp_coord.belongs_to_object_id);
+
+                    }
+                }
+                else if(temp_coord.object_type_id) {
+
+                    let object_type_index = object_types.findIndex(function(obj) { return obj && obj.id === temp_coord.object_type_id; });
+                    if(object_type_index !== -1) {
+
+                        if(temp_coord.object_amount > 1) {
+                            $('#coord_data').append(temp_coord.object_amount + " ");
+                        }
+
+                        $('#coord_data').append(object_types[object_type_index].name);
+
+                        if(debug_mode) {
+                            $('#coord_data').append("Object Type ID (No object): " + temp_coord.object_type_id);
+                        }
+
+                        $('#coord_data').append("<br>");
+                    }
+
+
+                }
+
+                if(temp_coord.player_id) {
+
+                    let other_player_index = players.findIndex(function(obj) { return obj && obj.id === temp_coord.player_id; });
+
+                    if(other_player_index !== -1) {
+                        $('#coord_data').append("Player " + players[other_player_index].name);
+
+                        if(debug_mode) {
+                            $('#coord_data').append(" ID: " + players[other_player_index].id);
+                        }
+
+                        $('#coord_data').append("<br>");
+
+                        if(current_view === "galaxy") {
+                            let other_ship_index = objects.findIndex(function(obj) { return obj &&
+                                obj.id === players[other_player_index].ship_id; });
+                            if(other_ship_index !== -1) {
+                                let other_ship_type_index = object_types.findIndex(function(obj) { return obj &&
+                                    obj.id === objects[other_ship_index].object_type_id; });
+                                if(other_ship_type_index !== -1) {
+                                    $('#coord_data').append("Ship: " + object_types[other_ship_type_index].name);
+
+                                    if(debug_mode) {
+                                        $('#coord_data').append(" Ship ID: " + objects[other_ship_index].id);
+                                    }
+
+                                    $('#coord_data').append("<br>");
+                                }
+
+                            } else {
+                                socket.emit('request_object_info', { 'object_id': players[other_player_index].ship_id });
+                            }
+                        }
+
+                    } else {
+                        console.log("Don't have player info. Requesting it");
+                        socket.emit('request_player_info', { 'player_id': temp_coord.player_id });
+                    }
+
+                }
+
+
+                if(temp_coord.npc_id) {
+                    $('#coord_data').append("NPC id: " + temp_coord.npc_id + "<br>");
+
+                    let npc_index = npcs.findIndex(function(obj) { return obj && obj.id === temp_coord.npc_id; });
+
+                    if(npc_index !== -1) {
+                        $('#coord_data').append("Current structure: " + npcs[npc_index].current_structure_type_id + "<br>");
+                        $('#coord_data').append("Dream structure: " + npcs[npc_index].dream_structure_type_id + "<br>");
+                    } else {
+                        $('#coord_data').append("Not found in npcs");
+                    }
+
+                }
+
+                if(temp_coord.floor_type_id && debug_mode) {
+                    let floor_type_index = floor_types.findIndex(function(obj) { return obj && obj.id === temp_coord.floor_type_id; });
+                    if(floor_type_index !== -1) {
+                        $('#coord_data').append("Floor: " + floor_types[floor_type_index].name + "<br>");
+                    }
+                }
+
+                if(temp_coord.spawns_monster_type_id) {
+                    $('#coord_data').append("Spawns monster type id: " + temp_coord.spawns_monster_type_id);
+                }
+
+                if(temp_coord.area_id) {
+                    let area_index = areas.findIndex(function(obj) { return obj && obj.id === temp_coord.area_id; });
+
+                    if(area_index !== -1) {
+                        $('#coord_data').append(areas[area_index].name);
+                    } else {
+                        $('#coord_data').append("Area ID: " + temp_coord.area_id);
+                        socket.emit('request_area_data', { 'area_id': temp_coord.area_id });
+                    }
+                }
+
+                if(temp_coord.structure_id && debug_mode) {
+                    $('#coord_data').append("Structure ID: " + temp_coord.structure_id);
+                }
+
+            } else {
+
+                $('#coord_data').append("Unable to find coord. Current view is: " + current_view);
+            }
+
+
+
+        } else if(pointer.rightButtonDown()) {
+
+            showClickMenu(pointer);
+
+        }
+    }
+
+    function printAssemblyList(assembling_object = false, coord = false) {
+
+
+
+        let player_can_build_something = false;
+        let player_inventory_items = inventory_items.filter(inventory_item => inventory_item.player_id === player_id);
+
+
+        /******************************************* BASIC ASSEMBLIES !!!!!!!!!!!!!!! ***********************************************/
+        // generate the default can_assemble_list
+        // basic assemblies. Is assembled, no research required, and doesn't need to be assembled in another object type
+        if(assembling_object === false) {
+
+            if(!$("#can_assemble_list").is(":visible")) {
+                return false;
+            }
+
+            $('#can_assemble_list').empty();
+            let html_string = "";
+
+            html_string += "<div class='message is-info'><div class='message-body'>";
+
+
+            let could_assemble_something = false;
+
+            object_types.forEach(function(object_type) {
+
+                // Object type is assembled
+                if(object_type.is_assembled && !object_type.required_research_object_type_id && !object_type.assembly_object_type_id) {
+
+                    // Check Assembly Linkers
+                    let object_assembly_linkers = object_type_assembly_linkers.filter(linker => linker.required_for_object_type_id === object_type.id);
+
+                    let requirements_met = true;
+
+                    object_assembly_linkers.forEach(function(assembly_linker) {
+                        let met_this_requirement = false;
+                        player_inventory_items.forEach(function(inventory_item) {
+                            if(inventory_item.object_type_id === assembly_linker.object_type_id && inventory_item.amount >= assembly_linker.amount) {
+                                met_this_requirement = true;
+                            }
+                        });
+
+                        if(!met_this_requirement) {
+                            requirements_met = false;
+                        }
+                    });
+
+                    if(requirements_met) {
+                        html_string += generateAssemblyListItem(object_type, object_assembly_linkers);
+
+                        if(!could_assemble_something) {
+                            could_assemble_something = true;
+                        }
+                    }
+                }
+            });
+
+
+            floor_types.forEach(function(floor_type) {
+                if(floor_type.is_assembled) {
+
+                    // Check Assembly Linkers
+                    let floor_assembly_linkers = floor_type_assembly_linkers.filter(linker => linker.required_for_floor_type_id === floor_type.id);
+
+                    let requirements_met = true;
+
+                    floor_assembly_linkers.forEach(function(assembly_linker) {
+                        let met_this_requirement = false;
+                        player_inventory_items.forEach(function(inventory_item) {
+                            if(inventory_item.object_type_id === assembly_linker.object_type_id && inventory_item.amount >= assembly_linker.amount) {
+                                met_this_requirement = true;
+                            }
+                        });
+
+                        if(!met_this_requirement) {
+                            requirements_met = false;
+                        }
+                    });
+
+                    if(requirements_met) {
+                        html_string += generateAssemblyListItemFloor(floor_type, floor_assembly_linkers);
+
+                        if(!could_assemble_something) {
+                            could_assemble_something = true;
+                        }
+                    }
+                }
+            });
+
+
+            if(!could_assemble_something) {
+                html_string += "<a target='_blank' href='/site/tutorial'>Check Out The Tutorial For Beginner Info</a>";
+            }
+
+            html_string += "</div></div>";
+
+            $('#can_assemble_list').append(html_string);
+
+
+
+
+
+        }
+
+        /*********************************** ASSEMBLIES HAPPENING IN AN OBJECT ***********************************************************************/
+
+        else if(assembling_object.is_active) {
+
+            let html_string = "";
+
+            // try and get the thing that is being assembled
+            let assembly_index = active_assemblies.findIndex(function(obj) { return obj && obj.assembler_object_id === assembling_object.id; });
+
+            if(assembly_index !== -1) {
+                if(assembly_index !== -1) {
+                    let being_assembled_object_type_index = object_types.findIndex(function(obj) {
+                        return obj && obj.id === active_assemblies[assembly_index].being_assembled_object_type_id });
+
+                    html_string += " Assembling " + object_types[being_assembled_object_type_index].name + " ";
+                    html_string += " Ticks Completed: " + active_assemblies[assembly_index].current_tick_count + "/";
+                    html_string += object_types[being_assembled_object_type_index].assembly_time;
+                    html_string += " Completed " + active_assemblies[assembly_index].amount_completed  + "/";
+                    html_string += active_assemblies[assembly_index].total_amount;
+                }
+            } else {
+                html_string += "Already Assembling Something";
+            }
+
+
+            $('#click_menu').append(html_string);
+
+        }
+        else {
+
+
+            let html_string = "";
+
+            html_string += "<div class='message is-info'><div class='message-header'>Things You Can Assemble</div>";
+
+            object_types.forEach(function(object_type) {
+
+                // See if there is a matching assembled_in_linker for this object type
+                let assembled_in_linker_index = assembled_in_linkers.findIndex(function(obj) { return obj && obj.object_type_id === object_type.id &&
+                    obj.assembled_in_object_type_id === assembling_object.object_type_id; });
+
+                if(assembled_in_linker_index === -1) {
+                    return false;
+                }
+
+
+                // Check Assembly Linkers
+                let object_assembly_linkers = object_type_assembly_linkers.filter(linker => linker.required_for_object_type_id === object_type.id);
+
+                let requirements_met = true;
+                let research_requirement_met = true;
+
+                object_assembly_linkers.forEach(function(assembly_linker) {
+                    let met_this_requirement = false;
+                    player_inventory_items.forEach(function(inventory_item) {
+                        if(inventory_item.object_type_id === assembly_linker.object_type_id && inventory_item.amount >= assembly_linker.amount) {
+                            met_this_requirement = true;
+                        }
+                    });
+
+                    if(!met_this_requirement) {
+                        requirements_met = false;
+                    }
+                });
+
+
+                // Check Research Linkers
+                if(object_type.required_research_object_type_id) {
+                    let required_object_index = object_types.findIndex(function(obj) { return obj && obj.id === object_type.required_research_object_type_id; });
+
+                    // see if the player has this researched
+                    let player_research_linker_index = player_research_linkers.findIndex(function(obj) {
+                        return obj && obj.object_type_id === object_type.required_research_object_type_id; });
+
+                    if(player_research_linker_index !== -1) {
+                        if(player_research_linkers[player_research_linker_index].researches_completed >= object_types[required_object_index].research_times_required) {
+
+                        } else {
+                            research_requirement_met = false;
+                        }
+                    } else {
+                        research_requirement_met = false;
+                    }
+                }
+
+
+                if(requirements_met && research_requirement_met) {
+                    html_string += generateAssemblyListItem(object_type, object_assembly_linkers, assembling_object);
+                }
+
+
+            });
+
+
+            html_string += "</div>";
+
+            $('#click_menu').append(html_string);
+
+
+
+            console.log("Trying to show things we could assemble");
+
+            html_string = "";
+            html_string += "<div class='message is-dark'><div class='message-header'>Things You Can't Assemble Yet</div>";
+
+
+
+
+
+            // Ternary in my code!!!!!
+            let sorted_object_types = object_types.sort((a, b) => (a.complexity > b.complexity) ? 1 : -1);
+
+            // Lets mess with showing what the player COULD build if they had enough stuff
+            sorted_object_types.forEach(function(object_type) {
+
+                if(!object_type.is_assembled) {
+                    return false;
+                }
+
+                let assembled_in_linker_index = assembled_in_linkers.findIndex(function(obj) { return obj && obj.object_type_id === object_type.id &&
+                    obj.assembled_in_object_type_id === assembling_object.object_type_id; });
+
+                if(assembled_in_linker_index === -1) {
+                    return false;
+                }
+
+
+                // Check Assembly Linkers
+                let object_assembly_linkers = object_type_assembly_linkers.filter(linker => linker.required_for_object_type_id === object_type.id);
+
+                let requirements_met = true;
+                let research_requirement_met = true;
+
+                object_assembly_linkers.forEach(function(assembly_linker) {
+                    let met_this_requirement = false;
+                    player_inventory_items.forEach(function(inventory_item) {
+                        if(inventory_item.object_type_id === assembly_linker.object_type_id && inventory_item.amount >= assembly_linker.amount) {
+                            met_this_requirement = true;
+                        }
+                    });
+
+                    if(!met_this_requirement) {
+                        requirements_met = false;
+                    }
+                });
+
+
+                let failure_reason = false;
+                // Check Research Linkers
+                if(object_type.required_research_object_type_id) {
+                    let required_object_index = object_types.findIndex(function(obj) { return obj && obj.id === object_type.required_research_object_type_id; });
+
+                    // see if the player has this researched
+                    let player_research_linker_index = player_research_linkers.findIndex(function(obj) {
+                        return obj && obj.object_type_id === object_type.required_research_object_type_id; });
+
+                    if(player_research_linker_index !== -1) {
+                        if(player_research_linkers[player_research_linker_index].researches_completed >= object_types[required_object_index].research_times_required) {
+
+                        } else {
+                            research_requirement_met = false;
+                            failure_reason = "Requires more " + object_types[required_object_index].name + " Research";
+                        }
+                    } else {
+                        research_requirement_met = false;
+                        failure_reason = "Requires " + object_types[required_object_index].name + " Research";
+                    }
+                }
+
+                if(!research_requirement_met) {
+                    html_string += generateAssemblyListItem(object_type, object_assembly_linkers, assembling_object, false, failure_reason);
+                } else if(!requirements_met) {
+                    html_string += generateAssemblyListItem(object_type, object_assembly_linkers, assembling_object, false);
+                }
+
+
+
+
+            });
+
+            html_string += "</div>";
+
+            $('#click_menu').append(html_string);
+
+        }
+
+
+    }
+
+    function printDiscovery(object_type, assembly_linkers) {
+        let html_string = "";
+
+        html_string += "<div class='box has-text-centered' style='display: inline-block;'>";
+
+        html_string += object_type.name + "<br>";
+        html_string += "<img src='https://space.alphacoders.com/" + urlName(object_type.name) + ".png'><br>";
+
+        // Show what is required to assemble it
+        assembly_linkers.forEach(function(assembly_linker) {
+
+            let required_object_type_index = object_types.findIndex(function(obj) { return obj && obj.id === assembly_linker.object_type_id; });
+
+            html_string += " " + assembly_linker.amount + " ";
+            if(required_object_type_index !== -1) {
+                html_string +=  object_types[required_object_type_index].name + " <img style='width:16px; height:16px;' src='https://space.alphacoders.com/" +
+                    urlName(object_types[required_object_type_index].name) + ".png'>";
+            } else {
+                html_string +=  "" + assembly_linker.object_type_id;
+            }
+
+            html_string += "<br>";
+
+
+        });
+
+        // and show what it is assembled in
+        if(object_type.assembly_object_type_id) {
+            let assembled_in_object_type_index = object_types.findIndex(function(obj) { return obj && obj.id === object_type.assembly_object_type_id; });
+            html_string += "In: " + object_types[assembled_in_object_type_index].name + "<br>";
+        }
+
+        html_string += "</div>";
+
+        return html_string;
+    }
+
+
+    function generateAddictionDisplay() {
+
+        if(client_player_index === -1) {
+            return false;
+        }
+
+        //console.log("Generating addiction display");
+        $('#addiction').empty();
+
+        // If there are no longer any active addiction linkers, we can remove the div
+        let active_count = 0;
+        for(let addiction_linker of addiction_linkers) {
+            if(addiction_linker && addiction_linker.addicted_body_id === players[client_player_index].body_id) {
+                active_count++;
+            }
+        }
+
+        if(active_count === 0) {
+            return;
+        }
+
+
+        let body_index = objects.findIndex(function(obj) { return obj && obj.id === players[client_player_index].body_id; });
+        let body_type_index = object_types.findIndex(function(obj) { return obj && obj.id === objects[body_index].object_type_id; });
+
+
+        let adding_string = "";
+        adding_string += "<div class='message is-danger message-inline'><div class='message-body'><i class='fas fa-skull-crossbones'></i>";
+
+        // TODO turn this into a normal for with a simple if addiction_linkers[i] check
+        let active_addiction_linkers = addiction_linkers.filter(n => n);
+        for(let addiction_linker of active_addiction_linkers) {
+
+            //console.log("Processing addiction linker:");
+            //console.log(addiction_linker);
+            if(addiction_linker && addiction_linker.addicted_body_id === players[client_player_index].body_id) {
+
+                let object_type_index = object_types.findIndex(function(obj) { return obj && obj.id === addiction_linker.addicted_to_object_type_id; });
+                let race_eating_linker_index = race_eating_linkers.findIndex(function(obj) { return obj && obj.race_id === object_types[body_type_index].race_id &&
+                    obj.object_type_id === addiction_linker.addicted_to_object_type_id; });
+
+
+                adding_string += "Addicted to " + object_types[object_type_index].name + " Tick " + addiction_linker.tick_count + "/" +
+                    race_eating_linkers[race_eating_linker_index].addiction_tick_count;
+
+
+                // See if there's an eating linker that is stopping negative effects for now
+                let eating_linker_index = eating_linkers.findIndex(function(obj) { return obj && obj.body_id === players[client_player_index].body_id &&
+                    obj.eating_object_type_id === addiction_linker.addicted_to_object_type_id; });
+
+                // The player isn't still consuming this item - addiction has set in
+                if(eating_linker_index === -1) {
+                    if(race_eating_linkers[race_eating_linker_index].hp) {
+                        let negative_hp_amount = race_eating_linkers[race_eating_linker_index].hp * addiction_linker.addiction_level;
+                        adding_string += " -" + negative_hp_amount + " HP ";
+                    }
+
+                    if(race_eating_linkers[race_eating_linker_index].attack) {
+                        let negative_attack_amount = race_eating_linkers[race_eating_linker_index].attack * addiction_linker.addiction_level;
+                        adding_string += " -" + negative_attack_amount + " Attack ";
+                    }
+
+                    if(race_eating_linkers[race_eating_linker_index].defense) {
+                        let negative_defense_amount = race_eating_linkers[race_eating_linker_index].defense * addiction_linker.addiction_level;
+                        adding_string += " -" + negative_defense_amount + " Defense ";
+                    }
+                }
+
+
+                adding_string += "<br>";
+
+
+
+
+            } else {
+                console.log("Not our body");
+            }
+        }
+
+
+        adding_string += "</div></div>";
+        $('#addiction').append(adding_string);
+
+
+    }
+
+
+    // If we are sending in a specific object index, only show for that one AI
+    function generateAiManagementDisplay(object_index = -1) {
+
+        if(!$("#ai_management").is(":visible")) {
+            return false;
+        }
+
+        if(client_player_index === -1) {
+            return false;
+        }
+
+        $('#ai_management').empty();
+
+        let html_string = "";
+        html_string += "<div class='message is-info message-inline'><div class='message-body'>";
+
+        for(let j = 0; j < objects.length; j++) {
+
+
+            if(objects[j] &&
+                (   (object_index === -1 && objects[j].object_type_id === 72 && objects[j].player_id === client_player_id) ||
+                    (object_index !== -1 && j === object_index)
+                )
+            ) {
+
+                if(objects[j].name) {
+                    html_string += "<strong>" + objects[j].name + "</strong>";
+                } else {
+                    html_string += "<strong>" + objects[j].id + "</strong>";
+                }
+
+                html_string += "<button class='button is-default is-small' " +
+                    "id='showobject_" + objects[j].id + "'" +
+                    " object_id='" + objects[j].id + "'>Show</button>";
+                html_string += ":<br>";
+                html_string += "<div id='management_object_" + objects[j].id + "'></div>";
+
+
+
+            }
+        }
+
+
+        html_string += "</div></div>";
+
+
+        $('#click_menu').empty();
+        $('#click_menu').hide();
+
+        $('#ai_management').empty();
+        $('#ai_management').append(html_string);
+
+
+    }
+
+    function generateAssemblyListItem(object_type, object_assembly_linkers, assembling_object = false, can_assemble = true, failure_reason = false) {
+
+
+        let html_string = "";
+        html_string += "<table class='assemble'><tr><td><div class='center'><strong>" + object_type.name + "</strong><br>";
+        html_string += "<img src='https://space.alphacoders.com/" + urlName(object_type.name) + ".png'>";
+
+        // Show what is required to assemble it
+
+        if(failure_reason !== false) {
+            html_string += failure_reason;
+        } else {
+            object_assembly_linkers.forEach(function(assembly_linker) {
+
+                let required_object_type_index = object_types.findIndex(function(obj) { return obj && obj.id === assembly_linker.object_type_id; });
+
+                html_string += "<br> " + assembly_linker.amount + " ";
+                if(required_object_type_index !== -1) {
+                    html_string +=  object_types[required_object_type_index].name + " <img style='width:16px; height:16px;' src='https://space.alphacoders.com/" +
+                        urlName(object_types[required_object_type_index].name) + ".png'>";
+                } else {
+                    html_string +=  "" + assembly_linker.object_type_id;
+                }
+
+
+            });
+        }
+
+
+
+        if(can_assemble) {
+
+            html_string += "<div class='center'>Assemble: ";
+
+            html_string += " <button id='assemble_" + object_type.id + "_all' class='button is-default is-small' ";
+            html_string += " object_type_id='" + object_type.id + "' ";
+            html_string += " being_assembled_in_object_id='" + assembling_object.id + "' amount='all'>All</button>";
+
+            html_string += " <button id='assemble_" + object_type.id + "_10' class='button is-default is-small' ";
+            html_string += " object_type_id='" + object_type.id + "' ";
+            html_string += " being_assembled_in_object_id='" + assembling_object.id + "' amount='10'>10</button>";
+
+            html_string += " <button id='assemble_" + object_type.id + "_1' class='button is-default is-small' ";
+            html_string += " object_type_id='" + object_type.id + "' ";
+            html_string += " being_assembled_in_object_id='" + assembling_object.id + "' amount='1'>1</button>";
+
+            html_string += "</div>";
+
+
+        }
+
+
+
+        html_string += "</td></tr></table>";
+
+        return html_string;
+    }
+
+    function generateAssemblyListItemFloor(floor_type, floor_assembly_linkers, coord = false) {
+        let html_string = "";
+        html_string += "<table class='assemble'><tr><td><div class='center'><strong>" + floor_type.name + " Floor</strong><br>";
+        html_string += "<img src='https://space.alphacoders.com/floor-" + urlName(floor_type.name) + ".png'>";
+
+        // Show what is required to assemble it
+        floor_assembly_linkers.forEach(function(assembly_linker) {
+
+            let required_object_type_index = object_types.findIndex(function(obj) { return obj && obj.id === assembly_linker.object_type_id; });
+
+            html_string += "<br> " + assembly_linker.amount + " ";
+            if(required_object_type_index !== -1) {
+                html_string +=  object_types[required_object_type_index].name + " <img style='width:16px; height:16px;' src='https://space.alphacoders.com/" +
+                    urlName(object_types[required_object_type_index].name) + ".png'>";
+            } else {
+                html_string +=  "" + assembly_linker.object_type_id;
+            }
+
+
+        });
+
+        html_string += "<div class='center'><button id='assemblefloor_" + floor_type.id + "' ";
+
+        // enter in the coord type and coord id depending on our view
+        if(coord) {
+            if(current_view === 'planet') {
+                html_string += " coord_type='planet' coord_id='" + coord.id + "' ";
+            } else if(current_view === 'ship') {
+                html_string += " coord_type='ship' coord_id='" + coord.id + "' ";
+            } else if(current_view === 'galaxy') {
+                html_string += " coord_type='galaxy' coord_id='" + coord.id + "' ";
+            }
+        }
+
+
+        html_string += " floor_type_id='" + floor_type.id + "' class='button is-default' source='generateAssemblyListItemFloor'>Assemble</button></div>";
+        html_string += "</td></tr></table>";
+
+        return html_string;
+    }
+
+
+    // I THINK We are just using printAssemblyList now??????
+    function generateCanAssembleListDeprecated() {
+        console.log("%c In generateCanAssembleList. We think this is deprecated", log_danger);
+        $('#can_assemble_list').empty();
+        can_assemble_list = [];
+
+        let player_can_build_something = false;
+        let player_inventory_items = inventory_items.filter(inventory_item => inventory_item.player_id === player_id);
+
+
+        for(let i = 0; i < object_types.length; i++) {
+            if(object_types[i].is_assembled) {
+                console.log("Seeing if player can assemble object type: " + object_types[i].name);
+                let requirements_met = true;
+                // let go through its assembly linkers
+
+                let object_assembly_linkers = object_type_assembly_linkers.filter(linker => linker.required_for_object_type_id === object_types[i].id);
+
+                for(let j = 0; j < object_assembly_linkers.length; j++) {
+                    console.log("It requires " + object_assembly_linkers[j].amount + " of " + object_assembly_linkers[j].object_type_id);
+                    let met_this_requirement = false;
+
+                    for(let k = 0; k < player_inventory_items.length; k++) {
+
+                        if(player_inventory_items[k].object_type_id === object_assembly_linkers[j].object_type_id &&
+                            player_inventory_items[k].amount >= object_assembly_linkers[j].amount) {
+                            met_this_requirement = true;
+                            console.log("Met this requirement");
+                        }
+                    }
+
+                    if(!met_this_requirement) {
+                        requirements_met = false;
+                    }
+                }
+
+                let research_requirement_met = true;
+                // if this assembly requires research
+                if(object_types[i].required_research_object_type_id) {
+
+                    let required_object_index = object_types.findIndex(function(obj) { return obj && obj.id == object_types[i].required_research_object_type_id; });
+
+                    // see if the player has this researched
+                    let player_research_linker_index = player_research_linkers.findIndex(function(obj) {
+                        return obj && obj.object_type_id == object_types[i].required_research_object_type_id; });
+
+                    if(player_research_linker_index != -1) {
+                        if(player_research_linkers[player_research_linker_index].researches_completed >= object_types[required_object_index].research_times_required) {
+
+                        } else {
+                            research_requirement_met = false;
+                        }
+                    } else {
+                        research_requirement_met = false;
+                    }
+
+                }
+
+                if(requirements_met && research_requirement_met) {
+                    console.log("Met all requirements");
+
+                    let new_assemble_index = can_assemble_list.push({ 'object_type_id': object_types[i].id }) - 1;
+
+                    // lets add in scopes - so we can show only items for generally assembling, in a manufacturer, cloning vat, etc
+                    if(object_types[i].assembly_object_type_id) {
+                        can_assemble_list[new_assemble_index].assembly_object_type_id = object_types[i].assembly_object_type_id;
+                    } else {
+                        can_assemble_list[new_assemble_index].assembly_object_type_id = false;
+                    }
+                }
+            }
+        }
+
+
+        printAssemblyList(false, can_assemble_list);
+
+        for(let i = 0; i < floor_types.length; i++) {
+            //console.log("Checking floor type: " + floor_types[i].name);
+            if(floor_types[i].is_assembled) {
+                //console.log("Can potentially be assembled type: " + floor_types[i].name);
+                let requirements_met = true;
+                // let go through its assembly linkers
+
+                let floor_assembly_linkers = floor_type_assembly_linkers.filter(linker => linker.required_for_floor_type_id == floor_types[i].id);
+
+                for(let j = 0; j < floor_assembly_linkers.length; j++) {
+                    let met_this_requirement = false;
+
+                    for(let k = 0; k < player_inventory_items.length; k++) {
+
+                        if(player_inventory_items[k].object_type_id == floor_assembly_linkers[j].object_type_id && player_inventory_items[k].amount >= floor_assembly_linkers[j].amount) {
+                            met_this_requirement = true;
+                        }
+                    }
+
+                    if(!met_this_requirement) {
+                        requirements_met = false;
+                    }
+                }
+
+                if(requirements_met) {
+                    //console.log("Can assemble floor type");
+                    var html_string = "<table class='assemble'><tr><td><div class='center'><strong>" + floor_types[i].name + "</strong><br>";
+
+
+
+                    // show all the requirements
+
+                    for(let j = 0; j < floor_assembly_linkers.length; j++) {
+                        let nested_object_type_index = object_types.findIndex(function(obj) { obj.id == floor_assembly_linkers[j].object_type_id; });
+                        html_string += floor_assembly_linkers.amount + " " + object_types[nested_object_type_index].name + "<br>";
+                    }
+
+
+                    html_string += "</div>";
+
+
+                    html_string += "<div class='center'><button id='assemblefloor_" + floor_types[i].id + "' class='button is-default'>Assemble</button></div>";
+
+
+                    html_string += "</td><td>";
+
+                    html_string += "<img src='https://space.alphacoders.com/" + urlName(floor_types[i].name) + ".png'>";
+
+                    html_string += "</td></tr></table>";
+
+                    $('#can_assemble_list').append(html_string);
+                }
+            }
+        }
+
+
+        if($('#can_assemble_list').is(':empty')) {
+            $('#can_assemble_list').append("We have a <a target='_blank' href='https://space.alphacoders.com/site/tutorial'>tutorial</a> that can help you get started");
+        }
+
+    }
+
+    function generateEquipmentDisplay() {
+
+        // If our inventory isn't visible, don't show anything
+        if(!$("#player_equipment").is(":visible")) {
+            return false;
+        }
+
+        if(client_player_index === -1) {
+            return false;
+        }
+
+
+
+        let augment_string = "";
+        let augment_capacity_used = 0;
+        let head_string = "";
+        let head_capacity_used = 0;
+        let left_arm_string = "";
+        let left_arm_capacity_used = 0;
+        let body_string = "";
+        let body_capacity_used = 0;
+        let right_arm_string = "";
+        let right_arm_capacity_used = 0;
+        let legs_string = "";
+        let legs_capacity_used = 0;
+
+
+        let equipment_layout_string =   "<div style='display:flex;'>";
+        equipment_layout_string +=          "<div id='equipment_augment' class='player_equipment'><span class='has-text-centered'><strong>Augments</strong></span><br></div>";
+        equipment_layout_string +=          "<div id='equipment_head' class='player_equipment'><strong>Head</strong></div>";
+        equipment_layout_string +=      "</div><div style='display:flex;'>";
+        equipment_layout_string +=          "<div id='equipment_left_arm' class='player_equipment'><strong>Left Arm</strong></div>";
+        equipment_layout_string +=          "<div id='equipment_body' class='player_equipment'><strong>Body</strong></div>";
+        equipment_layout_string +=          "<div id='equipment_right_arm' class='player_equipment'><strong>Right Arm</strong></div>";
+        equipment_layout_string +=      "</div><div style='display:flex;'>";
+        equipment_layout_string +=          "<div id='equipment_legs' class='player_equipment'><strong>Legs</strong></div>";
+        equipment_layout_string +=      "</div><div style='display:flex;'>";
+        equipment_layout_string +=          "<div id='equipment_body_type' class='player_equipment'><strong>Body Type</strong></div>";
+        equipment_layout_string +=      "</div>";
+
+
+        equipment_linkers.forEach(function(equipment_linker) {
+            if(equipment_linker.body_id === players[client_player_index].body_id) {
+
+                let object_type_index = object_types.findIndex(function(obj) { return obj && obj.id === equipment_linker.object_type_id; });
+
+                if(object_type_index === -1) {
+                    console.log("Could not find object type for equipment linker");
+                    return false;
+                }
+                let object_linker_index = object_type_equipment_linkers.findIndex(function(obj) {
+                    return obj && obj.object_type_id === equipment_linker.object_type_id && obj.equip_slot === equipment_linker.equip_slot;
+                });
+
+                if(object_linker_index === -1) {
+                    console.log("Could not find the object we have equipped");
+                    return false;
+                }
+
+                let equipment_linker_string = "<br>";
+
+                if(equipment_linker.amount > 1) {
+                    equipment_linker_string += equipment_linker.amount + " ";
+                }
+
+                equipment_linker_string += " <img title='" + object_types[object_type_index].name + "' style='width:32px; height:32px;' " +
+                    " src='https://space.alphacoders.com/" + urlName(object_types[object_type_index].name) + ".png'>";
+
+                equipment_linker_string += " ( ";
+                if(object_types[object_type_index].attack_strength) {
+                    equipment_linker_string += " + " + object_types[object_type_index].attack_strength + " attack";
+                }
+
+                if(object_types[object_type_index].defense) {
+                    equipment_linker_string += " + " + object_types[object_type_index].defense + " defense";
+                }
+                equipment_linker_string += " )";
+                equipment_linker_string += "<button class='button is-warning is-small' id='unequip_" + equipment_linker.id +
+                    "' equipment_linker_id='" + equipment_linker.id + "'>Unequip</button>";
+
+                if(equipment_linker.equip_slot === 'augment') {
+                    augment_string += equipment_linker_string;
+                    augment_capacity_used += object_type_equipment_linkers[object_linker_index].capacity_used;
+                } else if(equipment_linker.equip_slot === 'head') {
+                    head_string += equipment_linker_string;
+                    head_capacity_used += object_type_equipment_linkers[object_linker_index].capacity_used;
+                } else if(equipment_linker.equip_slot === 'left_arm') {
+                    left_arm_string += equipment_linker_string;
+                    left_arm_capacity_used += object_type_equipment_linkers[object_linker_index].capacity_used;
+                } else if(equipment_linker.equip_slot === 'body') {
+                    body_string += equipment_linker_string;
+                    body_capacity_used += object_type_equipment_linkers[object_linker_index].capacity_used;
+                } else if(equipment_linker.equip_slot === 'right_arm') {
+                    right_arm_string += equipment_linker_string;
+                    right_arm_capacity_used += object_type_equipment_linkers[object_linker_index].capacity_used;
+                } else if(equipment_linker.equip_slot === 'legs') {
+                    legs_string += equipment_linker_string;
+                    legs_capacity_used += object_type_equipment_linkers[object_linker_index].capacity_used;
+                }
+
+
+
+
+            }
+
+        });
+
+        $('#player_equipment').empty();
+        $('#player_equipment').append(equipment_layout_string);
+        $('#equipment_augment').append(augment_string);
+        $('#equipment_head').append(head_string);
+        $('#equipment_left_arm').append(left_arm_string);
+        $('#equipment_body').append(body_string);
+        $('#equipment_right_arm').append(right_arm_string);
+        $('#equipment_legs').append(legs_string);
+
+        // For each slot, show how full it is
+
+        $('#equipment_augment').append("<br>" + augment_capacity_used + "/Infinite Cap Used");
+        $('#equipment_head').append("<br>" + head_capacity_used + "/5 Cap Used");
+        $('#equipment_left_arm').append("<br>" + left_arm_capacity_used + "/3 Cap Used");
+        $('#equipment_body').append("<br>" + body_capacity_used + "/7 Cap Used");
+        $('#equipment_right_arm').append("<br>" + right_arm_capacity_used + "/3 Cap Used");
+        $('#equipment_legs').append("<br>" + legs_capacity_used + "/4 Cap Used");
+
+        // and show stats on the body type
+        let body_index = objects.findIndex(function(obj) { return obj && obj.id === players[client_player_index].body_id; });
+        if(body_index !== -1) {
+
+            let body_type_index = object_types.findIndex(function(obj) { return obj && obj.id === objects[body_index].object_type_id; });
+            let body_type_string = object_types[body_type_index].name + "<br> ";
+
+
+            if(object_types[body_type_index].mining_modifier) {
+                body_type_string += " " + object_types[body_type_index].mining_modifier + " Mining<br>";
+            }
+
+            if(object_types[body_type_index].move_delay !== 500) {
+                body_type_string += " " + object_types[body_type_index].move_delay + " Move Delay<br>";
+            }
+
+            if(object_types[body_type_index].attack_modifier) {
+                body_type_string += " " + object_types[body_type_index].attack_modifier + " Attack<br>";
+            }
+
+            if(object_types[body_type_index].defense_modifier) {
+                body_type_string += " " + object_types[body_type_index].defense_modifier + " Defense<br>";
+            }
+
+            if(object_types[body_type_index].hp_modifier) {
+                body_type_string += " " + object_types[body_type_index].hp_modifier + " HP<br>";
+            }
+
+            if(object_types[body_type_index].manufacturing_modifier) {
+                body_type_string += " " + object_types[body_type_index].manufacturing_modifier + " Manufacturing<br>";
+            }
+
+            $('#equipment_body_type').append(body_type_string);
+
+
+
+        } else {
+            console.log("Don't have player's body object");
+        }
+
+
+
+
+    }
+
+    function generateInventoryDisplay() {
+
+        // If our inventory isn't visible, don't show anything
+        if(!$("#inventory").is(":visible")) {
+            return false;
+        }
+
+        // Don't have info about the client player yet
+        if(client_player_index === -1) {
+            return false;
+        }
+
+        //console.log("%c Generating inventory display", log_success);
+        $('#inventory').empty();
+
+        inventory_items.forEach(function(inventory_item, i) {
+            // Only use our inventory items for the main display
+            if(inventory_item.player_id !== player_id) {
+                return false;
+            }
+
+            let object_type_index =  -1;
+            let floor_type_index = -1;
+            if(inventory_item.object_id) {
+                let object_index = objects.findIndex(function(obj) { return obj && obj.id === inventory_item.object_id; });
+                if(object_index === -1) {
+                    //console.log("Have inventory item but don't have the object associated with it. object id: "
+                    //    + inventory_item.object_id + ". Requesting info");
+                    socket.emit('request_object_info', { 'object_id': inventory_item.object_id });
+                    return;
+                }
+
+                object_type_index = object_types.findIndex(function(obj) { return obj && obj.id === objects[object_index].object_type_id; });
+            } if(inventory_item.object_type_id) {
+                object_type_index = object_types.findIndex(function(obj) { return obj && obj.id === inventory_item.object_type_id; });
+            } else if(inventory_item.floor_type_id) {
+                floor_type_index = floor_types.findIndex(function(obj) { return obj && obj.id === inventory_item.floor_type_id; });
+            }
+
+            // TODO
+            // I want to change the appearance of the linear gradient depending on how the player can interact with the item
+            // DEFAULT: linear-gradient(141deg, #cacaca 0%, #aaa 51%, #8e8e8e 75%)
+            // CAN EAT: linear-gradient(141deg, #cff0ff 0%, #01afff 51%, #007fae 75%)
+            // EQUIPABLE: linear-gradient(141deg, #ffc3c3 0%, #a83e3e 51%, #642424 75%)
+
+
+            // Wrapper div
+            let adding_string = "<div id='inventory_item_" + inventory_item.id + "' style=' " +
+                " display:inline-block; border: 2px solid black; width:64px; height:64px; " +
+                " border-radius: 4px; box-shadow: 1px 3px 4px #2cc2f9; margin:2px; " +
+                " background-image: linear-gradient(141deg, #c3faff 0%, #1fc8db 51%, #2cb5e8 75%); " +
+                " ' ";
+
+
+            if(object_type_index !== -1) {
+                adding_string += " title='" + object_types[object_type_index].name + "' ";
+            } else if(floor_type_index !== -1) {
+                adding_string += " title='" + floor_types[floor_type_index].name + "' ";
+            }
+
+            adding_string += " onclick='showInventoryOptions(" + inventory_item.id + ")'>";
+
+
+            // Internal div
+            if(object_type_index !== -1) {
+                adding_string += "<div style='width:60px; height:60px; background-size: cover; position:relative; " +
+                    " background-image: url(https://space.alphacoders.com/" + urlName(object_types[object_type_index].name) + ".png); '>";
+            } else if(floor_type_index !== -1) {
+                adding_string += "<div style='width:60px; height:60px; background-size: cover; position:relative; " +
+                    " background-image: url(https://space.alphacoders.com/floor-" + urlName(floor_types[floor_type_index].name) + ".png); '>";
+            }
+
+
+
+
+
+
+            adding_string += "<span style='color:white; font-size:20px; text-shadow: 1px 1px black; position:absolute; right: 6px; bottom: 0;'>";
+            adding_string +=            inventory_item.amount;
+            adding_string += "</span>";
+
+            adding_string += "</div>";
+
+
+
+
+
+            // End wrapper div
+            adding_string += "</div>";
+            $('#inventory').append(adding_string);
+        });
+    }
+
+
+    function generateInventoryDisplayOld() {
+
+        // Don't have info about the client player yet
+        if(client_player_index === -1) {
+            return false;
+        }
+        //console.log("%c Generating inventory display", log_success);
+        $('#inventory').empty();
+
+        inventory_items.forEach(function(inventory_item, i) {
+
+            // Only use our inventory items for the main display
+            if(inventory_item.player_id !== player_id) {
+                return false;
+            }
+
+            let object_type_index =  -1;
+            let floor_type_index = -1;
+            if(inventory_item.object_id) {
+                let object_index = objects.findIndex(function(obj) { return obj && obj.id === inventory_item.object_id; });
+                if(object_index === -1) {
+                    //console.log("Have inventory item but don't have the object associated with it. object id: "
+                    //    + inventory_item.object_id + ". Requesting info");
+                    socket.emit('request_object_info', { 'object_id': inventory_item.object_id });
+                    return;
+                }
+
+                object_type_index = object_types.findIndex(function(obj) { return obj && obj.id === objects[object_index].object_type_id; });
+            } if(inventory_item.object_type_id) {
+                object_type_index = object_types.findIndex(function(obj) { return obj && obj.id === inventory_item.object_type_id; });
+            } else if(inventory_item.floor_type_id) {
+                floor_type_index = floor_types.findIndex(function(obj) { return obj && obj.id === inventory_item.floor_type_id; });
+            }
+
+            // Wrapper div
+            let adding_string = "<div id='inventory_item_" + inventory_item.id + "' style='padding:6px;'>";
+
+            adding_string +=        "<div style='display:inline-block; width: 120px;'>";
+
+
+            // Amount, name, and image display
+            if(object_type_index !== -1) {
+                adding_string +=            inventory_item.amount + " " + object_types[object_type_index].name;
+                adding_string +=            "<img style='width:16px; height:16px;' src='https://space.alphacoders.com/" + urlName(object_types[object_type_index].name) + ".png'>";
+            } else if(floor_type_index !== -1) {
+                adding_string +=            inventory_item.amount + " " + floor_types[floor_type_index].name + " Floor";
+                adding_string +=            "<img style='width:16px; height:16px;'";
+                adding_string +=            "src='https://space.alphacoders.com/" + floor_types[floor_type_index].name.toLowerCase() + ".png'>";
+            }
+
+            adding_string +=        "</div>";
+
+
+            // Next div is for equip,eat, ect
+            adding_string +=        "<div style='width:100px; display:inline-block;'>";
+
+            if(object_type_index !== -1) {
+                if(object_types[object_type_index].is_equippable) {
+                    //console.log("Object type " + object_types[object_type_index].name + " is equippable");
+
+                    let type_equipment_linkers = object_type_equipment_linkers.filter(linker => linker.object_type_id === object_types[object_type_index].id);
+
+                    //console.log("Length of type_equipment_linkers: " + type_equipment_linkers.length);
+                    if(type_equipment_linkers.length > 0) {
+                        //console.log("Adding equip button stuff");
+
+                        adding_string += "Equip: ";
+
+
+                        type_equipment_linkers.forEach(function(linker) {
+                            adding_string += "<button id='equip_" + inventory_item.id + "_" + linker.equip_slot +
+                                "' inventory_item_id='" + inventory_item.id + "' equip_slot='"
+                                + linker.equip_slot + "' class='button is-default'>Equip " + linker.equip_slot + "</button>";
+                        });
+
+
+
+                    }
+
+                    //adding_string += "<button id='equip_" + inventory_item.id + "' class='btn btn-info btn-xs'>Equip</button>";
+                }
+
+                // see if the body the player has can eat this
+                let body_index = objects.findIndex(function(obj) { return obj && obj.id === players[client_player_index].body_id; });
+                if(body_index !== -1) {
+
+                    let body_object_type_index = object_types.findIndex(function(obj) { return obj && obj.id === objects[body_index].object_type_id; });
+
+                    //console.log("Our body's race id: " + object_types[body_object_type_index].race_id);
+
+                    // now lets see if the race can eat this one
+                    race_eating_linkers.forEach(function(race_eating_linker) {
+
+
+                        if(race_eating_linker.race_id === object_types[body_object_type_index].race_id && race_eating_linker.object_type_id === object_types[object_type_index].id) {
+                            adding_string += "<button id='eat_" + inventory_item.id + "' class='button is-info is-small'>Eat</button>";
+                        }
+                    });
+                }
+            }
+
+            // Ending the equip/eat div
+            adding_string +=    "</div>";
+
+            // Trash div (We are wrapping the buttons in divs so the trash button always lines up
+            adding_string +=    "<div style='display:inline-block;'>";
+            adding_string +=        "<button id='trash_" + inventory_item.id + "' class='button is-danger is-small'><span class='glyphicon glyphicon-trash'></span> Trash</button>";
+            adding_string +=    "</div>";
+
+
+
+            // End wrapper div
+            adding_string += "</div>";
+            $('#inventory').append(adding_string);
+
+
+
+        });
+    }
+
+    function generateNonAiManagementDisplay(object_index = -1) {
+
+        if(!$("#object_management").is(":visible")) {
+            return false;
+        }
+
+        if(client_player_index === -1) {
+            return false;
+        }
+
+        console.log("In generateNonAiManagementDisplay with object_index: " + object_index);
+
+        $('#object_management').empty();
+
+        let html_string = "";
+        html_string += "<div class='message is-info message-inline'><div class='message-body'>";
+
+        // Lets try a close button
+        html_string += "";
+
+        // go through the objects we know about, and if they are something we manage, show that
+        object_types.forEach(function(object_type, i) {
+            
+            if(object_type.is_ship) {
+                return false;
+            }
+
+            // We are expanding objects that can be managed - name and tint for most
+            //if(!object_type.can_have_rules) {
+            //    return false;
+            //}
+
+            objects.forEach(function(object, j) {
+
+                if(object_index !== -1 && j !== object_index) {
+                    return false;
+                }
+
+                // We separate out ships and AI's from this display
+                if(object.object_type_id === 72) {
+                    return false;
+                }
+
+                if(object.player_id === client_player_id && object.object_type_id === object_type.id) {
+
+                    if(object.name) {
+                        html_string += "<strong>" + object.name + "</strong>";
+                    } else {
+                        html_string += "<strong>" + object.id + "</strong>";
+                    }
+
+                    html_string += "<button class='button is-default is-small' " +
+                        "id='showobject_" + object.id + "'" +
+                        " object_id='" + object.id + "'>Show</button>";
+                    html_string += ":<br>";
+                    // we need some identifier so that if we get new rules in, we know if it matches the AI that we are showing rules on
+                    html_string += "<div id='management_object_" + object.id + "'></div>";
+
+
+
+                }
+            });
+
+        });
+
+
+        html_string += "</div></div>";
+
+
+        $('#click_menu').empty();
+        $('#click_menu').hide();
+
+        $('#objct_management').empty();
+        $('#object_management').append(html_string);
+
+        if(object_index !== -1) {
+            $("#objectcolor_" + objects[object_index].id).spectrum({
+                color: "#f00",
+                preferredFormat: "hex",
+            });
+        }
+
+
+    }
+
+    function generateManagementOptionsDisplay() {
+
+        console.log("In generateManagementOptionsDisplay");
+
+        if(!$("#management_options").is(":visible")) {
+            return false;
+        }
+
+        let html_string = "";
+
+        html_string += "<div class='message is-dark message-inline'><div class='message-body'>";
+        html_string += "Management. Expand: ";
+        html_string += " <button class='button is-info' id='showareaoptions'>Areas</button> ";
+        html_string += " <button class='button is-info' id='showaioptions'>AIs</button> ";
+        html_string += " <button class='button is-info' id='showshipoptions'>Ships</button> ";
+        html_string += " <button class='button is-info' id='showobjectoptions'>Objects</button> ";
+        html_string += " <button class='button is-info' id='showmarketoptions'>Market</button> ";
+        html_string += "</div></div>";
+
+        $('#management_options').empty();
+        $('#management_options').append(html_string);
+    }
+
+    function generateAreaDisplay(area_id) {
+
+        area_id = parseInt(area_id);
+
+        let area_index = areas.findIndex(function(obj) { return obj && obj.id === area_id; });
+
+        if(area_index === -1) {
+            console.log("Could not find area");
+            return false;
+        }
+
+        let html_string = "";
+
+        // Things to display if we are the owner
+        if(areas[area_index].owner_id === client_player_id) {
+
+            // Rename Option
+            html_string += "<form action='#'>";
+            html_string += "<div class='field is-horizontal'>";
+            html_string +=      "<input type='text' class='input' name='areaname_" + areas[area_index].id + "' id='areaname_" + areas[area_index].id + "'>";
+            html_string +=      "<input class='button is-default' onclick=\"renameArea(" + areas[area_index].id + "); return false;\" type=\"submit\" value=\"Rename\">";
+            html_string += "</div>";
+            html_string += "</form>";
+
+
+            // The area could be waiting for someone to accept renting it
+            if(areas[area_index].renting_player_id) {
+
+                let renting_player_index = players.findIndex(function(obj) { return obj && obj.id === areas[area_index].renting_player_id; });
+
+                if(areas[area_index].is_accepted) {
+
+                    if(renting_player_index === -1) {
+                        socket.emit('request_player_info', { 'player_id': areas[area_index].renting_player_id });
+                        html_string += " Rented by player id " + areas[area_index].renting_player_id;
+                    } else {
+                        html_string += " Rented by " + players[renting_player_index].name;
+                    }
+
+                    html_string += " for " + areas[area_index].price + " credits/month";
+
+                    // TODO evict option
+
+                } else {
+                    html_string += " waiting to be accepted by ";
+                    if(renting_player_index === -1) {
+                        html_string += " player id " + areas[area_index].renting_player_id;
+                    } else {
+                        html_string += " " + players[renting_player_index].name;
+                    }
+
+                    // TODO cancel button
+                }
+
+            } else {
+                // Option to manually rent to someone
+                html_string += "<strong>Rent To Specific Player:</strong><br>";
+                html_string += "<form action='#'>";
+                html_string += "<div class='field is-horizontal'>";
+                html_string +=      "<label class='label'>Player Name</label>";
+                html_string +=      "<input type='text' class='input' name='rent_to_player_name_" + areas[area_index].id + "' id='rent_to_player_name_" + areas[area_index].id + "'>";
+                html_string +=      "<label class='label'>Credits/Month</label>";
+                html_string +=      "<input type='text' class='input' name='price_" + areas[area_index].id + "' id='price_" + areas[area_index].id + "'>";
+                html_string +=      "<input class='button is-default' onclick=\"rentToPlayer(" + areas[area_index].id + "); return false;\" type=\"submit\" value=\"Rent to player\">";
+                html_string += "</div>";
+                html_string += "</form>";
+
+                // Or put it on the market
+                // Only give the option if it isn't already on the market
+                let on_market = false;
+                for(let i = 0; i < market_linkers.length; i++) {
+                    if(market_linkers[i].area_id === areas[area_index].id) {
+                        on_market = true;
+                    }
+                }
+
+                if(!on_market) {
+                    html_string += "<br><button class='button is-info' id='areaputonmarket_" + areas[area_index].id + "' area_id='" + areas[area_index].id + "'>Put On Market</button>";
+                } else {
+                    html_string += "<br>On The Market";
+                }
+
+
+
+            }
+
+
+            html_string += "<br>";
+
+        }
+        // Options for us as the renting player
+        else if(areas[area_index].renting_player_id === client_player_id) {
+            html_string += "Renting Options";
+        }
+
+        $("#area_" + area_id).empty();
+        $("#area_" + area_id).append(html_string);
+
+
+    }
+
+    function generateAreaManagementDisplay() {
+
+        if(!$("#area_management").is(":visible")) {
+            return false;
+        }
+
+        let html_string = "";
+
+        html_string += "<div class='message is-info message-inline'><div class='message-body'>";
+
+        // Create a room form
+
+        html_string += "<strong>Create An Area:</strong>";
+        html_string += "<form action='#'>";
+        html_string += "<div class='field is-horizontal'>";
+        html_string +=      "<input type='text' class='input' name='create_area_name' id='create_area_name'>";
+        html_string +=      "<input class='button is-default' onclick=\"createArea(); return false;\" type=\"submit\" value=\"Create New Area\">";
+        html_string += "</div>";
+        html_string += "</form>";
+
+
+        for(let i = 0; i < areas.length; i++) {
+
+            if(areas[i]) {
+                if(areas[i].owner_id === client_player_id || areas[i].renting_player_id === client_player_id) {
+                    html_string += "<strong>" + areas[i].name + "</strong>";
+                    html_string += "<button class='button is-default is-small' " +
+                        "id='showarea_" + areas[i].id + "'" +
+                        " area_id='" + areas[i].id + "'>Show</button>";
+                    html_string += ":<br>";
+                    html_string += "<div id='area_" + areas[i].id + "'></div>";
+                }
+            }
+
+        }
+
+
+        html_string += "</div></div>";
+
+        $('#area_management').empty();
+        $('#area_management').append(html_string);
+    }
+
+
+    // Basic info for the local market
+    function generateMarketDisplay() {
+
+        if(!$("#market").is(":visible")) {
+            return false;
+        }
+
+        let html_string = "";
+
+        html_string += "<div class='message is-info message-inline' style='margin-top:10px;'><div class='message-body'>";
+        html_string += "<strong>Local Areas On The Market</strong><br>";
+
+        let planet_coord_index = -1;
+        let ship_coord_index = -1;
+
+        if(players[client_player_index].planet_coord_id) {
+
+            planet_coord_index = planet_coords.findIndex(function(obj) { return obj && obj.id === players[client_player_index].planet_coord_id; });
+
+        } else if(players[client_player_index].ship_coord_id) {
+            ship_coord_index = ship_coords.findIndex(function(obj) { return obj && obj.id === players[client_player_index].ship_coord_id; });
+        }
+
+
+
+        for(let i = 0; i < market_linkers.length; i++) {
+            if(market_linkers[i] &&  ( ( planet_coord_index !== -1 && market_linkers[i].planet_id === planet_coords[planet_coord_index].planet_id ) ||
+                (ship_coord_index !== -1 && market_linkers[i].ship_id === ship_coords[ship_coord_index].ship_id ) ) ) {
+
+                // Show the area name if we have the area
+                let area_index = areas.findIndex(function(obj) { return obj && obj.id === market_linkers[i].area_id; });
+                if(area_index !== -1) {
+                    html_string += " Area: " + areas[area_index].name + " ";
+                } else {
+                    html_string += "Market Linker ID: " + market_linkers[i].id + " ";
+                }
+
+                // And the bids for it
+
+
+
+                // And when it ends
+
+                html_string += "<button class='button is-default is-small' " +
+                    "id='showmarketlinker_" + market_linkers[i].id + "'" +
+                    " market_linker_id='" + market_linkers[i].id + "'>Show</button>";
+                html_string += ":<br>";
+                html_string += "<div id='market_linker_" + market_linkers[i].id + "'></div>";
+
+            }
+        }
+
+
+
+
+        /*
+        for(let i = 0; i < areas.length; i++) {
+
+            if(areas[i]) {
+                if(areas[i].owner_id === client_player_id || areas[i].renting_player_id === client_player_id) {
+                    html_string += "<strong>" + areas[i].name + "</strong>";
+                    html_string += "<button class='button is-default is-small' " +
+                        "id='showarea_" + areas[i].id + "'" +
+                        " area_id='" + areas[i].id + "'>Show</button>";
+                    html_string += ":<br>";
+                    html_string += "<div id='area_" + areas[i].id + "'></div>";
+                }
+            }
+
+        }
+        */
+
+
+        html_string += "</div></div>";
+
+        $('#market').empty();
+        $('#market').append(html_string);
+    }
+
+    function generateMarketLinkerDisplay(market_linker_id) {
+
+        market_linker_id = parseInt(market_linker_id);
+
+        let market_linker_index = market_linkers.findIndex(function(obj) { return obj && obj.id === market_linker_id; });
+
+        if(market_linker_index === -1) {
+            console.log("Could not find market_linker");
+            return false;
+        }
+
+        let area_index = areas.findIndex(function(obj) { return obj && obj.id === market_linkers[market_linker_index].area_id; });
+
+
+        if(area_index === -1) {
+            return false;
+        }
+
+        let html_string = "";
+
+        // Show the current bids
+        let bid_count = 0;
+        for(let i = 0; i < bid_linkers.length; i++) {
+            if(bid_linkers[i] && bid_linkers[i].area_id === areas[area_index].id) {
+                bid_count++;
+                html_string += "Price: " + bid_linkers[i].price + "<br>";
+            }
+        }
+
+        if(bid_count === 0) {
+            html_string += "No bids yet<br>";
+        }
+
+        // and the ending time
+        html_string += "<br>Ending At: " + market_linkers[market_linker_index].ending_at + "<br>";
+
+        // Submit Bid Option
+        html_string += "<strong>Bid</strong><br>";
+        html_string += "<form action='#'>";
+        html_string += "<div class='field is-horizontal'>";
+        html_string +=      "<input type='text' class='input' name='bid_" + areas[area_index].id + "' id='bid_" + areas[area_index].id + "'>";
+        html_string +=      "<input class='button is-default' onclick=\"submitBid(" + areas[area_index].id + "); return false;\" type=\"submit\" value=\"Submit Bid\">";
+        html_string += "</div>";
+        html_string += "</form>";
+
+
+        $("#market_linker_" + market_linker_id).empty();
+        $("#market_linker_" + market_linker_id).append(html_string);
+
+
+    }
+
+
+    function generateObjectDisplay(object_id) {
+
+        object_id = parseInt(object_id);
+
+        let object_index = objects.findIndex(function(obj) { return obj && obj.id === object_id; });
+
+        if(object_index === -1) {
+            console.log("Could not find object");
+            return false;
+        }
+
+        let object_type_index = object_types.findIndex(function(obj) { return obj && obj.id === objects[object_index].object_type_id; });
+
+        let html_string = "";
+
+        if(objects[object_index].name) {
+            html_string += " " + objects[object_index].name + " ";
+        }
+
+        if(debug_mode) {
+            html_string += " ID " + objects[object_index].id;
+        }
+
+        html_string += ": ";
+
+        html_string += " <button class='button is-danger is-small' id='destroy_object_" + objects[object_index].id + "' object_id='" + objects[object_index].id + "'>Destroy</button>";
+
+        html_string += "<br>";
+
+
+
+        html_string += "<form action='#'>";
+        html_string += "<div class='field is-horizontal'>";
+        html_string +=      "<input type='text' class='input' name='object_" + objects[object_index].id + "_name' id='object_" + objects[object_index].id + "_name'>";
+        html_string +=      "<input class='button is-default' onclick=\"submitObjectName(" + objects[object_index].id + "); return false;\" type=\"submit\" value=\"Change Name\">";
+        html_string += "</div>";
+        html_string += "</form>";
+
+
+
+        /**************************************** RULES SECTION ******************************************/
+
+        if(object_types[object_type_index].can_have_rules) {
+
+            // AI RULES
+            if(object_types[object_type_index].id === 72) {
+                // AI on a planet
+                if(objects[object_index].planet_coord_id) {
+
+                    // show the planet and let them change the planet name
+                    let planet_coord_index = planet_coords.findIndex(function(obj) { return obj && obj.id === objects[object_index].planet_coord_id; })
+                    if(planet_coord_index !== -1) {
+                        let planet_index = planets.findIndex(function(obj) { return obj && obj.id === planet_coords[planet_coord_index].planet_id; });
+                        if(planet_index !== -1) {
+                            html_string += "Planet Name: " + planets[planet_index].name + " ";
+                            html_string += "<form action='#'>";
+                            html_string += "<div class='field is-horizontal'>";
+                            html_string +=      "<input type='text' class='input' name='planet_" + planets[planet_index].id + "_name' id='planet_" + planets[planet_index].id + "_name'>";
+                            html_string +=      "<input class='button is-default' onclick=\"submitPlanetName(" + planets[planet_index].id + "); return false;\" type=\"submit\" value=\"Change Planet Name\">";
+                            html_string += "</div>";
+                            html_string += "</form>";
+                        } else {
+                            console.log("333 request");
+                            socket.emit('request_planet_info', {'planet_id': planet_coords[planet_coord_index].planet_id });
+                        }
+                    }
+
+                } else if(objects[object_index].ship_coord_id) {
+
+                    // show the ship and let them change the ship name
+                    let ship_coord_index = ship_coords.findIndex(function(obj) { return obj && obj.id === objects[object_index].ship_coord_id; })
+                    if(ship_coord_index !== -1) {
+                        let ship_index = objects.findIndex(function(obj) { return obj && obj.id === ship_coords[ship_coord_index].ship_id; });
+                        if(ship_index !== -1) {
+                            html_string += "Ship Name: " + objects[ship_index].name + " ";
+                            html_string += "<form action='#'>";
+                            html_string += "<input type='text' name='object_" + objects[ship_index].id + "_name' id='object_" + objects[ship_index].id + "_name'>";
+                            html_string += "<input onclick=\"submitObjectName(" + objects[ship_index].id + "); return false;\" type=\"submit\" value=\"Change Ship Name\">";
+                            html_string += "</form>";
+                        } else {
+                            socket.emit('request_object_info', {'object_id': ship_coords[ship_coord_index].ship_id });
+                        }
+                    }
+                }
+
+
+
+
+                html_string += "<strong>Add A Rule:</strong>";
+                html_string += "<form action='#'>";
+                html_string += "<div class='field is-horizontal'>";
+                html_string +=      "<div class='select'>";
+                html_string +=          "<select id=\"" + objects[object_index].id + "_new_rule\">";
+                html_string +=              "<option value='attack_all_players'>Attack All Players</option>";
+                html_string +=              "<option value='attack_all_players_except_creator'>Attack All Players Except Creator</option>";
+                html_string +=              "<option value='attack_all_players_except_creator_faction'>Attack All Players Except Creator Faction</option>";
+                html_string +=              "<option value='protect_all_players'>Protect All Players</option>";
+                html_string +=              "<option value='protect_creator'>Protect Creator</option>";
+                html_string +=              "<option value='protect_creator_property'>Protect Creator Property</option>";
+                html_string +=              "<option value='protect_self'>Protect Self</option>";
+                html_string +=              "<option value='building_no_others'>Others can't build</option>";
+                html_string +=              "<option value='floor_no_others'>Others can't replace floor</option>";
+                html_string +=          "</select>";
+                html_string +=      "</div>";
+                html_string +=      "<input class='button is-default' onclick=\"submitRule(" + objects[object_index].id + "); return false;\" type=\"submit\" value=\"Submit Rule\">";
+                html_string += "</div>";
+
+                html_string += "</form>";
+            }
+            // DEFENSE DRONE
+            else if(objects[object_index].object_type_id === 71) {
+                html_string += "<form action='#'>";
+                html_string += "<select id=\"" + objects[object_index].id + "_new_rule\">";
+                html_string += "<option value='attack_all_players'>Attack All Players</option>";
+                html_string += "<option value='attack_all_players_except_creator'>Attack All Players Except Creator</option>";
+                html_string += "<option value='attack_all_players_except_creator_faction'>Attack All Players Except Creator Faction</option>";
+                html_string += "</select>";
+                html_string += "<input onclick=\"submitRule(" + objects[object_index].id + "); return false;\" type=\"submit\" value=\"Add Rule\">";
+                html_string += "</form>";
+            }
+
+            // TERRITE DOOR
+            else if(objects[object_index].object_type_id === 185) {
+                html_string += "<form action='#'>";
+                html_string += "<select id=\"" + objects[object_index].id + "_new_rule\">";
+                html_string += "<option value='allow_all_players'>Allow All Players</option>";
+                html_string += "<option value='allow_faction_players'>Allow Faction Players</option>";
+                html_string += "<option value='allow_creator'>Allow Creating Player</option>";
+                html_string += "<option value='allow_monsters'>Allow Monsters</option>";
+                html_string += "</select>";
+                html_string += "<input onclick=\"submitRule(" + objects[object_index].id + "); return false;\" type=\"submit\" value=\"Add Rule\">";
+                html_string += "</form>";
+            }
+
+
+
+            // show current rules and allow the user to remove them
+            rules.forEach(function(rule) {
+                if(rule.object_id === objects[object_index].id) {
+
+                    if(rule.rule === 'floor_no_others') {
+                        html_string += "Others can't replace floors";
+                    } else {
+                        html_string += rule.rule;
+                    }
+                    html_string +=  " <button class='button is-danger is-small' id='deleterule_" +
+                        rule.id + "' rule_id='" + rule.id + "'>Delete Rule</button><br>";
+                }
+            });
+        }
+
+
+
+
+
+        // Tint
+        html_string += "<strong>Change Tint</strong>";
+        html_string += "<form action='#'>";
+        html_string += "<div class='field is-horizontal'>";
+        html_string +=      "<input type='text' name='objectcolor_" + objects[object_index].id + "' id='objectcolor_" + objects[object_index].id + "'>";
+        html_string +=      "<input class='button is-default' onclick=\"objectTint(" + objects[object_index].id + "); return false;\" type=\"submit\" value=\"Set Tint\">";
+        html_string += "</div>";
+        html_string += "</form>";
+
+
+
+
+        // if the ship is docked somewhere, display that
+        if(objects[object_index].docked_at_planet_id) {
+            let planet_index = planets.findIndex(function(obj) { return obj && obj.id === objects[object_index].docked_at_planet_id; });
+
+            if(planet_index !== -1) {
+                html_string += " Docked At Planet " + planets[planet_index].name;
+            } else {
+                html_string += " Docked At A Planet";
+
+                console.log("444 request planet_id: " + objects[object_index].docked_at_planet_id);
+                socket.emit('request_planet_info', { 'planet_id': objects[object_index].docked_at_planet_id });
+            }
+        } else if(objects[object_index].docked_at_object_id) {
+            let docked_index = objects.findIndex(function(obj) { return obj && obj.id === objects[object_index].docked_at_object_id; });
+
+            if(docked_index !== -1) {
+                html_string += " Docked At " + objects[docked_index].name;
+            } else {
+                html_string += " Docked At A Station";
+
+                socket.emit('request_object_info', { 'object_id': objects[object_index].docked_at_object_id });
+            }
+        }
+
+
+
+        $("#management_object_" + object_id).empty();
+        $("#management_object_" + object_id).append(html_string);
+
+        $("#objectcolor_" + objects[object_index].id).spectrum({
+            color: "#f00",
+            preferredFormat: "hex",
+        });
+
+
+    }
+
+
+
+    function generateShipManagementDisplay() {
+
+        if(!$("#ship_management").is(":visible")) {
+            return false;
+        }
+
+        let html_string = "";
+
+        html_string += "<div class='message is-info message-inline'><div class='message-body'>";
+
+        let ship_object_types = object_types.filter(object_type => object_type.is_ship);
+
+        for(let object_type of ship_object_types) {
+            // see if the player has any of these
+            let player_ships = objects.filter(object => object.player_id === client_player_id && object.object_type_id === object_type.id);
+
+            if(player_ships && player_ships.length > 0) {
+                for(let ship of player_ships) {
+
+                    let ship_type_index = object_types.findIndex(function(obj) { return obj.id === ship.object_type_id; });
+
+
+                    if(ship.name) {
+                        html_string += "<strong>" + ship.name + "</strong>";
+                    } else {
+                        html_string += " ID " + ship.id + " ";
+                    }
+
+                    if(ship.id === players[client_player_index].ship_id) {
+                        html_string += " <span class='tag is-info'>Current Ship</span> ";
+                    }
+
+                    html_string += "<button class='button is-default is-small' " +
+                        "id='showobject_" + ship.id + "'" +
+                        " object_id='" + ship.id + "'>Show</button>";
+                    html_string += ":<br>";
+                    html_string += "<div id='management_object_" + ship.id + "'></div>";
+
+
+
+
+                }
+            }
+        }
+
+        html_string += "</div></div>";
+
+        $('#ship_management').empty();
+        $('#ship_management').append(html_string);
+    }
+
+    function getMonsterIndex(monster_id) {
+        let monster_index = -1;
+        monster_id = parseInt(monster_id);
+
+        if(isNaN(monster_id)) {
+            return monster_index;
+        }
+
+        monster_index = monsters.findIndex(function(obj) { return obj && obj.id === monster_id; });
+
+        return monster_index;
+    }
+
+    function getNpcIndex(npc_id) {
+        let npc_index = -1;
+        npc_id = parseInt(npc_id);
+
+        if(isNaN(npc_id)) {
+            return npc_index;
+        }
+
+        npc_index = npcs.findIndex(function(obj) { return obj && obj.id === npc_id; });
+
+        return npc_index;
+    }
+
+    function getObjectIndex(object_id) {
+        let object_index = -1;
+        object_id = parseInt(object_id);
+
+        if(isNaN(object_id)) {
+            return object_index;
+        }
+
+        object_index = objects.findIndex(function(obj) { return obj && obj.id === object_id; });
+
+        return object_index;
+    }
+
+    function getObjectTypeIndex(object_type_id) {
+        let object_type_index = -1;
+        object_type_id = parseInt(object_type_id);
+
+        if(isNaN(object_type_id)) {
+            return object_type_index;
+        }
+
+        object_type_index = object_types.findIndex(function(obj) { return obj && obj.id === object_type_id; });
+
+        return object_type_index;
+    }
+
+    function getPlayerIndex(player_id) {
+        let player_index = -1;
+        player_id = parseInt(player_id);
+
+        if(isNaN(player_id)) {
+            return player_index;
+        }
+
+        player_index = players.findIndex(function(obj) { return obj && obj.id === player_id; });
+
+        return player_index;
+    }
+
+    function halfTile() {
+        return parseInt(tile_size / 2);
+    }
+
+    function mapAddFloor(floor_type_id, tile_x, tile_y) {
+
+        let floor_type_index = floor_types.findIndex(function(obj) { return obj && obj.id === parseInt(floor_type_id); });
+
+        if(floor_type_index === -1) {
+            return false;
+        }
+
+
+        // see if we have display linker for this floor type
+        let display_linkers = floor_type_display_linkers.filter(
+            display_linker => display_linker.floor_type_id === floor_types[floor_type_index].id);
+
+        if(display_linkers.length > 0) {
+            //console.log("Using floor display linkers for floor type id: " + floor_types[floor_type_index].id);
+            display_linkers.forEach(function(linker) {
+                let linker_tile_x = tile_x + linker.position_x;
+                let linker_tile_y = tile_y + linker.position_y;
+
+                let current_tile = map.getTileAt(linker_tile_x, linker_tile_y, false, linker.layer);
+
+                // Draw it if it's not there, or we don't have an animator controlling it
+                if(!current_tile || (current_tile.index !== linker.game_file_index && !floor_types[floor_type_index].is_animated)) {
+                    map.putTileAt(linker.game_file_index, linker_tile_x, linker_tile_y, false, linker.layer);
+                }
+
+                //console.log("Putting game file index " + linker.game_file_index + " at " + linker_tile_x + "," + linker_tile_y + " on layer " + linker.layer);
+
+            });
+        } else {
+
+            let current_tile = map.getTileAt(tile_x, tile_y, false, 'layer_floor');
+            if(!current_tile || current_tile.index !== floor_types[floor_type_index].game_file_index) {
+                map.putTileAt(floor_types[floor_type_index].game_file_index, tile_x, tile_y, false, 'layer_floor');
+            }
+            //console.log("Adding floor game file index to map: "  + floor_types[floor_type_index].game_file_index);
+
+        }
+
+
+
+    }
+
+    function mapAddObjectType(object_type_id, tile_x, tile_y) {
+        let object_type_index = object_types.findIndex(function(obj) { return obj && obj.id === parseInt(object_type_id); });
+
+
+        if(object_type_index === -1) {
+            return false;
+        }
+
+        // we might have display linkers for this
+        let display_linkers = object_type_display_linkers.filter(linker =>
+            linker.object_type_id === object_types[object_type_index].id);
+
+
+        // We have display linkers
+        if(display_linkers.length > 0) {
+
+
+            display_linkers.forEach(function(linker) {
+                let linker_tile_x = parseInt(tile_x + linker.position_x);
+                let linker_tile_y = parseInt(tile_y + linker.position_y);
+
+
+
+                // TODO Test this more. Seems like we do actually need to check below too, since when we move around we are grabbing
+                // TODO     tiles in different orders
+
+
+
+                // Temp replace with a different above
+                //if(linker.object_type_id === 215 && linker.position_y === -1) {
+                //    map.putTileAt(10, linker_tile_x, linker_tile_y, false, linker.layer);
+                //}
+
+                // WALLS
+                // For walls, we have an additional extended tile for when there is a wall above/below
+                if(object_types[object_type_index].is_wall && linker.position_x === 0 && linker.position_y === 0) {
+
+                    if(linker_tile_x === 2 && linker_tile_y === 19) {
+                        console.log("At 2,19");
+                    }
+
+                    let above_y = parseInt(linker_tile_y - 1);
+                    let below_y = parseInt(linker_tile_y + 1);
+                    let above_index = -1;
+                    let below_index = -1;
+                    let coord_above = false;
+                    let coord_below = false;
+
+                    if(current_view === 'ship') {
+                         above_index = ship_coords.findIndex(function(obj) { return obj && obj.tile_x === linker_tile_x &&
+                            obj.tile_y === above_y; });
+                         below_index = ship_coords.findIndex(function(obj) { return obj && obj.tile_x === linker_tile_x &&
+                            obj.tile_y === below_y; });
+
+                         if(above_index !== -1) {
+                             coord_above = ship_coords[above_index];
+                         }
+
+                         if(below_index !== -1) {
+                             coord_below = ship_coords[below_index];
+                         }
+                    } else if(current_view === 'planet') {
+                        above_index = planet_coords.findIndex(function(obj) { return obj && obj.tile_x === linker_tile_x &&
+                            obj.tile_y === above_y; });
+                        below_index = planet_coords.findIndex(function(obj) { return obj && obj.tile_x === linker_tile_x &&
+                            obj.tile_y === below_y; });
+
+                        if(above_index !== -1) {
+                            coord_above = planet_coords[above_index];
+                        }
+
+                        if(below_index !== -1) {
+                            coord_below = planet_coords[below_index];
+                        }
+                    } else {
+                        console.log("Current view is not ship or planet");
+                    }
+
+
+
+                    let current_tile = map.getTileAt(linker_tile_x, linker_tile_y, false, linker.layer);
+                    let extended_index = linker.game_file_index + 1;
+
+                    // If there's a wall above, it needs to be extended
+                    if( above_index !== -1 && coord_above.object_type_id === object_types[object_type_index].id ) {
+
+
+                        // Lets see if we need to change the tile
+                        let above_tile = map.getTileAt(linker_tile_x, above_y, false, linker.layer);
+
+                        if(above_tile && above_tile.index === extended_index) {
+                            // don't have to change it
+
+                        } else {
+
+                            // Do the linker's game file index instead of the object game file index. Increased flexibility.
+                            map.putTileAt(extended_index, linker_tile_x, above_y, false, linker.layer);
+
+                        }
+                    }
+
+                    // If there's a wall below, our coord needs to be extended!
+                    if( below_index !== -1 && coord_below.object_type_id === object_types[object_type_index].id) {
+
+
+                        if(current_tile && current_tile.index === extended_index) {
+                            // nothing to do
+                        } else {
+                            map.putTileAt(extended_index, linker_tile_x, linker_tile_y, false, linker.layer);
+                        }
+
+
+                    }
+                    // Default for our current tile
+                    else {
+
+                        if(!current_tile || current_tile.index !== linker.game_file_index) {
+                            map.putTileAt(linker.game_file_index, linker_tile_x, linker_tile_y, false, linker.layer);
+                        }
+
+
+                    }
+
+
+                } else {
+                    map.putTileAt(linker.game_file_index, linker_tile_x, linker_tile_y, false, linker.layer);
+                }
+
+
+
+                // Lets try and test a very specific case. Ship wall, and try to do extended ones if there is already a wall below
+                /*
+                if(object_types[object_type_index].id === 215 && linker.position_x === 0 && linker.position_y === 0) {
+
+                    let above_y = parseInt(linker_tile_y - 1);
+                    let below_y = parseInt(linker_tile_y + 1);
+
+                    // see if there's supposed to be a wall below ( we draw top -> down, so there won't be anything on the map itself yet )
+                    // Not even sure if we'll have the coord at this point. Might need to check above as well
+                    if(current_view === 'ship') {
+
+
+
+                        let ship_coord_above_index = ship_coords.findIndex(function(obj) { return obj && obj.tile_x === linker_tile_x &&
+                            obj.tile_y === above_y; });
+
+
+                        if(ship_coord_above_index !== -1) {
+
+                            if(ship_coords[ship_coord_above_index].object_type_id === 215) {
+                                map.putTileAt(271, linker_tile_x, above_y, false, linker.layer);
+                            }
+                        }
+
+                        let ship_coord_below_index = ship_coords.findIndex(function(obj) { return obj && obj.tile_x === linker_tile_x &&
+                            obj.tile_y === above_y; });
+
+                        if(ship_coord_below_index !== -1) {
+                            if(ship_coords[ship_coord_below_index].object_type_id === 215) {
+                                map.putTileAt(271, linker_tile_x, above_y, false, linker.layer);
+                            }
+                        }
+
+                    }
+
+                } else if(object_types[object_type_index].id === 61 && linker.position_x === 0 && linker.position_y === 0) {
+                    let above_y = parseInt(linker_tile_y - 1);
+
+                    if(current_view === 'planet') {
+                        let planet_coord_above_index = planet_coords.findIndex(function(obj) { return obj && obj.tile_x === linker_tile_x &&
+                            obj.tile_y === above_y; });
+
+
+                        if(planet_coord_above_index !== -1) {
+
+                            if(planet_coords[planet_coord_above_index].object_type_id === 61) {
+                                map.putTileAt(274, linker_tile_x, above_y, false, linker.layer);
+                            }
+                        }
+                    }
+                }
+                */
+
+
+
+
+            });
+
+
+        } else {
+            // The normal display
+            let layer = 'layer_object';
+
+
+            //console.log("Putting game file index: " + object_types[object_type_index].game_file_index + " at tile_x,tile_y: " + tile_x + "," + tile_y);
+            map.putTileAt(object_types[object_type_index].game_file_index, tile_x, tile_y, false, layer);
+        }
+
+
+
+    }
+
+    // If we need to access something here, we need to make sure map.js in planet_data and ship_data is sending the data
+    function mapAddObject(object) {
+        //console.log("In mapAddObject for object id: " + object.id);
+
+        if(!object) {
+            return false;
+        }
+
+        let object_index = objects.findIndex(function(obj) { return obj && obj.id === object.id; });
+
+        if(object_index === -1) {
+            return false;
+        }
+
+        let object_info = getObjectInfo(object_index);
+
+        if(!object_info.coord) {
+            return false;
+        }
+
+        let object_type_index = object_types.findIndex(function(obj) { return obj && obj.id === objects[object_index].object_type_id; });
+
+        if(object_type_index === -1) {
+            console.log("%c No object type id for object id: " + object.id + " ?!?", log_danger);
+            return false;
+        }
+
+        // see if the object type has display linkers
+
+        // I THINK that for this, we just want to show only the original and the visual ones
+        // Since I THINK we are going to have belongs_to_object_id put on non-just visual tiles
+        // For now lets just draw all of them and see if anything goes wrong
+        // TODO support spawning with display linkers
+        let display_linkers = object_type_display_linkers.filter(linker =>
+            linker.object_type_id === object_types[object_type_index].id);
+
+
+
+        if(display_linkers.length > 0) {
+
+
+            display_linkers.forEach(function(linker) {
+                let linker_tile_x = object_info.coord.tile_x + linker.position_x;
+                let linker_tile_y = object_info.coord.tile_y + linker.position_y;
+
+                let current_tile = map.getTileAt(linker_tile_x, linker_tile_y, false, linker.layer);
+
+                /* Not gonna do the ship wall stuff right now
+                // If the object is a ship wall, and it's not the base linker, we might have to mirror it
+                if(object_types[object_type_index].is_ship_wall && linker.position_x !== 0)  {
+                    console.log("Trying to figure out how to orient the ship laser");
+
+                    let current_tile_floor = map.getTileAt(linker_tile_x, linker_tile_y, false, 'layer_floor');
+                    if(current_tile_floor) {
+                        console.log("Floor index of current tile: " + current_tile_floor.index);
+                    } else {
+                        console.log("No tile here");
+                    }
+
+                    // all good
+                    if(!current_tile_floor) {
+                        console.log("This one is fine");
+                        map.putTileAt(linker.game_file_index, linker_tile_x, linker_tile_y, false, linker.layer);
+                    }
+                    // flip it
+                    else {
+                        console.log("Need to flip this ship laser");
+
+                        map.putTileAt(linker.game_file_index, linker_tile_x + 2, linker_tile_y, false, linker.layer);
+                        let replacement_tile = map.getTileAt(linker_tile_x + 2, linker_tile_y, false, linker.layer);
+                        replacement_tile.setFlipX(true);
+                    }
+
+
+
+
+
+
+                }
+                */
+
+                // Draw it if it's not there, or we don't have an animator controlling it
+                if(!current_tile || (current_tile.index !== linker.game_file_index)) {
+                    map.putTileAt(linker.game_file_index, linker_tile_x, linker_tile_y, false, linker.layer);
+
+                    //if(object_types[object_type_index].id === 155 ) {
+                    //    console.log("Put tile: " + linker.game_file_index + " at " + linker_tile_x + "," + linker_tile_y);
+                    //}
+                }
+
+
+
+
+                //console.log("Drew from the display linkers");
+                //console.log("Drawing game file index: " + linker.game_file_index);
+            });
+
+
+        } else {
+            if(object.has_spawned_object && (object.has_spawned_object === true || object.has_spawned_object === 1)) {
+                //console.log("%c Using has_spawned_object_game_file_index", log_warning);
+                //console.log("Spawned object at " + object_info.coord.tile_x);
+                map.putTileAt(object_types[object_type_index].has_spawned_object_game_file_index, object_info.coord.tile_x, object_info.coord.tile_y, false, 'layer_object');
+
+            } else {
+                let layer = 'layer_object';
+
+                // make sure the object isn't a ship
+                let is_active_ship = false;
+                players.forEach(function(player, i) {
+                    if(player.ship_id === object.id) {
+                        is_active_ship = true;
+                        //console.log("Not drawing object id: " + object.id + " on tilemap. is active ship");
+                    }
+                });
+
+                if(!is_active_ship) {
+
+                    map.putTileAt(object_types[object_type_index].game_file_index, object_info.coord.tile_x, object_info.coord.tile_y, false, layer);
+                }
+
+
+            }
+        }
+
+
+
+    }
+
+    function checkForClientMove(time, tile_x = false, tile_y = false) {
+
+        if(client_player_index === -1) {
+            return false;
+        }
+
+        if(!upKey.isDown && !downKey.isDown && !leftKey.isDown &&  !rightKey.isDown) {
+            return false;
+        }
+
+        let time_since_last_move = time - last_move_sent;
+
+        // Trying -50 to see if it helps movement flow
+        if(time_since_last_move < (move_delay - 50)) {
+            return false;
+
+        }
+
+        if(tile_x !== false) {
+            console.log("In movePlayer with tile_x,tile_y: " + tile_x + "," + tile_y);
+        }
+
+
+        let player_trying_to_move = false;
+        let movement_direction = false;
+        let checking_coord_index = -1;
+
+
+        let player_info = getPlayerInfo(client_player_index);
+
+        if(!player_info.coord) {
+            console.log("Could not find player's coord");
+            return false;
+        }
+
+
+
+        // Player is trying to move
+        if(upKey.isDown || downKey.isDown || leftKey.isDown || rightKey.isDown) {
+
+            //console.log("%c User is trying to move player and move is available", log_success);
+            player_trying_to_move = true;
+
+            // get our movement direction
+
+
+            let tile_x_checking = false;
+            let tile_y_checking = false;
+            let player_coord_index = -1;
+
+
+            // ship_coord_id before coord_id is important since being on our ship is a view - ship is sitll on a galaxy coord
+            if(players[client_player_index].ship_coord_id) {
+
+                // return false if the client and server don't agree on the ship coord the client is on
+                if(client_move_ship_coord_id && client_move_ship_coord_id !== players[client_player_index].ship_coord_id) {
+                    console.log("%c Server and client don't agree on the ship coord the player is on", log_warning);
+
+                    // If it's been this way for a while (testing at 2 seconds), reset the client back to server
+                    let been_this_way_time = our_time - players[client_player_index].move_start_time;
+                    if(been_this_way_time > 2000) {
+                        console.log("Been this way too long. " + been_this_way_time + "ms. Resetting player");
+                        client_move_ship_coord_id = 0;
+                        let return_to_ship_coord_index = ship_coords.findIndex(function(obj) { return obj && obj.id === players[client_player_index].ship_coord_id; });
+                        if(return_to_ship_coord_index !== -1) {
+                            let return_x = ship_coords[return_to_ship_coord_index].tile_x * tile_size + tile_size / 2;
+                            let return_y = ship_coords[return_to_ship_coord_index].tile_y * tile_size + tile_size / 2;
+                            movePlayerInstant(client_player_index, return_x, return_y);
+                        }
+
+                    }
+                    return false;
+                }
+
+                player_coord_index = ship_coords.findIndex(function(obj) { return obj && obj.id === players[client_player_index].ship_coord_id; });
+
+                if(player_coord_index !== -1) {
+                    tile_x_checking = ship_coords[player_coord_index].tile_x;
+                    tile_y_checking = ship_coords[player_coord_index].tile_y;
+                }
+            } else if(players[client_player_index].coord_id) {
+
+                // return false if the client and server don't agree on the planet coord the client is on
+                if(client_move_coord_id && client_move_coord_id !== players[client_player_index].coord_id) {
+                    console.log("%c Server and client don't agree on the coord the player is on", log_warning);
+
+                    // If it's been this way for a while (testing at 2 seconds), reset the client back to server
+                    let been_this_way_time = our_time - players[client_player_index].move_start_time;
+                    if(been_this_way_time > 2000) {
+                        console.log("Been this way too long. " + been_this_way_time + "ms. Resetting player");
+                        client_move_coord_id = 0;
+                        let return_to_coord_index = coords.findIndex(function(obj) { return obj && obj.id === players[client_player_index].coord_id; });
+                        if(return_to_coord_index !== -1) {
+                            let return_x = coords[return_to_coord_index].tile_x * tile_size + tile_size / 2;
+                            let return_y = coords[return_to_coord_index].tile_y * tile_size + tile_size / 2;
+                            movePlayerInstant(client_player_index, return_x, return_y);
+                        }
+
+                    }
+                    return false;
+                }
+
+                player_coord_index = coords.findIndex(function(obj) { return obj && obj.id === players[client_player_index].coord_id; });
+                if(player_coord_index !== -1) {
+                    tile_x_checking = coords[player_coord_index].tile_x;
+                    tile_y_checking = coords[player_coord_index].tile_y;
+                }
+            } else if(players[client_player_index].planet_coord_id) {
+
+                // return false if the client and server don't agree on the planet coord the client is on
+                if(client_move_planet_coord_id && client_move_planet_coord_id !== players[client_player_index].planet_coord_id) {
+                    console.log("%c Server and client don't agree on the planet coord the player is on", log_warning);
+
+                    // If it's been this way for a while (testing at 2 seconds), reset the client back to server
+                    let been_this_way_time = our_time - players[client_player_index].move_start_time;
+                    if(been_this_way_time > 2000) {
+                        console.log("Been this way too long. " + been_this_way_time + "ms. Resetting player");
+                        client_move_planet_coord_id = 0;
+                        let return_to_planet_coord_index = planet_coords.findIndex(function(obj) { return obj && obj.id === players[client_player_index].planet_coord_id; });
+                        if(return_to_planet_coord_index !== -1) {
+                            let return_x = planet_coords[return_to_planet_coord_index].tile_x * tile_size + tile_size / 2;
+                            let return_y = planet_coords[return_to_planet_coord_index].tile_y * tile_size + tile_size / 2;
+                            movePlayerInstant(client_player_index, return_x, return_y);
+                        }
+
+                    }
+                    return false;
+                }
+
+                player_coord_index = planet_coords.findIndex(function(obj) { return obj && obj.id === players[client_player_index].planet_coord_id; });
+                if(player_coord_index !== -1) {
+                    tile_x_checking = planet_coords[player_coord_index].tile_x;
+                    tile_y_checking = planet_coords[player_coord_index].tile_y;
+                }
+            }
+
+
+            if(upKey.isDown) {
+                movement_direction = 'up';
+                tile_y_checking--;
+                //user_player.player_image.animations.play('up', 2, true);
+            } else if(downKey.isDown) {
+                movement_direction = 'down';
+                tile_y_checking++;
+                //user_player.player_image.animations.play('idle', 2, true);
+            } else if(leftKey.isDown) {
+                movement_direction = 'left';
+                tile_x_checking--;
+                //user_player.player_image.animations.play('left', 2, true);
+            } else if(rightKey.isDown) {
+                movement_direction = 'right';
+                tile_x_checking++;
+                //user_player.player_image.animations.play('right', 2, true);
+            }
+
+            if(players[client_player_index].ship_coord_id) {
+                checking_coord_index = ship_coords.findIndex(function(obj) { return obj && obj.tile_x === tile_x_checking &&
+                    obj.tile_y === tile_y_checking; });
+            } else if(players[client_player_index].coord_id) {
+                checking_coord_index = coords.findIndex(function(obj) { return obj && obj.tile_x === tile_x_checking &&
+                    obj.tile_y === tile_y_checking; });
+            } else if(players[client_player_index].planet_coord_id) {
+                //console.log("Finding planet coord at : " + tile_x_checking + "," + tile_y_checking + "level: " + player_info.coord.level +
+                //    " planet id: " + player_info.coord.planet_id);
+                checking_coord_index = planet_coords.findIndex(function(obj) { return obj && obj.tile_x === tile_x_checking &&
+                    obj.tile_y === tile_y_checking && obj.level === player_info.coord.level && obj.planet_id === player_info.coord.planet_id; });
+            }
+
+
+
+
+        }
+
+
+        /********************* MOBILE ******************************/
+        if(tile_x !== false) {
+            console.log("In mobile part of movePlayer");
+            player_trying_to_move = true;
+            if(players[client_player_index].ship_coord_id) {
+                checking_coord_index = ship_coords.findIndex(function(obj) { return obj && obj.tile_x === tile_x &&
+                    obj.tile_y === tile_y; });
+            } else if(players[client_player_index].coord_id) {
+                checking_coord_index = coords.findIndex(function(obj) { return obj && obj.tile_x === tile_x &&
+                    obj.tile_y === tile_y; });
+            } else if(players[client_player_index].planet_coord_id) {
+                checking_coord_index = planet_coords.findIndex(function(obj) { return obj && obj.tile_x === tile_x &&
+                    obj.tile_y === tile_y; });
+            }
+
+            if(tile_x > player_info.coord.tile_x) {
+                movement_direction = 'right';
+            } else if(tile_x < player_info.coord.tile_x) {
+                movement_direction = 'left';
+            } else if(tile_y > player_info.coord.tile_y) {
+                movement_direction = 'down';
+            } else if(tile_y < player_info.coord.tile_y) {
+                movement_direction = 'up';
+            }
+
+            console.log("Set movement direction to: " + movement_direction);
+            console.log("Player tile_x,tile_y: " + player_info.coord.tile_x + "," + player_info.coord.tile_y);
+        }
+
+        if(!player_trying_to_move) {
+            //console.log("Player is not trying to move");
+            return false;
+        }
+
+        if(checking_coord_index === -1) {
+            //console.log("Could not find coord to check");
+
+            // If our level is > 1 send it anyways - maybe we fall
+            if(players[client_player_index].planet_coord_id && player_info.coord.level > 0) {
+                console.log("Sending anyways to see if we fall");
+
+
+                socket.emit('move_data', { 'movement_direction': movement_direction });
+                last_move_sent = time;
+            }
+            return false;
+        }
+
+
+        let deny_move = false;
+
+
+
+
+        //console.log("Checking coord with x,y: " + tile_x_checking + "," + tile_y_checking);
+
+        // ship_coord_id before coord_id is important since being on our ship is a view - ship is still on a galaxy coord
+        if(players[client_player_index].ship_coord_id) {
+
+            if(ship_coords[checking_coord_index] && ship_coords[checking_coord_index].object_type_id) {
+                let object_type_index = object_types.findIndex(function(obj) { return obj && obj.id === ship_coords[checking_coord_index].object_type_id; });
+
+                if(object_type_index !== -1) {
+                    //console.log("%c Object type id at coord: " + ship_coords[checking_coord_index].object_type_id, log_warning);
+                    if(!object_types[object_type_index].can_walk_on) {
+                        console.log("Denied move because object is there: object_id: " + ship_coords[checking_coord_index].object_id + " object_type_id: " + ship_coords[checking_coord_index].object_type_id);
+                        deny_move = true;
+                    }
+                }
+
+            }
+
+            if(ship_coords[checking_coord_index].player_id) {
+                deny_move = true;
+                console.log("ship coord move denied based on player id: " + ship_coords[checking_coord_index].player_id);
+            }
+        } else if(players[client_player_index].coord_id) {
+
+            if(coords[checking_coord_index] && coords[checking_coord_index].object_type_id) {
+                let object_type_index = object_types.findIndex(function(obj) { return obj && obj.id === coords[checking_coord_index].object_type_id; });
+
+                if(object_type_index !== -1) {
+
+
+                    if(!object_types[object_type_index].can_walk_on && !object_types[object_type_index].is_dockable) {
+                        console.log("Denied move because object is there: object_id: " + coords[checking_coord_index].object_id +
+                            " object_type_id: " + coords[checking_coord_index].object_type_id + " cannot walk on and is not dockable");
+                        deny_move = true;
+                    }
+                }
+
+            }
+
+            if(coords[checking_coord_index].player_id) {
+                deny_move = true;
+                console.log("galaxy move denied based on player id: " + coords[checking_coord_index].player_id);
+            }
+
+
+        } else if(players[client_player_index].planet_coord_id) {
+            //console.log("Move is on planet coord");
+
+            if(planet_coords[checking_coord_index] && planet_coords[checking_coord_index].object_type_id) {
+                let object_type_index = object_types.findIndex(function(obj) { return obj && obj.id === planet_coords[checking_coord_index].object_type_id; });
+
+                if(object_type_index !== -1) {
+                    if(!object_types[object_type_index].can_walk_on) {
+                        console.log("Denied move because object is there: object_id: " + planet_coords[checking_coord_index].object_id + " object_type_id: " + planet_coords[checking_coord_index].object_type_id);
+                        deny_move = true;
+                    }
+                }
+            }
+
+            if(planet_coords[checking_coord_index].monster_id) {
+                deny_move = true;
+                //console.log("%c Move denied based on monster (planet coord monster id)", log_warning);
+            }
+
+            // The above isn't seeming to work well. Lets also check out monsters and see if a monster has this planet coord
+            let active_monsters = monsters.filter(n => n);
+            for(let monster of active_monsters) {
+                if(monster.planet_coord_id === planet_coords[checking_coord_index].id) {
+                    deny_move = true;
+                    //console.log("%c Move denied based on monster (monster's planet coord id)", log_warning);
+                }
+            }
+
+
+            if(planet_coords[checking_coord_index].npc_id) {
+                deny_move = true;
+                console.log("Move denied based on npc");
+            }
+
+            if(planet_coords[checking_coord_index].player_id) {
+                deny_move = true;
+                console.log("Move denied based on player");
+            }
+        }
+
+        if(deny_move) {
+            //console.log("Move was denied");
+            return false;
+        }
+
+        if(movement_direction === false) {
+            console.log("Movement direction was false");
+            return false;
+        }
+
+
+        // AND START THE MOVE!
+        if(players[client_player_index].ship_coord_id) {
+            movePlayerFlow(client_player_index, 'ship', ship_coords[checking_coord_index], 'movePlayer');
+        } else if(players[client_player_index].planet_coord_id) {
+            movePlayerFlow(client_player_index, 'planet', planet_coords[checking_coord_index], 'movePlayer');
+        } else if(players[client_player_index].coord_id) {
+            movePlayerFlow(client_player_index, 'galaxy', coords[checking_coord_index], 'movePlayer');
+        }
+
+
+
+        /*
+        if(player_is_moving) {
+
+            //user_player.player_image.animations.play('idle',2, true);
+
+            if(moving_direction == 'up') {
+                user_player.player_image.y--;
+            } else if(moving_direction == 'down') {
+                user_player.player_image.y++;
+            } else if(moving_direction == 'left') {
+                user_player.player_image.x--;
+            } else if(moving_direction == 'right') {
+                user_player.player_image.x++;
+            }
+
+            updateHealthDisplay(user_player);
+
+            total_moved++;
+
+            if(total_moved >= tile_size) {
+                player_is_moving = false;
+                total_moved = 0;
+                console.log("Player is done moving");
+            }
+        }
+        */
+    }
+
+    function moveMonsterInstant(monster_index, to_coord) {
+
+        if(!monsters[monster_index].sprite) {
+            createMonsterSprite(monster_index);
+        }
+
+        let destination_x = to_coord.tile_x * tile_size + tile_size / 2 + monsters[monster_index].sprite_x_offset;
+        let destination_y = to_coord.tile_y * tile_size + tile_size / 2 + monsters[monster_index].sprite_y_offset;
+
+        monsters[monster_index].sprite.x = destination_x;
+        monsters[monster_index].sprite.y = destination_y;
+
+        monsters[monster_index].destination_x = false;
+        monsters[monster_index].destination_y = false;
+
+        console.log("moveMonsterInstant monster id: " + monsters[monster_index].id + " to tile_x,tile_y: " + to_coord.tile_x + "," + to_coord.tile_y);
+
+    }
+
+    function moveMonsterFlow(monster_index, to_coord) {
+        if(!monsters[monster_index].sprite) {
+            createMonsterSprite(monster_index);
+        }
+
+        let destination_x = to_coord.tile_x * tile_size + tile_size / 2 + monsters[monster_index].sprite_x_offset;
+        let destination_y = to_coord.tile_y * tile_size + tile_size / 2 + monsters[monster_index].sprite_y_offset;
+
+        // If the monster's sprite is far away from the destination coord, we should just warp the monster there instead
+        if(Math.abs(monsters[monster_index].sprite.x - destination_x) > 100 ||
+            Math.abs(monsters[monster_index].sprite.y - destination_y) > 100) {
+
+            monsters[monster_index].destination_x = false;
+            monsters[monster_index].destination_y = false;
+            monsters[monster_index].sprite.x = destination_x;
+            monsters[monster_index].sprite.y = destination_y;
+            return;
+        }
+
+        monsters[monster_index].destination_x = destination_x;
+        monsters[monster_index].destination_y = destination_y;
+
+    }
+
+    function moveNpcFlow(npc_index, to_coord) {
+        console.log("In moveNpcFlow");
+        if(!npcs[npc_index].sprite) {
+            createNpcSprite(npc_index);
+        }
+
+        npcs[npc_index].destination_x = to_coord.tile_x * tile_size + tile_size / 2 + npcs[npc_index].sprite_x_offset;
+        npcs[npc_index].destination_y = to_coord.tile_y * tile_size + tile_size / 2 + npcs[npc_index].sprite_y_offset;
+    }
+
+
+    function moveNpcs() {
+        let moving_npcs = npcs.filter(npc => npc.destination_x || npc.destination_y);
+
+        if(moving_npcs.length) {
+            moving_npcs.forEach(function(npc) {
+
+                if(!npc.sprite) {
+                    return false;
+                }
+
+                // E.g. 1000 / 500 * 1 = 2 (default) or 1000/500 * .5 = 1 (water)
+                let npc_move_speed = 2;
+
+                if(npc.sprite.x < npc.destination_x) {
+
+                    if(npc.sprite.x + npc_move_speed > npc.destination_x) {
+                        npc.sprite.x = npc.destination_x;
+
+                    } else {
+                        npc.sprite.x += npc_move_speed;
+                    }
+
+                } else if(npc.sprite.x > npc.destination_x) {
+
+                    if(npc.sprite.x - npc_move_speed < npc.destination_x) {
+                        npc.sprite.x = npc.destination_x;
+                    } else {
+                        npc.sprite.x -= npc_move_speed;
+                    }
+
+
+                } else if(npc.sprite.y < npc.destination_y) {
+
+                    if(npc.sprite.y + npc_move_speed > npc.destination_y) {
+                        npc.sprite.y = npc.destination_y;
+                    } else {
+                        npc.sprite.y += npc_move_speed;
+
+                        // npc sprite is lagging behind (FRAME RATE!!). Extra pixel!
+                        if(npc.destination_y - npc.sprite.y > 100) {
+                            console.log("Increasing speed to cach up!");
+                            npc.sprite.y += 1;
+                        }
+                    }
+
+
+                } else if(npc.sprite.y > npc.destination_y) {
+
+                    if(npc.sprite.y - npc_move_speed < npc.destination_y) {
+                        npc.sprite.y = npc.destination_y;
+                    } else {
+                        npc.sprite.y -= npc_move_speed;
+
+                        let y_difference = npc.sprite.y - npc.destination_y;
+                        //console.log("Y difference: " + y_difference);
+                        // npc sprite is lagging behind (FRAME RATE!!). Extra pixel!
+                        if(npc.sprite.y - npc.destination_y > 100) {
+                            console.log("Increasing speed to catch up!");
+                            npc.sprite.y -= 1;
+                        }
+                    }
+
+                }
+                if(npc.sprite.y === npc.destination_y && npc.sprite.x === npc.destination_x) {
+                    npc.destination_x = false;
+                    npc.destination_y = false;
+                }
+
+
+            });
+
+            redrawBars();
+        }
+    }
+
+
+    // This function can move MORE THAN JUST THE CLIENT PLAYER!
+    function movePlayerFlow(player_index, destination_coord_type, destination_coord, source = false) {
+
+        if(typeof destination_coord === 'undefined') {
+            return false;
+        }
+
+        if(source === false) {
+            //console.log("In movePlayerFlow. No source");
+        } else {
+            //console.log("In movePlayerFlow. Source: " + source);
+        }
+
+        if(!players[player_index].sprite) {
+            createPlayerSprite(player_index);
+        }
+
+        // If the player is already moving, lets ignore this
+        if(players[player_index].destination_x) {
+            return false;
+        }
+
+        players[player_index].move_start_time = our_time;
+        players[player_index].move_pixel_amount = 0;
+        players[player_index].frames_to_idle = 0;
+
+        // Some extra things if we are moving our client player
+        if(client_player_index !== -1 && player_index === client_player_index) {
+
+            socket.emit('move_data', { 'destination_coord_type': destination_coord_type, 'destination_coord_id': destination_coord.id });
+            last_move_sent = our_time;
+
+            // Reset the # of pixels
+            client_move_pixel_amount = 0;
+            client_move_start_time = our_time;
+            if(destination_coord_type === 'planet') {
+                client_move_planet_coord_id = destination_coord.id;
+            } else if(destination_coord_type == 'ship') {
+                client_move_ship_coord_id = destination_coord.id;
+            } else if(destination_coord_type === 'galaxy') {
+                client_move_coord_id = destination_coord.id;
+            }
+            frames_to_idle = 0;
+        }
+
+
+        // If the moving player already has a destination, we nee to queue the new destination up
+        /*
+        if(players[player_index].destination_x || players[player_index].destination_y) {
+            //console.log("Player is already moving. Destination: " + players[player_index].destination_x + "," + players[player_index].destination_y);
+
+            let existing_next_move_index = next_moves.findIndex(function(obj) { return obj &&
+                obj.player_id === players[player_index].id && obj.destination_coord.id === to_coord.id });
+
+            if(existing_next_move_index === -1) {
+                //console.log("Pushed to next moves");
+                next_moves.push({ 'player_id': players[player_index].id, 'destination_coord': to_coord });
+            }
+
+            return;
+        }*/
+
+
+
+
+        players[player_index].destination_x = destination_coord.tile_x * tile_size + tile_size / 2 + players[player_index].sprite_x_offset;
+        players[player_index].destination_y = destination_coord.tile_y * tile_size + tile_size / 2 + players[player_index].sprite_y_offset;
+        players[player_index].destination_coord_id = destination_coord.id;
+
+
+        //console.log("Set destination x,y to: " + players[player_index].destination_x + "," + players[player_index].destination_y);
+
+        // If the destination x/y is really far from the current x/y, we need to just pop the player there
+        if(players[player_index].sprite && (Math.abs(players[player_index].destination_x - players[player_index].sprite.x) > 200 ||
+            Math.abs(players[player_index].destination_y - players[player_index].sprite.y) > 200)) {
+            console.log("Player is too far away. Insta moving");
+            movePlayerInstant(player_index, players[player_index].destination_x, players[player_index].destination_y);
+        }
+
+        if(players[player_index].sprite) {
+
+            /***************** CARGO SHIP ******************/
+            if(players[player_index].sprite.texture.key === 'player-cargo-ship') {
+
+                // LEFT !
+                if(players[player_index].destination_x < players[player_index].sprite.x) {
+
+                    if(players[player_index].sprite.anims.getCurrentKey() !== 'player-cargo-ship-left-animation') {
+                        players[player_index].sprite.anims.play('player-cargo-ship-left-animation');
+                    }
+
+                }
+                // RIGHT!
+                else if(players[player_index].destination_x > players[player_index].sprite.x) {
+                    if(players[player_index].sprite.anims.getCurrentKey() !== 'player-cargo-ship-right-animation') {
+                        players[player_index].sprite.anims.play('player-cargo-ship-right-animation');
+                    }
+
+
+                }
+                // UP!
+                else if(players[player_index].destination_y < players[player_index].sprite.y) {
+                    if(players[player_index].sprite.anims.getCurrentKey() !== 'player-cargo-ship-up-animation') {
+                        players[player_index].sprite.anims.play('player-cargo-ship-up-animation');
+                    }
+                }
+                // DOWN!
+                else if(players[player_index].destination_y > players[player_index].sprite.y) {
+                    if(players[player_index].sprite.anims.getCurrentKey() !== 'player-cargo-ship-down-animation') {
+                        players[player_index].sprite.anims.play('player-cargo-ship-down-animation');
+                    }
+                }
+            }
+            /********** CUTTER ************/
+            else if(players[player_index].sprite.texture.key === 'player-cutter') {
+                // LEFT !
+                if(players[player_index].destination_x < players[player_index].sprite.x) {
+
+                    if(players[player_index].sprite.anims.getCurrentKey() !== 'player-cutter-left-animation') {
+                        players[player_index].sprite.anims.play('player-cutter-left-animation');
+                    }
+
+                }
+                // RIGHT!
+                else if(players[player_index].destination_x > players[player_index].sprite.x) {
+                    if(players[player_index].sprite.anims.getCurrentKey() !== 'player-cutter-right-animation') {
+                        players[player_index].sprite.anims.play('player-cutter-right-animation');
+                    }
+
+
+                }
+                // UP!
+                else if(players[player_index].destination_y < players[player_index].sprite.y) {
+                    if(players[player_index].sprite.anims.getCurrentKey() !== 'player-cutter-up-animation') {
+                        players[player_index].sprite.anims.play('player-cutter-up-animation');
+                    }
+                }
+                // DOWN!
+                else if(players[player_index].destination_y > players[player_index].sprite.y) {
+                    if(players[player_index].sprite.anims.getCurrentKey() !== 'player-cutter-down-animation') {
+                        players[player_index].sprite.anims.play('player-cutter-down-animation');
+                    }
+                }
+            }
+            /********** HUMAN *************/
+            else if(players[player_index].sprite.texture.key === 'player-human') {
+
+                // LEFT !
+                if(players[player_index].destination_x < players[player_index].sprite.x) {
+
+                    if(players[player_index].sprite.anims.getCurrentKey() !== 'player-human-left-animation') {
+                        players[player_index].sprite.anims.play('player-human-left-animation');
+                        console.log(players[player_index].sprite.anims.getCurrentKey());
+                    }
+
+                }
+                // RIGHT!
+                else if(players[player_index].destination_x > players[player_index].sprite.x) {
+                    if(players[player_index].sprite.anims.getCurrentKey() !== 'player-human-right-animation') {
+                        players[player_index].sprite.anims.play('player-human-right-animation');
+                    }
+
+                }
+                // UP!
+                else if(players[player_index].destination_y < players[player_index].sprite.y) {
+                    if(players[player_index].sprite.anims.getCurrentKey() !== 'player-human-up-animation') {
+                        players[player_index].sprite.anims.play('player-human-up-animation');
+                    }
+                }
+                // DOWN!
+                else if(players[player_index].destination_y > players[player_index].sprite.y) {
+                    if(players[player_index].sprite.anims.getCurrentKey() !== 'player-human-down-animation') {
+                        players[player_index].sprite.anims.play('player-human-down-animation');
+                    }
+                }
+            }
+            /************ MINING SHIP *******************/
+            else if(players[player_index].sprite.texture.key === 'player-mining-ship') {
+
+                // LEFT !
+                if(players[player_index].destination_x < players[player_index].sprite.x) {
+
+                    if(players[player_index].sprite.anims.getCurrentKey() !== 'player-mining-ship-left-animation') {
+                        players[player_index].sprite.anims.play('player-mining-ship-left-animation');
+                    }
+
+                }
+                // RIGHT!
+                else if(players[player_index].destination_x > players[player_index].sprite.x) {
+                    if(players[player_index].sprite.anims.getCurrentKey() !== 'player-mining-ship-right-animation') {
+                        players[player_index].sprite.anims.play('player-mining-ship-right-animation');
+                    }
+
+
+                }
+                // UP!
+                else if(players[player_index].destination_y < players[player_index].sprite.y) {
+                    if(players[player_index].sprite.anims.getCurrentKey() !== 'player-mining-ship-up-animation') {
+                        players[player_index].sprite.anims.play('player-mining-ship-up-animation');
+                    }
+                }
+                // DOWN!
+                else if(players[player_index].destination_y > players[player_index].sprite.y) {
+                    if(players[player_index].sprite.anims.getCurrentKey() !== 'player-mining-ship-down-animation') {
+                        players[player_index].sprite.anims.play('player-mining-ship-down-animation');
+                    }
+                }
+            }
+
+            /********** MLM *************/
+            else if(players[player_index].sprite.texture.key === 'player-mlm') {
+
+                // LEFT !
+                if(players[player_index].destination_x < players[player_index].sprite.x) {
+
+                    if(players[player_index].sprite.anims.getCurrentKey() !== 'player-mlm-left-animation') {
+                        players[player_index].sprite.anims.play('player-mlm-left-animation');
+                    }
+
+                }
+                // RIGHT!
+                else if(players[player_index].destination_x > players[player_index].sprite.x) {
+                    if(players[player_index].sprite.anims.getCurrentKey() !== 'player-mlm-right-animation') {
+                        players[player_index].sprite.anims.play('player-mlm-right-animation');
+                    }
+
+
+                }
+                // UP!
+                else if(players[player_index].destination_y < players[player_index].sprite.y) {
+                    if(players[player_index].sprite.anims.getCurrentKey() !== 'player-mlm-up-animation') {
+                        players[player_index].sprite.anims.play('player-mlm-up-animation');
+                    }
+                }
+                // DOWN!
+                else if(players[player_index].destination_y > players[player_index].sprite.y) {
+                    if(players[player_index].sprite.anims.getCurrentKey() !== 'player-mlm-down-animation') {
+                        players[player_index].sprite.anims.play('player-mlm-down-animation');
+                    }
+                }
+            }
+            /***************************** RUEL *******************************/
+            else if(players[player_index].sprite.texture.key === 'player-ruel') {
+
+                // LEFT !
+                if(players[player_index].destination_x < players[player_index].sprite.x) {
+
+                    if(players[player_index].sprite.anims.getCurrentKey() !== 'player-ruel-left-animation') {
+                        players[player_index].sprite.anims.play('player-ruel-left-animation');
+                    }
+
+                }
+                // RIGHT!
+                else if(players[player_index].destination_x > players[player_index].sprite.x) {
+                    if(players[player_index].sprite.anims.getCurrentKey() !== 'player-ruel-right-animation') {
+                        players[player_index].sprite.anims.play('player-ruel-right-animation');
+                    }
+
+
+                }
+                // UP!
+                else if(players[player_index].destination_y < players[player_index].sprite.y) {
+                    if(players[player_index].sprite.anims.getCurrentKey() !== 'player-ruel-up-animation') {
+                        players[player_index].sprite.anims.play('player-ruel-up-animation');
+                    }
+                }
+                // DOWN!
+                else if(players[player_index].destination_y > players[player_index].sprite.y) {
+                    if(players[player_index].sprite.anims.getCurrentKey() !== 'player-ruel-down-animation') {
+                        players[player_index].sprite.anims.play('player-ruel-down-animation');
+                    }
+                }
+            }
+            /**************** SHUTTLE ***************************/
+            else if(players[player_index].sprite.texture.key === 'player-shuttle') {
+
+                // LEFT !
+                if(players[player_index].destination_x < players[player_index].sprite.x) {
+
+                    if(players[player_index].sprite.anims.getCurrentKey() !== 'player-shuttle-left-animation') {
+                        players[player_index].sprite.anims.play('player-shuttle-left-animation');
+                    }
+
+                }
+                // RIGHT!
+                else if(players[player_index].destination_x > players[player_index].sprite.x) {
+                    if(players[player_index].sprite.anims.getCurrentKey() !== 'player-shuttle-right-animation') {
+                        players[player_index].sprite.anims.play('player-shuttle-right-animation');
+                    }
+
+
+                }
+                // UP!
+                else if(players[player_index].destination_y < players[player_index].sprite.y) {
+                    if(players[player_index].sprite.anims.getCurrentKey() !== 'player-shuttle-up-animation') {
+                        players[player_index].sprite.anims.play('player-shuttle-up-animation');
+                    }
+                }
+                // DOWN!
+                else if(players[player_index].destination_y > players[player_index].sprite.y) {
+                    if(players[player_index].sprite.anims.getCurrentKey() !== 'player-shuttle-down-animation') {
+                        players[player_index].sprite.anims.play('player-shuttle-down-animation');
+                    }
+                }
+
+            }
+            else {
+                // by default we flip sprites, unless the player has a movement_display set
+                if(players[player_index].movement_display && players[player_index].movement_display === 'rotate') {
+
+                    if(players[player_index].destination_x < players[player_index].sprite.x) {
+
+                        //console.log("Set angle to -90");
+                        players[player_index].sprite.angle = -90;
+                    } else if(players[player_index].destination_x > players[player_index].sprite.x) {
+                        players[player_index].sprite.angle = 90;
+                        //console.log("Set angle to 90");
+                    } else if(players[player_index].destination_y > players[player_index].sprite.y) {
+                        players[player_index].sprite.angle = 180;
+                        //console.log("Set angle to 180");
+                    } else if(players[player_index].destination_y < players[player_index].sprite.y) {
+                        players[player_index].sprite.angle = 0;
+                        //console.log("Set angle to 0");
+                    }
+
+                } else {
+                    if(players[player_index].destination_x < players[player_index].sprite.x && !players[player_index].sprite.flipX) {
+                        //console.log("X flipping player sprite");
+                        players[player_index].sprite.flipX = true;
+                    } else if(players[player_index].destination_x > players[player_index].sprite.x && players[player_index].sprite.flipX) {
+                        players[player_index].sprite.flipX = false;
+                    }
+                }
+
+
+            }
+
+
+
+
+
+        }
+
+
+
+    }
+
+    function movePlayerInstant(player_index, x, y) {
+
+        players[player_index].destination_x = false;
+        players[player_index].destination_y = false;
+
+        // if the moving player doesn't have a sprite, we add the sprite
+        if(!players[player_index].sprite) {
+            createPlayerSprite(player_index);
+        }
+
+        if(!players[player_index].sprite) {
+            return false;
+        }
+
+        players[player_index].sprite.x = x + players[player_index].sprite_x_offset;
+        players[player_index].sprite.y = y + players[player_index].sprite_y_offset;
+
+        if(players[player_index].id === client_player_id) {
+            //console.log("function movePlayerInstant centering camera at tile_x,tile_y: " + tile_x + "," + tile_y);
+            camera.startFollow(players[player_index].sprite);
+            //camera.centerOn(x, y);
+        }
+
+        //console.log("Moved player sprite to: " + x + "," + y);
+
+        /*
+        // Don't advance the animation, just pop the player to where we are saying!
+        let animation_index = animations.findIndex(function(obj) { return obj && obj.player_id === moving_player.id; });
+        if(animation_index !== -1) {
+            let player_object_type_index = getPlayerObjectTypeIndex(moving_player);
+            if(player_object_type_index !== -1) {
+                let drawing_game_index = object_types[player_object_type_index].game_file_index + (animations[animation_index].current_frame - 1);
+                let tile_x = pixelToTileX(x);
+                let tile_y = pixelToTileY(y);
+                //console.log("Drawing player at " + tile_x + "," + tile_y + " in movePlayerInstant");
+
+                // We are trying different combinations of moving/centering the camera to try and fix visual glitches
+                if(moving_player.id === player_id) {
+                    //console.log("function movePlayerInstant centering camera at tile_x,tile_y: " + tile_x + "," + tile_y);
+                    camera.centerOn(tileToPixel(tile_x), tileToPixel(tile_y));
+                }
+                map.putTileAt(drawing_game_index, tile_x, tile_y, false, 'layer_being');
+
+
+
+            }
+
+
+        }
+        */
+
+        redrawBars();
+        return;
+
+
+    }
+
+    function pixelToTileX(pixel_number) {
+        return Math.floor(pixel_number / tile_size);
+    }
+
+    function pixelToTileY(pixel_number) {
+        return Math.floor(pixel_number / tile_size);
+        //return Math.floor(pixel_number / (tile_size * 2) );
+    }
+
+
+    function redrawBars() {
+
+        //console.log("Redrawing bars");
+
+        graphics.clear();
+        graphics.depth = 3;
+
+        // we get our player 
+        let our_player_index = players.findIndex(function(obj) { return obj && obj.id === player_id; });
+        if(our_player_index === -1) {
+            return false;
+        }
+
+        let our_player_info = getPlayerInfo(our_player_index);
+
+        // ASSEMBLIES
+
+        active_assemblies.forEach(function(active_assembly, i) {
+            //console.log("In redrawBars for assemblies. Current tick count: " + active_assembly.current_tick_count);
+
+            let object_type_index = object_types.findIndex(function(obj) { return obj && obj.id === active_assembly.being_assembled_object_type_id; });
+            let percent_complete = 1;
+            //console.log("Total assembly time: " + object_types[object_type_index].assembly_time);
+
+            if(active_assembly.current_tick_count >= 1) {
+                percent_complete = active_assembly.current_tick_count / object_types[object_type_index].assembly_time * 100;
+            }
+
+            graphics.fillStyle(0x4286f4);
+
+            let hp_bar_length = 64 * percent_complete / 100;
+            //console.log("This assembly percent: " + hp_bar_length);
+
+            // lets find our assembler object id's location on the map to show the bar
+            let object_index = objects.findIndex(function(obj) { return obj && obj.id === active_assembly.assembler_object_id; });
+
+            if(object_index === -1) {
+                return false;
+            }
+
+            let object_info = getObjectInfo(object_index);
+
+            if(object_info.coord === false) {
+                return false;
+            }
+
+            if(!shouldDraw(our_player_info.coord, object_info.coord, 'redrawBars - assemblies')) {
+                return false;
+            }
+
+
+            let rect_x = tileToPixel(object_info.coord.tile_x);
+            let rect_y = tileToPixel(object_info.coord.tile_y);
+
+
+            //console.log("Drawing bar at: " + rect_x + "," + rect_y);
+            //console.log("Player is at: " + user_player.x + ", " + user_player.y);
+            let rect = new Phaser.Geom.Rectangle(rect_x, rect_y, hp_bar_length, 8);
+            rect.depth = 3;
+            graphics.fillRectShape(rect);
+            graphics.depth = 3;
+
+
+        });
+
+
+        // BATTLE LINKERS
+        battle_linkers.forEach(function(battle_linker, i) {
+            //console.log("Looking to draw box for battle linker attacking_type: " + battle_linker.attacking_type + " being_attacked_type: " + battle_linker.being_attacked_type);
+
+            // TODO NPCS!!!!!
+
+            // YELLOWS BEFORE REDS
+
+            // A monster is attacking us
+            if(battle_linker.being_attacked_type === 'player' && battle_linker.being_attacked_id === player_id && battle_linker.attacking_type === 'monster') {
+
+                // yellow on us
+                let player_index = players.findIndex(function(obj) { return obj && obj.id === battle_linker.being_attacked_id; });
+                if(player_index !== -1) {
+                    let player_info = getPlayerInfo(player_index);
+                    if(player_info.coord) {
+                        graphics.lineStyle(1, 0xffff00, 1);
+                        graphics.strokeRect(tileToPixel(player_info.coord.tile_x), tileToPixel(player_info.coord.tile_y), 64,64);
+                    }
+                }
+
+                // yellow on the monster
+                let monster_index = monsters.findIndex(function(obj) { return obj && obj.id === battle_linker.attacking_id; });
+                if(monster_index !== -1) {
+                    let monster_info = getMonsterInfo(monster_index);
+                    if(monster_info.coord) {
+                        graphics.lineStyle(1, 0xffff00, 1);
+                        graphics.strokeRect(tileToPixel(monster_info.coord.tile_x), tileToPixel(monster_info.coord.tile_y), 64,64);
+                    }
+                }
+            }
+
+            // An object is attacking us
+            if(battle_linker.being_attacked_type === 'player' && battle_linker.being_attacked_id === player_id && battle_linker.attacking_type === 'object') {
+
+                // yellow on us
+                let player_index = players.findIndex(function(obj) { return obj && obj.id === battle_linker.being_attacked_id; });
+                if(player_index !== -1) {
+                    let player_info = getPlayerInfo(player_index);
+                    if(player_info.coord) {
+                        graphics.lineStyle(1, 0xffff00, 1);
+                        graphics.strokeRect(tileToPixel(player_info.coord.tile_x), tileToPixel(player_info.coord.tile_y), 64,64);
+                    }
+                }
+
+                // yellow on the object
+                let object_index = objects.findIndex(function(obj) { return obj && obj.id === battle_linker.attacking_id; });
+                if(object_index !== -1) {
+                    let object_info = getObjectInfo(object_index);
+                    if(object_info.coord) {
+                        graphics.lineStyle(1, 0xffff00, 1);
+                        graphics.strokeRect(tileToPixel(object_info.coord.tile_x), tileToPixel(object_info.coord.tile_y), 64,64);
+                    }
+                }
+            }
+
+            // We draw object v object if either of the objects are associated with us
+            if(battle_linker.attacking_type === 'object' && battle_linker.being_attacked_type === 'object') {
+
+                let being_attacked_object_index = objects.findIndex(function(obj) { return obj && obj.id === battle_linker.being_attacked_id; });
+                let attacking_object_index = objects.findIndex(function(obj) { return obj && obj.id === battle_linker.attacking_id; });
+
+                if(being_attacked_object_index !== -1 && attacking_object_index !== -1) {
+                    // At least one of the objects is associated with us
+                    if(objects[being_attacked_object_index].player_id === player_id || objects[attacking_object_index].player_id === player_id) {
+
+                        let attacking_object_info = getObjectInfo(attacking_object_index);
+                        if(attacking_object_info.coord) {
+                            graphics.lineStyle(1, 0xffff00, 1);
+                            graphics.strokeRect(tileToPixel(attacking_object_info.coord.tile_x), tileToPixel(attacking_object_info.coord.tile_y), 64,64);
+                        }
+
+                        let being_attacked_object_info = getObjectInfo(being_attacked_object_index);
+                        if(being_attacked_object_info.coord) {
+                            graphics.lineStyle(1, 0xffff00, 1);
+                            graphics.strokeRect(tileToPixel(being_attacked_object_info.coord.tile_x), tileToPixel(being_attacked_object_info.coord.tile_y), 64,64);
+                        }
+
+                    }
+                }
+
+            }
+
+            // A player is attacking us
+            if(battle_linker.being_attacked_type === 'player' && battle_linker.being_attacked_id === player_id && battle_linker.attacking_type === 'player') {
+
+                // yellow on us
+                let player_index = players.findIndex(function(obj) { return obj && obj.id === battle_linker.being_attacked_id; });
+                if(player_index !== -1) {
+                    let player_info = getPlayerInfo(player_index);
+                    if(player_info.coord) {
+                        graphics.lineStyle(1, 0xffff00, 1);
+                        graphics.strokeRect(tileToPixel(player_info.coord.tile_x), tileToPixel(player_info.coord.tile_y), 64,64);
+                    }
+                }
+
+                // yellow on the player attacking us
+                let attacking_player_index = players.findIndex(function(obj) { return obj && obj.id === battle_linker.attacking_id; });
+                if(attacking_player_index !== -1) {
+                    let attacking_player_info = getPlayerInfo(attacking_player_index);
+                    if(attacking_player_info.coord) {
+                        graphics.lineStyle(1, 0xffff00, 1);
+                        graphics.strokeRect(tileToPixel(attacking_player_info.coord.tile_x), tileToPixel(attacking_player_info.coord.tile_y), 64,64);
+                    }
+                }
+            }
+
+            // We are attacking a monster
+            if(battle_linker.being_attacked_type === 'monster' && battle_linker.attacking_type === 'player' && battle_linker.attacking_id === player_id) {
+                let monster_index = monsters.findIndex(function(obj) { return obj && obj.id === battle_linker.being_attacked_id; });
+
+                if(monster_index === -1) {
+                    return false;
+                }
+
+                let monster_info = getMonsterInfo(monster_index);
+                if(monster_info.coord === false) {
+                    return false;
+                }
+
+                graphics.lineStyle(2, 0xf44242, 1);
+                graphics.strokeRect(tileToPixel(monster_info.coord.tile_x), tileToPixel(monster_info.coord.tile_y), 64,64);
+            }
+
+            // We are attacking a npc
+            if(battle_linker.being_attacked_type === 'npc' && battle_linker.attacking_type === 'player' && battle_linker.attacking_id === player_id) {
+                let npc_index = npcs.findIndex(function(obj) { return obj && obj.id === battle_linker.being_attacked_id; });
+
+                if(npc_index === -1) {
+                    return false;
+                }
+
+                let npc_info = getNpcInfo(npc_index);
+                if(npc_info.coord === false) {
+                    return false;
+                }
+
+                graphics.lineStyle(2, 0xf44242, 1);
+                graphics.strokeRect(tileToPixel(npc_info.coord.tile_x), tileToPixel(npc_info.coord.tile_y), 64,64);
+            }
+
+
+            // We are attacking an object
+            if(battle_linker.being_attacked_type === 'object'  && battle_linker.attacking_type === 'player' && battle_linker.attacking_id === player_id) {
+
+                let object_index = objects.findIndex(function(obj) { return obj && obj.id === battle_linker.being_attacked_id; });
+
+                if(object_index === -1) {
+                    return false;
+                }
+
+                let object_info = getObjectInfo(object_index);
+                if(object_info.coord === false) {
+                    return false;
+                }
+
+                graphics.lineStyle(2, 0xf44242, 1);
+                graphics.strokeRect(tileToPixel(object_info.coord.tile_x), tileToPixel(object_info.coord.tile_y), 64,64);
+
+            }
+
+            // We are attacking a player
+            if(battle_linker.being_attacked_type === 'player'  && battle_linker.attacking_type === 'player' && battle_linker.attacking_id === player_id) {
+
+                let player_index = players.findIndex(function(obj) { return obj && obj.id === battle_linker.being_attacked_id; });
+
+                if(player_index === -1) {
+                    return false;
+                }
+
+                let player_info = getPlayerInfo(player_index);
+                if(player_info.coord === false) {
+                    return false;
+                }
+
+                graphics.lineStyle(2, 0xf44242, 1);
+                graphics.strokeRect(tileToPixel(player_info.coord.tile_x), tileToPixel(player_info.coord.tile_y), 64,64);
+
+            }
+
+        });
+
+
+        // MINING LINKERS
+        mining_linkers.forEach(function(mining_linker, i) {
+            //console.log("In redrawBars. Have mining linker");
+
+            let object_index = objects.findIndex(function(obj) { return obj && obj.id === mining_linker.object_id; });
+
+            if(object_index !== -1) {
+                let coord_index = coords.findIndex(function(obj) { return obj && obj.id === objects[object_index].coord_id; });
+                if(coord_index !== -1) {
+                    //console.log("Found object planet coord");
+                    graphics.lineStyle(2, 0xffff00, 1);
+                    graphics.strokeRect(tileToPixel(coords[coord_index].tile_x), tileToPixel(coords[coord_index].tile_y), 64,64);
+                }
+            }
+
+        });
+
+
+        // MONSTERS
+        monsters.forEach(function(monster, i) {
+            let monster_type_index = monster_types.findIndex(function(obj) { return obj && obj.id === monster.monster_type_id; });
+
+            if(monster_type_index === -1) {
+                return false;
+            }
+
+            if(monster.current_hp === monster_types[monster_type_index].hp) {
+                return false;
+            }
+
+            let monster_info = getMonsterInfo(i);
+
+            if(!monster_info.coord) {
+                return false;
+            }
+
+            if(!shouldDraw(our_player_info.coord, monster_info.coord, 'redrawBars - monsters')) {
+                return false;
+            }
+
+            let hp_percent = 1;
+
+            if(monster.current_hp > 1) {
+                hp_percent = monster.current_hp / monster_types[monster_type_index].hp * 100;
+            }
+
+            if (hp_percent < 32) {
+                graphics.fillStyle(0xff0000);
+            }
+            else if (hp_percent < 64) {
+                graphics.fillStyle(0xffff00);
+            }
+            else {
+                graphics.fillStyle(0x00ff00);
+            }
+
+            let hp_bar_length = 64 * hp_percent / 100;
+
+            //console.log("Hp percent: " + hp_percent + " hp bar length: " + hp_bar_length);
+
+            let rect = new Phaser.Geom.Rectangle(tileToPixel(monster_info.coord.tile_x), tileToPixel(monster_info.coord.tile_y), hp_bar_length, 8);
+            graphics.fillRectShape(rect);
+
+        });
+
+
+
+
+        // NPCS
+        for(let i = 0; i < npcs.length; i++) {
+
+            if(npcs[i] && npcs[i].current_hp !== npcs[i].max_hp) {
+
+                let npc_info = getNpcInfo(i);
+
+                if(npc_info.coord) {
+                    // lets determine the color and the size of the hp bar
+                    if(npcs[i].current_hp >= 1) {
+                        npcs[i].hp_percent = npcs[i].current_hp / npcs[i].max_hp * 100;
+                    } else {
+                        npcs[i].hp_percent = 1;
+                    }
+
+                    //console.log("Got map coord HP percent as: " + map_coords[i].hp_percent);
+
+                    // some simple colour changing to make it look like a health bar
+                    if (npcs[i].hp_percent < 32) {
+                        graphics.fillStyle(0xff0000);
+                    }
+                    else if (npcs[i].hp_percent < 64) {
+                        graphics.fillStyle(0xffff00);
+                    }
+                    else {
+                        graphics.fillStyle(0x00ff00);
+                    }
+
+                    let hp_bar_length = 64 * npcs[i].hp_percent / 100;
+
+                    let drawing_x = tileToPixel(npc_info.coord.tile_x);
+                    let drawing_y = tileToPixel(npc_info.coord.tile_y);
+
+                    let rect = new Phaser.Geom.Rectangle(drawing_x, drawing_y, hp_bar_length, 8);
+                    graphics.fillRectShape(rect);
+                }
+
+
+
+            }
+
+        }
+
+
+        // OBJECTS
+        objects.forEach(function(object, i) {
+
+            // objects currently only have hp . So we have to compare the object hp with the object type hp
+            let object_type_index = object_types.findIndex(function(obj) { return obj && obj.id === object.object_type_id; });
+
+            if(object_type_index === -1) {
+                return false;
+            }
+
+            if(object.current_hp >= object_types[object_type_index].hp) {
+                return false;
+            }
+
+            let object_info = getObjectInfo(i);
+
+            if(object_info.coord === false) {
+                return false;
+            }
+
+            // If the object is a non-dockable ship with a player id, we draw it in players
+            if(object_types[object_type_index].is_ship && !object_types[object_type_index].is_dockable && object.player_id) {
+                return false;
+            }
+
+
+            let drawing_x = object_info.coord.tile_x * tile_size;
+            let drawing_y = object_info.coord.tile_y * tile_size;
+
+
+
+            // lets determine the color and the size of the hp bar
+            if(object.current_hp >= 1) {
+                object.hp_percent = object.current_hp / object_types[object_type_index].hp * 100;
+            } else {
+                object.hp_percent = 1;
+            }
+
+            //console.log("Got map coord HP percent as: " + map_coords[i].hp_percent);
+
+            // some simple colour changing to make it look like a health bar
+            if (object.hp_percent < 32) {
+                graphics.fillStyle(0xff0000);
+            }
+            else if (object.hp_percent < 64) {
+                graphics.fillStyle(0xffff00);
+            }
+            else {
+                graphics.fillStyle(0x00ff00);
+            }
+
+            let hp_bar_length = 64 * object.hp_percent / 100;
+
+            //console.log("Drawing at x,y: " + drawing_x + "," + drawing_y);
+            let rect = new Phaser.Geom.Rectangle(drawing_x, drawing_y, hp_bar_length, 8);
+            graphics.fillRectShape(rect);
+
+
+
+
+
+        });
+
+        // PLAYERS
+        players.forEach(function(player, i) {
+
+            let drawing_x = 0;
+            let drawing_y = 0;
+            let draw_bar = false;
+            let hp_percent = 0;
+
+            if(!player.sprite) {
+                return false;
+            }
+
+            // Ship HP Display
+            if(current_view === 'galaxy') {
+                // get the player's ship
+                let ship_index = objects.findIndex(function(obj) { return obj && obj.id === player.ship_id; });
+
+                if(ship_index === -1) {
+                    return false;
+                }
+
+                let ship_type_index = object_types.findIndex(function(obj) { return obj && obj.id === objects[ship_index].object_type_id; });
+
+                if(ship_type_index === -1) {
+                    return false;
+                }
+
+                //console.log("Found basics");
+
+                if(objects[ship_index].current_hp !== object_types[ship_type_index].hp) {
+                    //console.log("Ship has damage");
+
+                    let coord_index = coords.findIndex(function(obj) { return obj && obj.id === player.coord_id; });
+                    if(coord_index !== -1) {
+                        //console.log("should be drawing bar");
+                        //drawing_x = tileToPixel(coords[coord_index].tile_x);
+                        //drawing_y = tileToPixel(coords[coord_index].tile_y);
+                        draw_bar = true;
+
+                        // lets determine the color and the size of the hp bar
+                        if(objects[ship_index].current_hp >= 1) {
+                            hp_percent = objects[ship_index].current_hp / object_types[ship_type_index].hp * 100;
+                        } else {
+                            hp_percent = 1;
+                        }
+
+                        //console.log("Set hp_percent to: " + hp_percent);
+
+
+                    }
+                }
+            }
+            // The actual player HP :)
+            else {
+                if(player.current_hp === player.max_hp) {
+                    return false;
+                }
+
+                let player_info = getPlayerInfo(i);
+
+                if(player_info.coord === false) {
+                    return false;
+                }
+
+                let should_draw_result = shouldDraw(our_player_info.coord, player_info.coord, 'redrawBars - players');
+
+                if(should_draw_result === false) {
+                    //console.log("shouldDraw for player " + player.id + " " + player.name + " returned false");
+                    //console.log(our_player_info.coord);
+                    //console.log(player_info.coord);
+                    return false;
+                }
+
+                //drawing_x = tileToPixel(player_info.coord.tile_x);
+                //drawing_y = tileToPixel(player_info.coord.tile_y);
+
+
+
+                draw_bar = true;
+                // lets determine the color and the size of the hp bar
+                if(player.current_hp >= 1) {
+                    player.hp_percent = player.current_hp / player.max_hp * 100;
+                } else {
+                    player.hp_percent = 1;
+                }
+
+                hp_percent = player.hp_percent;
+
+
+            }
+
+            if(draw_bar === true) {
+
+                drawing_x = player.sprite.x - 32;
+                drawing_y = player.sprite.y - 40;
+
+                //console.log("Drawing bar at " + drawing_x + "," + drawing_y);
+                //console.log("Got map coord HP percent as: " + map_coords[i].hp_percent);
+
+                // some simple colour changing to make it look like a health bar
+                if (hp_percent < 32) {
+                    graphics.fillStyle(0xff0000);
+                }
+                else if (hp_percent < 64) {
+                    graphics.fillStyle(0xffff00);
+                }
+                else {
+                    graphics.fillStyle(0x00ff00);
+                }
+
+                let hp_bar_length = 64 * hp_percent / 100;
+
+                //console.log("Hp percent: " + hp_percent + " hp bar length: " + hp_bar_length);
+
+                let rect = new Phaser.Geom.Rectangle(drawing_x, drawing_y, hp_bar_length, 8);
+                graphics.fillRectShape(rect);
+
+                //console.log("Drew bar");
+            }
+
+
+        });
+
+
+        // RESEARCHES
+        researches.forEach(function(research) {
+            //console.log("In redrawBars for researches. Current tick count: " + research.current_tick_count);
+
+            let object_type_index = object_types.findIndex(function(obj) { return obj && obj.id === research.being_researched_object_type_id; });
+            let percent_complete = 1;
+            //console.log("Total research time: " + object_types[object_type_index].research_tick_count);
+
+            if(research.current_tick_count >= 1) {
+                percent_complete = research.current_tick_count / object_types[object_type_index].research_tick_count * 100;
+            }
+
+            graphics.fillStyle(0x4286f4);
+
+            let hp_bar_length = 64 * percent_complete / 100;
+            //console.log("This assembly percent: " + hp_bar_length);
+
+            // lets find our researcher object id's location on the map to show the bar
+            let object_index = objects.findIndex(function(obj) { return obj && obj.id === research.researcher_object_id; });
+
+
+            if(object_index !== -1) {
+
+                let rect_x = false;
+                let rect_y = false;
+                if(objects[object_index].planet_coord_id) {
+                    let coord_index = planet_coords.findIndex(function(obj) { return obj && obj.id === objects[object_index].planet_coord_id; });
+                    if(coord_index !== -1) {
+                        rect_x = tileToPixel(planet_coords[coord_index].tile_x);
+                        rect_y = tileToPixel(planet_coords[coord_index].tile_y);
+                    }
+                } else if(objects[object_index].ship_coord_id) {
+                    let coord_index = ship_coords.findIndex(function(obj) { return obj && obj.id === objects[object_index].ship_coord_id; });
+                    if(coord_index !== -1) {
+                        rect_x = tileToPixel(ship_coords[coord_index].tile_x);
+                        rect_y = tileToPixel(ship_coords[coord_index].tile_y);
+                    }
+                }
+
+
+                //console.log("Drawing bar at: " + rect_x + "," + rect_y);
+                //console.log("Player is at: " + user_player.x + ", " + user_player.y);
+                let rect = new Phaser.Geom.Rectangle(rect_x, rect_y, hp_bar_length, 8);
+                rect.depth = 3;
+                graphics.fillRectShape(rect);
+                graphics.depth = 3;
+            } else {
+                //console.log("Could not find researcher object id: " + research.researcher_object_id);
+            }
+        });
+
+
+        // SALVAGING LINKERS
+        for(let i = 0; i < salvaging_linkers.length; i++) {
+            drawSalvageBar(i);
+
+        }
+
+    }
+
+    function removeMonster(monster_id) {
+
+
+        let removing_monster_id = parseInt(monster_id);
+        //console.log("Have monster info to remove: " + monster_id);
+
+        let monster_index = monsters.findIndex(function(obj) { return obj && obj.id === parseInt(monster_id); });
+
+
+        if(monster_index !== -1) {
+
+            if(monsters[monster_index].sprite) {
+                monsters[monster_index].sprite.destroy();
+                monsters[monster_index].sprite = false;
+            }
+
+            /*
+            if(monsters[monster_index].planet_coord_id) {
+                console.log("Monster had a planet coord id: " + monsters[monster_index].planet_coord_id);
+                let old_planet_coord_index = planet_coords.findIndex(function(obj) { return obj && obj.id === monsters[monster_index].planet_coord_id; });
+                if(old_planet_coord_index !== -1) {
+                    map.putTileAt(-1, planet_coords[old_planet_coord_index].tile_x, planet_coords[old_planet_coord_index].tile_y, false, 'layer_being');
+                    console.log("Removed monster from planet coord");
+                } else {
+                    console.log("Could not find that planet coord");
+                }
+            }
+
+            if(monsters[monster_index].ship_coord_id) {
+                let old_ship_coord_index = ship_coords.findIndex(function(obj) { return obj && obj.id === monsters[monster_index].ship_coord_id; });
+                if(old_ship_coord_index !== -1) {
+                    map.putTileAt(-1, ship_coords[old_ship_coord_index].tile_x, ship_coords[old_ship_coord_index].tile_y, false, 'layer_being');
+                    console.log("Removed monster from ship coord");
+                }
+            }
+            */
+
+            delete monsters[monster_index];
+            //console.log("Removed monster");
+
+            redrawBars();
+
+
+        } else {
+            //console.log("Don't have this monster");
+
+
+        }
+
+        // still remove it from any coords
+        /*
+        let planet_coord_index = planet_coords.findIndex(function(obj) { return obj && obj.monster_id === monster_id; });
+        if(planet_coord_index !== -1) {
+            console.log("Found a planet coord with this monster");
+            map.putTileAt(-1, planet_coords[planet_coord_index].tile_x, planet_coords[planet_coord_index].tile_y, false, 'layer_being');
+        }
+
+        let ship_coord_index = ship_coords.findIndex(function(obj) { return obj && obj.monster_id === monster_id; });
+        if(ship_coord_index !== -1) {
+            console.log("Found a ship coord with this monster");
+            map.putTileAt(-1, ship_coords[ship_coord_index].tile_x, ship_coords[ship_coord_index].tile_y, false, 'layer_being');
+        }
+        */
+
+        // lets remove any battle linkers with this monster id in them
+        battle_linkers.forEach(function(battle_linker, i) {
+            if(battle_linker.attacking_type === 'monster' && battle_linker.attacking_id === removing_monster_id) {
+
+                delete battle_linkers[i];
+                //console.log("Removed battle linker");
+            }
+
+            if(battle_linker.being_attacked_type === 'monster' && battle_linker.being_attacked_id === removing_monster_id) {
+
+                delete battle_linkers[i];
+                //console.log("Removed battle linker");
+            }
+        });
+
+        //console.log("Done removing monster");
+
+        redrawBars();
+        return;
+
+    }
+
+
+    function removeNpc(npc_id) {
+
+
+        npc_id = parseInt(npc_id);
+        //console.log("Have monster info to remove: " + monster_id);
+
+        let npc_index = npcs.findIndex(function(obj) { return obj && obj.id === npc_id; });
+
+
+        if(npc_index !== -1) {
+
+            if(npcs[npc_index].sprite) {
+                npcs[npc_index].sprite.destroy();
+                npcs[npc_index].sprite = false;
+            }
+
+            /*
+            if(monsters[monster_index].planet_coord_id) {
+                console.log("Monster had a planet coord id: " + monsters[monster_index].planet_coord_id);
+                let old_planet_coord_index = planet_coords.findIndex(function(obj) { return obj && obj.id === monsters[monster_index].planet_coord_id; });
+                if(old_planet_coord_index !== -1) {
+                    map.putTileAt(-1, planet_coords[old_planet_coord_index].tile_x, planet_coords[old_planet_coord_index].tile_y, false, 'layer_being');
+                    console.log("Removed monster from planet coord");
+                } else {
+                    console.log("Could not find that planet coord");
+                }
+            }
+
+            if(monsters[monster_index].ship_coord_id) {
+                let old_ship_coord_index = ship_coords.findIndex(function(obj) { return obj && obj.id === monsters[monster_index].ship_coord_id; });
+                if(old_ship_coord_index !== -1) {
+                    map.putTileAt(-1, ship_coords[old_ship_coord_index].tile_x, ship_coords[old_ship_coord_index].tile_y, false, 'layer_being');
+                    console.log("Removed monster from ship coord");
+                }
+            }
+            */
+
+            delete npcs[npc_index];
+            //console.log("Removed monster");
+
+            redrawBars();
+
+
+        } else {
+            //console.log("Don't have this monster");
+
+
+        }
+
+        // still remove it from any coords
+        /*
+        let planet_coord_index = planet_coords.findIndex(function(obj) { return obj && obj.monster_id === monster_id; });
+        if(planet_coord_index !== -1) {
+            console.log("Found a planet coord with this monster");
+            map.putTileAt(-1, planet_coords[planet_coord_index].tile_x, planet_coords[planet_coord_index].tile_y, false, 'layer_being');
+        }
+
+        let ship_coord_index = ship_coords.findIndex(function(obj) { return obj && obj.monster_id === monster_id; });
+        if(ship_coord_index !== -1) {
+            console.log("Found a ship coord with this monster");
+            map.putTileAt(-1, ship_coords[ship_coord_index].tile_x, ship_coords[ship_coord_index].tile_y, false, 'layer_being');
+        }
+        */
+
+        // lets remove any battle linkers with this monster id in them
+        battle_linkers.forEach(function(battle_linker, i) {
+            if(battle_linker.attacking_type === 'npc' && battle_linker.attacking_id === npc_id) {
+
+                delete battle_linkers[i];
+                //console.log("Removed battle linker");
+            }
+
+            if(battle_linker.being_attacked_type === 'npc' && battle_linker.being_attacked_id === npc_id) {
+
+                delete battle_linkers[i];
+                //console.log("Removed battle linker");
+            }
+        });
+
+        //console.log("Done removing monster");
+
+        redrawBars();
+        return;
+
+    }
+
+    function redrawMap() {
+
+        //console.log("In redrawMap");
+
+        if(!client_player_id) {
+            return false;
+        }
+
+        let player_info = getPlayerInfo(client_player_index);
+
+        if(!player_info.coord) {
+            console.log("%c Could not find the coord the player is on to redraw the map", log_warning);
+            map_needs_redraw = true;
+            return false;
+        }
+
+        let starting_x = player_info.coord.tile_x - Math.ceil(show_cols / 2) - 2;
+        let starting_y = player_info.coord.tile_y - Math.ceil(show_rows / 2) - 2;
+        let ending_x = player_info.coord.tile_x + Math.ceil(show_cols / 2) + 3;
+        let ending_y = player_info.coord.tile_y + Math.ceil(show_cols / 2) + 3;
+
+
+        //console.log("Redrawing tiles x,y: " + starting_x + "," + starting_y + " to: " + ending_x + "," + ending_y);
+
+        for(let x = starting_x; x <= ending_x; x++) {
+            for(let y = starting_y; y <= ending_y; y++) {
+
+
+                if(current_view === 'planet') {
+                    // match a planet coord
+                    let planet_coord_index = planet_coords.findIndex(function(obj) { return obj && obj.planet_id === player_info.coord.planet_id &&
+                        obj.level === player_info.coord.level && obj.tile_x === x && obj.tile_y === y; });
+
+                    if(planet_coord_index !== -1) {
+                        drawCoord('planet', planet_coords[planet_coord_index]);
+                    }
+                } else if(current_view === 'galaxy') {
+                    let coord_index = coords.findIndex(function(obj) { return obj && obj.tile_x === x && obj.tile_y === y; });
+                    if(coord_index !== -1) {
+                        drawCoord('galaxy', coords[coord_index]);
+                    }
+                } else if(current_view === 'ship') {
+                    let coord_index = ship_coords.findIndex(function(obj) { return obj && obj.tile_x === x && obj.tile_y === y; });
+                    if(coord_index !== -1) {
+                        drawCoord('ship', ship_coords[coord_index]);
+                    }
+                }
+
+            }
+        }
+
+        map_needs_redraw = false;
+
+        // and center our player
+        movePlayerInstant(client_player_index, player_info.coord.tile_x * tile_size + tile_size / 2, player_info.coord.tile_y * tile_size + tile_size / 2);
+    }
+
+    // So this seems to create a ton of slowdown. Probably the old one not getting removed, or something else bad
+    function resetMap() {
+        //console.log("Resetting map");
+
+        let saved_objects = [];
+
+        if(client_player_id) {
+            objects.forEach(function(object, i) {
+
+                let object_type_index = object_types.findIndex(function(obj) { return obj && obj.id === object.object_type_id; });
+
+                // if the object id matches our body id, save it
+                if(object.id === players[client_player_index].body_id) {
+                    //console.log("In resetmap - saving body object id: " + object.id);
+                    saved_objects.push(object);
+                }
+
+                // Same with our current ship
+                if(object.player_id === client_player_id && object_types[object_type_index].is_ship) {
+                    //console.log("Saving ship id: " + object.id);
+                    saved_objects.push(object);
+                }
+
+                // And things we own that have rules
+                if(object.player_id === client_player_id && object_types[object_type_index].can_have_rules) {
+                    saved_objects.push(object);
+                }
+
+
+
+
+            });
+        }
+
+        // Gotta remove name texts and tints for objects that are going away
+        for(let i = 0; i < objects.length; i++) {
+            if(objects[i]) {
+
+                if(objects[i].name_text || objects[i].tint) {
+
+                    let is_saved = false;
+                    // Delete if it's not in the saved objects
+                    for(let j = 0; j < saved_objects.length; j++) {
+                        if(saved_objects[j] && saved_objects[j].id === objects[i].id) {
+                            is_saved = true;
+                        }
+                    }
+
+                    if(!is_saved) {
+
+                        if(objects[i].name_text) {
+                            objects[i].name_text.destroy();
+                        }
+
+                        if(objects[i].tint) {
+                            let object_info = getObjectInfo(i);
+                            if(object_info.coord) {
+                                let object_tile = map.getTileAt(object_info.coord.tile_x, object_info.coord.tile_y, false, 'layer_object');
+                                if(object_tile) {
+                                    object_tile.tint = "0xffffff";
+                                    //object_tile.clearTint();
+                                }
+                            }
+
+
+                        }
+
+
+
+                    }
+
+                }
+            }
+        }
+
+        objects = [];
+
+        objects = saved_objects;
+
+
+        for(let i = 0; i < 100; i++) {
+            for(let j = 0; j < 100; j++) {
+                map.putTileAt(-1, i, j, false, 'layer_object');
+                map.putTileAt(-1, i, j, false, 'layer_floor');
+                //map.putTileAt(-1, i, j, false, 'layer_being');
+                map.putTileAt(-1, i, j, false, 'layer_above');
+            }
+        }
+
+        // maybe switch this to rectangles drawn via graphics based on user_player_attacking
+        /*
+        let attack_box_node = document.getElementById("attack_box");
+        while (attack_box_node.firstChild) {
+            attack_box_node.removeChild(attack_box_node.firstChild);
+        }
+        */
+        animations.splice(0, animations.length);
+
+        // This helped with the game trying to render bits and pieces of multiple layers of planets
+        ship_coords.splice(0, ship_coords.length);
+        planet_coords.splice(0, planet_coords.length);
+
+        //coords = [];
+        //coords.splice(0, coords.length);
+
+
+        /*
+        monsters.forEach(function(monster, i) {
+            if(monster.monster_image) {
+                monster.monster_image.destroy();
+            }
+
+            delete monsters[i];
+
+        });
+
+        //monsters = [];
+        monsters.splice(0, monsters.length);
+        */
+
+        // lets try and save a specific object or two ..... eeek.
+
+
+        //planets = [];
+        //planet_coords = [];
+
+        // remove other player sprites
+        for(let i = 0; i < players.length; i++) {
+            if(players[i] && i !== client_player_index && players[i].sprite) {
+                destroyPlayerSprite(players[i]);
+            }
+        }
+
+        // change our sprite
+        destroyPlayerSprite(players[client_player_index]);
+        createPlayerSprite(client_player_index);
+
+        // clear out all the players except for our player
+        /*
+        players.forEach(function(player, i) {
+
+            if(player.id !== player_id) {
+                delete players[i];
+            }
+
+        });
+        */
+
+        //ship_coords = [];
+        //user_player_attacking = [];
+
+
+
+
+        redrawBars();
+    }
+
+    function setPlayerMoveDelay(player_index) {
+
+
+
+        if(!players[player_index].current_move_delay) {
+            console.log("Set player id: " + players[player_index] + " current_move_delay to: " + players[player_index].current_move_delay);
+            players[player_index].current_move_delay = 500;
+        }
+
+        if(current_view === 'planet' || current_view === 'ship') {
+
+            // bodies can have different move delays too!
+            let body_index = objects.findIndex(function(obj) { return obj && obj.id === players[player_index].body_id; });
+            if(body_index === -1) {
+                socket.emit('request_object_info', { 'object_id': players[player_index].body_id });
+                return false;
+            }
+
+            let body_type_index = object_types.findIndex(function(obj) { return obj.id === objects[body_index].object_type_id; });
+
+            if(object_types[body_type_index].move_delay && object_types[body_type_index].move_delay !== 500) {
+                players[player_index].current_move_delay = object_types[body_type_index].move_delay;
+                console.log("Set player id: " + players[player_index].id + " current_move_delay to: " +
+                    players[player_index].current_move_delay + " based on object type id: " + object_types[body_type_index].id);
+            } else {
+                players[player_index].current_move_delay = 500;
+            }c
+
+        } else if(current_view === 'galaxy') {
+
+            console.log("Player ship id: " + players[player_index].ship_id);
+            let ship_index = objects.findIndex(function(obj) { return obj && obj.id === players[player_index].ship_id });
+
+            if(ship_index === -1) {
+                console.log("Don't have our ship object. Requesting it");
+                socket.emit('request_object_info', { 'object_id': players[player_index].ship_id });
+                return false;
+            }
+
+            let ship_type_index = object_types.findIndex(function(obj) { return obj.id === objects[ship_index].object_type_id; });
+
+            if(object_types[ship_type_index].move_delay) {
+                players[player_index].current_move_delay = object_types[ship_type_index].move_delay;
+
+            } else if(!object_types[ship_type_index].move_delay) {
+                // ship doesn't have a move delay set
+                players[player_index].current_move_delay = 500;
+            }
+        }
+
+
+        console.log("Set player move delay to: " + players[player_index].current_move_delay);
+
+    }
+
+    // Seeing if we should draw the other coord, based on the base coord
+    function shouldDraw(base_coord, other_coord, source = false) {
+
+        if(!base_coord) {
+            //console.log("No base coord in shouldDraw. source: " + source);
+            return false;
+        }
+
+        if(!other_coord) {
+            //console.log("No other coord in shouldDraw. source: " + source);
+            return false;
+        }
+
+        let tile_x_difference = Math.abs(base_coord.tile_x - other_coord.tile_x);
+        let tile_y_difference = Math.abs(base_coord.tile_y - other_coord.tile_y);
+
+        if(tile_x_difference > 10 || tile_y_difference > 10) {
+            //console.log("Tile difference is too high");
+            return false;
+        }
+
+        // galaxy - neither has a planet id and ship id
+        if(!base_coord.planet_id && !base_coord.ship_id && !other_coord.planet_id && !other_coord.ship_id) {
+            return true;
+        }
+
+        // Ship view - both on the same ship
+        if(base_coord.ship_id && other_coord.ship_id && base_coord.ship_id === other_coord.ship_id) {
+            return true;
+        }
+
+        // Planet view - both on same level of the same planet
+        if(base_coord.planet_id && other_coord.planet_id && base_coord.planet_id === other_coord.planet_id &&
+            base_coord.level === other_coord.level) {
+            return true;
+        }
+
+        return false;
+
+    }
+
+
+    function showClickMenu(pointer) {
+
+        if(!client_player_id) {
+            console.log("No client player yet");
+            return false;
+        }
+
+        let current_timestamp = Math.floor(new Date());
+
+        if(last_click_div_move + 500 > current_timestamp) {
+            return;
+        }
+
+        let worldPoint = pointer.positionToCamera(camera);
+
+        let tile_x = worldPointToTileX(worldPoint.x);
+        let tile_y = worldPointToTileY(worldPoint.y);
+        //let tile_x = pixelToTileX(worldPoint.x);
+        //let tile_y = pixelToTileY(worldPoint.y);
+
+        //let tile_x = map.worldToTileX(worldPoint.x);
+        //let tile_y = map.worldToTileY(worldPoint.y);
+
+        //console.log("%c Showing click menu at " + mouse_x + "x" + mouse_y, log_warning);
+
+        $('#click_menu').css({
+            'top': mouse_y, 'left': mouse_x, 'position':'absolute', 'max-height':'400px', 'max-width': '640px',
+            'overflow-y':'scroll', 'overflow-x': 'scroll', 'padding':'10px'
+        }).fadeIn('fast');
+
+        $('#click_menu').empty();
+
+        //console.log("Got tile x, tile y of click as: " + tile_x + "," + tile_y);
+
+        let coord_index = -1;
+        let coord_x = 0;
+        let coord_y = 0;
+        // generic coord
+        let coord = false;
+
+
+        if(current_view === 'planet') {
+
+            let client_coord = planet_coords.findIndex(function(obj) { return obj && obj.id === players[client_player_index].planet_coord_id; });
+
+            coord_index = planet_coords.findIndex(function(obj) { return obj && obj.tile_x === tile_x &&
+                obj.tile_y === tile_y && obj.level === planet_coords[client_coord].level && obj.planet_id === planet_coords[client_coord].planet_id; });
+            if(coord_index !== -1) {
+                coord = planet_coords[coord_index];
+                coord_x = planet_coords[coord_index].tile_x;
+                coord_y = planet_coords[coord_index].tile_y;
+            }
+        } else if(current_view === 'ship') {
+            coord_index = ship_coords.findIndex(function(obj) { return obj && obj.tile_x === tile_x && obj.tile_y === tile_y; });
+            if(coord_index !== -1) {
+                coord = ship_coords[coord_index];
+                coord_x = ship_coords[coord_index].tile_x;
+                coord_y = ship_coords[coord_index].tile_y;
+            }
+        } else if(current_view === 'galaxy') {
+            coord_index = coords.findIndex(function(obj) { return obj && obj.tile_x === tile_x && obj.tile_y === tile_y; });
+            if(coord_index !== -1) {
+                coord = coords[coord_index];
+                coord_x = coords[coord_index].tile_x;
+                coord_y = coords[coord_index].tile_y;
+            }
+        }
+
+        let player_inventory_items = inventory_items.filter(inventory_item => inventory_item.player_id === client_player_id);
+
+
+        // For most things we display, we want to have a coord
+        if(coord_index !== -1) {
+
+            let tile_object_type_id = false;
+
+            // FLOOR
+            if(coord.floor_type_id) {
+                showClickMenuFloor(coord);
+
+            }
+
+
+            // MONSTER
+            if(coord.monster_id) {
+                showClickMenuMonster(coord);
+
+            }
+
+
+            // OBJECTS
+            if(coord.object_id) {
+                showClickMenuObject(coord);
+
+            } else if(coord.object_type_id) {
+                showClickMenuObjectType(coord);
+
+            }
+
+            // NPC
+            if(coord.npc_id) {
+                showClickMenuNpc(coord);
+
+            }
+
+
+            // Player
+            if(coord.player_id && coord.player_id !== client_player_id && current_view !== 'galaxy') {
+
+                let other_player_index = players.findIndex(function(obj) { return obj && obj.id === coord.player_id; });
+
+                // Give the player the option to attack them
+                // see if we are already attacking based on the battle linkers we have
+                let player_is_attacking = false;
+                battle_linkers.forEach(function(battle_linker, i) {
+                    if(battle_linker.attacking_type === 'player' && battle_linker.attacking_id === client_player_id &&
+                        battle_linker.being_attacked_type === 'player' && battle_linker.being_attacked_id === coord.player_id) {
+                        player_is_attacking = true;
+                    }
+                });
+
+                if(player_is_attacking) {
+                    $('#click_menu').append("<button id='attackstop_player_" + coord.player_id + "' " +
+                        "player_id='" + coord.player_id + " class='button is-warning is-small'>Stop Attacking Player</button>");
+                } else {
+
+                    $('#click_menu').append("<button id='attack_player_" + coord.player_id + "' " +
+                        "player_id='" + coord.player_id + "' class='button is-warning is-small' source='player-generic'>Attack Player</button>");
+                }
+            }
+
+
+            // Show options for player inventory items
+            // There's a limited amount of stuff that we can put in space. Like a shipyard!
+            if(current_view === 'galaxy') {
+
+                player_inventory_items.forEach(function(inventory_item) {
+
+                    let object_type_index = object_types.findIndex(function(obj) { return obj && obj.id === inventory_item.object_type_id; });
+                    if(parseInt(inventory_item.object_type_id) === 116) {
+
+                        $('#click_menu').append("<br>" + object_types[object_type_index].name + ": ");
+                        $('#click_menu').append(
+                            "<button id='drop_" + inventory_item.id + "' x='" + tile_x + "' y='" + tile_y + "' class='button is-default'>Drop</button>"
+                        );
+                    }
+                });
+            }
+            // Some options for planet/ship stuff
+            else {
+
+
+                if(!coord.player_id && !coord.monster_id && !coord.npc_id && !coord.object_id && !coord.object_type_id) {
+
+
+                    player_inventory_items.forEach(function (inventory_item) {
+                        if(inventory_item.object_type_id)  {
+
+                            let object_type_index = object_types.findIndex(function(obj) { return obj && obj.id === inventory_item.object_type_id; });
+
+                            // Not doing the is_ship_wall stuff right now
+                            //   if(object_type_index !== -1 && !object_types[object_type_index].is_ship_wall) {
+                            if(object_type_index !== -1) {
+
+                                let inventory_options_string = "";
+
+                                inventory_options_string += "<div style='display:inline-block; position:relative; width:146px; height:74px; " +
+                                    " background-image: url(https://space.alphacoders.com/" +
+                                    urlName(object_types[object_type_index].name) + ".png); background-repeat: no-repeat; " +
+                                    " background-position: top; " +
+                                    " border: 1px #c8c1c1 solid; border-radius:6px; margin:2px;'>";
+
+                                inventory_options_string += "<div style='position:absolute; right: 4px; bottom: 0;'>";
+
+
+                                // if there's nothing on the tile - drop. Otherwise change based on what object is already there
+                                if(tile_object_type_id === false) {
+
+
+                                    // PLANT
+                                    if(object_types[object_type_index].is_plantable === true || object_types[object_type_index].is_plantable === 'true' ||
+                                        object_types[object_type_index].is_plantable === 1) {
+                                        inventory_options_string += "<button id='plant_" + inventory_item.id + "' x='" + tile_x +
+                                            "' y='" + tile_y + "' class='button is-success is-small'>Plant</button><br>";
+
+                                    }
+
+                                    inventory_options_string += "Drop:";
+
+                                    if(inventory_item.amount === 1) {
+                                        inventory_options_string += "<button id='drop_" + inventory_item.id + "_all' x='" +
+                                            tile_x + "' y='" + tile_y +
+                                            "' class='button is-default is-small'>All</button>";
+
+                                    } else {
+                                        inventory_options_string += "<button id='drop_" + inventory_item.id + "_all' x='" + tile_x +
+                                            "' y='" + tile_y + "' amount='all' class='button is-default is-small'>All</button>";
+
+                                        inventory_options_string += "<button id='drop_" + inventory_item.id + "_10' x='" + tile_x +
+                                            "' y='" + tile_y + "' amount='10' class='button is-default is-small'>10</button>";
+
+                                        inventory_options_string += "<button id='drop_" + inventory_item.id + "_1' x='" + tile_x +
+                                            "' y='" + tile_y + "' amount='1' class='button is-default is-small'>1</button>";
+
+
+                                    }
+
+
+                                }
+
+
+                                inventory_options_string += "</div>";
+
+                                inventory_options_string += "</div>";
+
+                                $('#click_menu').append(inventory_options_string);
+
+
+
+
+
+                            }
+
+
+                        } else if(inventory_item.floor_type_id) {
+                            let floor_type_index = floor_types.findIndex(function(obj) { return obj && obj.id === inventory_item.floor_type_id; });
+
+                            if(floor_type_index !== -1) {
+
+                                $('#click_menu').append("<button id='replacefloor_" + inventory_item.id + "' " +
+                                    "x='" + tile_x + "' y='" + tile_y + "' class='button is-default'>Replace Floor: " + floor_types[floor_type_index].name + "</button><br>")
+                            }
+                        }
+
+                    });
+                }
+
+                // Let the player change the floor
+                // Have this in above too
+                /*
+                player_inventory_items.forEach(function (inventory_item) {
+                    if(inventory_item.floor_type_id) {
+                        let floor_type_index = floor_types.findIndex(function(obj) { return obj && obj.id === inventory_item.floor_type_id; });
+
+                        if(floor_type_index !== -1) {
+
+                            $('#click_menu').append(floor_types[floor_type_index].name + ": ");
+                            $('#click_menu').append("<button id='replacefloor_" + inventory_item.id + "' " +
+                                "x='" + tile_x + "' y='" + tile_y + "' class='btn btn-default'>Replace Floor</button><br>")
+                        }
+                    }
+
+                });
+                 */
+            }
+
+
+            // If the player is on a planet, and they control the planet, they can do things like add/remove the coord from a room
+
+            if(!coord.monster_id && !coord.object_id && players[client_player_index].planet_coord_id ) {
+
+
+                let planet_index = planets.findIndex(function(obj) { return obj && obj.id === coord.planet_id; });
+                if(planet_index !== -1 && planets[planet_index].player_id === client_player_id) {
+
+                    $('#click_menu').append("<button id='manage_areas' class='button is-default'>Manage Areas</button>");
+
+                    // Go through the areas we have, giving the player the option of adding that coord to the area
+                    for(let i = 0; i < areas.length; i++) {
+                        console.log("Checking area id: " + areas[i].id);
+                        if(areas[i] && areas[i].owner_id === players[client_player_index].id && areas[i].planet_id === planets[planet_index].id) {
+                            $('#click_menu').append("<button id='addtoarea_" + coord.id + "' planet_coord_id='" + coord.id + "' area_id='" + areas[i].id + "' class='button is-default'>Add To Area: " + areas[i].name  + "</button>");
+                        }
+                    }
+
+                } else {
+                    if(planet_index === -1) {
+                        console.log("Don't have planet");
+                    } else if(planets[planet_index].player_id !== client_player_id) {
+                        console.log("Player player id: " + planets[planet_index].player_id + " not same as client player id: " + client_player_id);
+                    }
+                }
+            } else {
+                //console.log("Client is not on planet");
+            }
+            // Same if we're on a ship, and it's our ship
+
+        }
+        // There was no coord here. However! If we are > level 0 on a planet,
+        // there's a possibility that we can add a floor here
+        else {
+
+
+
+            if(players[client_player_index].planet_coord_id) {
+                let client_planet_coord_index = planet_coords.findIndex(function(obj) { return obj && obj.id === players[client_player_index].planet_coord_id; });
+                if(client_planet_coord_index !== -1) {
+                    if(planet_coords[client_planet_coord_index].level > 0) {
+
+                        // Give the user an add floor option
+
+
+                        player_inventory_items.forEach(function (inventory_item) {
+                            if(inventory_item.floor_type_id) {
+                                let floor_type_index = floor_types.findIndex(function(obj) { return obj && obj.id === inventory_item.floor_type_id; });
+
+                                if(floor_type_index !== -1) {
+
+                                    $('#click_menu').append(floor_types[floor_type_index].name + ": ");
+                                    $('#click_menu').append("<button id='replacefloor_" + inventory_item.id + "' " +
+                                        "x='" + tile_x + "' y='" + tile_y + "' class='button is-default'>Add Floor</button><br>")
+                                }
+                            }
+
+                        });
+                    }
+                }
+            }
+
+        }
+
+
+        last_click_div_move = current_timestamp;
+
+
+    }
+
+    function showClickMenuFloor(coord) {
+        let floor_type_index = floor_types.findIndex(function(obj) { return obj && obj.id === coord.floor_type_id; });
+
+        if(floor_type_index !== -1) {
+            //console.log("Got floor type index");
+            if(floor_types[floor_type_index].repaired_floor_type_id) {
+
+                //console.log("Floor type has repaired floor type id");
+
+                // see if we are already repairing it
+                let repairing_linker_index = repairing_linkers.findIndex(function(obj) { return obj && obj.player_id === client_player_id &&
+                    obj.ship_coord_id === coord.id; });
+
+
+                if(repairing_linker_index === -1) {
+                    $('#click_menu').append("<button id='repair_" + coord.id + "' " +
+                        "coord_id='" + coord.id + "' class='button is-success'>" +
+                        "Repair</button><br>");
+                } else {
+                    $('#click_menu').append("<button id='repairstop_" + coord.id + "' " +
+                        "coord_id='" + coord.id + "' class='button is-warning is-small'>" +
+                        "Stop Repairing</button>");
+                }
+
+            } else {
+                //console.log("Floor type does not have repaired floor type id");
+            }
+        }
+    }
+
+    function showClickMenuMonster(coord) {
+        //console.log("Coord has monster id");
+        let monster_index = monsters.findIndex(function(obj) { return obj && obj.id === coord.monster_id; });
+
+        if(monster_index !== -1) {
+            //console.log("Showing monster options");
+            let monster_type_index = monster_types.findIndex(function(obj) { return obj && obj.id === monsters[monster_index].monster_type_id; });
+
+
+            // see if we are already attacking based on the battle linkers we have
+            let player_is_attacking = false;
+            battle_linkers.forEach(function(battle_linker, i) {
+                if(battle_linker.attacking_type === 'player' && battle_linker.attacking_id === client_player_id &&
+                    battle_linker.being_attacked_type === 'monster' && battle_linker.being_attacked_id === monsters[monster_index].id) {
+                    player_is_attacking = true;
+                }
+            });
+
+            if(player_is_attacking) {
+                $('#click_menu').append("<button id='attackstop_monster_" + monsters[monster_index].id + "' " +
+                    "monster_id='" + monsters[monster_index].id + "' class='button is-warning is-small'>" +
+                    "Stop Attacking " + monster_types[monster_type_index].name + "</button><br>");
+            } else {
+                $('#click_menu').append("<button id='attack_" + monsters[monster_index].id + "' " +
+                    "monster_id='" + monsters[monster_index].id + "' class='button is-warning is-small'>" +
+                    "Attack " + monster_types[monster_type_index].name + "</button><br>");
+            }
+
+        }
+    }
+
+    function showClickMenuNpc(coord) {
+        let npc_index = npcs.findIndex(function(obj) { return obj && obj.id === coord.npc_id; });
+
+        if(npc_index === -1) {
+            return false;
+        }
+
+
+        console.log("Showing npc options");
+
+        // see if we are already attacking based on the battle linkers we have
+        let player_is_attacking = false;
+        battle_linkers.forEach(function(battle_linker, i) {
+            if(battle_linker.attacking_type === 'player' && battle_linker.attacking_id === client_player_id &&
+                battle_linker.being_attacked_type === 'npc' && battle_linker.being_attacked_id === npcs[npc_index].id) {
+                player_is_attacking = true;
+            }
+        });
+
+        if(player_is_attacking) {
+            $('#click_menu').append("<button id='attackstop_" + npcs[npc_index].id +
+                "' npc_id='" + npcs[npc_index].id + "' class='button is-warning is-small'>Stop Attacking</button>");
+        } else {
+
+            // We won't be able to attack the npc if it's the galaxy view and they don't have a ship (npc's version of a pod)
+            if(current_view === 'galaxy' && !npcs[npc_index].ship_id) {
+                // no pod attack
+            } else {
+                $('#click_menu').append("<button id='attack_" + npcs[npc_index].id + "' npc_id='" +
+                    npcs[npc_index].id + "' class='button is-warning is-small'>Attack NPC " + npcs[npc_index].name + "</button><br>");
+            }
+
+
+        }
+
+        if(!npcs[npc_index].enslaved_to_player_id && !npcs[npc_index].enslaved_to_npc_id) {
+            // We can ask the npc if they want to work for us on our ship
+            $('#click_menu').append("<button id='work' class='button'>Invite To Work On Ship (Testing)</button><br>");
+        }
+        else if(npcs[npc_index].enslaved_to_player_id && npcs[npc_index].enslaved_to_player_id === client_player_id) {
+            $('#click_menu').append("<button id='work_order_or_enslavement_order'>Force To Work On Ship</button><br>");
+        } else {
+            $('#click_menu').append(npcs[npc_index].name + " isn't interested in you");
+        }
+
+
+        // If the NPC wants something, we can potentially give them some of that to increase our relationship with them
+        if(npcs[npc_index].wants_object_type_id) {
+            let wanted_object_type_index = object_types.findIndex(function(obj) { return obj && obj.id === npcs[npc_index].wants_object_type_id; });
+            $('#click_menu').append(npcs[npc_index].name + " wants " + object_types[wanted_object_type_index].name);
+
+            // Go through our inventory and, if we have some, give us the option of giving them to the npc
+            for(let i = 0; i < inventory_items.length; i++) {
+                if(typeof inventory_items[i] !== 'undefined' && inventory_items[i].player_id === client_player_id &&
+                    inventory_items[i].object_type_id === npcs[npc_index].wants_object_type_id) {
+                    $('#click_menu').append("<button id='givenpc_" + inventory_items[i].id + "' npc_id='" +
+                        npcs[npc_index].id + "' inventory_item_id='" + inventory_items[i].id +
+                        "' class='button is-success is-small'>Give " + npcs[npc_index].name + " a " +
+                        object_types[wanted_object_type_index].name + "</button>");
+                }
+            }
+        } else {
+            $('#click_menu').append("<br>" + npcs[npc_index].name + " has no desires");
+        }
+
+
+
+    }
+
+    function showClickMenuObject(coord) {
+        //console.log("Has object id");
+        let attack_object_shown = false;
+        let object_index = objects.findIndex(function(obj) { return obj && obj.id === coord.object_id; });
+
+        if(object_index === -1) {
+            return false;
+        }
+
+        let object_type_index = object_types.findIndex(function(obj) { return obj && obj.id === objects[object_index].object_type_id; });
+
+        if(object_type_index === -1) {
+            return false;
+        }
+
+
+
+
+        // SPAWNING OTHER THINGS
+        if(object_types[object_type_index].spawns_object_type_id) {
+            //console.log("User right clicked on something that spawns other things!");
+
+            // TODO probably should find a better way of distinguishing between things that are mined over time, or insta-picked up
+            if(objects[object_index].has_spawned_object && !object_types[object_type_index].can_be_mined) {
+                $('#click_menu').append("<button class='button is-default' id='pickup_" + coord.object_id + "' object_id='" + coord.object_id + "'>Harvest " + object_types[object_type_index].name + "</button><br>");
+
+            }
+
+        }
+
+        if(object_types[object_type_index].can_be_mined) {
+
+            // Mine or stop mining if we are already mining it
+            let is_mining = false;
+            for(let i = 0; i < mining_linkers.length; i++) {
+                if(mining_linkers[i] && mining_linkers[i].player_id === client_player_id && mining_linkers[i].object_id === objects[object_index].id) {
+                    is_mining = true;
+                }
+            }
+
+            if(is_mining) {
+                $('#click_menu').append("<button id='minestop_object_" + coord.object_id + "' object_id='" + coord.object_id +
+                    "' class='button is-default is-small'>Stop Mining</button><br>");
+            } else if(objects[object_index].has_spawned_object) {
+                $('#click_menu').append("<button id='mine_object_" + coord.object_id + "' object_id='" + coord.object_id +
+                    "' class='button is-default is-small'>Mine</button><br>");
+            }
+
+
+        }
+
+
+
+
+
+        // Object has inventory. If it's ours, let us take it. If it has a price, let us buy it
+        if(objects[object_index].has_inventory) {
+            //console.log("Object should have inventory");
+
+            let take_string = "<div class='message is-success'>";
+            take_string += "<div class='message-header'>Take/Buy</div>";
+
+
+            // get anything that is in this object, and add in a take option
+            let object_inventory_items = inventory_items.filter(inventory_item => inventory_item.owned_by_object_id === objects[object_index].id);
+
+            object_inventory_items.forEach(function(inventory_item) {
+                //console.log("Has inventory item id: " + inventory_item.id);
+                let object_type_index = object_types.findIndex(function(obj) { return obj && obj.id === inventory_item.object_type_id; });
+                if(object_type_index !== -1) {
+
+                    // It's ours - we can take from it
+                    if(objects[object_index].player_id === client_player_id) {
+
+
+                        take_string += "<div style='display:inline-block; position:relative; width:146px; height:74px; " +
+                            " background-image: url(https://space.alphacoders.com/" +
+                            urlName(object_types[object_type_index].name) + ".png); background-repeat: no-repeat; " +
+                            " background-position: top; " +
+                            " border: 1px #c8c1c1 solid; border-radius:6px; margin:2px;'>";
+
+
+                        take_string += "<div style='position:absolute; right: 4px; top: 0;'>" + inventory_item.amount + "</div>";
+
+                        take_string += "<div style='position:absolute; right: 4px; bottom: 0;'>";
+
+
+
+                        if(inventory_item.amount === 1) {
+                            take_string += "<button id='take_" + inventory_item.id + "_all' class='button is-default is-small' " +
+                                " storage_object_id='" + objects[object_index].id + "' " +
+                                " inventory_item_id='" + inventory_item.id + "' amount='all'>Take</button>";
+                        } else {
+                            take_string += "Take:";
+
+                            take_string += "<button id='take_" + inventory_item.id + "_all' class='button is-default is-small' " +
+                                " storage_object_id='" + objects[object_index].id + "' " +
+                                " inventory_item_id='" + inventory_item.id + "' amount='all'>All</button>";
+
+
+                            if(inventory_item.amount >= 10) {
+                                take_string += "<button id='take_" + inventory_item.id + "_10' class='button is-default is-small' " +
+                                    " storage_object_id='" + objects[object_index].id + "' " +
+                                    " inventory_item_id='" + inventory_item.id + "' amount='10'>10</button>";
+
+                            }
+
+                            take_string += "<button id='take_" + inventory_item.id + "_1' class='button is-default is-small' " +
+                                " storage_object_id='" + objects[object_index].id + "' " +
+                                " inventory_item_id='" + inventory_item.id + "' amount='1'>1</button>";
+                        }
+
+
+
+
+
+                        take_string += "</div>";
+
+                        take_string += "</div>";
+
+
+
+                    }
+                    // It's something that is being sold
+                    else if(inventory_item.price) {
+                        take_string += "<img style='width:28px;' src='https://space.alphacoders.com/" + urlName(object_types[object_type_index].name) + ".png'>" +
+                            "<button id='buy_" + inventory_item.id + "' storage_object_id='" + objects[object_index].id + "' " +
+                            " inventory_item_id='" + inventory_item.id + "'>Buy $" + inventory_item.price + "</button><br>";
+                    } else if(!inventory_item.player_id) {
+                        // Other inventory items not owned by the player.
+                        take_string += "<img style='width:28px;' src='https://space.alphacoders.com/" + urlName(object_types[object_type_index].name) + ".png'>" +
+                            "<button id='take_" + inventory_item.id + "' class='button is-default' storage_object_id='" + objects[object_index].id + "' " +
+                            " inventory_item_id='" + inventory_item.id + "'>Take</button><br>";
+                    }
+
+
+
+                }
+            });
+
+            take_string += "</div>";
+
+            $('#click_menu').append(take_string);
+
+            $('#click_menu').append("<br>");
+        }
+
+
+
+        // SHIP OPTIONS
+        if(object_types[object_type_index].is_ship) {
+
+            //console.log("%c Player right clicked on a ship", log_warning);
+
+            // If the ship is on a planet coord and doesn't have a player id, we can claim it. Switch ship
+
+
+            if(!objects[object_index].npc_id && !objects[object_index].player_id) {
+
+                // Not completely sure my new IF is going to take care of every case
+                //if(!objects[object_index].player_id ||
+                //    (objects[object_index].player_id === client_player_id && objects[object_index].id !== players[client_player_index].ship_id)) {
+                $('#click_menu').append("<button id='switchship_" + objects[object_index].id +
+                    "' class='button is-warning is-small'>Claim and Switch To Ship</button><br>");
+            } else if(objects[object_index].player_id === client_player_id && objects[object_index].id !== players[client_player_index].ship_id) {
+                $('#click_menu').append("<button id='switchship_" + objects[object_index].id + "' object_id='" + objects[object_index].id +
+                    "' class='button is-warning is-small'>Switch To</button>");
+            }
+
+
+            // get the object index for the ship that our player is in
+            let client_ship_index = objects.findIndex(function(obj) { return obj && obj.id === players[client_player_index].ship_id; });
+
+
+
+            // Give the player the option to attack the ship
+            // see if we are already attacking based on the battle linkers we have
+            let player_is_attacking = false;
+            battle_linkers.forEach(function(battle_linker, i) {
+                if(battle_linker.attacking_type === 'object' && battle_linker.attacking_id === objects[client_ship_index].id &&
+                    battle_linker.being_attacked_type === 'object' && battle_linker.being_attacked_id === coord.object_id) {
+                    player_is_attacking = true;
+                }
+            });
+
+            // I think we don't need these here
+            /*
+            if(player_is_attacking) {
+                $('#click_menu').append("<button id='attackstop_object_" + coord.object_id + "' " +
+                    "object_id='" + coord.object_id + " class='btn btn-warning btn-sm'>Stop Attacking</button>");
+            } else {
+                $('#click_menu').append("<button id='attack_object_" + coord.object_id + "' " +
+                    "object_id='" + coord.object_id + "' class='btn btn-warning btn-sm' source='ship_options'>Attack</button>");
+                attack_object_shown = true;
+            }
+            */
+
+            // If it's Our ship, we can also set a destination
+            if(coord.object_id === players[client_player_index].ship_id) {
+
+                $('#click_menu').append("<button class='button is-info' id='showautopilot' " +
+                    "top='" + mouse_y + "' left='" + mouse_x + "'>Set Autopilot Destination</button>");
+            }
+        }
+
+
+        /*
+        // Now that we have tint and name options for basically everything we own - no need for a more specific management button
+        if(object_types[object_type_index].can_have_rules) {
+
+            // For now just limit the ability add rules to the person that created the object
+            if(objects[object_index].player_id === client_player_id) {
+                $('#click_menu').append("<button id='manage_" + objects[object_index].id +
+                    "' object_id='" + objects[object_index].id + "' class='button is-default is-small'>Manage</button>");
+            }
+        }
+        */
+
+
+        // REPAIRING
+        if(object_types[object_type_index].repaired_object_type_id || object_types[object_type_index].can_be_repaired) {
+
+
+            let repairing_linker_index = -1;
+
+            if(coord.ship_id) {
+                repairing_linker_index = repairing_linkers.findIndex(function(obj) { return obj && obj.player_id === client_player_id &&
+                    obj.ship_coord_id === coord.id; });
+            } else if(coord.planet_id) {
+                repairing_linker_index = repairing_linkers.findIndex(function(obj) { return obj && obj.player_id === client_player_id &&
+                    obj.planet_coord_id === coord.id; });
+            }
+
+            let show_repair_option = false;
+
+            if(object_index !== -1 && objects[object_index].current_hp < object_types[object_type_index].hp) {
+                show_repair_option = true;
+            } else if(object_type_index !== -1 && object_types[object_type_index].repaired_object_type_id ) {
+                show_repair_option = true;
+            }
+
+            if(repairing_linker_index === -1 && show_repair_option) {
+                $('#click_menu').append("<button id='repair_" + coord.id + "' " +
+                    "coord_id='" + coord.id + "' class='button is-success'>" +
+                    "Repair</button><br>");
+            } else if(repairing_linker_index !== -1) {
+                $('#click_menu').append("<button id='repairstop_" + coord.id + "' " +
+                    "coord_id='" + coord.id + "' class='button is-warning is-small'>" +
+                    "Stop Repairing</button>");
+            }
+
+        }
+
+        // If it belongs to us, we can place things in it
+        // Commented out: objects[object_index].player_id === player_id
+        // Reason: We are going to do multiple tiers of things that can have inventory. Higher tiers will be 'smart' with rules
+        if(object_types[object_type_index].can_have_inventory ) {
+            // let players put their stuff in
+            let player_inventory_items = inventory_items.filter(inventory_item => inventory_item.player_id === client_player_id);
+
+            player_inventory_items.forEach(function (inventory_item) {
+                let object_type_index = object_types.findIndex(function(obj) { return obj && obj.id === inventory_item.object_type_id; });
+                if(object_type_index !== -1) {
+
+                    let put_in_string = "";
+                    put_in_string += "<div style='display:inline-block; position:relative; width:146px; height:74px; " +
+                        " background-image: url(https://space.alphacoders.com/" +
+                        urlName(object_types[object_type_index].name) + ".png); background-repeat: no-repeat; " +
+                        " background-position: top; " +
+                        " border: 1px #c8c1c1 solid; border-radius:6px; margin:2px;'>";
+
+                    put_in_string += "<div style='position:absolute; right: 4px; bottom: 0;'>";
+
+                    put_in_string += "Put In:";
+
+                    put_in_string += "<button  id='place_" +
+                        inventory_item.id + "_all' class='button is-default is-small' storage_object_id='" + objects[object_index].id + "' " +
+                        " inventory_item_id='" + inventory_item.id + "' amount='all'>All</button>";
+
+                    put_in_string += "<button  id='place_" +
+                        inventory_item.id + "_10' class='button is-default is-small' storage_object_id='" + objects[object_index].id + "' " +
+                        " inventory_item_id='" + inventory_item.id + "' amount='10'>10</button>";
+
+                    put_in_string += "<button  id='place_" +
+                        inventory_item.id + "_1' class='button is-default is-small' storage_object_id='" + objects[object_index].id + "' " +
+                        " inventory_item_id='" + inventory_item.id + "' amount='1'>1</button>";
+
+                    put_in_string += "</div>";
+
+
+
+                    put_in_string += "</div>";
+
+                    $('#click_menu').append(put_in_string);
+
+                    /*
+                    $('#click_menu').append("<img style='width:28px;' src='https://space.alphacoders.com/" + urlName(object_types[object_type_index].name) + ".png'>" +
+                        "<button id='place_" + inventory_item.id + "' class='button is-default' storage_object_id='" + objects[object_index].id + "' " +
+                        " inventory_item_id='" + inventory_item.id + "'>Put In</button><br>");
+                    */
+                }
+
+            });
+        }
+
+        // Commented out: && objects[object_index].player_id === player_id
+        // Reason: We are going to do multiple tiers of things that can have inventory. Higher tiers will be 'smart' with rules
+        if(object_types[object_type_index].is_converter) {
+            $('#click_menu').append("<div>");
+
+            // We don't actually send the object_type_conversion_linkers to the client - to create some... mystery.
+            // So we've just hardcoded that the life extractor expects HP
+            if(object_types[object_type_index].id === 241 ) {
+                $('#click_menu').append("<button class='button is-default' id='convert_hp' converter_object_id='" + objects[object_index].id + "'>Get paid for some life force</button>");
+            } else {
+                // let players put their stuff in and see what happens!
+                let player_inventory_items = inventory_items.filter(inventory_item => inventory_item.player_id === client_player_id);
+
+                player_inventory_items.forEach(function (inventory_item) {
+                    let item_object_type_index = object_types.findIndex(function(obj) { return obj && obj.id === inventory_item.object_type_id; });
+                    if(item_object_type_index !== -1) {
+                        $('#click_menu').append(object_types[item_object_type_index].name +
+                            "<button class='button is-default' id='convert_" + inventory_item.id + "' converter_object_id='" + objects[object_index].id + "' " +
+                            " inventory_item_id='" + inventory_item.id + "'>Convert</button><br>");
+                    }
+
+                });
+            }
+
+
+
+            $('#click_menu').append("</div>");
+        }
+
+        /******************** INDIVIDUAL THINGS. SHOULD TRY AND MAKE FLAGS LIKE can_store_items, can_manage, etc ****************/
+
+
+
+        if(objects[object_index].object_type_id === 90) {    // MANUFACTURER
+            console.log("User right clicked on Manufacturer!");
+            //if(objects[object_index].player_id === player_id) {
+
+            printAssemblyList(objects[object_index], coord);
+            //}
+
+
+        }
+
+        if(objects[object_index].object_type_id === 116) { // SHIPYARD
+            printAssemblyList(objects[object_index], coord);
+        }
+
+        if(objects[object_index].object_type_id === 119) {  // FOOD REPLICATOR
+
+            printAssemblyList(objects[object_index], coord);
+
+
+        }
+
+        if(objects[object_index].object_type_id === 126) {   // CLONING VAT
+
+            console.log("User right clicked on Cloning Vat");
+            printAssemblyList(objects[object_index], coord);
+            shown_options = true;
+
+        }
+
+        if(objects[object_index].object_type_id === 127) {  // RESEARCHER
+            console.log("Research station options");
+            // Show a research menu
+            shown_options = true;
+
+            let player_inventory_items = inventory_items.filter(inventory_item => inventory_item.player_id === client_player_id);
+
+            player_inventory_items.forEach(function (inventory_item) {
+                let object_type_index = object_types.findIndex(function (obj) {
+                    return obj && obj.id === inventory_item.object_type_id;
+                });
+                if (object_type_index !== -1) {
+
+                    //  Only show if the player hasn't already maxed out the research
+                    let research_linker_index = player_research_linkers.findIndex(function(obj) { return obj &&
+                        obj.player_id === client_player_id && obj.object_type_id === object_types[object_type_index].id; });
+
+                    // Player is already done researching that
+                    if(research_linker_index !== -1 && player_research_linkers[research_linker_index].researches_completed >= object_types[object_type_index].research_times_required) {
+
+                    } else if(object_types[object_type_index].can_be_researched) {
+                        $('#click_menu').append(object_types[object_type_index].name +
+                            "<button id='research_" + inventory_item.id + "' object_id='" + objects[object_index].id +
+                                "' class='button is-default is-small'>Research</button><br>");
+                    }
+
+
+                }
+
+            });
+        }
+
+        // FORGE
+        if(objects[object_index].object_type_id === 177) {
+
+            $('#click_menu').append("<div style='margin-bottom:10px;'>");
+
+            printAssemblyList(objects[object_index], coord);
+
+            $('#click_menu').append("</div>");
+
+        }
+
+
+        //  AUTO DOC Show some cool auto doc implanting options
+        if(objects[object_index].object_type_id === 140) {
+
+            let client_body_index = objects.findIndex(function(obj) { return obj && obj.id === players[client_player_index].body_id; });
+
+            for(let i = 0; i < inventory_items.length; i++) {
+
+                if(inventory_items[i] && inventory_items[i].player_id === client_player_id) {
+
+                    // see if there's an equip linker that requires an auto doc
+                    for(let j = 0; j < object_type_equipment_linkers.length; j++) {
+
+                        // We found an object_type_equipment_linker that matches the object_type of the inventory item
+                        if(object_type_equipment_linkers[j].object_type_id === inventory_items[i].object_type_id ) {
+
+                            let auto_doc_required = false;
+
+                            if(object_type_equipment_linkers[j].auto_doc_required) {
+                                auto_doc_required = true;
+                            }
+
+                            // If there's already something else there, we will need an auto doc too
+                            let current_equipment_in_slot = 0;
+                            let current_capacity_used = 0;
+
+                            for(let e = 0; e < equipment_linkers.length; e++) {
+                                if(equipment_linkers[e] && equipment_linkers[e].body_id === objects[client_body_index].id &&
+                                    equipment_linkers[e].equip_slot === object_type_equipment_linkers[j].equip_slot) {
+
+                                    let existing_equipment_linker_index = object_type_equipment_linkers.findIndex(function(obj) {
+                                        return obj && obj.object_type_id === equipment_linkers[e].object_type_id && obj.equip_slot === object_type_equipment_linkers[j].equip_slot ;});
+
+                                    if(existing_equipment_linker_index !== -1) {
+                                        current_equipment_in_slot++;
+                                        current_capacity_used += object_type_equipment_linkers[existing_equipment_linker_index].capacity_used;
+                                    }
+
+                                }
+                            }
+
+                            if(current_equipment_in_slot > 0) {
+                                auto_doc_required = true;
+                            }
+
+
+                            if(auto_doc_required) {
+
+                                let inventory_item_object_type_index = object_types.findIndex(function(obj) {
+                                    return obj && obj.id === inventory_items[i].object_type_id; });
+
+
+                                $('#click_menu').append("<img style='width:32px; height:32px;' " +
+                                    "src='https://space.alphacoders.com/" + urlName(object_types[inventory_item_object_type_index].name) + ".png'> " +
+                                    "<button id='equip_" + inventory_items[i].id + "_" + object_type_equipment_linkers[j].equip_slot +
+                                    "' inventory_item_id='" + inventory_items[i].id + "' equip_slot='" + object_type_equipment_linkers[j].equip_slot + "' " +
+                                    " class='button is-small'>Implant " + object_types[inventory_item_object_type_index].name + " Into Your " +
+                                    object_type_equipment_linkers[j].equip_slot + "</button><br>");
+
+
+                            }
+                        }
+
+                    }
+                }
+            }
+        }
+
+        // IRON DOOR
+        /*
+        if(objects[object_index].object_type_id === 185) {
+            if(objects[object_index].player_id === player_id) {
+                $('#click_menu').append("<button id='manage_" + objects[object_index].id + "' object_id='" + objects[object_index].id + "'>Manage</button>");
+            }
+
+        }
+        */
+
+
+
+        // Switch Body Options
+        if(object_types[object_type_index].race_id) {
+            $('#click_menu').append("<button id='switchbody_" + objects[object_index].id +
+                "' class='button is-warning is-small'>Switch To Body</button>");
+
+        }
+
+
+        // Pick Up
+        if(object_types[object_type_index].can_pick_up) {
+            $('#click_menu').append("<button id='pickup_" + coord.object_id + "' class='button is-default is-small' object_id='" + coord.object_id + "'>Pick Up</button><br>");
+        }
+
+
+        // If it's our object, let try offering setting tint and name options
+        if(objects[object_index].player_id === client_player_id) {
+            console.log("Going to try to show manage button");
+            let options_string = "<br><button class='button is-default is-small is-primary' id='manage_" + objects[object_index].id + "' object_id='" + objects[object_index].id + "'>Manage</button>";
+
+            $('#click_menu').append(options_string);
+        }
+
+        // Salvaging
+        if(object_types[object_type_index].can_be_salvaged) {
+
+            console.log("Object type can be salvaged");
+
+            // If we are already salvaging it, give us the option to stop
+            let is_being_salvaged = false;
+            for(let s = 0; s < salvaging_linkers.length; s++ ) {
+                if(salvaging_linkers[s]) {
+                    if(salvaging_linkers[s].object_id === objects[object_index].id && salvaging_linkers[s].player_id === client_player_id) {
+                        is_being_salvaged = true;
+                        console.log("This object is being salvaged");
+                    }
+                }
+
+            }
+
+            if(is_being_salvaged) {
+                $('#click_menu').append("<button id='salvagestop_object_" + coord.object_id + "' object_id='" + coord.object_id +
+                    "' class='button is-warning is-small'>Stop Salvaging</button><br>");
+            } else {
+
+                // if it's in the galaxy, we can't salvage if our ship is a pod
+                let player_can_salvage = true;
+                if(objects[object_index].coord_id) {
+                    let player_ship_index = objects.findIndex(function(obj) { return obj && obj.id === players[client_player_index].ship_id; });
+                    if(player_ship_index !== -1 && objects[player_ship_index].object_type_id === 114) {
+                        player_can_salvage = false;
+                    }
+                }
+
+                if(player_can_salvage) {
+                    $('#click_menu').append("<button id='salvage_object_" + coord.object_id + "' object_id='" + coord.object_id +
+                        "' class='button is-default is-small is-info'>Salvage</button><br>");
+                }
+
+            }
+
+
+        }
+
+
+
+
+        if(object_types[object_type_index].can_be_attacked) {
+            //console.log("can be attacked");
+
+            // see if we are already attacking based on the battle linkers we have
+            let player_is_attacking = false;
+            let active_battle_linkers = battle_linkers.filter(n => n);
+            if(active_battle_linkers.length > 0) {
+                for(let battle_linker of battle_linkers) {
+                    if(battle_linker) {
+                        //console.log("Checking against battle linker: ");
+                        //console.log(battle_linker);
+                        if(battle_linker.attacking_type === 'player' && battle_linker.attacking_id === client_player_id &&
+                            battle_linker.being_attacked_type === 'object' && battle_linker.being_attacked_id === objects[object_index].id) {
+                            //console.log("Found matching battle linker");
+                            player_is_attacking = true;
+                        }
+
+                        // If we are in the galaxy, we should check object v object too
+                        if( current_view === "galaxy" && battle_linker.attacking_type === 'object' &&
+                            battle_linker.attacking_id === players[client_player_index].ship_id &&
+                            battle_linker.being_attacked_type === 'object' && battle_linker.being_attacked_id === objects[object_index].id) {
+                            //console.log("Found matching battle linker");
+                            player_is_attacking = true;
+                        }
+                    }
+
+                }
+            }
+
+
+
+            if(player_is_attacking) {
+                console.log("Player is attacking the object");
+                $('#click_menu').append("<button id='attackstop_object_" + objects[object_index].id + "' " +
+                    "object_id='" + objects[object_index].id + "' class='button is-warning is-small'>" +
+                    "Stop Attacking</button>");
+            } else {
+
+                // It's our object, we can do whatever we want with it!
+                if(objects[object_index].player_id && objects[object_index].player_id === client_player_id) {
+
+                    $('#click_menu').append("<br><button id='attack_" + coord.object_id + "' object_id='" + coord.object_id +
+                        "' class='button is-warning is-small' source='object_type_can_be_attacked'>Attack " +
+                        object_types[object_type_index].name + "</button>");
+
+                    $('#click_menu').append("<br><button id='destroy_" + coord.object_id + "' object_id='" + coord.object_id +
+                        "' class='button is-danger is-small is-pulled-right' source='object_type_can_be_attacked'>Destroy " +
+                        object_types[object_type_index].name + "</button>");
+                }
+                // Just an attack option
+                else {
+                    $('#click_menu').append("<br><button id='attack_" + coord.object_id + "' object_id='" + coord.object_id +
+                        "' class='button is-warning is-small' source='object_type_can_be_attacked'>Attack " +
+                        object_types[object_type_index].name + "</button><br>");
+                }
+            }
+
+
+
+
+
+        }
+
+
+
+
+    }
+
+    function showClickMenuObjectType(coord) {
+        // there's an object type here - but no object id
+
+        let object_type_index = object_types.findIndex(function(obj) { return obj && obj.id === coord.object_type_id; });
+
+        if(object_type_index !== -1) {
+
+            // Pick Up
+            if(object_types[object_type_index].can_pick_up) {
+                //console.log("Object type can be picked up");
+
+                let html_string = "<button id='pickup_" + coord.id + "' class='button is-default is-small' ";
+                if(coord.planet_id) {
+                    html_string += " planet_coord_id='" + coord.id + "' ";
+                } else if(coord.ship_id) {
+                    html_string += " ship_coord_id='" + coord.id + "' ";
+                }
+
+                html_string += ">Pick Up</button>";
+
+                $('#click_menu').append(html_string);
+            }
+
+            // If it's just an object type and it can be attacked - it's just insta-destroyed
+            // There is no object to keep track of a current HP for
+            if(object_types[object_type_index].can_be_attacked) {
+                if(current_view === 'planet') {
+                    $('#click_menu').append("<button id='destroy_" + coord.id + "' planet_coord_id='" +
+                        coord.id + "' class='button is-danger is-small'>Destroy " + object_types[object_type_index].name + "</button>");
+                } else if(current_view === 'ship') {
+                    $('#click_menu').append("<button id='destroy_" + coord.id + "' ship_coord_id='"
+                        + coord.id + "' class='button is-danger is-small'>Destroy " + object_types[object_type_index].name + "</button>");
+                }  else if(current_view === 'galaxy') {
+                    $('#click_menu').append("<button id='destroy_" + coord.id + "' coord_id='" +
+                        coord.id + "' class='button is-danger is-small'>Destroy " + object_types[object_type_index].name + "</button>");
+                }
+
+            }
+        }
+
+        // We want to let the player replace a ship wall with other wall objects
+        if(current_view === "ship" && object_types[object_type_index].is_wall) {
+
+            // I guess we can just go through the inventory and see if there's an object/object type match
+            for(let i = 0; i < inventory_items.length; i++) {
+                if(inventory_items[i] && inventory_items[i].player_id === client_player_id) {
+
+
+                    let inventory_item_object_type_index = -1;
+                    if(inventory_items[i].object_type_id) {
+                        inventory_item_object_type_index = getObjectTypeIndex(inventory_items[i].object_type_id);
+                    } else if(inventory_items[i].object_id) {
+                        let inventory_item_object_index = getObjectIndex(inventory_items[i].object_id);
+                        if(inventory_item_object_index !== -1) {
+                            inventory_item_object_type_index = getObjectTypeIndex(objects[inventory_item_object_index].object_type_id);
+                        }
+                    }
+
+
+
+                    // Not doing is_ship_wall right now
+                    /*
+                    if(inventory_item_object_type_index !== -1 && object_types[inventory_item_object_type_index].is_ship_wall) {
+                        $("#click_menu").append("<button id='replaceshipwall_" + inventory_items[i].id +
+                            "' inventory_item_id='" + inventory_items[i].id + "' ship_coord_id='" + coord.id + "'>" +
+                            "Replace ship wall with " + object_types[inventory_item_object_type_index].name + "</button>");
+                    }
+                    */
+
+                }
+            }
+
+        }
+    }
+
+    function showDockedShip(ship) {
+
+        let html_string = "";
+
+        let docked_ship_type_index = object_types.findIndex(function(obj) { return obj &&
+            obj.id === ship.object_type_id; });
+
+
+        html_string += object_types[docked_ship_type_index].name;
+
+        if(ship.name) {
+            html_string += ": " + ship.name;
+        }
+
+        if(debug_mode) {
+            html_string += " ID: " + ship.id;
+        }
+
+        if(ship.id === players[client_player_index].ship_id) {
+            html_string += "<span class='tag is-success'>Current Ship</span>";
+
+        } else {
+            html_string += "<button id='switchship_" + ship.id + "' object_id='" + ship.id + "' class='button is-warning is-small'>Switch To</button>";
+        }
+
+
+        html_string += "<br>";
+
+        return html_string;
+    }
+
+
+    function showInventoryOptions(inventory_item_id) {
+
+        let mouse_x = event.clientX;
+        let mouse_y = event.clientY;
+
+
+        $('#click_menu').css({
+            'top': mouse_y, 'left': mouse_x, 'position':'absolute', 'max-height':'400px', 'max-width': '600px',
+            'overflow-y':'scroll', 'overflow-x': 'scroll', 'padding':'10px'
+        }).fadeIn('fast');
+
+        $('#click_menu').empty();
+
+        let inventory_item_index = inventory_items.findIndex(function(obj) { return obj && obj.id === inventory_item_id; });
+
+
+
+        let object_type_index =  -1;
+        let floor_type_index = -1;
+        if(inventory_items[inventory_item_index].object_id) {
+            let object_index = objects.findIndex(function(obj) { return obj && obj.id === inventory_items[inventory_item_index].object_id; });
+            if(object_index === -1) {
+                //console.log("Have inventory item but don't have the object associated with it. object id: "
+                //    + inventory_items[inventory_item_index].object_id + ". Requesting info");
+                socket.emit('request_object_info', { 'object_id': inventory_items[inventory_item_index].object_id });
+                return;
+            }
+
+            object_type_index = object_types.findIndex(function(obj) { return obj && obj.id === objects[object_index].object_type_id; });
+        } if(inventory_items[inventory_item_index].object_type_id) {
+            object_type_index = object_types.findIndex(function(obj) { return obj && obj.id === inventory_items[inventory_item_index].object_type_id; });
+        } else if(inventory_items[inventory_item_index].floor_type_id) {
+            floor_type_index = floor_types.findIndex(function(obj) { return obj && obj.id === inventory_items[inventory_item_index].floor_type_id; });
+        }
+
+
+        let adding_string = "";
+
+        if(object_type_index !== -1) {
+
+            adding_string += object_types[object_type_index].name + "<br>";
+            if(object_types[object_type_index].is_equippable) {
+                //console.log("Object type " + object_types[object_type_index].name + " is equippable");
+
+                let type_equipment_linkers = object_type_equipment_linkers.filter(linker => linker.object_type_id === object_types[object_type_index].id);
+
+                //console.log("Length of type_equipment_linkers: " + type_equipment_linkers.length);
+                if(type_equipment_linkers.length > 0) {
+                    //console.log("Adding equip button stuff");
+
+
+
+                    type_equipment_linkers.forEach(function(linker) {
+                        adding_string += "<button id='equip_" + inventory_items[inventory_item_index].id + "_" + linker.equip_slot +
+                            "' inventory_item_id='" + inventory_items[inventory_item_index].id + "' equip_slot='"
+                            + linker.equip_slot + "' class='button is-small'>" + linker.equip_slot + "</button>";
+                    });
+
+
+                }
+
+                //adding_string += "<button id='equip_" + inventory_items[inventory_item_index].id + "' class='btn btn-info btn-xs'>Equip</button>";
+            }
+
+            // see if the body the player has can eat this
+            let body_index = objects.findIndex(function(obj) { return obj && obj.id === players[client_player_index].body_id; });
+            if(body_index !== -1) {
+
+                let body_object_type_index = object_types.findIndex(function(obj) { return obj && obj.id === objects[body_index].object_type_id; });
+
+                //console.log("Our body's race id: " + object_types[body_object_type_index].race_id);
+
+                // now lets see if the race can eat this one
+                race_eating_linkers.forEach(function(race_eating_linker) {
+
+
+                    if(race_eating_linker.race_id === object_types[body_object_type_index].race_id && race_eating_linker.object_type_id === object_types[object_type_index].id) {
+                        adding_string += "<button id='eat_" + inventory_items[inventory_item_index].id + "' class='button is-info'>Eat</button><br>";
+                    }
+                });
+            }
+        }
+
+        adding_string += "<br><button id='trash_" + inventory_items[inventory_item_index].id + "' class='button is-danger'><span class='glyphicon glyphicon-trash'></span> Trash</button>";
+        $('#click_menu').append(adding_string);
+    }
+
+    /*
+    function showMonster(showing_monster) {
+
+        if(!player_id) { return false; }
+
+        let monster_index = monsters.findIndex(function(obj) { return obj && obj.id === showing_monster.id; });
+
+        if(monster_index === -1) {
+            socket.emit('request_monster_info', { 'monster_id': showing_monster.id });
+            return false;
+        }
+
+        let monster_info = getMonsterInfo(monster_index);
+
+        let player_index = players.findIndex(function(obj) { return obj && obj.id === player_id; });
+        let player_info = getPlayerInfo(player_index);
+        if(!shouldDraw(player_info.coord, monster_info.coord, 'showMonster')) {
+            return false;
+        }
+
+        let animation_index = animations.findIndex(function(obj) { return obj && obj.monster_id === showing_monster.id; });
+
+        if(animation_index === -1) {
+            //console.log("Pushed animation for player id: " + showing_player.id);
+            animation_index = animations.push({ 'monster_id': showing_monster.id, 'current_frame': 1}) - 1;
+        }
+
+        let showing_monster_info = getMonsterInfo(monster_index);
+
+
+        if(!showing_monster_info.coord) {
+            console.log("Could not find coord for monster");
+            return false;
+        }
+
+        let monster_type_index = monster_types.findIndex(function(obj) { return obj && obj.id === monsters[monster_index].monster_type_id; });
+
+        if(monster_type_index === -1) {
+            return false;
+        }
+
+        let next_frame = animations[animation_index].current_frame + 1;
+        if(next_frame > monster_types[monster_type_index].frame_count) {
+            next_frame = 1;
+        }
+
+        animations[animation_index].current_frame = next_frame;
+        let drawing_game_index = monster_types[monster_type_index].game_file_index + (next_frame - 1);
+
+
+        if(monster_types[monster_type_index].game_file_index) {
+            map.putTileAt(drawing_game_index, showing_monster_info.coord.tile_x, showing_monster_info.coord.tile_y, false, 'layer_being');
+        } else {
+            if(debug_mode) {
+                map.putTileAt(34, showing_monster_info.coord.tile_x, showing_monster_info.coord.tile_y, false, 'layer_being');
+            } else {
+                map.putTileAt(9, showing_monster_info.coord.tile_x, showing_monster_info.coord.tile_y, false, 'layer_being');
+            }
+
+        }
+
+
+    }
+    */
+
+
+    // All players actually in our room
+    /*
+    function showPlayer(showing_player) {
+
+        if(players.length === 0) {
+            return false;
+        }
+        // get our current room
+        let player_index = players.findIndex(function(obj) { return obj && obj.id === player_id; });
+        if(player_index === -1) {
+            socket.emit('request_player_info', { 'player_id': player_id });
+            return false;
+        }
+
+        let showing_player_index = players.findIndex(function(obj) { return obj && obj.id === showing_player.id; });
+
+        let show_player = false;
+
+        // It's us - show us!
+        if(showing_player.id === players[player_index].id) {
+            show_player = true;
+        }
+
+        if(showing_player.planet_coord_id && current_view === 'planet') {
+            // make sure the level is the same
+            let showing_player_coord_index = planet_coords.findIndex(function(obj) { return obj && obj.id === showing_player.planet_coord_id; });
+            let player_coord_index = planet_coords.findIndex(function(obj) { return obj && obj.id === players[player_index].planet_coord_id; });
+            if(showing_player_coord_index !== -1 && planet_coords[showing_player_coord_index].level === planet_coords[player_coord_index].level) {
+                show_player = true;
+            }
+
+        }
+
+        if(showing_player.coord_id && current_view === 'galaxy') {
+            show_player = true;
+        }
+
+        if(showing_player.ship_coord_id && current_view === 'ship') {
+            show_player = true;
+        }
+
+
+        if(!show_player) {
+            return false;
+        }
+        
+        //console.log("Showing and Animating player id: " + showing_player.id);
+
+        let animation_index = animations.findIndex(function(obj) { return obj && obj.player_id === showing_player.id; });
+
+        if(animation_index === -1) {
+            //console.log("Pushed animation for player id: " + showing_player.id);
+            animation_index = animations.push({ 'player_id': showing_player.id, 'current_frame': 1}) - 1;
+        }
+
+        let showing_player_info = getPlayerInfo(showing_player_index);
+
+        if(!showing_player_info.coord) {
+            if(showing_player.id === player_id) {
+                console.log("%c Didn't find a type of coord for our player!", log_warning);
+                console.log(showing_player.coord_id + " " + showing_player.planet_coord_id + " " + showing_player.ship_coord_id + " requesting our info");
+                socket.emit('request_player_info', { 'player_id': player_id });
+                return false;
+            }
+        }
+
+
+        //console.log("Showing player id: " + showing_player.id + " at tile x/y: " + showing_player_info.coord.tile_x + "/" + showing_player_info.coord.tile_y);
+
+
+        // Get the object type that we are using for this player (body/ship)
+        let player_object_type_index = getPlayerObjectTypeIndex(showing_player);
+
+        if(player_object_type_index === -1) {
+            return false;
+        }
+
+
+        let next_frame = animations[animation_index].current_frame + 1;
+        if(next_frame > object_types[player_object_type_index].frame_count) {
+            next_frame = 1;
+        }
+
+        animations[animation_index].current_frame = next_frame;
+        let drawing_game_index = object_types[player_object_type_index].game_file_index + (next_frame - 1);
+
+        if(showing_player.id === player_id) {
+            //console.log("function animatePlayer centering camera at tile_x,tile_y: " + showing_player_info.coord.tile_x + "," + showing_player_info.coord.tile_y);
+            camera.centerOn(tileToPixel(showing_player_info.coord.tile_x), tileToPixel(showing_player_info.coord.tile_y));
+        }
+
+        //console.log("Drawing game index: " + drawing_game_index);
+        //console.log("Drawing player at " + tile_x + "," + tile_y + " in animatePlayer");
+        map.putTileAt(drawing_game_index, showing_player_info.coord.tile_x, showing_player_info.coord.tile_y, false, 'layer_being');
+
+
+        return;
+    }
+
+     */
+
+    function submitPriceUpdate(inventory_item_id) {
+        var new_price = $("#price_" + inventory_item_id).val();
+
+        socket.emit('price_update_data', { 'inventory_item_id':inventory_item_id, 'new_price':new_price});
+    }
+
+
+    function tileToPixel(tile_number) {
+        return tile_number * tile_size;
+    }
+
+
+
+    function urlName(name) {
+        //console.log("Called urlName on name: " + name);
+        return name.split(' ').join('-').toLowerCase();
+    }
+
+    function updatePlayer(data, player_index) {
+
+
+        if(current_view === 'planet') {
+
+            // We're on a planet and they aren't
+            if(!data.player.planet_coord_id || data.player.planet_coord_id === 0) {
+                destroyPlayerSprite(players[player_index]);
+                players[player_index].destination_x = false;
+                players[player_index].destination_y = false;
+            } else {
+
+
+                let coord_index = planet_coords.findIndex(function(obj) { return obj && obj.id === data.player.planet_coord_id; });
+
+                if(coord_index !== -1 && shouldDraw(client_player_info.coord, planet_coords[coord_index])) {
+                    // If they don't have a sprite, insta move them there
+                    if(!players[player_index].sprite) {
+                        createPlayerSprite(player_index);
+
+                        movePlayerInstant(player_index, planet_coords[coord_index].tile_x * tile_size + tile_size / 2,
+                            planet_coords[coord_index].tile_y * tile_size + tile_size / 2);
+                    }
+                    // Otherwise, flow them there
+                    else if(data.player.planet_coord_id !== players[player_index].planet_coord_id) {
+                        movePlayerFlow(player_index, 'planet', planet_coords[coord_index], 'updatePlayer > planet');
+                    }
+
+                    // Player switched bodies!
+                    if(data.player.body_id !== players[player_index].body_id) {
+                        let old_body_index = objects.findIndex(function(obj) { return obj && obj.id === players[player_index].body_id; });
+
+                        players[player_index].body_id = parseInt(players[player_index].body_id);
+                        createPlayerSprite(player_index);
+                        setPlayerMoveDelay(player_index);
+
+                        // If the new body previously had a name on it, we remove that now
+                        let new_body_index = objects.findIndex(function(obj) { return obj && obj.id === data.player.body_id; });
+                        if(objects[new_body_index].name_text) {
+                            objects[new_body_index].name_text.destroy();
+                        }
+
+                        // and if the old body has a name, add in its name text
+                        if(objects[old_body_index].name) {
+                            let old_body_info = getObjectInfo(old_body_index);
+                            let scene_game = game.scene.getScene('sceneGame');
+
+                            objects[old_body_index].name_text = scene_game.add.text(tileToPixel(old_body_info.coord.tile_x) - 18,
+                                tileToPixel(old_body_info.coord.tile_y) - 14, objects[old_body_index].name, {
+                                    fontSize: 14,
+                                    padding: { x: 10, y: 5},
+                                    stroke: '#000000',
+                                    strokeThickness: 3,
+                                    fill: '#ffffff'});
+                            objects[old_body_index].name_text.setDepth(11);
+                        }
+                    }
+                }
+                // Our client doesn't have the coord where the player is, or the player moved somewhere out of drawing range
+                else if(coord_index === -1 || !shouldDraw(client_player_info.coord, planet_coords[coord_index])) {
+                    destroyPlayerSprite(players[player_index]);
+                    players[player_index].destination_x = false;
+                    players[player_index].destination_y = false;
+                }
+
+
+            }
+
+
+
+        } else if(current_view === 'ship') {
+            if(!data.player.ship_coord_id || data.player.ship_coord_id === 0) {
+                destroyPlayerSprite(players[player_index]);
+            } else {
+                let coord_index = ship_coords.findIndex(function(obj) { return obj && obj.id === data.player.ship_coord_id; });
+
+                if(coord_index !== -1 && shouldDraw(client_player_info.coord, ship_coords[coord_index])) {
+
+                    // TODO this isn't really the most efficient way to go about it
+                    // TODO maybe add in a player.sprite_source = 'galaxy'/'ship' or something so we can insta-know if the sprite is outdated
+                    createPlayerSprite(player_index);
+                    // If they don't have a sprite, insta move them there
+                    if(!players[player_index].sprite) {
+                        createPlayerSprite(player_index);
+
+                        movePlayerInstant(player_index, ship_coords[coord_index].tile_x * tile_size + tile_size / 2,
+                            ship_coords[coord_index].tile_y * tile_size + tile_size / 2);
+                    }
+                    // Otherwise, flow them there
+                    else if(data.player.ship_coord_id !== players[player_index].ship_coord_id) {
+                        movePlayerFlow(player_index, 'ship', ship_coords[coord_index], 'updatePlayer > ship');
+                    }
+
+                    // Player switched bodies!
+                    if(data.player.body_id !== players[player_index].body_id) {
+
+                        let old_body_index = objects.findIndex(function(obj) { return obj && obj.id === players[player_index].body_id; });
+
+                        players[player_index].body_id = parseInt(players[player_index].body_id);
+                        createPlayerSprite(player_index);
+                        setPlayerMoveDelay(player_index);
+
+                        // If the new body previously had a name on it, we remove that now
+                        let new_body_index = objects.findIndex(function(obj) { return obj && obj.id === data.player.body_id; });
+                        if(objects[new_body_index].name_text) {
+                            objects[new_body_index].name_text.destroy();
+                        }
+
+                        // and if the old body has a name, add in its name text
+                        if(objects[old_body_index].name) {
+                            let old_body_info = getObjectInfo(old_body_index);
+                            let scene_game = game.scene.getScene('sceneGame');
+
+                            objects[old_body_index].name_text = scene_game.add.text(tileToPixel(old_body_info.coord.tile_x) - 18,
+                                tileToPixel(old_body_info.coord.tile_y) - 14, objects[old_body_index].name, {
+                                    fontSize: 14,
+                                    padding: { x: 10, y: 5},
+                                    stroke: '#000000',
+                                    strokeThickness: 3,
+                                    fill: '#ffffff'});
+                            objects[old_body_index].name_text.setDepth(11);
+                        }
+                    }
+                }
+
+
+            }
+        } else if(current_view === 'galaxy') {
+
+            if(!data.player.coord_id || data.player.coord_id === 0) {
+                destroyPlayerSprite(players[player_index]);
+            } else {
+                let coord_index = coords.findIndex(function(obj) { return obj && obj.id === data.player.coord_id; });
+
+                if(coord_index === -1) {
+                    console.log("Other player moved to a galaxy coord we don't have");
+                    return false;
+                }
+
+                if(!shouldDraw(client_player_info.coord, coords[coord_index])) {
+                    console.log("Not drawing this other player galaxy move");
+                    return false;
+                }
+
+
+                // If they don't have a sprite, insta move them there
+                if(!players[player_index].sprite) {
+                    createPlayerSprite(player_index);
+
+                    movePlayerInstant(player_index, coords[coord_index].tile_x * tile_size + tile_size / 2,
+                        coords[coord_index].tile_y * tile_size + tile_size / 2);
+                }
+                // Otherwise, flow them there
+                else if(data.player.coord_id !== players[player_index].coord_id) {
+                    console.log("Calling movePlayerFlow");
+                    movePlayerFlow(player_index, 'galaxy', coords[coord_index], 'updatePlayer > galaxy');
+                } else {
+                    console.log("There was no move");
+                }
+
+                // Player switched ships!
+                if(data.player.ship_id !== players[player_index].ship_id && shouldDraw(client_player_info.coord, coords[coord_index])) {
+                    console.log("A player we shouldDraw just switched ships. Re-doing player sprite");
+                    players[player_index].ship_id = parseInt(data.player.ship_id);
+                    createPlayerSprite(player_index);
+                    setPlayerMoveDelay(player_index);
+                }
+
+            }
+
+
+
+
+        }
+
+
+    }
+
+    function updatePlayerClient(data) {
+
+        //console.log("In updatePlayerClient");
+
+        let update_spaceport_display = false;
+
+        // We switched planet levels
+        if(current_view === 'planet') {
+
+
+            if(data.player.planet_coord_id) {
+
+                // Player switched ships on a planet - so switching in a spaceport
+                if(players[client_player_index].ship_id !== data.player.ship_id) {
+                    update_spaceport_display = true;
+                }
+
+                let new_planet_coord_index = planet_coords.findIndex(function(obj) { return obj && obj.id === data.player.planet_coord_id; });
+
+                if(new_planet_coord_index === -1) {
+                    socket.emit('request_planet_coord_info', { 'planet_coord_id': data.player.planet_coord_id });
+                    return false;
+                }
+
+
+                // Normal planet move
+                if(players[client_player_index].planet_coord_id !== data.player.planet_coord_id && planet_coords[new_planet_coord_index].level === client_player_info.coord.level ) {
+
+
+
+                    // No point in sending the move if the player is already moving there
+                    if(players[client_player_index].destination_x &&
+                        players[client_player_index].destination_coord_id === planet_coords[new_planet_coord_index].id) {
+
+                    } else {
+                        movePlayerFlow(client_player_index, 'planet', planet_coords[new_planet_coord_index], 'updatePlayerClient > planet');
+                    }
+
+
+                }
+                // We moved levels
+                else if(planet_coords[new_planet_coord_index].level !== client_player_info.coord.level) {
+                    battle_linkers = [];
+
+                    // and remove the monster sprites that are on a different level
+                    // and add sprites for monsters that are now on our level
+                    monsters.forEach(function(monster, i) {
+
+                        let monster_coord_index = planet_coords.findIndex(function(obj) {
+                            return obj && obj.id === monster.planet_coord_id;
+                        });
+
+                        if(monster_coord_index === -1) {
+                            return false;
+                        }
+
+                        if(monster_coord_index !== -1 && monster.sprite &&
+                            planet_coords[monster_coord_index].level !== planet_coords[new_planet_coord_index].level) {
+                            monster.sprite.destroy();
+                            monster.sprite = false;
+                        }
+
+                        if(monster_coord_index !== -1 && !monster.sprite &&
+                            planet_coords[monster_coord_index].level === planet_coords[new_planet_coord_index].level &&
+                            shouldDraw(client_player_info.coord, planet_coords[monster_coord_index])) {
+                            createMonsterSprite(i);
+                        }
+                    });
+
+                    players.forEach(function(player, i) {
+
+                        if(player.id === client_player_id) {
+                            return false;
+                        }
+
+                        if(!player.planet_coord_id) {
+                            return false;
+                        }
+
+                        let other_planet_coord_index = planet_coords.findIndex(function(obj) { return obj &&
+                            obj.id === player.planet_coord_id; });
+
+                        if(other_planet_coord_index === -1) {
+                            destroyPlayerSprite(player);
+                        } else if(planet_coords[other_planet_coord_index].planet_id !== planet_coords[new_planet_coord_index].planet_id ||
+                            planet_coords[other_planet_coord_index].level !== planet_coords[new_planet_coord_index].level) {
+                            destroyPlayerSprite(player);
+                        } else if(planet_coords[other_planet_coord_index].planet_id === planet_coords[new_planet_coord_index].planet_id &&
+                            planet_coords[other_planet_coord_index].level === planet_coords[new_planet_coord_index].level) {
+                            createPlayerSprite(i);
+                        }
+
+                    });
+
+                    client_move_planet_coord_id = false;
+                    movePlayerInstant(client_player_index,
+                        planet_coords[new_planet_coord_index].tile_x * tile_size + tile_size / 2,
+                        planet_coords[new_planet_coord_index].tile_y * tile_size + tile_size / 2);
+                    
+
+
+                    //redrawMap();
+
+
+                }
+
+                let starting_x = planet_coords[new_planet_coord_index].tile_x - 6;
+                let starting_y = planet_coords[new_planet_coord_index].tile_y - 6;
+                let ending_x = planet_coords[new_planet_coord_index].tile_x + 6;
+                let ending_y = planet_coords[new_planet_coord_index].tile_y + 6;
+
+                // depending on the direction that we moved, we want to just make sure a specific line of planet coords are re-drawn
+                if(planet_coords[new_planet_coord_index].tile_x > client_player_info.coord.tile_x) {
+                    starting_x = ending_x;
+                } else if(planet_coords[new_planet_coord_index].tile_x < client_player_info.coord.tile_x) {
+                    ending_x = starting_x;
+                } else if(planet_coords[new_planet_coord_index].tile_y > client_player_info.coord.tile_y) {
+                    starting_y = ending_y;
+                } else if(planet_coords[new_planet_coord_index].tile_y < client_player_info.coord.tile_y) {
+                    ending_y = starting_y;
+                }
+
+                //console.log("Move has us redrawing from: " + starting_x + "," + starting_y + " to: " +
+                //    ending_x + "," + ending_y);
+
+                for(let x = starting_x; x <= ending_x; x++) {
+                    for(let y = starting_y; y <=ending_y; y++) {
+                        let drawing_index = planet_coords.findIndex(function(obj) { return obj &&
+                            obj.planet_id === planet_coords[new_planet_coord_index].planet_id &&
+                            obj.level === planet_coords[new_planet_coord_index].level &&
+                            obj.tile_x === x && obj.tile_y === y;
+                        });
+
+                        if(drawing_index !== -1) {
+                            //console.log("Movement is drawing a coord");
+                            drawCoord('planet', planet_coords[drawing_index]);
+                        }
+                    }
+                }
+
+
+
+
+            }
+        }
+        // Ship view, and we moved
+        else if(current_view === 'ship' && data.player.ship_coord_id && data.player.ship_coord_id !== players[client_player_index].ship_coord_id) {
+            //console.log("Got ship move");
+            let coord_index = ship_coords.findIndex(function(obj) { return obj && obj.id === data.player.ship_coord_id; });
+
+            if(coord_index === -1) {
+                socket.emit('request_ship_coord_info', { 'ship_coord_id': data.player.ship_coord_id });
+            } else {
+                //console.log("Moving to ship coord id: " + ship_coords[coord_index].id + " tile x,y: " + ship_coords[coord_index].tile_x + "," + ship_coords[coord_index].tile_y);
+                movePlayerFlow(client_player_index, 'ship', ship_coords[coord_index], 'updatePlayerClient > ship');
+            }
+
+        }
+        // Galaxy view and we moved
+        else if(current_view === 'galaxy' && data.player.coord_id && data.player.coord_id !== client_player_info.coord.id) {
+            //console.log("Client galaxy move");
+            let coord_index = coords.findIndex(function(obj) { return obj && obj.id === data.player.coord_id; });
+
+            if(coord_index === -1) {
+                socket.emit('request_coord_info', { 'coord_id': data.player.coord_id });
+            }
+
+            movePlayerFlow(client_player_index, 'galaxy', coords[coord_index], 'updatePlayerClient > galaxy');
+        } else if(current_view === 'galaxy' && players[client_player_index].ship_coord_id) {
+            console.log("Player switched from ship to galaxy view. I think we could insta-move the player now");
+
+            let coord_index = coords.findIndex(function(obj) { return obj && obj.id === data.player.coord_id; });
+
+            if(coord_index !== -1) {
+                console.log("Would insta-move now");
+                //movePlayerInstant(players[client_player_index], )
+            }
+
+        }
+
+        if(parseInt(data.player.body_id) !== players[client_player_index].body_id) {
+
+            let old_body_index = objects.findIndex(function(obj) { return obj && obj.id === players[client_player_index].body_id; });
+
+            players[client_player_index].body_id = parseInt(data.player.body_id);
+            createPlayerSprite(client_player_index);
+
+
+            if(current_view === 'planet') {
+                // and we insta move
+                let player_coord_index = planet_coords.findIndex(function(obj) { return obj && obj.id === data.player.planet_coord_id; });
+                if(player_coord_index !== -1) {
+                    movePlayerInstant(client_player_index, planet_coords[player_coord_index].tile_x * tile_size + tile_size / 2,
+                        planet_coords[player_coord_index].tile_y * tile_size + tile_size / 2);
+                }
+            } else if(current_view === 'ship') {
+                // and we insta move
+                let player_coord_index = ship_coords.findIndex(function(obj) { return obj && obj.id === data.player.ship_coord_id; });
+                if(player_coord_index !== -1) {
+                    movePlayerInstant(client_player_index, ship_coords[player_coord_index].tile_x * tile_size + tile_size / 2,
+                        ship_coords[player_coord_index].tile_y * tile_size + tile_size / 2);
+                }
+            }
+
+            console.log("Generating new equipment display due to new body");
+            generateEquipmentDisplay();
+            // If the new body previously had a name on it, we remove that now
+            let new_body_index = objects.findIndex(function(obj) { return obj && obj.id === data.player.body_id; });
+            if(objects[new_body_index].name_text) {
+                objects[new_body_index].name_text.destroy();
+            }
+
+            // and if the old body has a name, add in its name text
+            if(objects[old_body_index].name) {
+                let old_body_info = getObjectInfo(old_body_index);
+                let scene_game = game.scene.getScene('sceneGame');
+
+                objects[old_body_index].name_text = scene_game.add.text(tileToPixel(old_body_info.coord.tile_x) - 18,
+                    tileToPixel(old_body_info.coord.tile_y) - 14, objects[old_body_index].name, {
+                        fontSize: 14,
+                        padding: { x: 10, y: 5},
+                        stroke: '#000000',
+                        strokeThickness: 3,
+                        fill: '#ffffff'});
+                objects[old_body_index].name_text.setDepth(11);
+            }
+
+
+        }
+
+        // Player switched ships in the galaxy view
+        if(current_view === 'galaxy' && parseInt(data.player.ship_id) !== players[client_player_index].ship_id) {
+
+            console.log("Our player switched ships");
+
+            let old_ship_id = players[client_player_index].ship_id;
+
+            let old_ship_index = objects.findIndex(function(obj) { return obj && obj.id === old_ship_id; });
+
+            // SET THE NEW SHIP ID
+            players[client_player_index].ship_id = parseInt(data.player.ship_id);
+            createPlayerSprite(client_player_index);
+
+            // and we insta move
+            let player_coord_index = coords.findIndex(function(obj) { return obj && obj.id === data.player.coord_id; });
+            if(player_coord_index !== -1) {
+                movePlayerInstant(client_player_index, coords[player_coord_index].tile_x * tile_size + tile_size / 2,
+                    coords[player_coord_index].tile_y * tile_size + tile_size / 2);
+            }
+
+            // and we redraw the coord with the old ship
+
+            console.log("Old ship id: " + old_ship_id + "  index: " + old_ship_index + " old ship coord id: " + objects[old_ship_index].coord_id);
+
+            if(old_ship_index !== -1 && objects[old_ship_index].coord_id) {
+
+                let object_coord_index = coords.findIndex(function(obj) { return obj &&
+                    obj.id === objects[old_ship_index].coord_id; });
+
+                if(object_coord_index !== -1) {
+                    console.log("Redrawing coord with old ship on it");
+                    drawCoord('galaxy', coords[object_coord_index]);
+                } else {
+                    console.log("Couldn't find old ship coord");
+                }
+
+            } else {
+                console.log("Couldn't find old ship index or it doesn't have a coord id");
+            }
+
+            setPlayerMoveDelay(client_player_index);
+
+            // If the new ship previously had a name on it, we remove that now
+            let new_ship_index = objects.findIndex(function(obj) { return obj && obj.id === data.player.ship_id; });
+            if(objects[new_ship_index].name_text) {
+                objects[new_ship_index].name_text.destroy();
+            }
+
+            // and if the old body has a name, add in its name text
+            if(objects[old_ship_index].name) {
+                let old_ship_info = getObjectInfo(old_ship_index);
+                let scene_game = game.scene.getScene('sceneGame');
+
+                objects[old_ship_index].name_text = scene_game.add.text(tileToPixel(old_ship_info.coord.tile_x) - 18,
+                    tileToPixel(old_ship_info.coord.tile_y) - 14, objects[old_ship_index].name, {
+                        fontSize: 14,
+                        padding: { x: 10, y: 5},
+                        stroke: '#000000',
+                        strokeThickness: 3,
+                        fill: '#ffffff'});
+                objects[old_ship_index].name_text.setDepth(11);
+            }
+
+        }
+
+    }
+
+    function worldPointToTileX(x) {
+        return Math.floor(x / tile_size);
+    }
+
+    function worldPointToTileY(y) {
+        // 3.17 weird stuff
+        //return Math.floor(y / tile_size) + 5;
+        return Math.floor(y / tile_size);
+        //return Math.floor(pixel_number / (tile_size * 2) );
+    }
+
+</script>

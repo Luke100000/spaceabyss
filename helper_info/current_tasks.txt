@@ -1,0 +1,83 @@
+
+
+DOING NOW:
+
+    See if we can make it to a warmind
+
+
+NEED TO DRAW
+
+
+    Some slerm. Baby slerm, generic slerm
+    Corporation floor type is ass (and need variety
+    Spaceport + Spaceport Buffer is really odd looking
+
+
+    Glass of Life Water / Bulb of Life water?
+        Drew Kick Bulb. Could do the same with life water
+
+
+
+    Low Priority:
+        https://gemquery.com/admin/favorite-view/818
+        Sandstone
+        Sandstone deposit
+        Sandstone floor
+        Sandstone wall
+
+
+
+CHANGES TO GAME FILE
+
+    above_images:
+
+    floor_images:
+
+
+    object_images:
+
+
+
+
+
+Things to have Joey (RunninBlood) Draw
+
+
+    quick matter knife
+
+    ship laser
+
+    Mining beam
+    Salvaging beam
+
+    Territe
+    Syntite
+    Chitin
+    Exodium
+
+
+
+    Dust Deposit
+
+    Manufacturer
+        Advanced Manufacturer
+            Smart Manufacturer
+
+    Forge
+        Advanced Forge
+            Smart Forge
+
+    Food Replicator
+        Advanced Food Replicator
+            Smart Food Replicator
+
+    Researcher
+        Advanced Researcher
+            Smart Researcher
+
+
+
+
+
+
+

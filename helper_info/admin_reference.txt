@@ -1,0 +1,79 @@
+game.processAdminChatMessage
+/addinventory AMOUNT OBJECT_TYPE_NAME
+/buildstructure STRUCTURE_TYPE_ID PLANET_COORD_ID PLAYER_ID
+/connectlevel PLANET_ID LEVEL
+/deletenpc npc_id
+/deleteobject object_id
+/deletestructure structure_id
+/destroyplanet PLANET_ID
+/generateplanet PLANET_ID
+/move (UP|DOWN)
+/movenpc NPC_ID planet_coord_id
+/moveplanet PLANET_ID coord_id
+/replacefloor COORD_TYPE(planet|ship|galaxy) COORD_ID NEW_FLOOR_TYPE_ID
+/setplanettype PLANET_ID PLANET_TYPE_ID
+/spawnevent PLANET_COORD_ID EVENT_ID
+/spawnmonster MONSTER_TYPE_ID
+/spawnnpc NPC_JOB_ID
+/spawnobject AMOUNT OBJECT_TYPE_NAME
+
+
+
+
+
+
+
+BOARD/CARD GAMES
+Android netrunner - card list
+
+VIDEO GAMES
+Azure Dreams - Gameplay mechanics, dungeon, city building, monster capturing
+Blazing Beaks - The pixel art
+Cookie Clicker
+Gravity Well - Owning planets
+Space Domination/Star Dart
+Starbound
+Stardew Valley
+Starsiege
+Mech games.
+board game tiny epic mechs
+Laurum Online ( mobile mmorpg )
+Mystera Legacy ( mmorpg )
+margonem ( mmorpg )
+rpg mo ( mmorpg )
+mirage realms ( mmorpg )
+
+
+Other game ideas I want to make:
+A new version of Space Domination
+Possibly something like gravity well
+A Kingdom-like ACP Game
+7th Continent-esque exploration ACP Game
+
+
+LEVELS
+    NORMAL:
+    global.level_modifier = 0.10;
+    level = 1 + Math.floor(global.level_modifier * Math.sqrt(dirty.players[player_index].defending_skill_points));
+    2 = 100
+    3 = 400
+    4 = 900
+    5 = 1600
+
+    DIFFICULT:
+    global.difficult_level_modifier = 0.20;
+    level = 1 + Math.floor(global.difficult_level_modifier * Math.sqrt(dirty.players[player_index].cooking_skill_points))
+    2 = 25
+    3 = 100
+    4 = 225
+    5 = 400
+
+
+COMPLEXITY
+    1 is easy.
+    10 seems medium?
+
+
+TIMINGS | SERVER SPEED
+    As of 8/17/2019:
+    -2 to +2 planet coord search currently takes <3ms
