@@ -125,6 +125,10 @@ include('config.php');
                     <h3 class="is-size-3">Game Login</h3>
                     <form class="form-control" id="login">
 
+                        <div id="login_status">
+
+                        </div>
+
                         <div class="field">
                             <label class="label">Email</label>
                             <input id="email" type="email" class="input">

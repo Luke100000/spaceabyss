@@ -6786,7 +6786,7 @@
                     players[player_index].current_move_delay + " based on object type id: " + object_types[body_type_index].id);
             } else {
                 players[player_index].current_move_delay = 500;
-            }c
+            }
 
         } else if(current_view === 'galaxy') {
 
@@ -7646,6 +7646,19 @@
 
 
             $('#click_menu').append("</div>");
+        }
+
+        // See if anything can be dropped onto this
+        let can_be_dropped_object_types = object_types.filter(object_type => object_type.drop_requires_object_type_id == objects[object_index].object_type_id);
+        if(can_be_dropped_object_types.length > 0) {
+            // For each of these, see if the client player has an inventory item that matches
+            for(let i = 0; i < can_be_dropped_object_types.length; i++) {
+                let inventory_item_index = inventory_items.findIndex(function(obj) { return obj && obj.player_id === client_player_id && obj.object_type_id === can_be_dropped_object_types[i].id; });
+                if(inventory_item_index !== -1) {
+                    $('#click_menu').append(can_be_dropped_object_types[i].name + " <button id='drop_" + inventory_items[inventory_item_index].id + "_1' x='" + coord.tile_x +
+                        "' y='" + coord.tile_y + "' amount='1' class='button is-default is-small'>Place On</button>");
+                }
+            }
         }
 
         /******************** INDIVIDUAL THINGS. SHOULD TRY AND MAKE FLAGS LIKE can_store_items, can_manage, etc ****************/

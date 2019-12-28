@@ -1,3 +1,38 @@
+## [0.0.6] - 2019-12-28
+### Fixed
+- Auto doc required message appearing as a success instead of failure.
+- Mini drones not moving when attacking
+- Game file index for acid floors
+- Hull welders can now be picked up, Chitin legs can now be picked up
+- Bug when placing an object type on that same object type
+- Failed login redirecting to 404 pages on the website
+
+
+### Changed
+- Updated the complexity of Chitin Body ( armor ) to 6 to match the rest of the set
+- AI Fragment complexity increased from 14 to 18
+- Updated the assembly requirements for laser guns and laser rifles
+- Made Monitors weak to hacking attacks
+- Re-coded the game.tickObjectSpawners function
+- Thiol extractors can only be placed on thiol deposits
+- The large 'Play Space Abyss' button on the website now is disabled if the above steps aren't met. You still don't
+need to login to the website to play the game, but this should be more clear for new players.
+- New sprites for slaver planet, corporation planet, and dirt walls from @UnfuneralOD
+
+### Added
+- Exodium armor set. Using placeholder sprites for now
+- Thiol Extractors now spawn thiol canisters
+- Added a planet_type_impact_linkers table, which we will be able to use to increase or decrease planet HP based 
+on object types being produced/generated from the planet ( current goal is Thiol extraction from acid planets 
+reducing hp)
+- Added a drop_requires_object_type_id property to object types to support needing to drop a Thiol Extractor on 
+a Thiol Deposit
+- Thiol Deposists now spawn on Acid planets as an event.
+- Placeholder images for thiol deposit, thiol extractor, and thiol cannister
+- Added a navbar to the Space Abyss website
+- A bypass for the new disabled 'Play Space Abyss' button
+- Added in game assets psd files. I use Photopea to open/edit these.
+
 ## [0.0.5] - 2019-12-23
 ### Fixed
 - Only stack equippable items if they are consumed on attack

@@ -1021,6 +1021,56 @@ module.exports = function(main, io, mysql, pool, chalk, log, uuid, PF) {
 
     module.checkObjectBattleConditions = checkObjectBattleConditions;
 
+
+    //  data:   object_type_id   |   planet_coord_id   |   amount
+    async function checkPlanetImpact(dirty, data) {
+
+        try {
+
+            let planet_index = -1;
+
+
+            if(data.planet_coord_id) {
+                let planet_coord_index = await main.getPlanetCoordIndex({ 'planet_coord_id': parseInt(data.planet_coord_id )});
+                if(planet_coord_index !== -1) {
+                    planet_index = await main.getPlanetIndex({ 'planet_id': dirty.planet_coords[planet_coord_index].planet_id });
+                }
+            }
+
+            if(planet_index === -1) {
+                log(chalk.yellow("Was unable to find the planet"));
+                return false;
+            }
+
+
+            // try and find a matching linker
+            let linker_index = dirty.planet_type_impact_linkers.findIndex(function(obj) { return obj &&
+                obj.planet_type_id === dirty.planets[planet_index].planet_type_id && obj.object_type_id === parseInt(data.object_type_id); });
+
+            if(linker_index === -1) {
+                console.log("No impact linker");
+                return false;
+            }
+
+
+            dirty.planets[planet_index].current_hp += dirty.planet_type_impact_linkers[linker_index].hp_change;
+
+            if(dirty.planets[planet_index].current_hp < 0) {
+                dirty.planets[planet_index].current_hp = 0;
+            } else if(dirty.planets[planet_index].current_hp > dirty.planets[planet_index].max_hp) {
+                dirty.planets[planet_index].current_hp = dirty.planets[planet_index].max_hp;
+            }
+            dirty.planets[planet_index].has_change = true;
+
+
+        } catch(error) {
+            log(chalk.red("Error in world.checkPlanetImpact: " + error));
+            console.error(error);
+        }
+    }
+
+    module.checkPlanetImpact = checkPlanetImpact;
+
     function complexityCheck(level, complexity) {
 
         // If the player's surgery level is high enough, it's just gonna work

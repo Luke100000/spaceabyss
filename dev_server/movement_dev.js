@@ -2627,7 +2627,7 @@ module.exports = function(main, io, mysql, pool, chalk, log, world, map) {
             } else if(data.warping_to === 'galaxy') {
 
                 // No base coord index - lets just get a random one
-                if(!data.base_coord_index) {
+                if(typeof data.base_coord_index === 'undefined') {
 
                     let found_coord = false;
                     let max_tries = 20;

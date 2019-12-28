@@ -165,13 +165,11 @@ module.exports = function(main, io, mysql, pool, chalk, log, world, inventory, g
                 defense = dirty.monster_types[monster_type_index].defense;
             }
 
-
             // modify for each damage type we encounter.....
             if(damage_types.length > 0) {
 
 
                 for(let i = 0; i < damage_types.length; i++) {
-                    //console.log("Have damage type: " + damage_types[i]);
 
                     if(damage_types[i] === 'hacking' && dirty.monster_types[monster_type_index].hacking_defense_modifier) {
                         defense += dirty.monster_types[monster_type_index].hacking_defense_modifier;
@@ -182,9 +180,9 @@ module.exports = function(main, io, mysql, pool, chalk, log, world, inventory, g
                     }
                 }
 
+
             }
 
-            //console.log("Defense being returned is: " + defense);
             return defense;
 
 
@@ -1641,9 +1639,11 @@ module.exports = function(main, io, mysql, pool, chalk, log, world, inventory, g
                 return false;
             }
 
-            // See if there's an AI that comes into play
             let damage_amount = attack - defense;
 
+
+
+            // See if there's an AI that comes into play
 
             let ai_index = await world.getAIProtector(dirty, { 'damage_amount': damage_amount,
                 'monster_index': monster_index, 'coord': monster_info.coord });

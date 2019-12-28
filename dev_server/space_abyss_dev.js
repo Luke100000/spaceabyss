@@ -134,6 +134,7 @@ dirty.planet_coords = [];
 dirty.planet_event_linkers = [];
 dirty.planet_monster_linkers = [];
 dirty.planet_object_linkers = [];
+dirty.planet_type_impact_linkers = [];
 dirty.planet_types = [];
 dirty.planet_type_display_linkers = [];
 dirty.players = [];
@@ -588,52 +589,6 @@ inits.init(4, function(callback) {
 });
 
 
-// Load NPC Structures Into Memory
-inits.init(4, function(callback) {
-
-    pool.query("SELECT * FROM structure_types", function(err, rows, fields) {
-        if(err) throw err;
-
-        if(rows[0]) {
-            dirty.structure_types = rows;
-
-            console.log("Loaded Npc Structures Into Memory");
-
-            callback(null);
-
-        }
-
-    });
-
-});
-
-inits.init(5, function(callback) {
-    pool.query("SELECT * FROM structure_type_linkers", function(err, rows, fields) {
-        if(err) throw err;
-
-        if(rows[0]) {
-            dirty.structure_type_linkers = rows;
-        }
-
-        console.log("Loaded Structure Type Linkers Into Memory");
-
-        callback(null);
-    });
-});
-
-inits.init(5, function(callback) {
-    pool.query("SELECT * FROM structure_type_requirement_linkers", function(err, rows, fields) {
-        if(err) throw err;
-
-        if(rows[0]) {
-            dirty.structure_type_requirement_linkers = rows;
-        }
-
-        console.log("Loaded Npc Structure Requirement Linkers Into Memory");
-
-        callback(null);
-    });
-});
 
 // Load NPCs Into Memory
 inits.init(function(callback) {
@@ -954,6 +909,20 @@ inits.init(function(callback) {
 });
 
 inits.init(function(callback) {
+    pool.query("SELECT * FROM planet_type_impact_linkers", function(err, rows, fields) {
+        if(err) throw err;
+
+        if(rows[0]) {
+            dirty.planet_type_impact_linkers = rows;
+        }
+
+        console.log("Loaded Planet Type Impact Linkers Into Memory");
+
+        callback(null);
+    });
+});
+
+inits.init(function(callback) {
     pool.query("SELECT * FROM races", function(err, rows, fields) {
         if(err) throw err;
 
@@ -1062,6 +1031,53 @@ inits.init(function(callback) {
         }
 
         console.log("Loaded Structures Into Memory");
+
+        callback(null);
+    });
+});
+
+// Load  Structure TYpes Into Memory
+inits.init(4, function(callback) {
+
+    pool.query("SELECT * FROM structure_types", function(err, rows, fields) {
+        if(err) throw err;
+
+        if(rows[0]) {
+            dirty.structure_types = rows;
+
+            console.log("Loaded Npc Structures Into Memory");
+
+            callback(null);
+
+        }
+
+    });
+
+});
+
+inits.init(5, function(callback) {
+    pool.query("SELECT * FROM structure_type_linkers", function(err, rows, fields) {
+        if(err) throw err;
+
+        if(rows[0]) {
+            dirty.structure_type_linkers = rows;
+        }
+
+        console.log("Loaded Structure Type Linkers Into Memory");
+
+        callback(null);
+    });
+});
+
+inits.init(5, function(callback) {
+    pool.query("SELECT * FROM structure_type_requirement_linkers", function(err, rows, fields) {
+        if(err) throw err;
+
+        if(rows[0]) {
+            dirty.structure_type_requirement_linkers = rows;
+        }
+
+        console.log("Loaded Npc Structure Requirement Linkers Into Memory");
 
         callback(null);
     });
@@ -2276,7 +2292,7 @@ async function loginPlayer(socket, dirty, data) {
         let [rows, fields] = await (pool.query("SELECT id,name,password FROM users WHERE email = ?", [trying_email]));
 
         if(!rows[0]) {
-            socket.emit('login_data', { 'status': 'failed '});
+            socket.emit('login_data', { 'status': 'failed'});
             return false;
         }
 
@@ -5610,8 +5626,7 @@ setInterval(tickDecay, 600000, dirty);
 
 // 2 hours
 // Testing at 30 seconds
-//setInterval(tickDecay, 30000, dirty);
-
+//setInterval(tickObjectSpawners, 30000, dirty);
 setInterval(tickObjectSpawners, 7200000, dirty);
 
 

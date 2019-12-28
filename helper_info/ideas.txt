@@ -2,6 +2,8 @@
 
 HACKING. THE VIEW I HAVEN'T MADE YET! Need a way to enter into virtual realm
 
+A player body type that is resistant to acid - or armor that is especially useful for it. (I LIKE BOTH :p )
+
 
 There's a high fail chance for complex things. Manufacturing skill helps. Certain monsters drop blueprints that will
  99% the success rate of manufacturing the item. Not really sure how I would want to implement blueprints. One time use?

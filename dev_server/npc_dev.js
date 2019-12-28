@@ -44,7 +44,7 @@ module.exports = function(main, io, mysql, pool, chalk, log, world, inventory, m
 
                 log(chalk.cyan("Destination set! Poor planet!"));
             }
-            /******************** NPC WITHOUT STRUCTURE, ON A PLANET **********************/
+            /******************** WITHOUT STRUCTURE, ON A PLANET **********************/
             else {
 
                 // If there's a coord that spawns a monster around us, we take it over and replace it with

@@ -2316,6 +2316,7 @@ module.exports = function(main, io, mysql, pool, chalk, log, uuid, world, map, i
                 // Can't place shipyards on planets
                 if(dirty.inventory_items[inventory_item_index].object_id && dirty.objects[object_index].object_type_id === 116) {
                     socket.emit('chat', { 'message': "Can't place shipyards on planets. Shipyards must be built in space", 'scope': 'system' });
+                    socket.emit('result_info', { 'status': 'failure', 'text': 'Place In Galaxy' });
                     return false;
                 }
 
@@ -2383,11 +2384,37 @@ module.exports = function(main, io, mysql, pool, chalk, log, uuid, world, map, i
             }
 
 
+            // Some things require that they be placed on specific other things ( Thiol Extractor on a Thiol Deposit, Spaceport on Galaxy )
+            let pre_verified_can_place = false;
+            if(dirty.object_types[object_type_index].drop_requires_object_type_id) {
+                if(temp_coord.object_type_id === dirty.object_types[object_type_index].drop_requires_object_type_id) {
+                    pre_verified_can_place = true;
+                } else {
+                    // We need to get the required object type for a useful user message
+                    let required_object_type_index = main.getObjectTypeIndex(dirty.object_types[object_type_index].drop_requires_object_type_id);
+
+                    socket.emit('result_info', { 'status': 'failure', 'text': "Must place on " + dirty.object_types[required_object_type_index].name });
+                    log(chalk.yellow("That must be placed on a specific type of object type"));
+                    return false;
+                }
+            }
+
+            // We can only drop this on specific classes of floors ( think Spaceport and galaxy )
+            if(dirty.object_types[object_type_index].drop_requires_floor_type_class) {
+                let floor_type_index = main.getFloorTypeIndex(temp_coord.floor_type_id);
+                if(floor_type_index === -1 || dirty.floor_types[floor_type_index].class !== dirty.object_types[object_type_index].drop_requires_floor_type_class) {
+                    socket.emit('result_info', { 'status': 'failure', 'text': "Must place on " + dirty.object_types[object_type_index].drop_requires_floor_type_class + " floor"});
+                    log(chalk.yellow("That must be placed on a specific type of floor"));
+                    return false;
+                }
+            }
+
+
 
             // Now that we've gathered our data - we can do the sending
             // See if there is already a matching object type here without an object present
             if(temp_coord.object_type_id && !temp_coord.object_id &&
-                temp_coord.object_type_id === temp_coord.object_type_id) {
+                temp_coord.object_type_id === dirty.object_types[object_type_index].id) {
                 console.log("Planet coord has this object_type_id and doesn't have an object id - so we can just update the amount");
 
                 let amount_update_data = update_data;
@@ -2400,7 +2427,7 @@ module.exports = function(main, io, mysql, pool, chalk, log, uuid, world, map, i
                 await inventory.removeFromInventory(socket, dirty, remove_inventory_data);
                 await inventory.sendInventory(socket, false, dirty, 'player', socket.player_id);
 
-            } else if(await main.canPlaceObject({ 'scope': scope, 'coord': temp_coord, 'object_type_id': dirty.object_types[object_type_index].id })) {
+            } else if(pre_verified_can_place || await main.canPlaceObject({ 'scope': scope, 'coord': temp_coord, 'object_type_id': dirty.object_types[object_type_index].id })) {
 
 
                 console.log("Can place there! object_id: " + dirty.inventory_items[inventory_item_index].object_id);
@@ -2446,6 +2473,14 @@ module.exports = function(main, io, mysql, pool, chalk, log, uuid, world, map, i
                     object_update_data.object_id = dirty.inventory_items[inventory_item_index].object_id;
 
 
+                    // If there was a requirement that someone else was there previously, we can remove that now
+                    if(dirty.object_types[object_type_index].drop_requires_object_type_id && temp_coord.object_id) {
+                        let removing_object_index = await main.getObjectIndex(temp_coord.object_id);
+                        if(removing_object_index !== -1) {
+                            await deleteObject(dirty, { 'object_index': removing_object_index });
+                        }
+                    }
+
                     let placed_result = await main.placeObject(socket, dirty, object_update_data);
 
                     console.log("placed_result: " + placed_result);
@@ -2479,6 +2514,7 @@ module.exports = function(main, io, mysql, pool, chalk, log, uuid, world, map, i
             } else {
                 console.log("Unable to place object there");
                 socket.emit('chat', {'message':'Unable to place object there', 'scope': 'system'});
+                socket.emit('result_info', { 'status': 'failure', 'text': 'Unable to place there' });
             }
 
 
@@ -2594,7 +2630,7 @@ module.exports = function(main, io, mysql, pool, chalk, log, uuid, world, map, i
                 if(player_info.coord.object_type_id !== 140) {
                     console.log("Player is not standing on an auto doc. on coord id: " + player_info.coord.id + " object_id: " + player_info.coord.object_id + " Object type id here is: " + player_info.coord.object_type_id);
                     socket.emit('chat', { 'message': "Equipping this at this location requires an auto doc. You need to be standing on an auto doc", 'scope':'system' });
-                    socket.emit('result_info', { 'status': 'Failure', 'text': 'Auto Doc Required' });
+                    socket.emit('result_info', { 'status': 'failure', 'text': 'Auto Doc Required' });
                     return false;
                 }
 
@@ -8148,121 +8184,130 @@ module.exports = function(main, io, mysql, pool, chalk, log, uuid, world, map, i
             //log(chalk.green("In game.tickObjectSpawners"));
 
 
-            // Objects can spawn objects or monsters. Lets do objects then monsters
-            let object_spawning_types = dirty.object_types.filter(object_type => object_type.spawns_object_type_id);
+            let spawning_object_types = [];
 
-            object_spawning_types.forEach(function(object_type) {
-                let spawning_objects = dirty.objects.filter(object => object.object_type_id === object_type.id && !object.has_spawned_object);
+            for(let i = 0; i < dirty.object_types.length; i++) {
 
-                spawning_objects.forEach(function(object) {
-                    object.has_spawned_object = true;
-                    object.spawned_object_type_amount = object_type.spawns_object_type_amount;
-                    object.has_change = true;
-                });
-            });
+                if(dirty.object_types[i].spawns_object_type_id) {
+                    spawning_object_types.push({ 'object_type_id': dirty.object_types[i].id, 'spawns_object_type_id': dirty.object_types[i].spawns_object_type_id,
+                        'spawns_object_type_amount': dirty.object_types[i].spawns_object_type_amount });
+                }
 
-            let monster_spawning_types = dirty.object_types.filter(object_type => object_type.spawns_monster_type_id);
-            monster_spawning_types.forEach(async function(object_type) {
+                if(dirty.object_types[i].spawns_monster_type_id) {
+                    spawning_object_types.push({ 'object_type_id': dirty.object_types[i].id, 'spawns_monster_type_id': dirty.object_types[i].spawns_monster_type_id,
+                        'spawns_monster_location': dirty.object_types[i].spawns_monster_location });
+                }
+            }
 
-                try {
-                    let spawning_objects = dirty.objects.filter(object => object.object_type_id === object_type.id);
+            for(let i = 0; i < dirty.objects.length; i++) {
+                if(dirty.objects[i]) {
 
-                    spawning_objects.forEach(async function(object) {
+                    let spawning_object_type_index = spawning_object_types.findIndex(function(obj) { return obj && obj.object_type_id === dirty.objects[i].object_type_id; });
 
-                        try {
-                            // delete us, and put the monster where we are
-                            if(object_type.spawns_monster_location === 'self') {
+                    if(spawning_object_type_index !== -1 && spawning_object_types[spawning_object_type_index].spawns_object_type_id) {
+                        if(!dirty.objects[i].has_spawned_object) {
+                            console.log("Object is spawning stuff!");
+                            dirty.objects[i].has_spawned_object = true;
+                            dirty.objects[i].spawned_object_type_amount = spawning_object_types[spawning_object_type_index].spawns_object_type_amount;
+                            dirty.objects[i].has_change = true;
 
-                                let object_index = await main.getObjectIndex(object.id);
-                                let coord_index = await main.getPlanetCoordIndex({ 'planet_coord_id': object.planet_coord_id });
+                            // We need to send the updated object info!
 
-                                let spawned_event_id = false;
-                                if(dirty.objects[object_index].spawned_event_id) {
-                                    spawned_event_id = dirty.objects[object_index].spawned_event_id;
-                                }
+                            if(dirty.objects[i].planet_coord_id) {
+                                world.checkPlanetImpact(dirty, { 'object_type_id': spawning_object_types[spawning_object_type_index].spawns_object_type_id,
+                                    'amount': spawning_object_types[spawning_object_type_index].spawns_object_type_amount, 'planet_coord_id': dirty.objects[i].planet_coord_id });
+                            }
 
-                                await deleteObject(dirty, { 'object_index': object_index });
+                        }
+                    }
 
-                                world.spawnMonster(dirty, { 'planet_coord_id':dirty.planet_coords[coord_index].id,
-                                    'monster_type_id': object_type.spawns_monster_type_id,
-                                    'spawned_event_id': spawned_event_id });
+                    if(spawning_object_type_index !== -1 && spawning_object_types[spawning_object_type_index].spawns_monster_type_id) {
 
-                            } else if(object_type.spawns_monster_location === 'adjacent') {
-                                console.log("Seeing if spawning adjacent works!");
-
-                                let object_index = await main.getObjectIndex(object.id);
-                                // go through the coords aroudn the object, and spawn on the first available one
-                                let object_info = await world.getObjectCoordAndRoom(dirty, object_index);
-                                if(!object_info.coord) {
-                                    log(chalk.yellow("Could not find coord for object id: " + dirty.objects[object_index].id));
-                                    return false;
-                                }
-
-                                let placed_monster = false;
-                                for(let x = object_info.coord.tile_x - 1; x <= object_info.coord.tile_x + 1; x++) {
-                                    for(let y = object_info.coord.tile_y -1; y <= object_info.coord.tile_y + 1; y++) {
-
-                                        if(!placed_monster) {
-                                            if(dirty.objects[object_index].planet_coord_id) {
-                                                let possible_coord_index = await main.getPlanetCoordIndex({ 'planet_id': object_info.coord.planet_id,
-                                                    'planet_level': object_info.coord.level, 'tile_x': x, 'tile_y': y });
-                                                if(possible_coord_index !== -1) {
-                                                    if(main.canPlace('planet', dirty.planet_coords[possible_coord_index], 'monster', false)) {
-
-                                                        placed_monster = true;
-                                                        let spawn_monster_data = { 'planet_coord_index': possible_coord_index, 'monster_type_id': object_type.spawns_monster_type_id };
+                        // delete us, and put the monster where we are
+                        if(spawning_object_types[spawning_object_type_index].spawns_monster_location === 'self') {
 
 
-                                                        await world.spawnMonster(dirty, spawn_monster_data);
-                                                    }
+                            let coord_index = await main.getPlanetCoordIndex({ 'planet_coord_id': dirty.objects[i].planet_coord_id });
+
+                            let spawned_event_id = false;
+                            if(dirty.objects[i].spawned_event_id) {
+                                spawned_event_id = dirty.objects[i].spawned_event_id;
+                            }
+
+                            await deleteObject(dirty, { 'object_index': i });
+
+                            world.spawnMonster(dirty, { 'planet_coord_id':dirty.planet_coords[coord_index].id,
+                                'monster_type_id': spawning_object_types[spawning_object_type_index].spawns_monster_type_id,
+                                'spawned_event_id': spawned_event_id });
+
+                        } else if(spawning_object_types[spawning_object_type_index].spawns_monster_location === 'adjacent') {
+                            console.log("Seeing if spawning adjacent works!");
+
+                            // go through the coords aroudn the object, and spawn on the first available one
+                            let object_info = await world.getObjectCoordAndRoom(dirty, i);
+                            if(!object_info.coord) {
+                                log(chalk.yellow("Could not find coord for object id: " + dirty.objects[i].id));
+                                return false;
+                            }
+
+                            let placed_monster = false;
+                            for(let x = object_info.coord.tile_x - 1; x <= object_info.coord.tile_x + 1; x++) {
+                                for(let y = object_info.coord.tile_y -1; y <= object_info.coord.tile_y + 1; y++) {
+
+                                    if(!placed_monster) {
+                                        if(dirty.objects[i].planet_coord_id) {
+                                            let possible_coord_index = await main.getPlanetCoordIndex({ 'planet_id': object_info.coord.planet_id,
+                                                'planet_level': object_info.coord.level, 'tile_x': x, 'tile_y': y });
+                                            if(possible_coord_index !== -1) {
+                                                if(main.canPlace('planet', dirty.planet_coords[possible_coord_index], 'monster', false)) {
+
+                                                    placed_monster = true;
+                                                    let spawn_monster_data = { 'planet_coord_index': possible_coord_index, 'monster_type_id': spawning_object_types[spawning_object_type_index].spawns_monster_type_id };
+
+
+                                                    await world.spawnMonster(dirty, spawn_monster_data);
                                                 }
+                                            }
 
-                                            } else if(dirty.objects[object_index].ship_coord_id) {
-                                                let possible_coord_index = await main.getShipCoordIndex({ 'ship_id': object_info.coord.ship_id,
-                                                    'tile_x': x, 'tile_y': y });
-                                                if(possible_coord_index !== -1) {
-                                                    if(main.canPlace('ship', dirty.ship_coords[possible_coord_index], 'monster', false)) {
+                                        } else if(dirty.objects[i].ship_coord_id) {
+                                            let possible_coord_index = await main.getShipCoordIndex({ 'ship_id': object_info.coord.ship_id,
+                                                'tile_x': x, 'tile_y': y });
+                                            if(possible_coord_index !== -1) {
+                                                if(main.canPlace('ship', dirty.ship_coords[possible_coord_index], 'monster', false)) {
 
-                                                        placed_monster = true;
-                                                        let spawn_monster_data = { 'ship_coord_index': possible_coord_index, 'monster_type_id': object_type.spawns_monster_type_id };
+                                                    placed_monster = true;
+                                                    let spawn_monster_data = { 'ship_coord_index': possible_coord_index, 'monster_type_id': spawning_object_types[spawning_object_type_index].spawns_monster_type_id };
 
 
-                                                        await world.spawnMonster(dirty, spawn_monster_data);
+                                                    await world.spawnMonster(dirty, spawn_monster_data);
 
-                                                    }
                                                 }
                                             }
                                         }
-
                                     }
+
                                 }
                             }
-
-
-                            else {
-                                log(chalk.yellow("Haven't coded when objects spawn monsters at: " + object_type.spawns_monster_location));
-
-
-                                // try and find an adjacent spot to put the monster
-                                // TODO CODE THIS :/ *future self hatred intensifies*
-                            }
-                        } catch(error) {
-                            log(chalk.red("Error in game.tickObjectSpawners - object: " + error));
                         }
 
 
-                    });
-                } catch(error) {
-                    log(chalk.red("Error in game.tickObjectSpawners - monster spawning types: " + error));
+                        else {
+                            log(chalk.yellow("Haven't coded when objects spawn monsters at: " + spawning_object_types[spawning_object_type_index].spawns_monster_location));
+
+
+                            // try and find an adjacent spot to put the monster
+                            // TODO CODE THIS :/ *future self hatred intensifies*
+                        }
+
+
+                    }
                 }
+            }
 
 
-
-
-
-            });
         } catch(error) {
             log(chalk.red("Error in game.tickObjectSpawners: " + error));
+            console.error(error);
         }
 
 

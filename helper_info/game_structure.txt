@@ -156,46 +156,61 @@ Territe Armor:
         Just mine some territe and turn it into armor
 
 
-Chitin Armor:
-    Description:    Really hard pieces of exoskeleton put together.
-    Complexity: 4
-    Requirements:
-        Chitin
+    Syntite Armor (Skipping this for now in favor of a transition from Chitin -> Exodium:
+        Description: Armor made from Syntite
+        Complexity: 8
 
-    Easiest way to obtain:
-        Kill some Crystal Spiders on Mountain worlds. No complexity requirements
+        Exodium Armor:
+            Description:     Advanced metal integration allows for better defensive power
+            Complexity: 14
+            Requirements:
+                Exodium
+            Easiest way to obtain:
+                Survive slaver guards on slaver planets
+
+                Nano-Exodium:
+                    Description:    Advanced metalurgy combined with some AI elements.
+                    Complexity: 40
+                    Requirements:
+                        Exodium
+                        AI Dust or maybe AI Fragments
+
+                    Regen-Exodium:
+                        Description: Exodium armor with self repairing abilities, making it incredibly durable
+                        Complexity: 64
+                        Requirements:
+                            Exodium
+                            AIFragment
+                            Batteries
 
 
-    Keratin plating
+                            Crystadmantium
+                                Description:    Highly unnatural strong atomic element. Build slowly atom by atom
+                                Complexity: 100
+                                Requirements:
+                                    Crystadmantium
+                                    Nanite Mesh
 
 
-Syntite Armor:
-    Description: Armor made from Syntite
-    Complexity: 8
 
-Exodium Armor:
-    Description:     Advanced metal integration allows for better defensive power
-    Complexity: 14
-    Requirements:
-        Exodium
-    Easiest way to obtain:
-        Survive slaver guards on slaver planets
+    Chitin Armor:
+        Description:    Really hard pieces of exoskeleton put together.
+        Complexity: 6
+        Requirements:
+            Chitin
+
+        Easiest way to obtain:
+            Kill some Crystal Spiders on Mountain worlds. No complexity requirements
 
 
-Nano-Exodium:
-    Description:    Advanced metalurgy combined with some AI elements.
-    Complexity: 40
-    Requirements:
-        Exodium
-        AI Dust or maybe AI Fragments
+        Keratin plating
+            Description:
 
-Regen-Exodium:
-    Description: Exodium armor with self repairing abilities, making it incredibly durable
-    Complexity: 24
-    Requirements:
-        Exodium
-        AIFragment
-        Batteries
+
+
+
+
+
 
 
 Plasteel
@@ -207,17 +222,6 @@ Plasteel
         Nanite Mesh
 
 
-
-
-
-
-
-Crystadmantium
-    Description:    Highly unnatural strong atomic element. Build slowly atom by atom
-    Complexity: 100
-    Requirements:
-        Crystadmantium
-        Nanite Mesh
 
 
 

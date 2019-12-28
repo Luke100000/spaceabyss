@@ -1234,6 +1234,7 @@
             generateEquipmentDisplay();
 
         } else {
+            $('#login_status').append("<span style='color:red;'>Login Failed</span>");
             console.log("%c Login failed", log_danger);
         }
     });

@@ -2,16 +2,65 @@
 
 DOING NOW:
 
+    Have thiol extractors suck life out of acid planets
+
+
+
+        I think I want to implement both.
+            drop_requires_object_type_id for the thiol extractors
+                Thiol deposits should show up as events
+            drop_requires_floor_type_class for shipyards
+
+        Next:
+
+            When the thiol is spawned, we need the health of the planet to reduce
+
+            planet_type_impact_linkers
+                planet_type_id
+                object_type_id
+                hp_change
+
+            planet_type_hp_linkers ?
+                acid planet type -> hp-- whenever a thiol cannister is spawned?
+                planet_type_id, object_type_id, hp_change
+
+            For now, we could just have the planet slowly tick/recover hp
+
+
+            Both require that the thiol extractor can store something
+                (ended up just using the spawns object type stuff )
+                Current we have max_storage and max_energy_storage
+                How about converting those to storage_type and max_storage?
+
+
+            We currently have
+                spawns_object_type_amount
+                spawns_id
+                spawns_type
+                spawns_object_seconds
+                has_spawned_object
+                spawns_object_type_id
+                spawns_object_type_depleted
+                spawns_object_type_on_create
+
+
     See if we can make it to a warmind
+        Can't reasonably get to one with chitin armor set - need exodium set at a minimum I think
+
+
+    Need to start on augments
+
+
+
+    MUST code in safe areas in space. Beacon with an area around it. Beacons needs to be protected by an AI somehow
+        Entangled to a particular plantary AI? Or the beacon itself is a AI in SPACE
+
 
 
 NEED TO DRAW
 
 
     Some slerm. Baby slerm, generic slerm
-    Corporation floor type is ass (and need variety
-    Spaceport + Spaceport Buffer is really odd looking
-
 
     Glass of Life Water / Bulb of Life water?
         Drew Kick Bulb. Could do the same with life water
