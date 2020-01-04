@@ -1,3 +1,30 @@
+## [0.0.7] - 2020-01-04
+### Fixed
+- Bug setting new coords to belong to planets switching planet types
+- Defense drone assembly location
+- Critical bug that could switch sockets when logging in
+- Damage types being sent when objects attack other objects
+- I had broken ship refueling with some typos.
+- Animations showing from previous levels after you switch levels
+
+### Changed
+- Re-worked how we go through planet coords for the map update. The old way actually didn't scale well at all - 
+running getPlanetCoordIndex for each coord. Instead we just iterate through all the planet coords once, 
+adding in what we need, and running getPlanetCoordIndex on the not found ones against our index. Old way could 
+easily get to 100ms per player (super unsustainable). New way is ~2-5ms per player.
+- Did a similar re-coding for a ship coords update. Difference is even more drastic here. 300ms -> .2 to 1ms
+- Trying less frequent total map updates for players ( 5 -> 20 seconds ). In theory the goal is to not have this 
+on setIncrement at all.
+- Airlocks can now have rules 
+- Can no longer walk on Ion Drives
+
+### Added
+- watched_by_object_id column to the object_types table - setting up for protected Spacelanes
+- Spacelane beacon object, and all the logic behind supporting it
+- More messages about fuel for non-default ships. The game doesn't communicate that there are fuel 
+requirements very well
+- Ability to jump out the airlock with an emergency pod if you are truly stuck on your ship
+
 ## [0.0.6] - 2019-12-28
 ### Fixed
 - Auto doc required message appearing as a success instead of failure.

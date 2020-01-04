@@ -605,6 +605,19 @@ module.exports = function(main, io, mysql, pool, chalk, log, world, map) {
                     dirty.objects[dirty.objects[player_ship_index].engine_indexes[i]].energy--;
                     dirty.objects[dirty.objects[player_ship_index].engine_indexes[i]].has_change = true;
                     world.sendObjectInfo(socket, false, dirty, dirty.objects[player_ship_index].engine_indexes[i]);
+
+                    if(dirty.objects[dirty.objects[player_ship_index].engine_indexes[i]].object_type_id === 265 && dirty.objects[dirty.objects[player_ship_index].engine_indexes[i]].energy === 200) {
+                        socket.emit('result_info', {'status': 'failure', 'text': 'Engine Low On Fuel' });
+                    }
+
+                    if(dirty.objects[dirty.objects[player_ship_index].engine_indexes[i]].object_type_id === 265 && dirty.objects[dirty.objects[player_ship_index].engine_indexes[i]].energy === 100) {
+                        socket.emit('result_info', {'status': 'failure', 'text': 'Dock At Planet Soon!' });
+                    }
+
+                    if(dirty.objects[dirty.objects[player_ship_index].engine_indexes[i]].object_type_id === 265 && dirty.objects[dirty.objects[player_ship_index].engine_indexes[i]].energy === 50) {
+                        socket.emit('result_info', {'status': 'failure', 'text': 'Engine Critically Low On Fuel' });
+                    }
+
                     paid_for_move = true;
                 }
 
@@ -618,10 +631,10 @@ module.exports = function(main, io, mysql, pool, chalk, log, world, map) {
 
             if(paid_for_move === false) {
                 console.log("Engine has no energy");
-                socket.emit('chat', { 'message': "Your engines need more fuel", 'scope': 'system' });
-                socket.emit('result_info', { 'status': 'failure',
-                    'text': "Ship failed to move due to lack of fuel",
-                    'object_id': dirty.objects[player_ship_index].id });
+                socket.emit('chat', { 'message': "Your engines need more fuel. Refuel, or jump out the airlock and come back with fuel", 'scope': 'system' });
+                socket.emit('result_info', { 'status': 'failure', 'text': "No fuel" });
+                socket.emit('move_failure', { 'failed_coord_id': dirty.coords[coord_index].id,
+                    'return_to_coord_id': dirty.coords[previous_coord_index].id });
                 return false;
             }
 
@@ -1076,11 +1089,15 @@ module.exports = function(main, io, mysql, pool, chalk, log, world, map) {
 
                 //console.log("Movement has us sending new coords from x: " + starting_x + " - " + ending_x + " y: " + starting_y + " - " + ending_y);
 
+
+                let planet_index = await main.getPlanetIndex({ 'planet_id': dirty.planet_coords[planet_coord_index].planet_id });
+
+
                 for(let i = starting_x; i <= ending_x; i++) {
                     for(let j = starting_y; j <= ending_y; j++) {
 
                         // coords don't exist < 0
-                        if(i >= 0 && j >= 0) {
+                        if(i >= 0 && j >= 0 && i < dirty.planets[planet_index].x_size && j < dirty.planets[planet_index].y_size ) {
                             //console.log("Sending planet coord x,y: " + i + "," + j + " due to move");
                             let planet_coord_data = { 'planet_id': dirty.planet_coords[planet_coord_index].planet_id,
                                 'planet_level': dirty.planet_coords[planet_coord_index].level, 'tile_x': i, 'tile_y': j };
@@ -1652,6 +1669,10 @@ module.exports = function(main, io, mysql, pool, chalk, log, world, map) {
 
                 if(!passed_rules) {
                     console.log("Did not pass rules");
+                    socket.emit('move_failure', { 'failed_ship_coord_id': dirty.ship_coords[ship_coord_index].id,
+                        'return_to_ship_coord_id': dirty.ship_coords[previous_ship_coord_index].id });
+                    socket.emit('result_info', { 'status': 'failure', 'text': 'Not allowed due to rules',
+                        'object_id': dirty.ship_coords[ship_coord_index].object_id });
                     return false;
                 }
 
@@ -2036,17 +2057,17 @@ module.exports = function(main, io, mysql, pool, chalk, log, world, map) {
 
                     for(let i = 0; i < dirty.objects[ship_index].engine_indexes.length; i++) {
 
-                        if(dirty.objects[dirty.objects[ship_index].engine_indexs[i]].object_type_id === 265) {
+                        if(dirty.objects[dirty.objects[ship_index].engine_indexes[i]] && dirty.objects[dirty.objects[ship_index].engine_indexes[i]].object_type_id === 265) {
 
-                            let ion_drive_object_type_index = main.getObjectTypeIndex(dirty.objects[dirty.objects[ship_index].engine_indexs[i]].object_type_id);
+                            let ion_drive_object_type_index = main.getObjectTypeIndex(dirty.objects[dirty.objects[ship_index].engine_indexes[i]].object_type_id);
 
                             if(ion_drive_object_type_index !== -1) {
                                 console.log("Refueling ion drive");
 
                                 socket.emit('chat', { 'message': "Your ship's ion drives have been refueled", 'scope': 'system' });
 
-                                dirty.objects[dirty.objects[ship_index].engine_indexs[i]].energy = dirty.object_types[ion_drive_object_type_index].max_energy_storage;
-                                dirty.objects[dirty.objects[ship_index].engine_indexs[i]].has_change = true;
+                                dirty.objects[dirty.objects[ship_index].engine_indexes[i]].energy = dirty.object_types[ion_drive_object_type_index].max_energy_storage;
+                                dirty.objects[dirty.objects[ship_index].engine_indexes[i]].has_change = true;
                             }
 
 
@@ -2733,8 +2754,11 @@ module.exports = function(main, io, mysql, pool, chalk, log, world, map) {
 
                 if(placing_type === 'player') {
 
-                    // Also gotta remove the ship
-                    removing_data.object_id = false;
+                    // We only want to remove the ship from the coord if it is OUR ship
+                    if(dirty.coords[previous_coord_index].object_id && dirty.coords[previous_coord_index].object_id === placing_thing.ship_id) {
+                        removing_data.object_id = false;
+                    }
+
 
                     // I don't think we actually need to set the previous coord id here
                     //placing_thing.previous_coord_id = placing_thing.coord_id;
@@ -2805,6 +2829,8 @@ module.exports = function(main, io, mysql, pool, chalk, log, world, map) {
                 await main.updateCoordGeneric(socket, placing_data);
                 placing_thing.coord_id = dirty.coords[destination_coord_index].id;
                 placing_thing.has_change = true;
+
+                socket.emit('view_change_data', { 'view': 'galaxy' });
             } else if(data.warping_to === 'spaceport') {
                 await main.updateCoordGeneric(socket, placing_data);
                 placing_thing.planet_coord_id = dirty.planet_coords[destination_coord_index].id;

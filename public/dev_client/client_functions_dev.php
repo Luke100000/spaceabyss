@@ -3,7 +3,7 @@
 
 
     //      data:   x   |   y   |   damage_amount   |   damage_types   |   was_damaged_type   |   damage_source_type   |
-    //              damage_source_id
+    //              damage_source_id   |   attacker_x   |   attacker_y
     function addEffect(data) {
 
 
@@ -12,9 +12,13 @@
         if(data.damage_types && data.damage_types.length > 0) {
             for(let i = 0; i < data.damage_types.length; i++ ) {
 
+                console.log("Going to try to add effect for damage type: " + data.damage_types[i] + " from attacker at x,y: " + data.attacker_x + ", " + data.attacker_y);
+
 
 
                 // Blocked Effect - trying drawing it first so any attack effects show over it
+                // Need this separate or things like lasers shooting won't happen - and that doesn't provide enough feedback to the user
+                // that something is actually happening
                 if(typeof data.damage_amount !== 'undefined' && data.damage_amount === 0 && data.was_damaged_type === 'hp') {
 
                     if(blocked_effect_sprite === false) {
@@ -28,7 +32,9 @@
                         blocked_effect_sprite.setDepth(10);
                         blocked_effect_sprite.anims.play('blocked-effect');
                     }
-                } else if(data.damage_types[i] === 'addiction') {
+                }
+
+                if(data.damage_types[i] === 'addiction') {
                     if(addiction_sprite === false) {
                         addiction_sprite = scene_game.add.sprite(data.x + 32, data.y, 'addiction-effect');
                         //fire_attack_sprite.on('animationcomplete', fireCompleteCallback, this);
@@ -83,6 +89,7 @@
 
                 // Lets see how the range framework stuff works like this
                 else if(data.damage_types[i] === 'laser' && data.attacker_x !== -100) {
+                    console.log("In laser section");
 
                     let found_range_sprite = false;
                     let found_range_sprite_index = -1;
@@ -91,6 +98,7 @@
                         if(!found_range_sprite && range_sprites[i].visible === false) {
                             found_range_sprite = true;
                             found_range_sprite_index = i;
+                            console.log("Using range sprite index: " + i);
                         }
                     }
 
@@ -100,9 +108,11 @@
                     // Lets add another range sprite to the game!
                     if(!found_range_sprite) {
 
+                        console.log("Creating new ... range sprite");
+
                         let new_range_sprite_index = range_sprites.push(scene_game.add.sprite(data.attacker_x + 32, data.attacker_y + 64, 'laser')) - 1;
-                        range_sprites[new_range_sprite_index].x = data.attacker_x + 32;
-                        range_sprites[new_range_sprite_index].y = data.attacker_y + 64;
+                        range_sprites[new_range_sprite_index].x = data.attacker_x + getRandomIntInclusive(1,64);
+                        range_sprites[new_range_sprite_index].y = data.attacker_y + getRandomIntInclusive(12, 64);
                         scene_game.physics.add.existing(range_sprites[new_range_sprite_index], false);
 
                         scene_game.physics.moveTo(range_sprites[new_range_sprite_index], data.x, data.y, 800);
@@ -112,10 +122,12 @@
 
                     } else {
 
+                        console.log("Using old ... range sprite");
+
                         // RECYCLING TO SAVE THE EARTH!
 
-                        range_sprites[found_range_sprite_index].x = data.attacker_x + 32;
-                        range_sprites[found_range_sprite_index].y = data.attacker_y + 64;
+                        range_sprites[found_range_sprite_index].x = data.attacker_x + getRandomIntInclusive(1,64);
+                        range_sprites[found_range_sprite_index].y = data.attacker_y + getRandomIntInclusive(12, 64);
                         range_sprites[found_range_sprite_index].setVisible(true);
                         scene_game.physics.moveTo(range_sprites[found_range_sprite_index], data.x, data.y, 800);
                         range_sprites[found_range_sprite_index].destination_x = data.x;
@@ -940,28 +952,38 @@
         // We get to create it
         if(!players[player_index].sprite ) {
 
-            players[player_index].sprite = scene_game.add.sprite(-1000,-1000, new_texture_key);
-            players[player_index].sprite.anims.play(new_texture_animation_key);
-
-            // just created it, try to move it to where it needs to be
             let player_info = getPlayerInfo(player_index);
+
             if(player_info.coord) {
+
+                players[player_index].sprite = scene_game.add.sprite(-1000,-1000, new_texture_key);
+                players[player_index].sprite.anims.play(new_texture_animation_key);
+
                 players[player_index].sprite.x = player_info.coord.tile_x * tile_size + tile_size / 2 + new_sprite_x_offset;
                 players[player_index].sprite.y = player_info.coord.tile_y * tile_size + tile_size / 2 + new_sprite_y_offset;
+
+                if(client_player_id && players[player_index].id === client_player_id) {
+                    camera.startFollow(players[player_index].sprite);
+                }
+
+                players[player_index].movement_display = new_movement_display;
+                players[player_index].sprite_x_offset = new_sprite_x_offset;
+                players[player_index].sprite_y_offset = new_sprite_y_offset;
+
+                setPlayerMoveDelay(player_index);
+
             } else {
-                console.log("%c Created a player sprite but HAVE NO IDEA WHERE TO PUT IT!", log_warning);
+                console.log("%c No idea where to put player sprite!", log_warning);
                 console.log("Player id: " + players[player_index].id + " coord_id, ship_coord_id: " + players[player_index].coord_id + "," + players[player_index].ship_coord_id);
+                console.log("Current have x many ship coords: " + ship_coords.length);
+                for(let i = 0; i < ship_coords.length; i++) {
+                    if(ship_coords[i].id === players[player_index].ship_coord_id) {
+                        console.log("Foudn the ship coord. It has player id: " + ship_coords[i].player_id);
+                    }
+                }
             }
 
-            if(client_player_id && players[player_index].id === client_player_id) {
-                camera.startFollow(players[player_index].sprite);
-            }
 
-            players[player_index].movement_display = new_movement_display;
-            players[player_index].sprite_x_offset = new_sprite_x_offset;
-            players[player_index].sprite_y_offset = new_sprite_y_offset;
-
-            setPlayerMoveDelay(player_index);
         }
         // Just a switch!
         else if(players[player_index].sprite.texture.key !== new_texture_key) {
@@ -1268,7 +1290,7 @@
             let floor_type_index = floor_types.findIndex(function(obj) { return obj && obj.id === coord.floor_type_id; });
 
             if(floor_type_index !== -1) {
-                mapAddFloor(coord.floor_type_id, coord.tile_x, coord.tile_y);
+                mapAddFloor(coord.floor_type_id, coord.tile_x, coord.tile_y, coord);
 
                 if(floor_types[floor_type_index].is_animated) {
                     if(type === 'planet') {
@@ -2235,21 +2257,19 @@
 
     function generateAirlockDisplay() {
 
-
-        console.log("In generateAirlockDisplay");
-
         $('#launch').empty();
 
 
         let client_ship_index = objects.findIndex(function(obj) { return obj && obj.id === players[client_player_index].ship_id; });
 
-        if(client_ship_index === -1) {
+        if(client_ship_index === -1 && client_player_index !== -1) {
             console.log("Could not find client's ship. Requesting it");
             socket.emit('request_object_info', { 'object_id': players[client_player_index].ship_id });
         }
 
 
         let ship_coord_index = ship_coords.findIndex(function(obj) { return obj && obj.id === players[client_player_index].ship_coord_id; });
+        console.log("ship_coord_index: " + ship_coord_index);
 
 
         if(client_ship_index === -1 || ship_coord_index === -1) {
@@ -2259,15 +2279,19 @@
             client_player_info = getPlayerInfo(client_player_index);
         }
 
+        let on_ship_is_dockable = false;
+
         if(client_ship_index !== -1 && ship_coord_index !== -1 && ship_coords[ship_coord_index].ship_id === objects[client_ship_index].id) {
             $('#launch').append('<button class="button is-success" id="viewchange" newview="galaxy"><i class="fad fa-stars"></i> Back To Galaxy</button>');
 
             // If we are just on our own ship, and it's not a dockable ship, the only option is to head back to the galaxy view
             let client_ship_type_index = object_types.findIndex(function(obj) { return obj.id === objects[client_ship_index].object_type_id; });
-            if(!object_types[client_ship_type_index].is_dockable) {
-                return;
+
+            if(object_types[client_ship_type_index].is_dockable) {
+                on_ship_is_dockable = true;
             }
-        } else {
+
+        } else if(current_view === "ship") {
             $('#launch').append('<button class="button is-success" id="viewchange" newview="galaxy"><i class="fad fa-rocket"></i> Launch With Current Ship</button>');
         }
 
@@ -2282,67 +2306,85 @@
 
         }
 
+        // We're on a ship that is dockable - a few more options
+        if(on_ship_is_dockable) {
+            // show the docked ships the player has here
+            let docked_ships = objects.filter(obj => obj.player_id === client_player_id && obj.docked_at_object_id === client_player_info.coord.ship_id);
 
-        // show the docked ships the player has here
-        let docked_ships = objects.filter(obj => obj.player_id === client_player_id && obj.docked_at_object_id === client_player_info.coord.ship_id);
+            let has_pod = false;
 
-        let has_pod = false;
-
-        if(docked_ships.length > 0) {
-            console.log("Player has at least one ship docked at this station");
-
-
-            docked_ships.forEach(function(ship) {
+            if(docked_ships.length > 0) {
+                console.log("Player has at least one ship docked at this station");
 
 
-                let html_string = showDockedShip(ship);
+                docked_ships.forEach(function(ship) {
 
 
-                $('#launch').append(html_string);
+                    let html_string = showDockedShip(ship);
 
-                if(ship.object_type_id === 114) {
-                    has_pod = true;
-                }
-            });
-        }
 
-        // we should only let the player have one pod at a spaceport
-        if(!has_pod) {
-            $('#launch').append('<button class="button is-default" id="buy_pod" object_type_id="114">Buy A Pod</button>');
-        }
+                    $('#launch').append(html_string);
 
-        // If we own the station, we can switch to that too
-        if(ship_coord_index !== -1) {
-            let on_ship_index = objects.findIndex(function(obj) { return obj && obj.id === ship_coords[ship_coord_index].ship_id; });
-
-            if(on_ship_index !== -1) {
-                if(objects[on_ship_index].player_id === client_player_id) {
-
-                    //console.log("Player owns the ship they are docked at id: " + objects[on_ship_index].id);
-
-                    // The station is already our current ship
-                    if(objects[on_ship_index].id === players[client_player_index].ship_id) {
-                        $('#launch').append("<span class='tag is-success'>Station Is Current Ship</span>");
+                    if(ship.object_type_id === 114) {
+                        has_pod = true;
                     }
-                    // we can switch to the station
-                    else {
+                });
+            }
 
-                        if(debug_mode) {
-                            $('#launch').append("Ship ID: " + objects[on_ship_index].id);
+            // we should only let the player have one pod at a spaceport
+            if(!has_pod) {
+                $('#launch').append('<button class="button is-default" id="buy_pod" object_type_id="114">Buy A Pod</button>');
+            }
+
+            // If we own the station, we can switch to that too
+            if(ship_coord_index !== -1) {
+                let on_ship_index = objects.findIndex(function(obj) { return obj && obj.id === ship_coords[ship_coord_index].ship_id; });
+
+                if(on_ship_index !== -1) {
+                    if(objects[on_ship_index].player_id === client_player_id) {
+
+                        //console.log("Player owns the ship they are docked at id: " + objects[on_ship_index].id);
+
+                        // The station is already our current ship
+                        if(objects[on_ship_index].id === players[client_player_index].ship_id) {
+                            $('#launch').append("<span class='tag is-success'>Station Is Current Ship</span>");
+                        }
+                        // we can switch to the station
+                        else {
+
+                            if(debug_mode) {
+                                $('#launch').append("Ship ID: " + objects[on_ship_index].id);
+                            }
+
+                            if(objects[on_ship_index].name) {
+                                $('#launch').append(" " + objects[on_ship_index].name + " ");
+                            }
+
+                            $('#launch').append("<button id='switchship_" + objects[on_ship_index].id + "' object_id='" +
+                                objects[on_ship_index].id + "' class='button is-warning is-small'>Switch To Station</button>");
                         }
 
-                        if(objects[on_ship_index].name) {
-                            $('#launch').append(" " + objects[on_ship_index].name + " ");
-                        }
 
-                        $('#launch').append("<button id='switchship_" + objects[on_ship_index].id + "' object_id='" +
-                            objects[on_ship_index].id + "' class='button is-warning is-small'>Switch To Station</button>");
                     }
-
-
                 }
+
+
+            } else {
+                console.log("Ship coord index is -1");
             }
         }
+
+
+        if(ship_coord_index !== -1 && ship_coords[ship_coord_index].object_type_id === 266) {
+            console.log("Player is on an airlock");
+            $('#launch').append('<button class="button is-danger" id="buy_pod" object_type_id="114">Use Emergency Pod</button>');
+
+        } else {
+            console.log("Player ship coord id: " + players[client_player_index].ship_coord_id);
+        }
+
+
+
 
     }
 
@@ -4279,14 +4321,25 @@
                 html_string += "</form>";
             }
 
-            // TERRITE DOOR
-            else if(objects[object_index].object_type_id === 185) {
+            // Doors
+            else if(objects[object_index].object_type_id === 185 || objects[object_index].object_type_id === 266) {
                 html_string += "<form action='#'>";
                 html_string += "<select id=\"" + objects[object_index].id + "_new_rule\">";
                 html_string += "<option value='allow_all_players'>Allow All Players</option>";
                 html_string += "<option value='allow_faction_players'>Allow Faction Players</option>";
                 html_string += "<option value='allow_creator'>Allow Creating Player</option>";
                 html_string += "<option value='allow_monsters'>Allow Monsters</option>";
+                html_string += "</select>";
+                html_string += "<input onclick=\"submitRule(" + objects[object_index].id + "); return false;\" type=\"submit\" value=\"Add Rule\">";
+                html_string += "</form>";
+            }
+
+            // SPACELANE BEACON
+            else if(objects[object_index].object_type_id === 288) {
+                html_string += "<form action='#'>";
+                html_string += "<select id=\"" + objects[object_index].id + "_new_rule\">";
+                html_string += "<option value='protect_3'>Protect 3x3 Area</option>";
+                html_string += "<option value='protect_4'>Protect 4x4 Area</option>";
                 html_string += "</select>";
                 html_string += "<input onclick=\"submitRule(" + objects[object_index].id + "); return false;\" type=\"submit\" value=\"Add Rule\">";
                 html_string += "</form>";
@@ -4484,7 +4537,7 @@
         return parseInt(tile_size / 2);
     }
 
-    function mapAddFloor(floor_type_id, tile_x, tile_y) {
+    function mapAddFloor(floor_type_id, tile_x, tile_y, coord) {
 
         let floor_type_index = floor_types.findIndex(function(obj) { return obj && obj.id === parseInt(floor_type_id); });
 
@@ -4513,7 +4566,15 @@
                 //console.log("Putting game file index " + linker.game_file_index + " at " + linker_tile_x + "," + linker_tile_y + " on layer " + linker.layer);
 
             });
-        } else {
+        } else if(coord.watched_by_object_id) {
+            let current_tile = map.getTileAt(tile_x, tile_y, false, 'layer_floor');
+            if(!current_tile || current_tile.index !== 58) {
+                map.putTileAt(58, tile_x, tile_y, false, 'layer_floor');
+            }
+        }
+        else {
+
+
 
             let current_tile = map.getTileAt(tile_x, tile_y, false, 'layer_floor');
             if(!current_tile || current_tile.index !== floor_types[floor_type_index].game_file_index) {
@@ -4602,7 +4663,7 @@
                             coord_below = planet_coords[below_index];
                         }
                     } else {
-                        console.log("Current view is not ship or planet");
+                        console.log("Current view is not ship or planet: " + current_view);
                     }
 
 
@@ -5097,7 +5158,6 @@
                 if(object_type_index !== -1) {
                     //console.log("%c Object type id at coord: " + ship_coords[checking_coord_index].object_type_id, log_warning);
                     if(!object_types[object_type_index].can_walk_on) {
-                        console.log("Denied move because object is there: object_id: " + ship_coords[checking_coord_index].object_id + " object_type_id: " + ship_coords[checking_coord_index].object_type_id);
                         deny_move = true;
                     }
                 }
@@ -5117,8 +5177,7 @@
 
 
                     if(!object_types[object_type_index].can_walk_on && !object_types[object_type_index].is_dockable) {
-                        console.log("Denied move because object is there: object_id: " + coords[checking_coord_index].object_id +
-                            " object_type_id: " + coords[checking_coord_index].object_type_id + " cannot walk on and is not dockable");
+
                         deny_move = true;
                     }
                 }
@@ -5127,7 +5186,6 @@
 
             if(coords[checking_coord_index].player_id) {
                 deny_move = true;
-                console.log("galaxy move denied based on player id: " + coords[checking_coord_index].player_id);
             }
 
 
@@ -5139,7 +5197,7 @@
 
                 if(object_type_index !== -1) {
                     if(!object_types[object_type_index].can_walk_on) {
-                        console.log("Denied move because object is there: object_id: " + planet_coords[checking_coord_index].object_id + " object_type_id: " + planet_coords[checking_coord_index].object_type_id);
+
                         deny_move = true;
                     }
                 }
@@ -6699,7 +6757,17 @@
             attack_box_node.removeChild(attack_box_node.firstChild);
         }
         */
+
+        // Any active animations, mining, or salvaging shouldn't move with us to the next level
         animations.splice(0, animations.length);
+        if(mining_beam_sprite) {
+            mining_beam_sprite.setVisible(false);
+        }
+
+        if(salvaging_beam_sprite) {
+            salvaging_beam_sprite.setVisible(false);
+        }
+
 
         // This helped with the game trying to render bits and pieces of multiple layers of planets
         ship_coords.splice(0, ship_coords.length);
@@ -6765,7 +6833,6 @@
 
 
         if(!players[player_index].current_move_delay) {
-            console.log("Set player id: " + players[player_index] + " current_move_delay to: " + players[player_index].current_move_delay);
             players[player_index].current_move_delay = 500;
         }
 
@@ -6782,8 +6849,7 @@
 
             if(object_types[body_type_index].move_delay && object_types[body_type_index].move_delay !== 500) {
                 players[player_index].current_move_delay = object_types[body_type_index].move_delay;
-                console.log("Set player id: " + players[player_index].id + " current_move_delay to: " +
-                    players[player_index].current_move_delay + " based on object type id: " + object_types[body_type_index].id);
+
             } else {
                 players[player_index].current_move_delay = 500;
             }
@@ -6996,13 +7062,20 @@
                 player_inventory_items.forEach(function(inventory_item) {
 
                     let object_type_index = object_types.findIndex(function(obj) { return obj && obj.id === inventory_item.object_type_id; });
-                    if(parseInt(inventory_item.object_type_id) === 116) {
 
-                        $('#click_menu').append("<br>" + object_types[object_type_index].name + ": ");
-                        $('#click_menu').append(
-                            "<button id='drop_" + inventory_item.id + "' x='" + tile_x + "' y='" + tile_y + "' class='button is-default'>Drop</button>"
-                        );
+                    if(object_type_index === -1) {
+                        console.log("Couldn't find object type for inventory item id: " + inventory_item.id);
+                    } else {
+                        console.log(object_types[object_type_index].drop_requires_floor_type_class);
+                        if(object_types[object_type_index].drop_requires_floor_type_class === 'galaxy') {
+
+                            $('#click_menu').append("<br>" + object_types[object_type_index].name + ": ");
+                            $('#click_menu').append(
+                                "<button id='drop_" + inventory_item.id + "' x='" + tile_x + "' y='" + tile_y + "' class='button is-default'>Drop</button>"
+                            );
+                        }
                     }
+
                 });
             }
             // Some options for planet/ship stuff
@@ -8602,6 +8675,8 @@
 
                     });
 
+                    animations.splice(0, animations.length);
+
                     client_move_planet_coord_id = false;
                     movePlayerInstant(client_player_index,
                         planet_coords[new_planet_coord_index].tile_x * tile_size + tile_size / 2,
@@ -8610,6 +8685,8 @@
 
 
                     //redrawMap();
+
+
 
 
                 }
@@ -8665,17 +8742,19 @@
                 movePlayerFlow(client_player_index, 'ship', ship_coords[coord_index], 'updatePlayerClient > ship');
             }
 
+
+
         }
         // Galaxy view and we moved
         else if(current_view === 'galaxy' && data.player.coord_id && data.player.coord_id !== client_player_info.coord.id) {
             //console.log("Client galaxy move");
             let coord_index = coords.findIndex(function(obj) { return obj && obj.id === data.player.coord_id; });
 
-            if(coord_index === -1) {
-                socket.emit('request_coord_info', { 'coord_id': data.player.coord_id });
+            if(coord_index !== -1) {
+                movePlayerFlow(client_player_index, 'galaxy', coords[coord_index], 'updatePlayerClient > galaxy');
             }
 
-            movePlayerFlow(client_player_index, 'galaxy', coords[coord_index], 'updatePlayerClient > galaxy');
+
         } else if(current_view === 'galaxy' && players[client_player_index].ship_coord_id) {
             console.log("Player switched from ship to galaxy view. I think we could insta-move the player now");
 

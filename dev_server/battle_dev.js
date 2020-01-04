@@ -222,6 +222,8 @@ module.exports = function(main, io, mysql, pool, chalk, log, world, inventory, g
 
         try {
 
+            console.time("calculateObjectAttack");
+
             // TODO RANGE
             let object_type_index = main.getObjectTypeIndex(dirty.objects[object_index].object_type_id);
 
@@ -230,7 +232,22 @@ module.exports = function(main, io, mysql, pool, chalk, log, world, inventory, g
                 return false;
             }
 
-            let attack = dirty.object_types[object_type_index].attack_strength;
+            let damage_amount = 0;
+            let damage_types = [];
+
+
+            if(dirty.object_types[object_type_index].attack_strength) {
+                damage_amount += dirty.object_types[object_type_index].attack_strength;
+            }
+
+
+            // bah. Stupid 0 check
+            if(dirty.object_types[object_type_index].equip_skill && dirty.object_types[object_type_index].equip_skill !== 0 &&
+                dirty.object_types[object_type_index].equip_skill !== "0") {
+                console.log("Object type itself has an equip skill: " + dirty.object_types[object_type_index].equip_skill);
+                damage_types.push(dirty.object_types[object_type_index].equip_skill);
+            }
+
 
             // Lots more to do if it's a ship
             if(dirty.object_types[object_type_index].is_ship) {
@@ -243,6 +260,8 @@ module.exports = function(main, io, mysql, pool, chalk, log, world, inventory, g
 
                         // Ship Laser - see if we have energy for it
                         if(attacking_ship_coord.object_type_id === 221) {
+
+                            let attacking_object_index = await main.getObjectIndex(attacking_ship_coord.object_id);
 
                             let found_energy_source = false;
 
@@ -258,10 +277,18 @@ module.exports = function(main, io, mysql, pool, chalk, log, world, inventory, g
 
                                             console.log("Found energy source for ship laser attack");
                                             found_energy_source = true;
-                                            attack += 5;
+                                            damage_amount += 5;
 
                                             dirty.objects[coord_object_index].energy -= 10;
                                             dirty.objects[coord_object_index].has_change = true;
+
+                                            // and add in that damage type
+                                            let attacking_object_type_index = main.getObjectTypeIndex(dirty.objects[attacking_object_index].object_type_id);
+                                            if(dirty.object_types[attacking_object_type_index].equip_skill && dirty.object_types[attacking_object_type_index].equip_skill !== '0' &&
+                                                dirty.object_types[attacking_object_type_index].equip_skill !== 0) {
+                                                console.log("Object on ship has equip_skill: " + dirty.object_types[attacking_object_type_index].equip_skill);
+                                                damage_types.push(dirty.object_types[attacking_object_type_index].equip_skill);
+                                            }
                                         }
                                     }
 
@@ -280,10 +307,12 @@ module.exports = function(main, io, mysql, pool, chalk, log, world, inventory, g
             }
 
 
+            console.timeEnd("calculateObjectAttack");
 
-            return attack;
+            return { 'damage_amount': damage_amount, 'damage_types': damage_types };
         } catch(error) {
             log(chalk.red("Error in battle.calculateObjectAttack: " + error));
+            console.error(error);
         }
 
 
@@ -1346,21 +1375,39 @@ module.exports = function(main, io, mysql, pool, chalk, log, world, inventory, g
 
     module.npcAttackPlayer = npcAttackPlayer;
 
-    async function objectAttackObject(dirty, battle_linker) {
+    //  data:   attacking_object_index, defending_object_index
+    async function objectAttackObject(dirty, battle_linker, data = false) {
         try {
 
-            let attacking_object_index = await main.getObjectIndex(battle_linker.attacking_id);
-            let defending_object_index = await main.getObjectIndex(battle_linker.being_attacked_id);
+            let attacking_object_index = -1;
+            let defending_object_index = -1;
+
+            if(battle_linker) {
+                attacking_object_index = await main.getObjectIndex(battle_linker.attacking_id);
+                defending_object_index = await main.getObjectIndex(battle_linker.being_attacked_id);
+            } else if(typeof data.attacking_object_index !== 'undefined' && typeof data.defending_object_index !== 'undefined') {
+                attacking_object_index = data.attacking_object_index;
+                defending_object_index = data.defending_object_index;
+            }
+
+
 
             if(attacking_object_index === -1) {
                 log(chalk.yellow("Could not get the attacking object"));
-                world.removeBattleLinkers(dirty, { 'battle_linker_id': battle_linker.id });
+                if(battle_linker) {
+                    world.removeBattleLinkers(dirty, { 'battle_linker_id': battle_linker.id });
+                }
+
                 return false;
             }
 
             if(defending_object_index === -1) {
                 log(chalk.yellow("Could not get the defending object"));
-                world.removeBattleLinkers(dirty, { 'battle_linker_id': battle_linker.id });
+
+                if(battle_linker) {
+                    world.removeBattleLinkers(dirty, { 'battle_linker_id': battle_linker.id });
+                }
+
                 return false;
             }
 
@@ -1369,21 +1416,34 @@ module.exports = function(main, io, mysql, pool, chalk, log, world, inventory, g
 
             if(attacking_object_info.coord === false) {
                 log(chalk.yellow("Could not get the attacking object coord"));
-                world.removeBattleLinkers(dirty, { 'battle_linker_id': battle_linker.id });
+                if(battle_linker) {
+                    world.removeBattleLinkers(dirty, { 'battle_linker_id': battle_linker.id });
+                }
+
                 return false;
             }
 
             if(defending_object_info.coord === false) {
                 log(chalk.yellow("Could not get the defending object coord"));
-                world.removeBattleLinkers(dirty, { 'battle_linker_id': battle_linker.id });
+                if(battle_linker) {
+                    world.removeBattleLinkers(dirty, { 'battle_linker_id': battle_linker.id });
+                }
+
                 return false;
             }
 
             if(attacking_object_info.room !== defending_object_info.room) {
                 log(chalk.yellow("Objects don't share the same room"));
-                world.removeBattleLinkers(dirty, { 'battle_linker_id': battle_linker.id });
+                if(battle_linker) {
+                    world.removeBattleLinkers(dirty, { 'battle_linker_id': battle_linker.id });
+                }
+
                 return false;
             }
+
+
+            let attacking_object_type_index = main.getObjectTypeIndex(dirty.objects[attacking_object_index].object_type_id);
+
 
             let calculating_range = await calculateRange(
                 attacking_object_info.coord.tile_x, attacking_object_info.coord.tile_y,
@@ -1397,13 +1457,15 @@ module.exports = function(main, io, mysql, pool, chalk, log, world, inventory, g
 
             //console.log("Attacking object index: " + attacking_object_index + " id: " + dirty.objects[attacking_object_index].id);
 
-            let attack = await calculateObjectAttack(dirty, attacking_object_index);
+            let object_attack_profile = await calculateObjectAttack(dirty, attacking_object_index);
+            let attack = object_attack_profile.damage_amount;
+            console.log("Got attack object damage types as: ");
+            console.log(object_attack_profile.damage_types);
             let defense = await calculateObjectDefense(dirty, defending_object_index);
 
             // For whatever reason, the object has no more attacking power (ships, batteries, etc). Remove the battle linker
             if(attack === 0) {
-
-
+                console.log("No attack value. Removing battle linker");
 
                 await world.removeBattleLinkers(dirty, { 'battle_linker_id': battle_linker.id });
 
@@ -1411,7 +1473,13 @@ module.exports = function(main, io, mysql, pool, chalk, log, world, inventory, g
             }
 
             if(attack <= defense) {
+                io.to(defending_object_info.room).emit('damaged_data',
+                    {'object_id': dirty.objects[defending_object_index].id, 'damage_amount': 0, 'was_damaged_type': 'hp',
+                        'damage_source_type':'object', 'damage_source_id': dirty.objects[attacking_object_index].id,
+                        'damage_types': object_attack_profile.damage_types,
+                        'calculating_range': calculating_range });
                 return false;
+
             }
 
 
@@ -1423,7 +1491,7 @@ module.exports = function(main, io, mysql, pool, chalk, log, world, inventory, g
                 io.to(defending_object_info.room).emit('damaged_data',
                     {'object_id': dirty.objects[defending_object_index].id, 'damage_amount': damage_amount, 'was_damaged_type': 'energy',
                         'damage_source_type':'object', 'damage_source_id': dirty.objects[attacking_object_index].id,
-                        'calculating_range': calculating_range });
+                        'calculating_range': calculating_range, 'damage_types': object_attack_profile.damage_types });
 
                 return;
             }
@@ -1439,45 +1507,94 @@ module.exports = function(main, io, mysql, pool, chalk, log, world, inventory, g
                 io.to(defending_object_info.room).emit('damaged_data',
                     {'object_id': dirty.objects[defending_object_index].id, 'damage_amount': damage_amount, 'was_damaged_type': 'energy',
                         'damage_source_type':'object', 'damage_source_id': dirty.objects[attacking_object_index].id,
-                        'calculating_range': calculating_range });
+                        'calculating_range': calculating_range, 'damage_types': object_attack_profile.damage_types });
 
                 await world.aiRetaliate(dirty, ai_index, battle_linker.attacking_type, battle_linker.attacking_id);
+                return;
+            }
+            // Adding in code for a spacelane beacon to help out
+            else if(defending_object_info.room === 'galaxy' && defending_object_info.coord.watched_by_object_id &&
+                dirty.objects[attacking_object_index].id !== defending_object_info.coord.watched_by_object_id) {
+                console.log("Coord is watched");
+
+                let watching_object_index = await main.getObjectIndex(defending_object_info.coord.watched_by_object_id);
+                if(watching_object_index !== -1 && dirty.objects[watching_object_index].energy > damage_amount) {
+                    log(chalk.green("Watcher is helping out!"));
+                    dirty.objects[watching_object_index].energy -= damage_amount;
+                    dirty.objects[watching_object_index].has_change = true;
+
+                    let watching_object_type_index = main.getObjectTypeIndex(dirty.objects[watching_object_index].object_type_id);
+
+                    io.to(defending_object_info.room).emit('damaged_data',
+                        {'object_id': dirty.objects[defending_object_index].id, 'damage_amount': damage_amount, 'was_damaged_type': 'energy',
+                            'damage_source_type':'object', 'damage_source_id': dirty.objects[attacking_object_index].id,
+                            'calculating_range': calculating_range, 'damage_types': object_attack_profile.damage_types });
+                    objectAttackObject(dirty, false, { 'attacking_object_index': watching_object_index, 'defending_object_index': attacking_object_index });
+                }
+
                 return;
             }
 
             // No AI - Do the attack/defense normally
             await game.damageObject(dirty, { 'object_index': defending_object_index, 'damage_amount': damage_amount,
-                'battle_linker': battle_linker, 'object_info': defending_object_info, 'calculating_range': calculating_range });
+                'battle_linker': battle_linker, 'object_info': defending_object_info, 'calculating_range': calculating_range,
+                'damage_types': object_attack_profile.damage_types,
+                'damage_source_type': 'object', 'damage_source_id': dirty.objects[attacking_object_index].id });
 
 
         } catch(error) {
             log(chalk.red("Error in battle.objectAttackObject: " + error));
+            console.error(error);
         }
     }
 
-    async function objectAttackPlayer(dirty, battle_linker) {
+    async function objectAttackPlayer(dirty, battle_linker, data = false) {
 
         try {
 
-            if(!io.sockets.connected[battle_linker.being_attacked_socket_id]) {
+            if(battle_linker && !io.sockets.connected[battle_linker.being_attacked_socket_id]) {
                 log(chalk.yellow("Player with being_attacked_socket_id: " + battle_linker.being_attacked_socket_id + " is no longer connected. Removing"));
                 world.removeBattleLinkers(dirty, { 'battle_linker_id': battle_linker.id });
                 return;
             }
 
-            let object_index = await main.getObjectIndex(battle_linker.attacking_id);
+            let object_index = -1;
+            if(battle_linker) {
+                object_index = await main.getObjectIndex(battle_linker.attacking_id);
+            } else if(typeof data.object_index !== 'undefined') {
+                object_index = data.object_index;
+            }
+
+
 
             if(object_index === -1) {
-                log(chalk.yellow("Could not find object id: " + battle_linker.attacking_id));
-                world.removeBattleLinkers(dirty, { 'object_id': battle_linker.attacking_id });
+                log(chalk.yellow("Could not find object"));
+
+                if(battle_linker) {
+                    log(chalk.yellow("Could not find object id: " + battle_linker.attacking_id));
+                    world.removeBattleLinkers(dirty, { 'object_id': battle_linker.attacking_id });
+                }
+
+
                 return;
             }
 
-            let player_index = await main.getPlayerIndex({ 'player_id': battle_linker.being_attacked_id });
+
+            let player_index = -1;
+            if(battle_linker) {
+                player_index = await main.getPlayerIndex({ 'player_id': battle_linker.being_attacked_id });
+            } else if(typeof data.player_index !== 'undefined') {
+                player_index = data.player_index;
+            }
+
 
             if(player_index === -1) {
-                log(chalk.yellow("Could not find player id: " + battle_linker.being_attacked_id + ". player_index: " + player_index));
-                world.removeBattleLinkers(dirty, { 'player_id': battle_linker.being_attacked_id });
+                log(chalk.yellow("Could not find player"));
+                if(battle_linker) {
+                    log(chalk.yellow("Could not find player id: " + battle_linker.being_attacked_id + ". player_index: " + player_index));
+                    world.removeBattleLinkers(dirty, { 'player_id': battle_linker.being_attacked_id });
+                }
+
                 return;
             }
 
@@ -1554,6 +1671,7 @@ module.exports = function(main, io, mysql, pool, chalk, log, world, inventory, g
 
         } catch(error) {
             log(chalk.red("Error in battle.objectAttackPlayer: " + error));
+            console.error(error);
         }
 
     }
@@ -2071,6 +2189,22 @@ module.exports = function(main, io, mysql, pool, chalk, log, world, inventory, g
 
                 await world.aiRetaliate(dirty, ai_index, battle_linker.attacking_type, battle_linker.attacking_id);
                 return;
+            }
+            // Adding in code for a spacelane beacon to help out
+            else if(defending_player_info.room === 'galaxy' && defending_player_info.coord.watched_by_object_id) {
+                let watching_object_index = await main.getObjectIndex(defending_player_info.coord.watched_by_object_id);
+                if(watching_object_index !== -1 && dirty.objects[watching_object_index].energy > damage_amount) {
+                    log(chalk.green("Watcher is helping out!"));
+
+                    let watching_object_type_index = main.getObjectTypeIndex(dirty.objects[watching_object_index].object_type_id);
+                    io.to(defending_player_info.room).emit('damaged_data',
+                        {'player_id': dirty.players[defending_player_index].id, 'damage_amount': damage_amount, 'was_damaged_type': 'energy',
+                            'damage_source_type':'player', 'damage_source_id': dirty.players[attacking_player_index].id,
+                            'calculating_range': calculating_range, 'damage_types': [ dirty.object_types[watching_object_type_index].equip_skill ] });
+                    objectAttackPlayer(dirty, false, { 'object_index': watching_object_index, 'player_index': attacking_player_index });
+
+                    return
+                }
             }
 
 

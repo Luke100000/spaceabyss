@@ -371,7 +371,8 @@ module.exports = function(main, io, mysql, pool, chalk, log, uuid, PF) {
             // For now we are just going to have a master list
             let rule_values = ["attack_all_players", "attack_all_players_except_creator", "attack_all_players_except_creator_faction",
                 "protect_all_players", "protect_creator", "protect_creator_property", "protect_self", "allow_all_players",
-                "allow_faction_players", "allow_creator", "allow_monsters", "building_no_others", "floor_no_others"];
+                "allow_faction_players", "allow_creator", "allow_monsters", "building_no_others", "floor_no_others",
+                "protect_3", "protect_4"];
 
             // make sure the new rule is found in our array of rule values
             let in_array = false;
@@ -385,6 +386,20 @@ module.exports = function(main, io, mysql, pool, chalk, log, uuid, PF) {
                 log(chalk.yellow("Was sent rule that isn't in our rule_values array: " + data.new_rule));
                 return false;
 
+            }
+
+            // Make sure the socket player and the object player match
+            let object_index = await main.getObjectIndex(parseInt(data.object_id));
+
+            if(object_index === -1) {
+                log(chalk.yellow("Object index not found"));
+                return false;
+
+            }
+
+            if(!socket.player_id || socket.player_id !== dirty.objects[object_index].player_id) {
+                log(chalk.yellow("Not that player's object to add rules for"));
+                return false;
             }
 
             let sql = "INSERT INTO rules(object_id, rule) VALUES(?,?)";
@@ -407,11 +422,52 @@ module.exports = function(main, io, mysql, pool, chalk, log, uuid, PF) {
                 let object_info = await getObjectCoordAndRoom(dirty, object_index);
 
                 sendRuleInfo(socket, object_info.room, dirty, added_rule.id);
+
+                // Bit of extra work depending on the rule!
+
+                // In the case of a protect_3_3 or protect_4_4 rule, we need to set that it is watching that area
+                let split = data.new_rule.split("_");
+                // For now, just protect in this
+                if(split[0] !== "protect") {
+                    console.log("Not protect rule");
+                    return;
+                }
+
+
+                if(isNaN(split[1])) {
+                    console.log("Not numbered protect rule");
+                    return;
+                }
+
+                let protecting_radius = parseInt(split[1]);
+
+
+                if(!object_info.room || object_info.room !== 'galaxy') {
+                    log(chalk.yellow("Currently only supporting in galaxy"));
+                }
+
+                let starting_tile_x = object_info.coord.tile_x - protecting_radius;
+                let ending_tile_x = object_info.coord.tile_x + protecting_radius;
+                let starting_tile_y = object_info.coord.tile_y - protecting_radius;
+                let ending_tile_y = object_info.coord.tile_y + protecting_radius;
+
+                for(let x = starting_tile_x; x <= ending_tile_x; x++) {
+                    for(let y = starting_tile_y; y <= ending_tile_y; y++) {
+                        let coord_index = await main.getCoordIndex({ 'tile_x': x, 'tile_y': y });
+
+                        if(coord_index !== -1 && !dirty.coords[coord_index].watched_by_object_id) {
+
+                            main.updateCoordGeneric(socket, { 'coord_index': coord_index, 'watched_by_object_id': dirty.objects[object_index].id });
+                        }
+                    }
+                }
+
+
             }
 
 
         } catch(error) {
-            log(chalk.red("Error in game.addRule: " + error));
+            log(chalk.red("Error in world.addRule: " + error));
             console.error(error);
         }
 
@@ -3385,6 +3441,7 @@ module.exports = function(main, io, mysql, pool, chalk, log, uuid, PF) {
 
             if(!dirty.objects[object_index]) {
                 log(chalk.yellow("Did not find object in dirty. source: " + source));
+
                 console.trace("Lets find you");
                 return false;
             }
@@ -3763,6 +3820,8 @@ module.exports = function(main, io, mysql, pool, chalk, log, uuid, PF) {
 
         try {
 
+            console.log("In world.setPlanetType");
+
             data.planet_index = parseInt(data.planet_index);
             data.planet_type_index = parseInt(data.planet_type_index);
 
@@ -3809,6 +3868,7 @@ module.exports = function(main, io, mysql, pool, chalk, log, uuid, PF) {
             }
 
             if(can_place_all_tiles && planet_type_has_display_linkers) {
+                console.log("Can place all tiles");
                 for(let i = 0; i < dirty.planet_type_display_linkers.length; i++) {
                     if(dirty.planet_type_display_linkers[i].planet_type_id === dirty.planet_types[data.planet_type_index].id) {
 
@@ -3820,13 +3880,18 @@ module.exports = function(main, io, mysql, pool, chalk, log, uuid, PF) {
 
                             let checking_coord_index = await main.getCoordIndex({ 'tile_x': checking_tile_x, 'tile_y': checking_tile_y });
 
-                            if(checking_coord_index === -1 ) {
+                            if(checking_coord_index !== -1 ) {
+                                console.log("Set belongs_to_planet_id");
                                 dirty.coords[checking_coord_index].belongs_to_planet_id = dirty.planets[data.planet_index].id;
                                 dirty.coords[checking_coord_index].has_change = true;
+                            } else {
+                                console.log("Couldn't find coord at " + checking_tile_x + "," + checking_tile_y);
                             }
                         }
                     }
                 }
+            } else {
+                log(chalk.yellow("Can't place all tiles"));
             }
 
 
@@ -3837,7 +3902,7 @@ module.exports = function(main, io, mysql, pool, chalk, log, uuid, PF) {
             dirty.planets[data.planet_index].x_size = dirty.planet_types[data.planet_type_index].size;
             dirty.planets[data.planet_index].y_size = dirty.planet_types[data.planet_type_index].size;
 
-            dirty.planets[data.planet_index].lowest_depth = -1 * getRandomIntInclusive(dirty.planet_types[data.planet_type_index].min_depth,
+            dirty.planets[data.planet_index].lowest_depth = -1 * main.getRandomIntInclusive(dirty.planet_types[data.planet_type_index].min_depth,
                 dirty.planet_types[data.planet_type_index].max_depth);
 
             dirty.planets[data.planet_index].has_change = true;

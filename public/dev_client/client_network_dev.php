@@ -341,6 +341,8 @@
     //  data:   damage_types (piercing,laser,repairing,healing,etc)   |   damage_source_type (monster,npc,player,object,etc)   |   damage_source_id
     socket.on('damaged_data', function(data) {
 
+        console.log(data.damage_types);
+
         let drawing_x = -100;
         let drawing_y = -100;
 
@@ -439,6 +441,25 @@
                 if(attacking_player_info.coord) {
                     attacker_x = tileToPixel(attacking_player_info.coord.tile_x);
                     attacker_y = tileToPixel(attacking_player_info.coord.tile_y);
+                }
+            } else if(data.damage_source_type === 'object') {
+                let attacking_object_index = getObjectIndex(data.damage_source_id);
+                if(attacking_object_index === -1) {
+                    socket.emit('request_object_info', { 'object_id': data.damage_source_id });
+                    return;
+                }
+
+                let attacking_object_type_index = getObjectTypeIndex(objects[attacking_object_index].object_type_id);
+
+                // If this is an active ship
+                if(object_types[attacking_object_type_index].is_ship) {
+
+                }
+
+                let attacking_object_info = getObjectInfo(attacking_object_index);
+                if(attacking_object_info.coord) {
+                    attacker_x = tileToPixel(attacking_object_info.coord.tile_x);
+                    attacker_y = tileToPixel(attacking_object_info.coord.tile_y);
                 }
             }
         }
@@ -1171,7 +1192,6 @@
             client_player_id = parseInt(data.player_id);
             $("#login_container").hide();
             $("#chat_container").show();
-            console.log("Showing chat container");
             redrawMap();
 
 
@@ -2400,7 +2420,6 @@
     });
 
     socket.on('object_type_display_linker_info', function(data) {
-        console.log("Received object_type_display_linker");
 
         let object_type_display_linker_index = object_type_display_linkers.findIndex(function(obj) {
             return obj && obj.id === parseInt(data.object_type_display_linker.id); });
@@ -2636,8 +2655,19 @@
 
             players[player_index].planet_coord_id = data.player.planet_coord_id;
 
+            let moved_on_ship = false;
+            if(!Object.is(parseInt(players[player_index].ship_coord_id), parseInt(data.player.ship_coord_id))) {
+                console.log("moved on ship." + parseInt(players[player_index].ship_coord_id) + "!== " + parseInt(data.player.ship_coord_id));
+                moved_on_ship = true;
+            }
 
             players[player_index].ship_coord_id = data.player.ship_coord_id;
+
+            if(moved_on_ship) {
+                generateAirlockDisplay();
+            }
+
+
             players[player_index].coord_id = data.player.coord_id;
             players[player_index].planet_id = data.player.planet_id;
 
@@ -3219,6 +3249,8 @@
             return false;
         }
 
+        console.log("Got ship coord info");
+
         let coord_index = ship_coords.findIndex(function(obj) { return obj && obj.id === parseInt(data.ship_coord.id) });
 
         if(coord_index === -1) {
@@ -3226,7 +3258,16 @@
             drawCoord('ship', ship_coords[coord_index]);
 
             // we just added the coord that the player is on - we should insta center the player there
-            if(ship_coords[coord_index].player_id === client_player_id) {
+            if(client_player_index !== -1 && ship_coords[coord_index].player_id === client_player_id) {
+                console.log("This coord has our player");
+
+                if(!players[client_player_index].sprite) {
+                    console.log("Trying to create our player sprite");
+                    createPlayerSprite(client_player_index);
+                } else {
+                    console.log("Player already has a sprite");
+                }
+
                 movePlayerInstant(client_player_index, ship_coords[coord_index].tile_x * tile_size + tile_size / 2, ship_coords[coord_index].tile_y * tile_size + tile_size / 2);
 
                 if(airlock_display_needs_regeneration) {
@@ -3263,7 +3304,18 @@
 
             ship_coords[coord_index] = data.ship_coord;
 
+            if(ship_coords[coord_index].player_id === client_player_id) {
+                console.log("Got update on coord with our player");
+            }
+
+            if(client_player_index !== -1 && !players[client_player_index].sprite && ship_coords[coord_index].player_id === client_player_id) {
+                console.log("Found the player!");
+                createPlayerSprite(client_player_index);
+            }
+
         }
+
+
 
 
     });

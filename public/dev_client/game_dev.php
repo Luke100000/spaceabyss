@@ -1929,7 +1929,7 @@ include('config.php');
             for(let i = 0; i < players.length; i++) {
 
                 // Tail end of movement to smooth it out
-                if(players[i] && players[i].frames_to_idle !== 0) {
+                if(players[i] && players[i].sprite && players[i].frames_to_idle !== 0) {
                     players[i].frames_to_idle--;
 
                     if(players[i].frames_to_idle <= 0) {
