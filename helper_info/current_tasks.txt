@@ -2,59 +2,9 @@
 
 DOING NOW:
 
-    Testing:
-        Have cadian create another ship, and abandon it
-        Have Phaethon go into it, and see if the airlock and engine switch over to him
-
-    Gabriel ran out of energy on his engine
-        Two big issues: 1 The game did not warn him his engine was low on energy, or how to replenish it
-                        2 Need the ion drive to be a converter that can accept batteries
-                        3 Need other players to be able to provide energy too
-
-            Not sure about other players providing energy ( the coding of it )
-                Focusing now on self refueling and jumping out the airlock
 
 
-    Airlocks could have rules like doors
-        Which means two ships side by side.... other players could move onto the ship if they were allowed
-
-
-
-    I really think there are things blocking movement from being nice
-        * trying to move while a monster is killed
-
-    Active food replicator from level above showing on layer below
-    mining linkers not immediately being removed when switching levels
-
-    Holes being blocked by monsters is kind of awful.
-        Either have the player move to another coord around it, or have it push the monsters around
-
-
-
-    Robot janitors showing up on wrong spot on -1
-
-
-    I want there to be beacons in space that protect an area around them
-
-        So lets say player D is being attacked by player A
-        if player D is within range of the beacon, it should protect player D and attack player A
-
-
-        Lets say beacon at 10,10 is protecting from 8,8 to 12,12
-
-        player D at 12,12 -> Need to find in there is a beacon... anywhere in the vicinity
-            hate that
-
-        player D at 12,12 -> coord has a protected_by_object_id field?
-
-        Wouldn't be the worst thing to make the system work for someone to put attacking beacons down too
-            ruled_by_object_id ? watched_by_object_id ?
-
-        So how does a defense drone work right now? We just pull it in via the map. Wouldn't have the ability to protect
-        AI works at a ship/planet level
-
-        When objects die, we have to check that coords in their room are updated
-            Also need to update the watched_by_object_id value if the object isn't found
+    Have a doctor NPCs surgery skill slowly tick up
 
 
         For now, we could just have the planet slowly tick/recover hp
@@ -68,10 +18,6 @@ DOING NOW:
 
     Need to start on augments
 
-
-
-    MUST code in safe areas in space. Beacon with an area around it. Beacons needs to be protected by an AI somehow
-        Entangled to a particular plantary AI? Or the beacon itself is a AI in SPACE
 
 
 
@@ -103,6 +49,25 @@ CHANGES TO GAME FILE
 
     object_images:
 
+THINGS TO INVESTIGATE/OPTIMIZATION IDEAS:
+    /addinventory 100 manufacturing augment
+        The above admin command lags up the client to the point of disconnect. Need to figure out why,
+        and if it's just the one client, or the entire server.
+
+    I had the idea of not storing planet coords at level -1 and below if they are just walls - and telling the client
+        to just draw those spaces as walls.
+        Benefits: Many less planet coords
+        Cons: Each time the server fails to find a planet coord, it means a full array lookup
+        (and potentially a database query, which also ends up not finding it). Quite a few things to consider
+        to avoid some big drawbacks.
+
+
+    Another idea is to store the array index of things in memory, so we don't have to do lookups all the time
+        e.g. Storing that planet_coord id: 70 has array index: 30
+        If done well, I think I could avoid a lot of lookups, and I believe the only big con is more memory usage
+
+    Third idea for planet coords is to separate them out by planet
+    dirty.planet_coords[planet_id] = []; //?
 
 
 

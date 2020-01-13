@@ -7,6 +7,12 @@ if(isMainThread) {
     return false;
 }
 
+function getRandomIntInclusive(min, max) {
+    min = Math.ceil(min);
+    max = Math.floor(max);
+    return Math.floor(Math.random() * (max - min + 1)) + min; //The maximum is inclusive and the minimum is inclusive
+}
+
 
 console.log("Pathfinding Worker Started");
 
@@ -116,7 +122,14 @@ parentPort.once('message', (data) => {
     while(!found_path && path_attempts < 10) {
 
         if(!grid.isWalkableAt(grid_destination_x, grid_destination_y)) {
-            grid_destination_y--;
+
+            // randomly decrement x or y
+            if(getRandomIntInclusive(1,2) === 2) {
+                grid_destination_y--;
+            } else {
+                grid_destination_x--;
+            }
+
         }
 
         path = finder.findPath(grid_origin_x, grid_origin_y,

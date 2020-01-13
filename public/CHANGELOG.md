@@ -1,3 +1,37 @@
+## [0.0.8] - 2020-01-13
+### Fixed
+- Assemblies using the old assembly tick count, instead of the new one which is based on the object we're 
+using for the assembly.
+- Placing multi-tile ships on the galaxy
+- When a player's HP changes, we now redraw the hp bar
+- A few different bugs when players die that interrupted the dying process
+- Player surgery level was not being calculated
+
+
+### Changed
+- When going up stairs, or down a hole, the server will try to place you in tiles surrounding the hole/stairs 
+if the main tile is blocked by something.
+- Moved and resized the 'Trash' button on inventory items so it's not the first thing you mouseoever
+- Optimized when checking to see if an NPC can build a structure. Stops searching subsequent coords if one has 
+already failed
+- New Robot Janitor and Crystal Spider Baby sprites from @RunninBlood ( https://twitter.com/RunninBlood )
+- Put Crystal Spider Babies on the surface level of Mountain planet types, and made Crystal Spiders stronger, and 
+spawning them starting at -1 instead.
+- Changed the drops of Crystal Spiders and Crystal Guards to include dropping Crystals
+
+### Added
+- Support for augments. Augments are neural enhancements that always require an auto doc to equip. I king of wanted 
+them to completely burn a body on failure, but for now I am going to keep it consistent with other equip spots. 
+Failure will just burn the spot, and take away some HP. For now I think the consistency, and the game's general 
+ability to communicate disaster make burning an entire body too detrimental. It's still possible to fail until you 
+have 0 HP and the body dies.
+- The basics of a doctor NPC. Once an NPC with the dream of becoming a doctor obtains 100 credits, they are able 
+to build a clinic with a pair of auto docs. 
+- The ability for a user to use an auto doc from a doctor npc. This uses the NPC's surgery skill, rather than the 
+player's surgery skill. This should open up the pathway for players to offer surgery stuff down the road as well. 
+- A doctor npc's surgery skill will slowly increase as they tinker with.... bodies.
+
+
 ## [0.0.7] - 2020-01-04
 ### Fixed
 - Bug setting new coords to belong to planets switching planet types

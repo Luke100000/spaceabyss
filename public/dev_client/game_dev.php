@@ -785,7 +785,7 @@ include('config.php');
             this.load.spritesheet('player-cutter', 'https://space.alphacoders.com/cutter-animated.png',
                 { frameWidth: 64, frameHeight: 64, endFrame: 12 });
 
-            this.load.spritesheet('player-mlm', 'https://space.alphacoders.com/player-mlm-animated.png?234',
+            this.load.spritesheet('player-mlm', 'https://space.alphacoders.com/player-mlm-animated.png',
                 { frameWidth: 64, frameHeight: 64, endFrame: 36 });
 
             this.load.spritesheet('player-human', 'https://space.alphacoders.com/player-human-animated.png',
@@ -794,14 +794,22 @@ include('config.php');
             this.load.spritesheet('player-ruel', 'https://space.alphacoders.com/ruel-body-animated.png',
                 { frameWidth: 64, frameHeight: 64, endFrame: 36 });
 
-            this.load.spritesheet('player-shuttle', 'https://space.alphacoders.com/shuttle-animated.png?234',
+            // Ships
+
+            this.load.spritesheet('player-shuttle', 'https://space.alphacoders.com/shuttle-animated.png',
                 { 'frameWidth': 64, 'frameHeight': 64, endFrame: 16 });
 
-            this.load.spritesheet('player-cargo-ship', 'https://space.alphacoders.com/cargo-ship-animated.png?234',
+            this.load.spritesheet('player-cargo-ship', 'https://space.alphacoders.com/cargo-ship-animated.png',
                 { 'frameWidth': 64, 'frameHeight': 64, endFrame: 16 });
 
-            this.load.spritesheet('player-mining-ship', 'https://space.alphacoders.com/mining-ship-animated.png?234',
+            this.load.spritesheet('player-destroyer', 'https://space.alphacoders.com/destroyer-animated.png',
+                { 'frameWidth': 128, 'frameHeight': 128, endFrame: 2 });
+
+            this.load.spritesheet('player-mining-ship', 'https://space.alphacoders.com/mining-ship-animated.png',
                 { 'frameWidth': 64, 'frameHeight': 64, endFrame: 16 });
+
+            this.load.spritesheet('player-royal-cruiser', 'https://space.alphacoders.com/royal-cruiser-animated.png',
+                { 'frameWidth': 64, 'frameHeight': 128, endFrame: 2 });
 
             this.load.spritesheet('player-space-station', 'https://space.alphacoders.com/space-station.png',
                 { 'frameWidth': 128, 'frameHeight': 128, endFrame: 1});
@@ -827,6 +835,8 @@ include('config.php');
                 { frameWidth: 64, frameHeight: 64, endFrame: 3 });
             this.load.spritesheet('crystal-spider', 'https://space.alphacoders.com/crystal-spider.png',
                 { frameWidth: 64, frameHeight: 64, endFrame: 4 });
+            this.load.spritesheet('crystal-spider-baby', 'https://space.alphacoders.com/crystal-spider-baby.png',
+                { frameWidth: 64, frameHeight: 64, endFrame: 7 });
             this.load.spritesheet('cyberskell', 'https://space.alphacoders.com/cyberskell.png',
                 { frameWidth: 64, frameHeight: 64, endFrame: 2 });
             this.load.spritesheet('ddrone', 'https://space.alphacoders.com/ddrone.png',
@@ -855,7 +865,7 @@ include('config.php');
             this.load.spritesheet('process', 'https://space.alphacoders.com/process.png',
                 { frameWidth: 32, frameHeight: 32, endFrame: 3 });
             this.load.spritesheet('robot-janitor', 'https://space.alphacoders.com/robot-janitor.png',
-                { frameWidth: 64, frameHeight: 64, endFrame: 3 });
+                { frameWidth: 64, frameHeight: 64, endFrame: 4 });
             this.load.spritesheet('scrapslog', 'https://space.alphacoders.com/scrapslog.png',
                 { frameWidth: 64, frameHeight: 64, endFrame: 2 });
             this.load.spritesheet('slave', 'https://space.alphacoders.com/slave.png',
@@ -1093,6 +1103,40 @@ include('config.php');
             this.anims.create(player_cutter_down_config);
 
 
+
+            let player_destroyer_up_config = {
+                key: 'player-destroyer-up-animation',
+                frames: this.anims.generateFrameNumbers('player-destroyer', { start: 0, end: 0, first: 0 }),
+                frameRate: 2,
+                repeat: -1
+            };
+            this.anims.create(player_destroyer_up_config);
+
+            let player_destroyer_down_config = {
+                key: 'player-destroyer-down-animation',
+                frames: this.anims.generateFrameNumbers('player-destroyer', { start: 0, end: 0, first: 0 }),
+                frameRate: 2,
+                repeat: -1
+            };
+            this.anims.create(player_destroyer_down_config);
+
+            let player_destroyer_left_config = {
+                key: 'player-destroyer-left-animation',
+                frames: this.anims.generateFrameNumbers('player-destroyer', { start: 1, end: 1, first: 1 }),
+                frameRate: 2,
+                repeat: -1
+            };
+            this.anims.create(player_destroyer_left_config);
+
+            let player_destroyer_right_config = {
+                key: 'player-destroyer-right-animation',
+                frames: this.anims.generateFrameNumbers('player-destroyer', { start: 1, end: 1, first: 1 }),
+                frameRate: 2,
+                repeat: -1
+            };
+            this.anims.create(player_destroyer_right_config);
+
+
             // PLAYER HUMAN
 
             /*
@@ -1245,6 +1289,14 @@ include('config.php');
             };
             this.anims.create(player_pod_config);
 
+            let player_royal_cruiser_config = {
+                key: 'player-royal_cruiser-animation',
+                frames: this.anims.generateFrameNumbers('player-royal-cruiser', { start: 0, end: 0, first: 0 }),
+                frameRate: 2,
+                repeat: -1
+            };
+            this.anims.create(player_royal_cruiser_config);
+
             let player_ruel_idle_config = {
                 key: 'player-ruel-idle-animation',
                 frames: this.anims.generateFrameNumbers('player-ruel', { start: 0, end: 11, first: 11 }),
@@ -1325,9 +1377,7 @@ include('config.php');
             };
 
             this.anims.create(player_shuttle_down_config);
-            
-            
-            
+
 
             let player_space_station_config = {
                 key: 'player-space-station-animation',
@@ -1336,6 +1386,9 @@ include('config.php');
                 repeat: -1
             };
             this.anims.create(player_space_station_config);
+
+
+
 
 
 
@@ -1419,11 +1472,19 @@ include('config.php');
 
             let crystal_spider_config = {
                 key: 'crystal-spider-animation',
-                frames: this.anims.generateFrameNumbers('crystal-spider', { start: 0, end: 1, first: 1 }),
+                frames: this.anims.generateFrameNumbers('crystal-spider', { start: 0, end: 3, first: 3 }),
                 frameRate: 2,
                 repeat: -1
             };
             this.anims.create(crystal_spider_config);
+
+            let crystal_spider_baby_config = {
+                key: 'crystal-spider-baby-animation',
+                frames: this.anims.generateFrameNumbers('crystal-spider-baby', { start: 0, end: 6, first: 6 }),
+                frameRate: 2,
+                repeat: -1
+            };
+            this.anims.create(crystal_spider_baby_config);
 
             let cyberskell_config = {
                 key: 'cyberskell-animation',
@@ -1525,7 +1586,7 @@ include('config.php');
 
             let robot_janitor_config = {
                 key: 'robot-janitor-animation',
-                frames: this.anims.generateFrameNumbers('robot-janitor', { start: 0, end: 2, first: 2 }),
+                frames: this.anims.generateFrameNumbers('robot-janitor', { start: 0, end: 3, first: 3 }),
                 frameRate: 2,
                 repeat: -1
             };

@@ -495,7 +495,21 @@ module.exports = function(main, io, mysql, pool, chalk, log, world, map) {
                 return false;
             }
 
+            // get the display linkers, if there are any, and determine the movement tile width/height
+            let ship_display_linkers = dirty.object_type_display_linkers.filter(linker =>
+                linker.object_type_id === dirty.object_types[player_ship_type_index].id);
+
+            let current_coords = [];
+            for(let linker of ship_display_linkers) {
+                let linker_tile_x = dirty.coords[previous_coord_index].tile_x + linker.position_x;
+                let linker_tile_y = dirty.coords[previous_coord_index].tile_y + linker.position_y;
+
+                current_coords.push({ 'tile_x': linker_tile_x, 'tile_y': linker_tile_y, 'still_used': false });
+            }
+
+
             /************** STEP 1. GET ALL THE INFO ABOUT THE DESTINATION COORD ******************/
+            // Notes: Can place grabs the ship linkers
 
 
             let object_index = -1;
@@ -551,6 +565,7 @@ module.exports = function(main, io, mysql, pool, chalk, log, world, map) {
             // The potential to land on the planet - if we aren't piloting a dockable ship ourselves
             else if( (dirty.coords[coord_index].planet_id && dirty.coords[coord_index].planet_type !== "Forming") ||
                 dirty.coords[coord_index].belongs_to_planet_id) {
+                console.log("Coord player is trying to move towards is part of a planet");
 
                 if(dirty.object_types[player_ship_type_index].is_dockable) {
                     socket.emit('chat', { 'message': "You cannot land on a planet with a large, dockable ship", 'scope': 'system' });
@@ -586,6 +601,7 @@ module.exports = function(main, io, mysql, pool, chalk, log, world, map) {
             }
 
 
+            // THIS CHECKS ALL THE COORDS
             let can_place = await main.canPlacePlayer({ 'scope': 'galaxy', 'coord': dirty.coords[coord_index],
                 'player_index': socket.player_index });
             //let can_place = await main.canPlace('galaxy', dirty.coords[coord_index], 'player', dirty.players[player_index].id);
@@ -700,10 +716,6 @@ module.exports = function(main, io, mysql, pool, chalk, log, world, map) {
 
 
 
-            // get the display linkers, if there are any, and determine the movement tile width/height
-            let ship_display_linkers = dirty.object_type_display_linkers.filter(linker =>
-                linker.object_type_id === dirty.object_types[player_ship_type_index].id);
-
             // Just a small ship. EASY MOVE!
             if(ship_display_linkers.length === 0) {
                 await main.updateCoordGeneric(socket, { 'coord_index': previous_coord_index, 'player_id': false,
@@ -718,14 +730,6 @@ module.exports = function(main, io, mysql, pool, chalk, log, world, map) {
                 return;
             }
 
-
-            let current_coords = [];
-            for(let linker of ship_display_linkers) {
-                let linker_tile_x = dirty.coords[previous_coord_index].tile_x + linker.position_x;
-                let linker_tile_y = dirty.coords[previous_coord_index].tile_y + linker.position_y;
-
-                current_coords.push({ 'tile_x': linker_tile_x, 'tile_y': linker_tile_y, 'still_used': false });
-            }
 
             for(let linker of ship_display_linkers) {
                 let linker_tile_x = dirty.coords[coord_index].tile_x + linker.position_x;
@@ -815,7 +819,6 @@ module.exports = function(main, io, mysql, pool, chalk, log, world, map) {
             //main.clearObjectExtraCoords(player_ship_index);
 
             /******************************************* END TEMP THING ************************************************************/
-
 
 
         } catch(error) {
@@ -942,7 +945,7 @@ module.exports = function(main, io, mysql, pool, chalk, log, world, map) {
                 moveThroughPortal(socket, dirty, dirty.planet_coords[planet_coord_index].object_id);
 
             }
-            // Object types that move you down. Holes.
+            // HOLES
             else if (dirty.planet_coords[planet_coord_index].object_type_id && dirty.object_types[object_type_index].is_hole) {
                 console.log("Player is trying to go down a hole");
 
@@ -953,10 +956,42 @@ module.exports = function(main, io, mysql, pool, chalk, log, world, map) {
                 if(stairs_index !== -1) {
                     console.log("Found stairs");
 
+                    let moving_to_coord_index = -1;
+
+                    // In most cases, we can just put them on the stairs
+
                     let can_place_result = await main.canPlacePlayer({ 'scope': 'planet',
                         'coord': dirty.planet_coords[stairs_index], 'player_index': socket.player_index });
 
-                    if(can_place_result === true) {
+                    if(can_place_result) {
+                        moving_to_coord_index = stairs_index;
+                    }
+
+                    // If the hole coord is blocked, we try the coords around it
+                    if(moving_to_coord_index === -1) {
+                        for(let x = dirty.planet_coords[stairs_index].tile_x - 1; x <= dirty.planet_coords[stairs_index].tile_x + 1 && moving_to_coord_index === -1; x++) {
+                            for(let y = dirty.planet_coords[stairs_index].tile_y -1; y <= dirty.planet_coords[stairs_index].tile_y + 1 && moving_to_coord_index === -1; y++) {
+
+                                let trying_index = await main.getPlanetCoordIndex({'planet_id': dirty.planet_coords[planet_coord_index].planet_id,
+                                    'planet_level': new_planet_level, 'tile_x': x, 'tile_y': y });
+
+                                if(trying_index !== -1) {
+                                    can_place_result = await main.canPlacePlayer({ 'scope': 'planet',
+                                        'coord': dirty.planet_coords[trying_index], 'player_index': socket.player_index });
+
+                                    if(can_place_result) {
+                                        moving_to_coord_index = trying_index;
+                                    }
+                                }
+
+
+
+
+                            }
+                        }
+                    }
+
+                    if(moving_to_coord_index !== -1) {
 
                         // we basically skip moving onto the actual hole, and move directly to the stairs
                         await main.updateCoordGeneric(socket, {'planet_coord_index': previous_planet_coord_index, 'player_id': false });
@@ -964,12 +999,12 @@ module.exports = function(main, io, mysql, pool, chalk, log, world, map) {
                         // SKIP THE HOLE!!!!
                         //await main.updateCoordGeneric(socket, {'planet_coord_index': hole_index, 'player_id': false });
 
-                        await main.updateCoordGeneric(socket, {'planet_coord_index': stairs_index, 'player_id': socket.player_id });
+                        await main.updateCoordGeneric(socket, {'planet_coord_index': moving_to_coord_index, 'player_id': socket.player_id });
 
-                        dirty.players[socket.player_index].planet_coord_id = dirty.planet_coords[stairs_index].id;
+                        dirty.players[socket.player_index].planet_coord_id = dirty.planet_coords[moving_to_coord_index].id;
                         dirty.players[socket.player_index].has_change = true;
                         // send the updated player info
-                        await world.sendPlayerInfo(socket, "planet_" + dirty.planet_coords[stairs_index].planet_id, dirty,
+                        await world.sendPlayerInfo(socket, "planet_" + dirty.planet_coords[moving_to_coord_index].planet_id, dirty,
                             dirty.players[socket.player_index].id);
 
                         socket.emit('clear_map');
@@ -977,8 +1012,8 @@ module.exports = function(main, io, mysql, pool, chalk, log, world, map) {
                         await map.updateMap(socket, dirty);
                         world.removeBattleLinkers(dirty, { 'player_id': dirty.players[socket.player_index].id });
                     } else {
-                        console.log("Something is already on the stairs");
-                        socket.emit('move_failure', { 'failed_planet_coord_id': dirty.planet_coords[stairs_index].id,
+                        console.log("Something is blocking the stairs and the area around the stairs");
+                        socket.emit('move_failure', { 'failed_planet_coord_id': dirty.planet_coords[moving_to_coord_index].id,
                             'return_to_planet_coord_id': dirty.players[socket.player_index].planet_coord_id });
                         socket.emit('result_info', { 'status': 'failure', 'text': 'Something is blocking the stairs below' });
                     }
@@ -986,8 +1021,10 @@ module.exports = function(main, io, mysql, pool, chalk, log, world, map) {
                     console.log("Unable to find hole above stairs");
                 }
 
-            } else if (dirty.planet_coords[planet_coord_index].object_type_id && dirty.object_types[object_type_index].is_stairs) {
-                // STAIRS
+            }
+            // STAIRS
+            else if (dirty.planet_coords[planet_coord_index].object_type_id && dirty.object_types[object_type_index].is_stairs) {
+
 
                 // get the coord we would actually be moving to ( think warp to the planet coord above )
                 let new_planet_level = dirty.planet_coords[previous_planet_coord_index].level + 1;
@@ -996,28 +1033,64 @@ module.exports = function(main, io, mysql, pool, chalk, log, world, map) {
 
                 if(hole_index !== -1) {
 
+                    let moving_to_coord_index = -1;
+
+                    // In most cases, we can just put them on the hole
                     let can_place_result = await main.canPlacePlayer({ 'scope': 'planet',
                         'coord': dirty.planet_coords[hole_index], 'player_index': socket.player_index });
 
-                    if(can_place_result === true) {
+                    if(can_place_result) {
+                        moving_to_coord_index = hole_index;
+                    }
+
+                    // If the hole coord is blocked, we try the coords around it
+                    if(moving_to_coord_index === -1) {
+                        for(let x = dirty.planet_coords[hole_index].tile_x - 1; x <= dirty.planet_coords[hole_index].tile_x + 1 && moving_to_coord_index === -1; x++) {
+                            for(let y = dirty.planet_coords[hole_index].tile_y -1; y <= dirty.planet_coords[hole_index].tile_y + 1 && moving_to_coord_index === -1; y++) {
+
+                                let trying_index = await main.getPlanetCoordIndex({'planet_id': dirty.planet_coords[planet_coord_index].planet_id,
+                                    'planet_level': new_planet_level, 'tile_x': x, 'tile_y': y });
+
+                                if(trying_index !== -1) {
+                                    can_place_result = await main.canPlacePlayer({ 'scope': 'planet',
+                                        'coord': dirty.planet_coords[trying_index], 'player_index': socket.player_index });
+
+                                    if(can_place_result) {
+                                        moving_to_coord_index = trying_index;
+                                    }
+                                }
+
+
+
+
+                            }
+                        }
+                    }
+
+
+
+                    if(moving_to_coord_index !== -1) {
 
                         // MOVE DIRECTLY ONTO THE HOLE
                         await main.updateCoordGeneric(socket, { 'planet_coord_index': previous_planet_coord_index, 'player_id': false });
 
                         //await main.updateCoordGeneric(socket, {'planet_coord_index': stairs_index, 'player_id': false });
 
-                        await main.updateCoordGeneric(socket, {'planet_coord_index': hole_index, 'player_id': socket.player_id });
+                        await main.updateCoordGeneric(socket, {'planet_coord_index': moving_to_coord_index, 'player_id': socket.player_id });
 
-                        dirty.players[socket.player_index].planet_coord_id = dirty.planet_coords[hole_index].id;
+                        dirty.players[socket.player_index].planet_coord_id = dirty.planet_coords[moving_to_coord_index].id;
                         dirty.players[socket.player_index].has_change = true;
-                        await world.sendPlayerInfo(socket, "planet_" + dirty.planet_coords[hole_index].planet_id, dirty, dirty.players[socket.player_index].id);
+                        await world.sendPlayerInfo(socket, "planet_" + dirty.planet_coords[moving_to_coord_index].planet_id, dirty, dirty.players[socket.player_index].id);
 
                         socket.emit('clear_map');
                         world.removeBattleLinkers(dirty, { 'player_id': dirty.players[socket.player_index].id});
                         await map.updateMap(socket, dirty);
 
                     } else {
-                        console.log("Something is blocking the hole");
+                        console.log("Something is blocking the hole, AND the space around it!");
+                        socket.emit('move_failure', { 'failed_planet_coord_id': dirty.planet_coords[moving_to_coord_index].id,
+                            'return_to_planet_coord_id': dirty.players[socket.player_index].planet_coord_id });
+                        socket.emit('result_info', { 'status': 'failure', 'text': 'Something is blocking the hole above' });
 
                     }
                 } else {
@@ -2629,7 +2702,7 @@ module.exports = function(main, io, mysql, pool, chalk, log, world, map) {
                         if(placing_type === 'player') {
                             console.log("Seeing if we can place player there");
                             can_place_result = await main.canPlacePlayer({ 'scope': 'planet',
-                                'coord': dirty.planet_coords[i], 'player_index': player_index, 'show_output': true });
+                                'coord': dirty.planet_coords[i], 'player_index': player_index });
 
                             console.log("Can place result: " + can_place_result);
                         } else if(placing_type === 'npc') {

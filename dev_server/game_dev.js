@@ -1727,7 +1727,11 @@ module.exports = function(main, io, mysql, pool, chalk, log, uuid, world, map, i
     async function damagePlayer(dirty, data) {
         try {
 
+            console.log("In game.damagePlayer");
+
             let new_player_hp = dirty.players[data.player_index].current_hp - data.damage_amount;
+
+            console.log("New player hp: " + new_player_hp);
 
             if(!data.flavor_text) {
                 data.flavor_text = false;
@@ -2660,12 +2664,13 @@ module.exports = function(main, io, mysql, pool, chalk, log, uuid, world, map, i
                 maximum_capacity = 4;
             }
 
-            if(current_capacity_used + dirty.object_type_equipment_linkers[equipment_linker_index].capacity_used > maximum_capacity) {
+            // If maximum_capacity is still 0, its an augment and there is no limit
+            if(maximum_capacity !== 0 && current_capacity_used + dirty.object_type_equipment_linkers[equipment_linker_index].capacity_used > maximum_capacity) {
                 socket.emit('chat', { 'message': "Unable to equip. Slot does not hae enough capacity to equip this.", 'scope': 'system'});
                 return false;
             }
 
-            // Auto doc is required. See if the player is on one
+            // AUDO DOC IS REQUIRED. See if the player is on one
             if(current_equip_slot_count > 0 || dirty.object_type_equipment_linkers[equipment_linker_index].auto_doc_required) {
 
 
@@ -2679,12 +2684,75 @@ module.exports = function(main, io, mysql, pool, chalk, log, uuid, world, map, i
                     return false;
                 }
 
+                // Now lets see who owns the auto doc
+                let auto_doc_index = await main.getObjectIndex(player_info.coord.object_id);
+
+                if(auto_doc_index === -1) {
+                    log(chalk.red("Auto doc isn't there!"));
+                    return false;
+                }
+
+                let surgery_level = 1;
+                let npc_index = await main.getNpcIndex(dirty.objects[auto_doc_index].npc_id);
+
+                if(dirty.objects[auto_doc_index].npc_id) {
+
+
+                    if(npc_index !== -1) {
+                        surgery_level = 1 + Math.floor(global.difficult_level_modifier * Math.sqrt(dirty.npcs[npc_index].surgery_skill_points));
+
+                        // surgery level is also the cost
+                        let paid_cost = false;
+                        for(let i = 0; i < dirty.inventory_items.length && paid_cost === false; i++) {
+
+                            // Finding the player's credit inventory item
+                            if(dirty.inventory_items[i] && dirty.inventory_items[i].player_id === dirty.players[socket.player_index].id && dirty.inventory_items[i].object_type_id === 74) {
+
+                                if(dirty.inventory_items[i].amount >= surgery_level) {
+
+                                    // remove from us
+                                    let remove_inventory_data = { 'inventory_item_id': dirty.inventory_items[i].id, 'amount': surgery_level };
+                                    await inventory.removeFromInventory(socket, dirty, remove_inventory_data);
+                                    paid_cost = true;
+
+                                    // give to npc
+
+                                    let adding_to_data = { 'adding_to_type':'npc', 'adding_to_id': dirty.npcs[npc_index].id,
+                                        'object_type_id': 74, 'amount': surgery_level };
+
+                                    await inventory.addToInventory(socket, dirty, adding_to_data);
+
+                                }
+                                // Failed to pay for it
+                                else {
+                                    console.log("Player could not afford to pay the NPC");
+                                    socket.emit('chat', { 'message': "Failed to pay credit cost of " + surgery_level, 'scope':'system' });
+                                    socket.emit('result_info', { 'status': 'failure', 'text': 'Failed To Pay' });
+                                    return false;
+                                }
+
+                            }
+                        }
+
+                    }
+
+                } else if(dirty.objects[auto_doc_index].player_id && dirty.objects[auto_doc_index].player_id === dirty.players[socket.player_index].id) {
+                    surgery_level = await world.getPlayerLevel(dirty,
+                        { 'player_index': socket.player_index, 'scope': 'planet', 'skill_type': 'surgery' });
+                }
+
+
+
+
+
                 // COMPLEXITY CHECK
 
-                let surgery_level = await world.getPlayerLevel(dirty,
-                    { 'player_index': socket.player_index, 'scope': 'planet', 'skill_type': 'surgery' });
+
                 //let surgery_level = 1 + Math.floor(global.difficult_level_modifier * Math.sqrt(dirty.players[player_index].surgery_skill_points));
-                console.log("Player surgery level is: " + surgery_level);
+                console.log("Surgery level is: " + surgery_level);
+                if(npc_index !== -1) {
+                    log(chalk.green("Its a doctor npc doing this!"));
+                }
 
                 let resulting_complexity = current_complexity + dirty.object_types[object_type_index].complexity;
                 console.log("Complexity for this addition brings total to: " + resulting_complexity);
@@ -2727,8 +2795,14 @@ module.exports = function(main, io, mysql, pool, chalk, log, uuid, world, map, i
                     await damagePlayer(dirty, { 'player_index': socket.player_index, 'damage_amount': resulting_complexity,
                         'damage_types': [ 'normal' ], 'flavor_text': "You've been mangled a bit" });
 
-                    dirty.players[socket.player_index].surgery_skill_points += dirty.object_types[object_type_index].complexity + additional_points_gained;
-                    dirty.players[socket.player_index].has_change = true;
+                    if(npc_index !== -1) {
+                        dirty.npcs[npc_index].surgery_skill_points += dirty.object_types[object_type_index].complexity + additional_points_gained;
+                        dirty.npcs[npc_index].has_change = true;
+                    } else {
+                        dirty.players[socket.player_index].surgery_skill_points += dirty.object_types[object_type_index].complexity + additional_points_gained;
+                        dirty.players[socket.player_index].has_change = true;
+                    }
+
                     world.sendPlayerInfo(socket, player_info.room, dirty, dirty.players[socket.player_index].id);
 
                     socket.emit('chat', { 'message': "Equipping item failed. Everything in the slot was destroyed", 'scope':'system' });
@@ -2736,9 +2810,16 @@ module.exports = function(main, io, mysql, pool, chalk, log, uuid, world, map, i
                     return false;
                 }
 
-                // increase the player's surgery skill points
-                dirty.players[socket.player_index].surgery_skill_points += dirty.object_types[object_type_index].complexity;
-                dirty.players[socket.player_index].has_change = true;
+                // increase surgery skill points
+                // Doctor did it
+                if(npc_index !== -1) {
+                    dirty.npcs[npc_index].surgery_skill_points += dirty.object_types[object_type_index].complexity;
+                    dirty.npcs[npc_index].has_change = true;
+                } else {
+                    dirty.players[socket.player_index].surgery_skill_points += dirty.object_types[object_type_index].complexity;
+                    dirty.players[socket.player_index].has_change = true;
+                }
+
             }
 
 
@@ -3272,7 +3353,7 @@ module.exports = function(main, io, mysql, pool, chalk, log, uuid, world, map, i
             }
             // Ship ID before coord id
             else if(dirty.players[player_index].ship_coord_id) {
-                let coord_index = await main.getShipCoordIndex({ 'planet_coord_id': dirty.players[player_index].ship_coord_id });
+                let coord_index = await main.getShipCoordIndex({ 'ship_coord_id': dirty.players[player_index].ship_coord_id });
 
                 // spawn a dead body
                 let insert_object_type_data = { 'object_type_id': 151 };
@@ -3280,7 +3361,12 @@ module.exports = function(main, io, mysql, pool, chalk, log, uuid, world, map, i
                 new_object_index = await main.getObjectIndex(new_object_id);
                 console.log("Created the dead body");
 
-                await main.updateCoordGeneric(player_socket, { 'ship_coord_index': coord_index, 'player_id': false, 'object_index': new_object_index });
+                // Don't want to overwrite the object that is already on the tile
+                if(!dirty.ship_coords[coord_index].object_id) {
+                    await main.updateCoordGeneric(player_socket, { 'ship_coord_index': coord_index, 'player_id': false, 'object_index': new_object_index });
+                }
+
+
 
 
                 console.log("Added it to ship coord, and sent ship coord info");
@@ -3298,10 +3384,15 @@ module.exports = function(main, io, mysql, pool, chalk, log, uuid, world, map, i
 
             // Unequip all the items (this puts basically everything back into the inventory of the player
 
+
+
             for(let equipment_linker of dirty.equipment_linkers) {
-                if(equipment_linker.body_id === dirty.objects[body_index].id) {
-                    await game.unequip(player_socket, dirty, equipment_linker.id);
+                if(equipment_linker) {
+                    if(equipment_linker.body_id === dirty.objects[body_index].id) {
+                        await game.unequip(player_socket, dirty, equipment_linker.id);
+                    }
                 }
+
             }
 
 
@@ -3358,6 +3449,7 @@ module.exports = function(main, io, mysql, pool, chalk, log, uuid, world, map, i
 
         } catch(error) {
             log(chalk.red("Error in game.killPlayer: " + error));
+            console.error(error);
         }
     }
 
@@ -6582,7 +6674,7 @@ module.exports = function(main, io, mysql, pool, chalk, log, uuid, world, map, i
         //console.log("In game.tickAssemblies");
         try {
 
-            dirty.assemblies.forEach(async function(assembly, i) {
+            dirty.assemblies.forEach(await async function(assembly, i) {
 
                 try {
                     let player_index = await main.getPlayerIndex({'player_id':assembly.player_id});
@@ -8070,11 +8162,15 @@ module.exports = function(main, io, mysql, pool, chalk, log, uuid, world, map, i
                             }
                         } else {
 
+                            // Not sure why we are outputing text here
+                            /*
                             if(!structure_linker.object_type_id) {
                                 console.log("No object type to put here");
                             } else {
                                 console.log("Object type matches");
                             }
+
+                            */
                         }
                     } else {
                         //log(chalk.yellow("Could not find planet coord in npc.tickStructures"));

@@ -2854,6 +2854,7 @@ async function canPlaceObject(data) {
 module.exports.canPlaceObject = canPlaceObject;
 
 
+// The logic in this function is very close to the logic in the client function
 //      data:   scope   |   coord   |   player_index   |   show_output
 async function canPlacePlayer(data) {
 
@@ -2973,7 +2974,7 @@ async function canPlacePlayer(data) {
                             checking_coords.push(dirty.planet_coords[checking_coord_index]);
                         }
                     } else if(data.scope === 'ship') {
-                        checking_coord_index = await getShipCoordIndex({ 'ship_ic': coord.ship_id,
+                        checking_coord_index = await getShipCoordIndex({ 'ship_id': coord.ship_id,
                             'tile_x': x, 'tile_y': y });
 
                         if(checking_coord_index !== -1) {
@@ -2995,6 +2996,7 @@ async function canPlacePlayer(data) {
                 }
             }
         } else {
+
             checking_coords.push(data.coord);
         }
 
@@ -3061,30 +3063,32 @@ async function canPlacePlayer(data) {
                 // If it's us... we're done with that coord
                 if(data.scope === 'galaxy' && checking_coord.object_id &&
                     checking_coord.object_id === dirty.players[data.player_index].ship_id) {
-                    return true;
+
                 } else if(data.scope === 'galaxy' && checking_coord.belongs_to_object_id &&
                     checking_coord.belongs_to_object_id === dirty.players[data.player_index].ship_id) {
-                    return true;
-                }
 
-                let object_index = -1;
-                if(checking_coord.object_id) {
-                    object_index = await getObjectIndex(checking_coord.object_id);
-                } else if(checking_coord.belongs_to_object_id) {
-                    object_index = await getObjectIndex(checking_coord.belongs_to_object_id);
-                }
+                } else {
 
-                if(object_index !== -1) {
-                    let object_type_index = getObjectTypeIndex(dirty.objects[object_index].object_type_id);
-                    if(!dirty.object_types[object_type_index].can_walk_on) {
+                    let object_index = -1;
+                    if(checking_coord.object_id) {
+                        object_index = await getObjectIndex(checking_coord.object_id);
+                    } else if(checking_coord.belongs_to_object_id) {
+                        object_index = await getObjectIndex(checking_coord.belongs_to_object_id);
+                    }
 
-                        if(data.show_output) {
-                            console.log("Returning false");
+                    if(object_index !== -1) {
+                        let object_type_index = getObjectTypeIndex(dirty.objects[object_index].object_type_id);
+                        if(!dirty.object_types[object_type_index].can_walk_on) {
+
+                            if(data.show_output) {
+                                console.log("Returning false");
+                            }
+
+                            return false;
                         }
-
-                        return false;
                     }
                 }
+
             }
 
 
@@ -3212,7 +3216,7 @@ async function canPlace(scope, coord, placing_type, placing_id, data = false) {
                             checking_coords.push(dirty.planet_coords[checking_coord_index]);
                         }
                     } else if(scope === 'ship') {
-                        checking_coord_index = await getShipCoordIndex({ 'ship_ic': coord.ship_id,
+                        checking_coord_index = await getShipCoordIndex({ 'ship_id': coord.ship_id,
                             'tile_x': x, 'tile_y': y });
 
                         if(checking_coord_index !== -1) {
@@ -3323,6 +3327,13 @@ async function canPlace(scope, coord, placing_type, placing_id, data = false) {
                 } else {
                     return true;
                 }
+
+                // We also can't place on
+                let floor_type_index = getFloorTypeIndex(coord.floor_type_id);
+                if(floor_type_index === -1 || !dirty.floor_types[floor_type_index].can_walk_on || dirty.floor_types[floor_type_index].is_protected || !dirty.floor_types[floor_type_index].can_build_on) {
+                    return false;
+                }
+
             } else if(placing_type === 'floor') {
 
                 // just make sure the floor isn't protected
@@ -5050,11 +5061,11 @@ async function writeDirty(show_output = false) {
             let sql = "UPDATE npcs SET attacking_skill_points = ?, coord_id = ?, current_hp = ?, current_structure_type_id = ?, " +
                 "current_structure_type_is_built = ?, " +
                 "defending_skill_points = ?, dream_job_id = ?, dream_structure_type_id = ?, enslaved_to_player_id = ?, enslaved_to_npc_id = ?, farming_skill_points = ?, " +
-                "has_inventory = ?, planet_coord_id = ?, planet_id = ?, ship_coord_id = ?, ship_id = ?, wants_object_type_id = ? WHERE id = ?";
+                "has_inventory = ?, planet_coord_id = ?, planet_id = ?, ship_coord_id = ?, ship_id = ?, surgery_skill_points = ?, wants_object_type_id = ? WHERE id = ?";
             let inserts = [npc.attacking_skill_points, npc.coord_id, npc.current_hp, npc.current_structure_type_id, npc.current_structure_type_is_built,
                 npc.defending_skill_points, npc.dream_job_id, npc.dream_structure_type_id, npc.enslaved_to_player_id, npc.enslaved_to_npc_id, npc.farming_skill_points, npc.has_inventory,
                 npc.planet_coord_id, npc.planet_id,
-                npc.ship_coord_id, npc.ship_id, npc.wants_object_type_id, npc.id];
+                npc.ship_coord_id, npc.ship_id, npc.surgery_skill_points, npc.wants_object_type_id, npc.id];
             pool.query(sql, inserts, function(err, result) {
                 if(err) throw err;
             });
@@ -5522,6 +5533,14 @@ async function tickMonsterSpawns(dirty) {
     }
 }
 
+async function tickMoveMonsters(dirty) {
+    try {
+        game.tickMoveMonsters(dirty);
+    } catch(error) {
+        log(chalk.red("Error in calling game.tickMoveMonsters: " + error));
+    }
+}
+
 // Every 10th of a secnod
 async function tickNextMoves(dirty) {
 
@@ -5555,11 +5574,11 @@ async function tickNextMoves(dirty) {
     }
 }
 
-async function tickMoveMonsters(dirty) {
+async function tickNpcSkills() {
     try {
-        game.tickMoveMonsters(dirty);
+        npc.tickNpcSkills(dirty);
     } catch(error) {
-        log(chalk.red("Error in calling game.tickMoveMonsters: " + error));
+        log(chalk.red("Error in tickNpcSkills"));
     }
 }
 
@@ -5662,6 +5681,9 @@ setInterval(tickTraps, 300000, dirty);
 setInterval(tickGrowths, 600000, dirty);
 setInterval(tickMarketLinkers, 600000, dirty);
 setInterval(tickDecay, 600000, dirty);
+
+// 1 hour
+setInterval(tickNpcSkills, 3600000);
 
 // 2 hours
 // Testing at 30 seconds

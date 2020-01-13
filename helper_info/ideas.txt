@@ -1,5 +1,17 @@
 
 
+So we have a doctor NPC
+    The goal: To let the player pay the NPC to perform a surgery on them
+    Requirement 1. Player is standing on an auto doc owned by the npc
+    Requirement 2. Npc is next to that auto doc
+    Price could increase based on npc's surgery level
+    Npc's surgery level should increase slowly over time
+
+    So player right clicks on npc, while standing on an auto doc that the npc owns, and that gives the player the option
+        to 'Pay to implant xxxx/yyyy'. Similar to the normal auto doc right click menu, but with a $$$ attached to it
+
+
+
 HACKING. THE VIEW I HAVEN'T MADE YET! Need a way to enter into virtual realm
 
 A player body type that is resistant to acid - or armor that is especially useful for it. (I LIKE BOTH :p )
@@ -1068,6 +1080,17 @@ Ships cloaking. Defense drones that attack monsters ( just need to add a rule I 
 I like the idea of void power
 
 Metaviral spawn
+
+I really do love the scale and scope of the great ship series by Robert Reed. A ship larger than most planets. Unused rocket nozzles so large
+    that whole cities can live on them. Alien goo building an entire ecosystem around one.
+    I would like some event with a great ship. I am even kind of considering having it show up, fly around space a little, and then leave space for a bit.
+        I don't want to trap players. I guess I could add in a warning, even account level that the great ship was going to leave our area of space in
+        like a few days ( real time )
+
+
+So players and NPCs should be able to bid on the merchant spots in spaceports.
+    Players can put in vending machines, or auto docs
+    So players should be able to sell their auto doc services for a price.
 
 
 

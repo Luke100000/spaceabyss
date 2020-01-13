@@ -551,14 +551,14 @@ Pod ( drawn )
         Cutter ( have image idea ) Movement speed: 500 10 Batteries 10 Circuits 20 Exodium
 
 
-            Lancer
-            Striker
+            Lancer ( have image idea )
+            Striker ( have image idea )
                 Corvette
                 Destroyer ( have image idea )
                 Frigate ( have image idea )
 
                     Cruiser
-                        Dreadnought
+                        Dreadnought ( have image idea )
                         Battlecruiser
                             Supercruiser
 
@@ -575,9 +575,11 @@ Pod ( drawn )
 
     Shuttle (have image drawn )
 
-        Yacht
+        Yacht ( have image idea )
 
             Royal Cruiser (have image idea)
+
+                Royal Starship
 
         Light Sail Ship (Lighthugger)
 
@@ -588,6 +590,11 @@ Pod ( drawn )
                                 Stardome
                                 Cityship
                                     Star Fortress - Tier 9
+
+
+            Station
+                Asteroid Station
+                    City Station
 
 NPC SHIPS
     Prisonship

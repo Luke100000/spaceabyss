@@ -698,6 +698,318 @@
 
     }
 
+
+    // This logic of this functions closely matches the server
+    //  data:   scope   |   coord   |   player_index   |   show_output (optional)
+    function canPlacePlayer(data) {
+
+        if(typeof data.player_index === 'undefined') {
+            return false;
+        }
+
+        let checking_coords = [];
+
+        // If we have a player id, use the body or a ship type, depending on the view
+        let body_index = -1;
+        let ship_index = -1;
+        let type_index = -1;
+
+
+        if(data.scope === 'planet' || data.scope === 'ship') {
+            //console.log("Getting body");
+            body_index = getObjectIndex(players[data.player_index].body_id);
+
+            if(body_index === -1) {
+
+                if(data.show_output) {
+                    console.log("Could not get player's body");
+                }
+
+                return false;
+            }
+
+            type_index = getObjectTypeIndex(objects[body_index].object_type_id);
+        } else if(data.scope === 'galaxy') {
+            //console.log("Getting ship");
+            ship_index = getObjectIndex(players[data.player_index].ship_id);
+
+            if(ship_index === -1) {
+
+                if(data.show_output) {
+                    console.log("Could not get player's ship. id: " + players[data.player_index].ship_id);
+                }
+
+                return false;
+            }
+            type_index = getObjectTypeIndex(objects[ship_index].object_type_id);
+        }
+
+        if(body_index === -1 && ship_index === -1) {
+
+            if(data.show_output) {
+                console.log("Couldn't get body or ship");
+
+                console.log("Player's ship id: " + players[data.player_index].ship_id);
+                console.log("Ship's object type id: " + objects[ship_index].object_type_id);
+            }
+
+            return false;
+        }
+
+        if(type_index === -1) {
+
+            if(data.show_output) {
+                console.log("Couldn't get type for body or ship");
+
+            }
+
+            return false;
+        }
+
+
+        //console.log("collecting the coords");
+        /************************** COLLECT ALL THE COORDS *******************************/
+        let last_x = data.coord.tile_x;
+        let last_y = data.coord.tile_y;
+        let movement_tile_width = 1;
+        let movement_tile_height = 1;
+
+        // see if the object type has non visual display linkers
+        let display_linkers = object_type_display_linkers.filter(linker =>
+            linker.object_type_id === object_types[type_index].id && !linker.only_visual);
+
+        if(display_linkers.length > 0) {
+
+
+            for(let linker of display_linkers) {
+                let linker_movement_width = linker.position_x + 1;
+                if(linker_movement_width > movement_tile_width) {
+                    movement_tile_width = linker_movement_width;
+                }
+
+                let linker_movement_height = linker.position_y + 1;
+                if(linker_movement_height > movement_tile_height) {
+                    movement_tile_height = linker_movement_height;
+                }
+            }
+
+
+            last_x = data.coord.tile_x + movement_tile_width - 1;
+            last_y = data.coord.tile_y + movement_tile_height - 1;
+
+            for(let x = data.coord.tile_x; x <= last_x; x++) {
+                for(let y = data.coord.tile_y; y <= last_y; y++) {
+
+
+                    let checking_coord_index = -1;
+                    if(data.scope === 'galaxy') {
+                        checking_coord_index = getCoordIndex({ 'tile_x': x, 'tile_y': y });
+
+                        if(checking_coord_index !== -1) {
+                            checking_coords.push(coords[checking_coord_index]);
+                        }
+                    } else if(data.scope === 'planet') {
+                        checking_coord_index = getPlanetCoordIndex({ 'planet_id': coord.planet_id,
+                            'planet_level': coord.level, 'tile_x': x, 'tile_y': y });
+
+                        if(checking_coord_index !== -1) {
+                            checking_coords.push(planet_coords[checking_coord_index]);
+                        }
+                    } else if(data.scope === 'ship') {
+                        checking_coord_index = getShipCoordIndex({ 'ship_id': coord.ship_id,
+                            'tile_x': x, 'tile_y': y });
+
+                        if(checking_coord_index !== -1) {
+                            checking_coords.push(ship_coords[checking_coord_index]);
+                        }
+                    }
+
+                    // We weren't able to find all the coords we needed to match up to all the display linkers
+                    if(checking_coord_index === -1) {
+
+                        if(data.show_output) {
+                            console.log("Returning false on coord not found");
+                        }
+
+                        return false;
+                    }
+
+
+                }
+            }
+        } else {
+            checking_coords.push(data.coord);
+        }
+
+
+
+        /********************** GO THROUGH EACH OF THE COORDS ***********************/
+        for(let checking_coord of checking_coords) {
+            //console.log("Checking coord id: " + checking_coord.id);
+
+            if(checking_coord.floor_type_id) {
+                let floor_type_index = getFloorTypeIndex(checking_coord.floor_type_id);
+
+                if(floor_type_index !== -1) {
+                    if(!floor_types[floor_type_index].can_walk_on) {
+
+                        if(data.show_output) {
+                            console.log("Returning false on " + checking_coord.tile_x + "," + checking_coord.tile_y + " can't walk on floor");
+                        }
+
+                        return false;
+                    }
+                }
+            }
+
+            if(checking_coord.monster_id || checking_coord.belongs_to_monster_id) {
+
+                if(data.show_output) {
+                    console.log("Returning false on " + checking_coord.tile_x + "," + checking_coord.tile_y + " monster");
+                }
+
+                return false;
+            }
+
+            if(checking_coord.npc_id) {
+
+                if(data.show_output) {
+                    console.log("Returning false on " + checking_coord.tile_x + "," + checking_coord.tile_y + " npc");
+                }
+
+                return false;
+            }
+
+            // We have a base object type here - no object/belongs object
+            if(checking_coord.object_type_id && !checking_coord.object_id && !checking_coord.belongs_to_object_id) {
+                let object_type_index = getObjectTypeIndex(checking_coord.object_type_id);
+
+                if(object_type_index !== -1) {
+                    if(!object_types[object_type_index].can_walk_on) {
+
+                        if(data.show_output) {
+                            console.log("Checking coord id: " + checking_coord.id + " scope: " + data.scope);
+                            console.log("Returning false on " + checking_coord.tile_x + "," + checking_coord.tile_y + " not walkable object");
+                        }
+
+                        //log(chalk.yellow("Blocked by object_type_id"));
+                        return false;
+                    }
+                }
+            }
+
+            if(checking_coord.object_id || checking_coord.belongs_to_object_id) {
+
+
+                // If it's us... we're done with that coord
+                if(data.scope === 'galaxy' && checking_coord.object_id &&
+                    checking_coord.object_id === players[data.player_index].ship_id) {
+
+                } else if(data.scope === 'galaxy' && checking_coord.belongs_to_object_id &&
+                    checking_coord.belongs_to_object_id === players[data.player_index].ship_id) {
+
+                } else {
+                    let object_index = -1;
+                    if(checking_coord.object_id) {
+                        object_index = getObjectIndex(checking_coord.object_id);
+                    } else if(checking_coord.belongs_to_object_id) {
+                        object_index = getObjectIndex(checking_coord.belongs_to_object_id);
+                    }
+
+                    if(object_index !== -1) {
+                        let object_type_index = getObjectTypeIndex(objects[object_index].object_type_id);
+                        if(!object_types[object_type_index].can_walk_on) {
+
+                            if(data.show_output) {
+                                console.log("Returning false");
+                            }
+
+                            return false;
+                        }
+                    }
+                }
+
+
+            }
+
+
+            //console.log("Checking coord planet id: " + checking_coord.planet_id);
+
+            // || checking_coord.belongs_to_planet_id
+            if(data.scope === 'galaxy' && checking_coord.planet_id) {
+
+                if(data.show_output) {
+                    console.log("Returning false on " + checking_coord.tile_x + "," + checking_coord.tile_y + " planet");
+                }
+
+                return false;
+            }
+
+
+            if(data.scope === 'galaxy' && checking_coord.belongs_to_planet_id) {
+
+                // step 1. Find the base planet coord it
+
+                let planet_index = getPlanetIndex({ 'planet_id': checking_coord.belongs_to_planet_id });
+
+                if(planet_index !== -1) {
+                    let origin_planet_coord_index = getCoordIndex({ 'coord_id': planets[planet_index].coord_id });
+                    if(origin_planet_coord_index !== -1) {
+
+                        let linker_position_x = checking_coord.tile_x - coords[origin_planet_coord_index].tile_x;
+                        let linker_position_y = checking_coord.tile_y - coords[origin_planet_coord_index].tile_y;
+
+                        // step 2. Find the display linker we are trying to move to
+                        let display_linker_index = planet_type_display_linkers.findIndex(function(obj) {
+                            return obj.planet_type_id === planets[planet_index].planet_type_id && obj.position_x === linker_position_x &&
+                                obj.position_y === linker_position_y; });
+
+                        // step 3. Check if it's only_visual or not
+                        if(display_linker_index !== -1 && !planet_type_display_linkers[display_linker_index].only_visual) {
+
+                            if(data.show_output) {
+                                console.log("Something about visual stuff");
+                            }
+                            return false;
+                        }
+
+
+
+                    }
+                }
+
+
+
+            }
+
+            if(checking_coord.player_id && checking_coord.player_id !== players[data.player_index].id) {
+
+                if(data.show_output) {
+                    console.log("Returning false on " + checking_coord.tile_x + "," + checking_coord.tile_y + " other player");
+                }
+
+                return false;
+            }
+
+            if(checking_coord.belongs_to_object_id && checking_coord.belongs_to_object_id !== players[data.player_index].body_id &&
+                checking_coord.belongs_to_object_id !== players[data.player_index].ship_id) {
+                if(data.show_output) {
+                    console.log("Returning false on " + checking_coord.tile_x + "," + checking_coord.tile_y + " belongs to other object");
+                }
+
+                return false;
+            }
+
+        }
+
+        if(data.show_output) {
+            console.log("Returning true");
+        }
+
+        return true;
+
+    }
+
     function clearTiles(direction) {
         /*
         if(direction == 'up') {
@@ -746,6 +1058,10 @@
             monsters[monster_index].sprite_y_offset = 0;
 
             if(new_texture_key === "slaver-guard") {
+                monsters[monster_index].sprite_y_offset = -6;
+            }
+
+            if(new_texture_key === "robot-janitor") {
                 monsters[monster_index].sprite_y_offset = -6;
             }
 
@@ -899,7 +1215,19 @@
                 new_movement_display = 'flip';
                 new_sprite_x_offset = 32;
                 new_sprite_y_offset = 32;
-            } else {
+            } else if(objects[ship_index].object_type_id === 271) {
+                new_texture_key = 'player-destroyer';
+                new_texture_animation_key = 'player-destroyer-down-animation';
+                new_sprite_x_offset = 32;
+                new_sprite_y_offset = 32;
+            } else if(objects[ship_index].object_type_id === 270) {
+                new_texture_key = 'player-royal-cruiser';
+                new_texture_animation_key = 'player-royal-cruiser-animation';
+                new_movement_display = 'flip';
+                new_sprite_y_offset = 32;
+            }
+
+            else {
                 // DEFAULT!!!!!!!
                 console.log("%c Using Default Ship Display", log_warning);
                 new_texture_key = 'player-pod';
@@ -2840,7 +3168,17 @@
 
                     html_string += " Assembling " + object_types[being_assembled_object_type_index].name + " ";
                     html_string += " Ticks Completed: " + active_assemblies[assembly_index].current_tick_count + "/";
-                    html_string += object_types[being_assembled_object_type_index].assembly_time;
+
+                    // get the assembled_in_linker
+                    let assembled_in_linker_index = assembled_in_linkers.findIndex(function(obj) { return obj && obj.object_type_id === object_types[being_assembled_object_type_index].id &&
+                        obj.assembled_in_object_type_id === assembling_object.object_type_id; });
+
+                    if(assembled_in_linker_index !== -1) {
+                        html_string += assembled_in_linkers[assembled_in_linker_index].tick_count;
+                    }
+
+                    //html_string += object_types[being_assembled_object_type_index].assembly_time;
+
                     html_string += " Completed " + active_assemblies[assembly_index].amount_completed  + "/";
                     html_string += active_assemblies[assembly_index].total_amount;
                 }
@@ -4468,6 +4806,19 @@
         $('#ship_management').append(html_string);
     }
 
+    //  data:   coord_id   OR   (   tile_x   |   tile_y   )
+    function getCoordIndex(data) {
+        if(data.coord_id) {
+            return coords.findIndex(function(obj) { return obj && obj.id === parseInt(data.coord_id); });
+        } else {
+            return coords.findIndex(function(obj) { return obj && obj.tile_x === parseInt(data.tile_x) && obj.tile_y === parseInt(data.tile_y); });
+        }
+    }
+
+    function getFloorTypeIndex(floor_type_id) {
+        return floor_types.findIndex(function(obj) { return obj && obj.id === parseInt(floor_type_id); });
+    }
+
     function getMonsterIndex(monster_id) {
         let monster_index = -1;
         monster_id = parseInt(monster_id);
@@ -4520,6 +4871,18 @@
         return object_type_index;
     }
 
+    //  data:   planet_id
+    function getPlanetIndex(data) {
+        return planets.findIndex(function(obj) { return obj && obj.id === parseInt(data.planet_id); });
+    }
+
+    //  data:   planet_id   |   planet_level   |   tile_x   |   tile_Y
+    function getPlanetCoordIndex(data) {
+        return planet_coords.findIndex(function(obj) { return obj.planet_id === parseInt(data.planet_id) &&
+            obj.level === parseInt(data.planet_level) && obj.tile_x === parseInt(data.tile_x) &&
+            obj.tile_y === parseInt(data.tile_y); });
+    }
+
     function getPlayerIndex(player_id) {
         let player_index = -1;
         player_id = parseInt(player_id);
@@ -4531,6 +4894,12 @@
         player_index = players.findIndex(function(obj) { return obj && obj.id === player_id; });
 
         return player_index;
+    }
+
+    //  data:   ship_id   |   tile_x   |   tile_y
+    function getShipCoordIndex(data) {
+        return ship_coords.findIndex(function(obj) { return obj && obj.ship_id === parseInt(data.ship_id) &&
+            obj.tile_x === parseInt(data.tile_x) && obj.tile_y === parseInt(data.tile_y); });
     }
 
     function halfTile() {
@@ -5169,23 +5538,19 @@
                 console.log("ship coord move denied based on player id: " + ship_coords[checking_coord_index].player_id);
             }
         } else if(players[client_player_index].coord_id) {
+            console.log("Moving in galaxy");
 
-            if(coords[checking_coord_index] && coords[checking_coord_index].object_type_id) {
-                let object_type_index = object_types.findIndex(function(obj) { return obj && obj.id === coords[checking_coord_index].object_type_id; });
-
-                if(object_type_index !== -1) {
-
-
-                    if(!object_types[object_type_index].can_walk_on && !object_types[object_type_index].is_dockable) {
-
-                        deny_move = true;
-                    }
-                }
+            // Special cases like if there's a planet
+            if(coords[checking_coord_index].planet_id || coords[checking_coord_index].belongs_to_planet_id) {
 
             }
+            // Normal cases
+            else {
+                let can_place_result = canPlacePlayer({ 'scope':'galaxy', 'coord':coords[checking_coord_index], 'player_index':client_player_index, 'show_output': true });
 
-            if(coords[checking_coord_index].player_id) {
-                deny_move = true;
+                if(can_place_result === false) {
+                    deny_move = true;
+                }
             }
 
 
@@ -5230,7 +5595,7 @@
         }
 
         if(deny_move) {
-            //console.log("Move was denied");
+            console.log("Move was denied");
             return false;
         }
 
@@ -5438,6 +5803,7 @@
         // Some extra things if we are moving our client player
         if(client_player_index !== -1 && player_index === client_player_index) {
 
+            console.log("Sending move data");
             socket.emit('move_data', { 'destination_coord_type': destination_coord_type, 'destination_coord_id': destination_coord.id });
             last_move_sent = our_time;
 
@@ -5522,6 +5888,7 @@
                     }
                 }
             }
+
             /********** CUTTER ************/
             else if(players[player_index].sprite.texture.key === 'player-cutter') {
                 // LEFT !
@@ -5553,6 +5920,39 @@
                     }
                 }
             }
+
+            /********** DESTROYER ************/
+            else if(players[player_index].sprite.texture.key === 'player-destroyer') {
+                // LEFT !
+                if(players[player_index].destination_x < players[player_index].sprite.x) {
+
+                    if(players[player_index].sprite.anims.getCurrentKey() !== 'player-destroyer-left-animation') {
+                        players[player_index].sprite.anims.play('player-destroyer-left-animation');
+                    }
+
+                }
+                // RIGHT!
+                else if(players[player_index].destination_x > players[player_index].sprite.x) {
+                    if(players[player_index].sprite.anims.getCurrentKey() !== 'player-destroyer-right-animation') {
+                        players[player_index].sprite.anims.play('player-destroyer-right-animation');
+                    }
+
+
+                }
+                // UP!
+                else if(players[player_index].destination_y < players[player_index].sprite.y) {
+                    if(players[player_index].sprite.anims.getCurrentKey() !== 'player-destroyer-up-animation') {
+                        players[player_index].sprite.anims.play('player-destroyer-up-animation');
+                    }
+                }
+                // DOWN!
+                else if(players[player_index].destination_y > players[player_index].sprite.y) {
+                    if(players[player_index].sprite.anims.getCurrentKey() !== 'player-destroyer-down-animation') {
+                        players[player_index].sprite.anims.play('player-destroyer-down-animation');
+                    }
+                }
+            }
+
             /********** HUMAN *************/
             else if(players[player_index].sprite.texture.key === 'player-human') {
 
@@ -7816,6 +8216,14 @@
 
             let client_body_index = objects.findIndex(function(obj) { return obj && obj.id === players[client_player_index].body_id; });
 
+            let object_npc_index = -1;
+            if(objects[object_index].npc_id) {
+                object_npc_index = getNpcIndex(objects[object_index].npc_id);
+                if(object_npc_index === -1) {
+                    console.log("Not sure if we should request npc info here. Could be a decent spot, but the NPC could also be dead");
+                }
+            }
+
             for(let i = 0; i < inventory_items.length; i++) {
 
                 if(inventory_items[i] && inventory_items[i].player_id === client_player_id) {
@@ -7862,12 +8270,29 @@
                                     return obj && obj.id === inventory_items[i].object_type_id; });
 
 
-                                $('#click_menu').append("<img style='width:32px; height:32px;' " +
-                                    "src='https://space.alphacoders.com/" + urlName(object_types[inventory_item_object_type_index].name) + ".png'> " +
-                                    "<button id='equip_" + inventory_items[i].id + "_" + object_type_equipment_linkers[j].equip_slot +
-                                    "' inventory_item_id='" + inventory_items[i].id + "' equip_slot='" + object_type_equipment_linkers[j].equip_slot + "' " +
-                                    " class='button is-small'>Implant " + object_types[inventory_item_object_type_index].name + " Into Your " +
-                                    object_type_equipment_linkers[j].equip_slot + "</button><br>");
+                                // Two different scenarios
+
+                                // 1. Its our auto doc
+                                if(objects[object_index].player_id && client_player_id && objects[object_index].player_id === client_player_id) {
+                                    $('#click_menu').append("<img style='width:32px; height:32px;' " +
+                                        "src='https://space.alphacoders.com/" + urlName(object_types[inventory_item_object_type_index].name) + ".png'> " +
+                                        "<button id='equip_" + inventory_items[i].id + "_" + object_type_equipment_linkers[j].equip_slot +
+                                        "' inventory_item_id='" + inventory_items[i].id + "' equip_slot='" + object_type_equipment_linkers[j].equip_slot + "' " +
+                                        " class='button is-small'>Implant " + object_types[inventory_item_object_type_index].name + " Into Your " +
+                                        object_type_equipment_linkers[j].equip_slot + "</button><br>");
+                                }
+                                // 2. It's the auto doc of an npc
+                                if(objects[object_index].npc_id && object_npc_index !== -1) {
+                                    let npc_surgery_level = 1 + Math.floor(difficult_level_modifier * Math.sqrt(npcs[object_npc_index].surgery_skill_points));
+
+                                    $('#click_menu').append("<img style='width:32px; height:32px;' " +
+                                        "src='https://space.alphacoders.com/" + urlName(object_types[inventory_item_object_type_index].name) + ".png'> " +
+                                        "<button id='equip_" + inventory_items[i].id + "_" + object_type_equipment_linkers[j].equip_slot +
+                                        "' inventory_item_id='" + inventory_items[i].id + "' equip_slot='" + object_type_equipment_linkers[j].equip_slot + "' " +
+                                        " class='button is-small'>Pay $" + npc_surgery_level + " Credits: Implant " + object_types[inventory_item_object_type_index].name + " Into Your " +
+                                        object_type_equipment_linkers[j].equip_slot + "</button><br>");
+                                }
+
 
 
                             }
@@ -8214,7 +8639,7 @@
             }
         }
 
-        adding_string += "<br><button id='trash_" + inventory_items[inventory_item_index].id + "' class='button is-danger'><span class='glyphicon glyphicon-trash'></span> Trash</button>";
+        adding_string += "<br><button id='trash_" + inventory_items[inventory_item_index].id + "' class='button is-danger is-small is-pulled-right'><span class='glyphicon glyphicon-trash'></span> Trash</button>";
         $('#click_menu').append(adding_string);
     }
 

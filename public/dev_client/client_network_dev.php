@@ -2640,6 +2640,13 @@
 
             // with a player we need to selectively add new values since there will be some client side
             // manipulation of some values
+            let needs_redraw = false;
+            if(parseInt(players[player_index].current_hp) !== parseInt(data.player.current_hp) && players[player_index].sprite) {
+                console.log("Redrawing bars due to player hp change");
+                needs_redraw = true;
+
+            }
+
             players[player_index].current_hp = data.player.current_hp;
             players[player_index].max_hp = data.player.max_hp;
 
@@ -2790,6 +2797,10 @@
 
             }
 
+
+            if(needs_redraw) {
+                redrawBars();
+            }
             //showPlayer(players[player_index]);
         }
 

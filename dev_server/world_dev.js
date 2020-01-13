@@ -2455,7 +2455,40 @@ module.exports = function(main, io, mysql, pool, chalk, log, uuid, PF) {
                 level = 1 + Math.floor(global.difficult_level_modifier * Math.sqrt(dirty.players[data.player_index].researching_skill_points));
             } else if(data.skill_type === 'salvaging') {
                 level = 1 + Math.floor(global.level_modifier * Math.sqrt(dirty.players[data.player_index].salvaging_skill_points));
+            } else if(data.skill_type === 'surgery') {
+                level = 1 + Math.floor(global.difficult_level_modifier * Math.sqrt(dirty.players[data.player_index].surgery_skill_points));
             }
+
+            // Lets go through each of the player's equipped items too
+            // I think we only need to do this when dealing with a player's body for now
+            if(body_index !== -1) {
+                for(let i = 0; i < dirty.equipment_linkers.length; i++) {
+                    if(dirty.equipment_linkers[i] && dirty.equipment_linkers[i].body_id === dirty.objects[body_index].id) {
+
+                        let equipped_object_index = -1;
+                        let equipped_object_type_index = -1;
+
+                        if(dirty.equipment_linkers[i].object_id) {
+                            equipped_object_index = await main.getObjectIndex(dirty.equipment_linkers[i].object_id);
+                            if(equipped_object_index !== -1) {
+                                equipped_object_type_index = main.getObjectTypeIndex(dirty.objects[equipped_object_index].object_type_id);
+                            }
+                        } else if(dirty.equipment_linkers[i].object_type_id) {
+                            equipped_object_type_index = main.getObjectTypeIndex(dirty.equipment_linkers[i].object_type_id);
+                        }
+
+                        if(equipped_object_type_index !== -1) {
+                            if(data.skill_type === 'manufacturing' && dirty.object_types[equipped_object_type_index].manufacturing_modifier) {
+                                log(chalk.green("Equipped item is adding manufacturing level (augment?!?)!"));
+                                level += dirty.object_types[equipped_object_type_index].manufacturing_modifier;
+                            }
+                        }
+
+
+                    }
+                }
+            }
+
 
 
             return level;

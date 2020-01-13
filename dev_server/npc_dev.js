@@ -117,7 +117,7 @@ module.exports = function(main, io, mysql, pool, chalk, log, world, inventory, m
             // Not loving a var with a name 'pretend' in it
             let pretend_npc_level = 0 + Math.abs(lowest_level);
 
-            for(let i = 0; i < structure_linkers.length; i++) {
+            for(let i = 0; i < structure_linkers.length && can_build; i++) {
                 if(structure_linkers[i]) {
                     let tile_x = dirty.planet_coords[npc_coord_index].tile_x + structure_linkers[i].position_x;
                     let tile_y = dirty.planet_coords[npc_coord_index].tile_y + structure_linkers[i].position_y;
@@ -178,6 +178,59 @@ module.exports = function(main, io, mysql, pool, chalk, log, world, inventory, m
 
     }
     module.canBuildStrcuture = canBuildStructure;
+
+
+    // Actions specific to the bugAttack NPC job
+    async function doctorCode(dirty, npc_index) {
+        try {
+
+            if(!dirty.npcs[npc_index].planet_coord_id) {
+
+                // Non forming/azure array of planets
+                let possible_planets = dirty.planets.filter(planet => planet.planet_type_id !== 26 && planet.planet_type_id !== 16);
+                let chosen_planet = possible_planets[Math.floor(Math.random()*possible_planets.length)];
+
+                if(!chosen_planet) {
+                    log(chalk.yellow("No non-forming planets in memory"));
+                    return false;
+                }
+
+                console.log("Looks like planet id: " + chosen_planet.id + " is gonna get a doctor!");
+
+                // Lets find a galaxy coord around the planet to park our bug ship next to
+                let chosen_planet_coord_index = dirty.coords.findIndex(function(obj) { return obj &&
+                    obj.planet_id === chosen_planet.id; });
+
+                if(chosen_planet_coord_index === -1) {
+                    console.log("Could not find the coord the planet is on");
+                    return false;
+                }
+
+
+                let destination_tile_x = dirty.coords[chosen_planet_coord_index].tile_x;
+                let destination_tile_y = dirty.coords[chosen_planet_coord_index].tile_y;
+
+
+
+                dirty.npc_tasks.push({ 'npc_id': dirty.npcs[npc_index].id, 'destination_tile_x': destination_tile_x,
+                    'destination_tile_y': destination_tile_y, 'destination_planet_id': chosen_planet.id });
+
+                log(chalk.cyan("Destination set! Doctor is coming!"));
+            }
+            /******************** WITHOUT STRUCTURE, ON A PLANET **********************/
+            else {
+
+                // and randomly move
+                moveRandom(dirty, npc_index);
+
+
+
+            }
+        } catch(error) {
+            log(chalk.red("Error in npc.doctorCode: " + error));
+            console.error(error);
+        }
+    }
 
 
     async function moveRandom(dirty, npc_index) {
@@ -419,7 +472,7 @@ module.exports = function(main, io, mysql, pool, chalk, log, world, inventory, m
             }
             // Move towards our destination
             else if(dirty.npc_tasks[task_index].destination_tile_x) {
-                console.log("Npc has a destination");
+                console.log("Npc has a destination. tile_x,tile_y: " + dirty.npc_tasks[task_index].destination_tile_x + " " + dirty.npc_tasks[task_index].destination_tile_y);
 
                 // Npc is currently moving around the galaxy
                 if(dirty.npcs[npc_index].coord_id) {
@@ -429,7 +482,7 @@ module.exports = function(main, io, mysql, pool, chalk, log, world, inventory, m
                     let y_difference = Math.abs(dirty.coords[npc_coord_index].tile_y - dirty.npc_tasks[task_index].destination_tile_y);
 
                     if(x_difference === 0 && y_difference === 0) {
-                        console.log("Npc is already at destination");
+                        console.log("Npc is already at destination. Npc is at " + dirty.coords[npc_coord_index].tile_x + "," + dirty.coords[npc_coord_index].tile_y);
 
                         // The npc's ship isn't going to be directly on the planet, just next to it
                         if(dirty.npcs[npc_index].current_job_id === 5) {
@@ -669,7 +722,7 @@ module.exports = function(main, io, mysql, pool, chalk, log, world, inventory, m
 
             }
         } catch(error) {
-            log(chalk.red("Error in game.performNpcTask: " + error));
+            log(chalk.red("Error in npc.performNpcTask: " + error));
             console.error(error);
         }
     }
@@ -716,7 +769,8 @@ module.exports = function(main, io, mysql, pool, chalk, log, world, inventory, m
             // If the npc has a current_structure_id but it's not built, lets make sure the npc has the things required
             // to build it
 
-            if(dirty.npcs[npc_index].current_structure_type_id && !dirty.npcs[npc_index].current_structure_type_is_built) {
+            if(dirty.npcs[npc_index].current_structure_type_id && !dirty.npcs[npc_index].current_structure_type_is_built &&
+                dirty.npcs[npc_index].planet_coord_id) {
                 tryToBuildStructure(dirty, npc_index);
 
             }
@@ -819,6 +873,9 @@ module.exports = function(main, io, mysql, pool, chalk, log, world, inventory, m
             /************************** NPC DOESN'T HAVE A STRUCTURE *****************************/
             else {
 
+                if(dirty.npcs[npc_index].current_job_id === 3) {
+                    doctorCode(dirty, npc_index);
+                }
                 // If we are a bug attack job, and we don't have a planet coord id, lets find a random planet to attack
                 if(dirty.npcs[npc_index].current_job_id === 5) {
                     bugAttackCode(dirty, npc_index);
@@ -1127,6 +1184,31 @@ module.exports = function(main, io, mysql, pool, chalk, log, world, inventory, m
     }
 
     module.spawnNpc = spawnNpc;
+
+    async function tickNpcSkills(dirty) {
+
+        try {
+
+            for(let i = 0; i < dirty.npcs.length; i++) {
+                if(dirty.npcs[i]) {
+
+                    // increase a skill based on a job
+                    if(dirty.npcs[i].current_job_id === 3) {
+                        dirty.npcs[i].surgery_skill_points++;
+                        dirty.npcs[i].has_change = true;
+                    }
+
+                }
+            }
+
+        } catch(error) {
+            log(chalk.red("Error in npc.tickNpcSkills: " + error));
+            console.error(error);
+        }
+
+    }
+
+    module.tickNpcSkills = tickNpcSkills;
 
     async function tryToBuildStructure(dirty, npc_index) {
         try {
