@@ -1,3 +1,41 @@
+## [0.0.9] - 2020-01-22
+### Fixed
+- When objects are placed on a planet or ship, set a planet_id/ship_id for that object (this is used for AIs associating
+ AI Batteries/AI Cores with themselves)
+- Remove names and tints of objects when the player changes levels or views
+- AIs won't protect players they are attacking
+- Spaceport merchant spots are now protected
+- Various bugs related to when salvaging finishes
+- Bug when a ship or other object with associated things was loaded in from an event. Nothing, like ship coords,
+were being grabbed from the database and attached. Should have that all fixed but just calling getObjectIndex 
+from the init function
+- Dead bodies of players could overwrite the location of static stairs. I've fixed this, and put in an extra 
+check in the placeObject function that will throw a warning and prevent it if something like this is happening 
+somewhere else.
+
+
+### Changed
+- Made the cargo ship larger
+- Decreased the cost of the shuttle significantly, since it's smaller than the cargo ship and the mining ship
+- The salvaging opportunities of the forge (added nano bonder)
+- Food replicator can now be salvaged for 1/2 resources back.
+- Research Station can now be salvaged for 1/2 resources back.
+- Sprite changes: Spacelane beacon. Machine walls. Rock Walls. Territe. Syntite. Some floors. 
+@UnfuneralOD https://twitter.com/UnfuneralOD
+
+### Added
+- A failure message when trying to replace a floor or 'build' something, but the ruling AI doesn't allow it
+- Started more of the structure for factions. Joining, creating, leaving, viewing. Still have a long way to go, but 
+will push this and then continue down the path with factions.
+- An admin interface to make the designing of ships easier. This isn't directly part of the client/server, but part
+of the Space Abyss website. I think I need to eventually include that in this repository too.
+- Support for ships with multiple levels (still need to test this a bunch)
+- The ability to use batteries to add power to AI Batteries
+- An asteroid ship. The first multi level ship. Currently in testing. Uses a new type of ship engine, a Thiol Drive.
+- Admins can now spawn events in the galaxy and ship
+- Support for events to spawn in a ship or a galaxy. Crazy how big and far this change ended up reaching.
+
+
 ## [0.0.8] - 2020-01-13
 ### Fixed
 - Assemblies using the old assembly tick count, instead of the new one which is based on the object we're 

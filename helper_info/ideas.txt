@@ -1056,6 +1056,10 @@ Microton AM warheads
 
 Could have a monster looking portal as an event. Basically make a portal, but it looks like a huge monster mouth. Transports you to 'inside the monster' (Could just be a ship in the code )
 
+Could have a player body that changes over time.
+    Could do this with Ruel bodies - over time they slowly crystalize.
+    Could have other body types that just evolve over time.
+
 Spacetime foam
 Engineer-of-souls
 Diamond sphere eating matter and energy from the sun itself
@@ -1086,6 +1090,9 @@ I really do love the scale and scope of the great ship series by Robert Reed. A 
     I would like some event with a great ship. I am even kind of considering having it show up, fly around space a little, and then leave space for a bit.
         I don't want to trap players. I guess I could add in a warning, even account level that the great ship was going to leave our area of space in
         like a few days ( real time )
+
+    Another one of the issues with this, is there should really only ever be one of these things, but I would probably want to change it
+        eventually. I would need some sort of way to update the layout of an existing object (ship) based on new ship linkers
 
 
 So players and NPCs should be able to bid on the merchant spots in spaceports.
@@ -1119,3 +1126,8 @@ The option of a player being in the game world, but basically being an observer.
 
 
 ************** USED IDEAS THAT WE ARE SAVING FOR WHATEVER REASON *****************
+
+
+I want two ships with airlocks to be able to move next to each other and interact
+    We already get so much of this functionality from 'is_dockable'. So I'm not sure if the solution is to just
+    make more ships have the 'is_dockable' flag set to true.

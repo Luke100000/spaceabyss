@@ -233,10 +233,12 @@ module.exports = function(main, io, mysql, pool, chalk, log, world) {
             // active ship coords are loaded - we are almost never going to have full screens
 
             for(let i = 0; i < dirty.ship_coords.length; i++) {
-                if(dirty.ship_coords[i] && dirty.ship_coords[i].ship_id === dirty.players[player_index].ship_id &&
+                if(dirty.ship_coords[i] && dirty.ship_coords[i].ship_id === dirty.ship_coords[player_ship_coord_index].ship_id &&
+                    dirty.ship_coords[i].level === dirty.ship_coords[player_ship_coord_index].level &&
                     dirty.ship_coords[i].tile_x <= ending_x && dirty.ship_coords[i].tile_x >= starting_x &&
                     dirty.ship_coords[i].tile_y <= ending_y && dirty.ship_coords[i].tile_y >= starting_y ) {
 
+                    //console.log("Sending ship coord id: " + dirty.ship_coords[i]);
                     socket.emit('ship_coord_info', { 'ship_coord': dirty.ship_coords[i] });
                 }
             }

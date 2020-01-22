@@ -918,7 +918,7 @@
 
                     if(object_index !== -1) {
                         let object_type_index = getObjectTypeIndex(objects[object_index].object_type_id);
-                        if(!object_types[object_type_index].can_walk_on) {
+                        if(!object_types[object_type_index].can_walk_on && !object_types[object_type_index].is_dockable) {
 
                             if(data.show_output) {
                                 console.log("Returning false");
@@ -1025,6 +1025,96 @@
             }
         }
         */
+    }
+
+    // Used to clear the things we need to clear when a player moves levels
+    function clearPreviousLevel() {
+        battle_linkers = [];
+
+        // and remove the monster sprites that are on a different level
+        // and add sprites for monsters that are now on our level
+        monsters.forEach(function(monster, i) {
+
+            if(monsters[i].sprite) {
+                monster.sprite.destroy();
+                monster.sprite = false;
+            }
+
+            /*
+            // I get trying to keep monsters that we currently have that are the current level, but we aren't
+            // passing any of that info into this function at the moment.
+            let monster_coord_index = planet_coords.findIndex(function(obj) {
+                return obj && obj.id === monster.planet_coord_id;
+            });
+
+            if(monster_coord_index === -1) {
+                return false;
+            }
+
+            if(monster_coord_index !== -1 && monster.sprite &&
+                planet_coords[monster_coord_index].level !== planet_coords[new_planet_coord_index].level) {
+                monster.sprite.destroy();
+                monster.sprite = false;
+            }
+
+            if(monster_coord_index !== -1 && !monster.sprite &&
+                planet_coords[monster_coord_index].level === planet_coords[new_planet_coord_index].level &&
+                shouldDraw(client_player_info.coord, planet_coords[monster_coord_index])) {
+                createMonsterSprite(i);
+            }
+            */
+        });
+
+        players.forEach(function(player, i) {
+
+            if(player.id === client_player_id) {
+                return false;
+            }
+
+            if(!player.planet_coord_id) {
+                return false;
+            }
+
+            let other_planet_coord_index = planet_coords.findIndex(function(obj) { return obj &&
+                obj.id === player.planet_coord_id; });
+
+            if(other_planet_coord_index === -1) {
+                destroyPlayerSprite(player);
+            } else if(planet_coords[other_planet_coord_index].planet_id !== planet_coords[new_planet_coord_index].planet_id ||
+                planet_coords[other_planet_coord_index].level !== planet_coords[new_planet_coord_index].level) {
+                destroyPlayerSprite(player);
+            } else if(planet_coords[other_planet_coord_index].planet_id === planet_coords[new_planet_coord_index].planet_id &&
+                planet_coords[other_planet_coord_index].level === planet_coords[new_planet_coord_index].level) {
+                createPlayerSprite(i);
+            }
+
+        });
+
+        // remove the animations we have
+        animations.splice(0, animations.length);
+
+        // remove the names we have drawn and clear tints
+        for(let i = 0; i < objects.length; i++) {
+            if(objects[i]) {
+
+                if(objects[i].name_text) {
+                    objects[i].name_text.destroy();
+                    objects[i].name_text = false;
+                }
+
+                if(objects[i].tint) {
+                    let object_info = getObjectInfo(i);
+                    if(object_info.coord) {
+                        let object_tile = map.getTileAt(object_info.coord.tile_x, object_info.coord.tile_y, false, 'layer_object');
+                        if(object_tile) {
+                            object_tile.tint = "0xffffff";
+                            //object_tile.clearTint();
+                        }
+                    }
+                }
+
+            }
+        }
     }
 
     function createMonsterSprite(monster_index) {
@@ -1302,11 +1392,11 @@
 
             } else {
                 console.log("%c No idea where to put player sprite!", log_warning);
-                console.log("Player id: " + players[player_index].id + " coord_id, ship_coord_id: " + players[player_index].coord_id + "," + players[player_index].ship_coord_id);
+                console.log("Player id: " + players[player_index].id + " coord_id: " + players[player_index].coord_id+ " ship_coord_id: " + players[player_index].ship_coord_id);
                 console.log("Current have x many ship coords: " + ship_coords.length);
                 for(let i = 0; i < ship_coords.length; i++) {
                     if(ship_coords[i].id === players[player_index].ship_coord_id) {
-                        console.log("Foudn the ship coord. It has player id: " + ship_coords[i].player_id);
+                        console.log("Found the ship coord. It has player id: " + ship_coords[i].player_id);
                     }
                 }
             }
@@ -1550,6 +1640,8 @@
                 $('#coord_data').append("&nbsp;&nbsp;No AI");
             }
 
+            // Planet HP
+
 
         }
     }
@@ -1600,7 +1692,14 @@
             }
 
             if(type === 'ship' && players[client_player_index].ship_coord_id) {
-                show_coord = true;
+                let player_coord_index = ship_coords.findIndex(function(obj) { return obj && obj.id === players[client_player_index].ship_coord_id; });
+
+                // We don't actually have our ship coord yet, just draw things
+                if(player_coord_index === -1) {
+                    show_coord = true;
+                } else if(coord.level === ship_coords[player_coord_index].level && coord.ship_id === ship_coords[player_coord_index].ship_id) {
+                    show_coord = true;
+                }
             }
 
 
@@ -2005,25 +2104,53 @@
 
 
         let html_string = "";
+        html_string += "<div class='message is-dark message-inline'><div class='message-body'>";
 
         // Allow them to create a faction or join one
         if(!players[client_player_index].faction_id) {
             html_string += "<form action='#'>";
-            html_string += "<input type=\"text\" name=\"faction_name\">";
-            html_string += "<input onclick=\"submitCreateFaction(); return false;\" type=\"submit\" value=\"Create Faction\">";
+            html_string += "<input type=\"text\" class=\"input\" name=\"faction_name\" id=\"faction_name\">";
+            html_string += "<input onclick=\"submitCreateFaction(); return false;\" type=\"submit\" class=\"button is-default\" value=\"Create Faction\">";
             html_string += "</form>";
+
+            /*
+            html_string += "<br>Top Factions:<br>";
+
+            // Show the players the top factions
+            factions.forEach(function(faction) {
+                html_string += faction.name + ": " + faction.player_count + " members<br>";
+            });
+            */
+
+            // Link to where they can search for factions
+            html_string += "<a target=\"_blank\" href=\"https://space.alphacoders.com/faction\">View All Factions</a>";
+
+            // Let them join by faction id
+            html_string += "<form action='#'>";
+            html_string += "<div class='field is-horizontal'>";
+            html_string +=      "<input type='text' class='input' name='factionjoin' id='factionjoin' placeholder='faction id'>";
+            html_string +=      "<input class='button is-default' onclick=\"submitFactionJoin(); return false;\" type=\"submit\" value=\"Join Faction\">";
+            html_string += "</div>";
+            html_string += "</form>";
+
+        } else {
+            let faction_index = factions.findIndex(function(obj) { return obj && obj.id === players[client_player_index].faction_id; });
+            if(faction_index !== -1) {
+                html_string += "Your current faction: <a target='_blank' href='https://space.alphacoders.com/faction/view/" +
+                    factions[faction_index].id + "'>" + factions[faction_index].name + "</a> ";
+            } else {
+                html_string += "Your current faction id: <a target='_blank' href='https://space.alphacoders.com/faction/view/" +
+                    players[client_player_index].faction_id + "'>" + players[client_player_index].faction_id + "</a> ";
+            }
+
+            html_string += " <button class='button is-danger is-small is-pulled-right' id='leavefaction'>Leave</button>";
         }
 
-        html_string += "<br>Top Factions:<br>";
-
-        // Show the players the top factions
-        factions.forEach(function(faction) {
-            html_string += faction.name + ": " + faction.player_count + " members<br>";
-        });
-
-        // TODO Let them join a faction by ID
 
 
+
+
+        html_string += "</div></div>";
         $('#faction').append(html_string);
     }
 
@@ -2790,6 +2917,10 @@
     function pointerDownDesktop(pointer, pointerTileX, pointerTileY) {
 
 
+        if(client_player_index === -1) {
+            return false;
+        }
+
         if(pointer.leftButtonDown()) {
 
 
@@ -2808,8 +2939,10 @@
             let coord_tile_x = false;
             let coord_tile_y = false;
 
+            let player_info = getPlayerInfo(client_player_index);
+
             if(current_view === 'ship') {
-                coord_index = ship_coords.findIndex(function(obj) { return obj && obj.tile_x === pointerTileX && obj.tile_y === pointerTileY; });
+                coord_index = ship_coords.findIndex(function(obj) { return obj && obj.level === player_info.coord.level && obj.tile_x === pointerTileX && obj.tile_y === pointerTileY; });
                 if(coord_index !== -1) {
 
                     if(admin_drawing_floor_type_id) {
@@ -2838,8 +2971,7 @@
 
             } else if(current_view === 'planet') {
 
-                let player_index = players.findIndex(function(obj) { return obj && obj.id === player_id; });
-                let player_info = getPlayerInfo(player_index);
+
 
 
                 coord_index = planet_coords.findIndex(function(obj) { return obj && obj.tile_x === pointerTileX &&
@@ -3022,9 +3154,9 @@
                     let area_index = areas.findIndex(function(obj) { return obj && obj.id === temp_coord.area_id; });
 
                     if(area_index !== -1) {
-                        $('#coord_data').append(areas[area_index].name);
+                        $('#coord_data').append("Area: " +areas[area_index].name + "<br>");
                     } else {
-                        $('#coord_data').append("Area ID: " + temp_coord.area_id);
+                        $('#coord_data').append("Area ID: " + temp_coord.area_id + "<br>");
                         socket.emit('request_area_data', { 'area_id': temp_coord.area_id });
                     }
                 }
@@ -4225,7 +4357,7 @@
         $('#click_menu').empty();
         $('#click_menu').hide();
 
-        $('#objct_management').empty();
+        $('#object_management').empty();
         $('#object_management').append(html_string);
 
         if(object_index !== -1) {
@@ -4519,7 +4651,14 @@
         }
 
         // and the ending time
-        html_string += "<br>Ending At: " + market_linkers[market_linker_index].ending_at + "<br>";
+
+        let timestamp_difference = market_linkers[market_linker_index].ending_at - Date.now();
+
+        let divide_by_day = 24 * 60 * 60 * 1000;
+        let days_until_end = Math.floor(timestamp_difference / divide_by_day);
+
+
+        html_string += "<br>Ending In " + days_until_end + " Days<br>";
 
         // Submit Bid Option
         html_string += "<strong>Bid</strong><br>";
@@ -4896,9 +5035,10 @@
         return player_index;
     }
 
-    //  data:   ship_id   |   tile_x   |   tile_y
+    //  data:   ship_id   |   level   |    tile_x   |   tile_y
     function getShipCoordIndex(data) {
         return ship_coords.findIndex(function(obj) { return obj && obj.ship_id === parseInt(data.ship_id) &&
+            obj.level === parseInt(data.level) &&
             obj.tile_x === parseInt(data.tile_x) && obj.tile_y === parseInt(data.tile_y); });
     }
 
@@ -5445,7 +5585,7 @@
 
             if(players[client_player_index].ship_coord_id) {
                 checking_coord_index = ship_coords.findIndex(function(obj) { return obj && obj.tile_x === tile_x_checking &&
-                    obj.tile_y === tile_y_checking; });
+                    obj.level === player_info.coord.level && obj.tile_y === tile_y_checking; });
             } else if(players[client_player_index].coord_id) {
                 checking_coord_index = coords.findIndex(function(obj) { return obj && obj.tile_x === tile_x_checking &&
                     obj.tile_y === tile_y_checking; });
@@ -5539,6 +5679,7 @@
             }
         } else if(players[client_player_index].coord_id) {
             console.log("Moving in galaxy");
+
 
             // Special cases like if there's a planet
             if(coords[checking_coord_index].planet_id || coords[checking_coord_index].belongs_to_planet_id) {
@@ -7046,7 +7187,7 @@
                         drawCoord('galaxy', coords[coord_index]);
                     }
                 } else if(current_view === 'ship') {
-                    let coord_index = ship_coords.findIndex(function(obj) { return obj && obj.tile_x === x && obj.tile_y === y; });
+                    let coord_index = ship_coords.findIndex(function(obj) { return obj && obj.level === player_info.coord.level && obj.tile_x === x && obj.tile_y === y; });
                     if(coord_index !== -1) {
                         drawCoord('ship', ship_coords[coord_index]);
                     }
@@ -7099,40 +7240,22 @@
         for(let i = 0; i < objects.length; i++) {
             if(objects[i]) {
 
-                if(objects[i].name_text || objects[i].tint) {
-
-                    let is_saved = false;
-                    // Delete if it's not in the saved objects
-                    for(let j = 0; j < saved_objects.length; j++) {
-                        if(saved_objects[j] && saved_objects[j].id === objects[i].id) {
-                            is_saved = true;
-                        }
-                    }
-
-                    if(!is_saved) {
-
-                        if(objects[i].name_text) {
-                            objects[i].name_text.destroy();
-                        }
-
-                        if(objects[i].tint) {
-                            let object_info = getObjectInfo(i);
-                            if(object_info.coord) {
-                                let object_tile = map.getTileAt(object_info.coord.tile_x, object_info.coord.tile_y, false, 'layer_object');
-                                if(object_tile) {
-                                    object_tile.tint = "0xffffff";
-                                    //object_tile.clearTint();
-                                }
-                            }
-
-
-                        }
-
-
-
-                    }
-
+                if(objects[i].name_text) {
+                    objects[i].name_text.destroy();
+                    objects[i].name_text = false;
                 }
+
+                if(objects[i].tint) {
+                    let object_info = getObjectInfo(i);
+                    if(object_info.coord) {
+                        let object_tile = map.getTileAt(object_info.coord.tile_x, object_info.coord.tile_y, false, 'layer_object');
+                        if(object_tile) {
+                            object_tile.tint = "0xffffff";
+                            //object_tile.clearTint();
+                        }
+                    }
+                }
+
             }
         }
 
@@ -7307,8 +7430,9 @@
             return true;
         }
 
-        // Ship view - both on the same ship
-        if(base_coord.ship_id && other_coord.ship_id && base_coord.ship_id === other_coord.ship_id) {
+        // Ship view - both on the same ship and level
+        if(base_coord.ship_id && other_coord.ship_id && base_coord.ship_id === other_coord.ship_id &&
+            base_coord.level === other_coord.level) {
             return true;
         }
 
@@ -7325,7 +7449,7 @@
 
     function showClickMenu(pointer) {
 
-        if(!client_player_id) {
+        if(client_player_index === -1) {
             console.log("No client player yet");
             return false;
         }
@@ -7364,19 +7488,20 @@
         let coord = false;
 
 
+        let player_info = getPlayerInfo(client_player_index);
+
         if(current_view === 'planet') {
 
-            let client_coord = planet_coords.findIndex(function(obj) { return obj && obj.id === players[client_player_index].planet_coord_id; });
-
             coord_index = planet_coords.findIndex(function(obj) { return obj && obj.tile_x === tile_x &&
-                obj.tile_y === tile_y && obj.level === planet_coords[client_coord].level && obj.planet_id === planet_coords[client_coord].planet_id; });
+                obj.tile_y === tile_y && obj.level === player_info.coord.level && obj.planet_id === player_info.coord.planet_id; });
             if(coord_index !== -1) {
                 coord = planet_coords[coord_index];
                 coord_x = planet_coords[coord_index].tile_x;
                 coord_y = planet_coords[coord_index].tile_y;
             }
         } else if(current_view === 'ship') {
-            coord_index = ship_coords.findIndex(function(obj) { return obj && obj.tile_x === tile_x && obj.tile_y === tile_y; });
+            coord_index = ship_coords.findIndex(function(obj) { return obj && obj.ship_id === player_info.coord.ship_id &&
+                obj.level === player_info.coord.level && obj.tile_x === tile_x && obj.tile_y === tile_y; });
             if(coord_index !== -1) {
                 coord = ship_coords[coord_index];
                 coord_x = ship_coords[coord_index].tile_x;
@@ -7597,13 +7722,20 @@
 
                     $('#click_menu').append("<button id='manage_areas' class='button is-default'>Manage Areas</button>");
 
-                    // Go through the areas we have, giving the player the option of adding that coord to the area
-                    for(let i = 0; i < areas.length; i++) {
-                        console.log("Checking area id: " + areas[i].id);
-                        if(areas[i] && areas[i].owner_id === players[client_player_index].id && areas[i].planet_id === planets[planet_index].id) {
-                            $('#click_menu').append("<button id='addtoarea_" + coord.id + "' planet_coord_id='" + coord.id + "' area_id='" + areas[i].id + "' class='button is-default'>Add To Area: " + areas[i].name  + "</button>");
+
+                    // If the coord doesn't already have an area, give us the option to add it to an area
+                    if(!coord.area_id) {
+                        // Go through the areas we have, giving the player the option of adding that coord to the area
+                        for(let i = 0; i < areas.length; i++) {
+                            console.log("Checking area id: " + areas[i].id);
+                            if(areas[i] && areas[i].owner_id === players[client_player_index].id && areas[i].planet_id === planets[planet_index].id) {
+                                $('#click_menu').append("<button id='addtoarea_" + coord.id + "' planet_coord_id='"
+                                    + coord.id + "' area_id='" + areas[i].id + "' class='button is-default'>Add To Area: " + areas[i].name  + "</button>");
+                            }
                         }
                     }
+
+
 
                 } else {
                     if(planet_index === -1) {
@@ -7990,6 +8122,16 @@
                 $('#click_menu').append("<button class='button is-info' id='showautopilot' " +
                     "top='" + mouse_y + "' left='" + mouse_x + "'>Set Autopilot Destination</button>");
             }
+
+
+            // We want the player to be able to just have their ship next to the other ship, and move through the airlock
+            // Gotta make sure the ships are close enough to each other
+
+            // Not actually sure I want to go that route, and just focus on is_dockable stuff
+            //$('#click_menu').append("<button class='button' id='moveairlock_" + objects[object_index].id + "'>Move Through Airlocks</button>");
+
+
+
         }
 
 
@@ -9048,59 +9190,10 @@
                 }
                 // We moved levels
                 else if(planet_coords[new_planet_coord_index].level !== client_player_info.coord.level) {
-                    battle_linkers = [];
 
-                    // and remove the monster sprites that are on a different level
-                    // and add sprites for monsters that are now on our level
-                    monsters.forEach(function(monster, i) {
+                    clearPreviousLevel();
 
-                        let monster_coord_index = planet_coords.findIndex(function(obj) {
-                            return obj && obj.id === monster.planet_coord_id;
-                        });
 
-                        if(monster_coord_index === -1) {
-                            return false;
-                        }
-
-                        if(monster_coord_index !== -1 && monster.sprite &&
-                            planet_coords[monster_coord_index].level !== planet_coords[new_planet_coord_index].level) {
-                            monster.sprite.destroy();
-                            monster.sprite = false;
-                        }
-
-                        if(monster_coord_index !== -1 && !monster.sprite &&
-                            planet_coords[monster_coord_index].level === planet_coords[new_planet_coord_index].level &&
-                            shouldDraw(client_player_info.coord, planet_coords[monster_coord_index])) {
-                            createMonsterSprite(i);
-                        }
-                    });
-
-                    players.forEach(function(player, i) {
-
-                        if(player.id === client_player_id) {
-                            return false;
-                        }
-
-                        if(!player.planet_coord_id) {
-                            return false;
-                        }
-
-                        let other_planet_coord_index = planet_coords.findIndex(function(obj) { return obj &&
-                            obj.id === player.planet_coord_id; });
-
-                        if(other_planet_coord_index === -1) {
-                            destroyPlayerSprite(player);
-                        } else if(planet_coords[other_planet_coord_index].planet_id !== planet_coords[new_planet_coord_index].planet_id ||
-                            planet_coords[other_planet_coord_index].level !== planet_coords[new_planet_coord_index].level) {
-                            destroyPlayerSprite(player);
-                        } else if(planet_coords[other_planet_coord_index].planet_id === planet_coords[new_planet_coord_index].planet_id &&
-                            planet_coords[other_planet_coord_index].level === planet_coords[new_planet_coord_index].level) {
-                            createPlayerSprite(i);
-                        }
-
-                    });
-
-                    animations.splice(0, animations.length);
 
                     client_move_planet_coord_id = false;
                     movePlayerInstant(client_player_index,
@@ -9116,6 +9209,8 @@
 
                 }
 
+                // We aren't doing any of this in any of the other views
+                /*
                 let starting_x = planet_coords[new_planet_coord_index].tile_x - 6;
                 let starting_y = planet_coords[new_planet_coord_index].tile_y - 6;
                 let ending_x = planet_coords[new_planet_coord_index].tile_x + 6;
@@ -9151,25 +9246,38 @@
                 }
 
 
+                */
+
 
 
             }
         }
-        // Ship view, and we moved
-        else if(current_view === 'ship' && data.player.ship_coord_id && data.player.ship_coord_id !== players[client_player_index].ship_coord_id) {
-            //console.log("Got ship move");
-            let coord_index = ship_coords.findIndex(function(obj) { return obj && obj.id === data.player.ship_coord_id; });
+        else if(current_view === 'ship') {
+            if(data.player.ship_coord_id) {
 
-            if(coord_index === -1) {
-                socket.emit('request_ship_coord_info', { 'ship_coord_id': data.player.ship_coord_id });
-            } else {
-                //console.log("Moving to ship coord id: " + ship_coords[coord_index].id + " tile x,y: " + ship_coords[coord_index].tile_x + "," + ship_coords[coord_index].tile_y);
-                movePlayerFlow(client_player_index, 'ship', ship_coords[coord_index], 'updatePlayerClient > ship');
+
+                let coord_index = ship_coords.findIndex(function(obj) { return obj && obj.id === data.player.ship_coord_id; });
+
+                if(coord_index === -1) {
+                    socket.emit('request_ship_coord_info', { 'ship_coord_id': data.player.ship_coord_id });
+                }
+                // Normal Ship Move
+                else if(players[client_player_index].ship_coord_id !== data.player.ship_coord_id && ship_coords[coord_index].level === client_player_info.coord.level) {
+                    //console.log("Moving to ship coord id: " + ship_coords[coord_index].id + " tile x,y: " + ship_coords[coord_index].tile_x + "," + ship_coords[coord_index].tile_y);
+                    movePlayerFlow(client_player_index, 'ship', ship_coords[coord_index], 'updatePlayerClient > ship');
+                }
+                // We moved to a different level
+                else if(ship_coords[coord_index].level !== client_player_info.coord.level) {
+                    clearPreviousLevel();
+                    client_move_ship_coord_id = false;
+
+                    movePlayerInstant(client_player_index,
+                        ship_coords[coord_index].tile_x * tile_size + tile_size / 2,
+                        ship_coords[coord_index].tile_y * tile_size + tile_size / 2);
+                }
             }
-
-
-
         }
+
         // Galaxy view and we moved
         else if(current_view === 'galaxy' && data.player.coord_id && data.player.coord_id !== client_player_info.coord.id) {
             //console.log("Client galaxy move");

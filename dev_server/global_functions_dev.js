@@ -202,7 +202,7 @@ module.exports.eat = eat;
 
 
 
-//   (object_id   OR   object_index)   |   coord_index   |   planet_coord_index   |   ship_coord_index
+//   (object_id   OR   object_index)   |   coord_index   |   planet_coord_index   |   ship_coord_index   |   reason (optional)
 async function placeObject(socket, dirty, data) {
 
     try {
@@ -223,6 +223,16 @@ async function placeObject(socket, dirty, data) {
         }
 
         let object_type_index = getObjectTypeIndex(dirty.objects[object_index].object_type_id);
+
+
+        // We can't place things on stairs or a hole - I think in general I should have this in the various canPlace functions
+        // But this is such a game breaking thing
+        if(typeof data.planet_coord_index !== "undefined" && (dirty.planet_coords[data.planet_coord_index].object_type_id === 63 ||
+            dirty.planet_coords[data.planet_coord_index].object_type_id === 62 )) {
+            log(chalk.yellow("Can't place on hole or stairs! Why didn't canPlace catch this?!?"));
+            console.trace("this!");
+            return false;
+        }
 
         // PORTAL
         if(dirty.objects[object_index].object_type_id === 47) {
@@ -262,8 +272,15 @@ async function placeObject(socket, dirty, data) {
                 return false;
             }
 
+            // No need for all these checks - it's part of the system! Just add it
+            if(data.reason && data.reason === "generate_ship") {
+
+                await updateCoordGeneric(socket, { 'ship_coord_index': data.ship_coord_index, 'object_index': object_index });
+                return true;
+            }
+
             // Also needs to be level 0 or higher
-            if(dirty.planet_coords[data.planet_coord_index].level < 1) {
+            if(typeof data.planet_coord_index !== "undefined" && dirty.planet_coords[data.planet_coord_index].level < 1) {
                 console.log("Can't place hole on level < 1");
                 return false;
             }
@@ -271,6 +288,7 @@ async function placeObject(socket, dirty, data) {
 
 
             // We need to see if the coord below can accept stairs (we can create it if needed)
+
             let below_level = dirty.planet_coords[data.planet_coord_index].level - 1;
 
             let below_data = { 'planet_id': dirty.planet_coords[data.planet_coord_index].planet_id, 'planet_level': below_level,
@@ -342,7 +360,12 @@ async function placeObject(socket, dirty, data) {
                 return false;
             }
 
+            // No need for all these checks - it's part of the system! Just add it
+            if(data.reason && data.reason === "generate_ship") {
 
+                await updateCoordGeneric(socket, { 'ship_coord_index': data.ship_coord_index, 'object_index': object_index });
+                return true;
+            }
 
             // Also needs to be level 0 or higher
             if(dirty.planet_coords[data.planet_coord_index].level < 0) {
@@ -441,6 +464,7 @@ async function placeObject(socket, dirty, data) {
                             'planet_level': origin_coord.level, 'tile_x': tile_x, 'tile_y': tile_y });
                     } else if(data.ship_coord_index) {
                         placing_coord_index = await getShipCoordIndex({ 'ship_id': origin_coord.ship_id,
+                            'level': origin_coord.level,
                             'tile_x': tile_x, 'tile_y': tile_y });
                     }
 
@@ -472,11 +496,16 @@ async function placeObject(socket, dirty, data) {
 
                 if(data.coord_index) {
                     await updateCoordGeneric(socket, { 'coord_index': data.coord_index, 'object_index': object_index });
+
                 } else if(data.planet_coord_index) {
                     await updateCoordGeneric(socket, { 'planet_coord_index': data.planet_coord_index, 'object_index': object_index });
+                    dirty.objects[object_index].planet_id = dirty.planet_coords[data.planet_coord_index].planet_id;
+                    dirty.objects[object_index].has_change = true;
                 } else if(data.ship_coord_index) {
 
                     await updateCoordGeneric(socket, { 'ship_coord_index': data.ship_coord_index, 'object_index': object_index });
+                    dirty.objects[object_index].ship_id = dirty.ship_coords[data.ship_coord_index].ship_id;
+                    dirty.objects[object_index].has_change = true;
                 }
             }
 

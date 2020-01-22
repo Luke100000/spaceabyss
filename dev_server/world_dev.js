@@ -527,7 +527,7 @@ module.exports = function(main, io, mysql, pool, chalk, log, uuid, PF) {
     module.addToArea = addToArea;
 
     /*
-    ai_id   |   atacking_type   |   attacking_id
+    data:   ai_id   |   atacking_type   |   attacking_id
     */
     async function aiAttack(dirty, data) {
 
@@ -583,7 +583,7 @@ module.exports = function(main, io, mysql, pool, chalk, log, uuid, PF) {
 
             if(data.attacking_type === 'player') {
 
-                console.log("AI spawning monster on player");
+                //console.log("AI spawning monster on player");
 
                 spawn_monster_data.attack_on_spawn_type = 'player';
                 spawn_monster_data.attack_on_spawn_id = data.attacking_id;
@@ -608,7 +608,7 @@ module.exports = function(main, io, mysql, pool, chalk, log, uuid, PF) {
                         for(let y = dirty.planet_coords[being_attacked_planet_coord_index].tile_y - 1;
                             y <= dirty.planet_coords[being_attacked_planet_coord_index].tile_y + 1; y++) {
 
-                            console.log("Checking x,y: " + x + "," + y);
+                            //console.log("Checking x,y: " + x + "," + y);
 
                             if(found_planet_coord === false) {
                                 // (   planet_id   |   planet_level   |   tile_x   |   tile_y   )
@@ -658,6 +658,7 @@ module.exports = function(main, io, mysql, pool, chalk, log, uuid, PF) {
                             if(found_ship_coord === false) {
                                 // (   ship_id   |   tile_x   |   tile_y   )
                                 let checking_data = { 'ship_id': dirty.ship_coords[being_attacked_ship_coord_index].ship_id,
+                                    'level': dirty.ship_coords[being_attacked_ship_coord_index].level,
                                     'tile_x': x, 'tile_y':y };
                                 let checking_ship_coord_index = await main.getShipCoordIndex(checking_data);
 
@@ -839,10 +840,12 @@ module.exports = function(main, io, mysql, pool, chalk, log, uuid, PF) {
                 }
 
                 let in_a_week_timestamp = Date.now() + 7 * 24 * 60 * 60 * 1000;
+                // Doesn't work in this instance
+                //in_a_week_timestamp.toISOString().slice(0, 19).replace('T', ' ');
 
                 // Insert a market linker
                 let [result] = await (pool.query("INSERT INTO market_linkers(area_id, planet_id, ship_id, ending_at)VALUES(?,?,?,?)",
-                    [dirty.areas[area_index].id, dirty.areas[area_index].planet_id, dirty.areas[area_index].ship_id, in_a_week_timestamp.toISOString().slice(0, 19).replace('T', ' ')]));
+                    [dirty.areas[area_index].id, dirty.areas[area_index].planet_id, dirty.areas[area_index].ship_id, in_a_week_timestamp]));
 
                 if(result) {
                     let new_market_linker_id = result.insertId;
@@ -872,26 +875,55 @@ module.exports = function(main, io, mysql, pool, chalk, log, uuid, PF) {
 
     module.changeArea = changeArea;
 
-    async function changePlanetCoordFloor(dirty, coord_index, floor_type_id) {
+
+    //  data:   (planet_coord_index   |   coord_index   |   ship_coord_index)   |   floor_type_id
+    async function changeFloor(dirty, data) {
         try {
-            if(floor_type_id <= 0 || floor_type_id === false || typeof floor_type_id === "undefined" || isNaN(floor_type_id)) {
-                log(chalk.yellow("Invalid floor_type_id value sent into changePlanetCoordFloor: " + floor_type_id));
+
+            if(typeof data.floor_type_id === "undefined") {
+                log(chalk.yellow("Not floor type id passed into world.changeFloor"));
+                return false;
             }
 
-            //console.log("Changing floor type id to: " + floor_type_id);
-            dirty.planet_coords[coord_index].floor_type_id = floor_type_id;
-            dirty.planet_coords[coord_index].has_change = true;
+            // Lets verify we can find that floor type
+            let floor_type_index = main.getFloorTypeIndex(data.floor_type_id);
+
+            if(floor_type_index === -1) {
+                log(chalk.yellow("Could not find that floor type"));
+                return false;
+            }
+
+            let room = "";
+
+            if(typeof data.planet_coord_index !== "undefined") {
+                //console.log("Changing floor type id to: " + floor_type_id);
+                dirty.planet_coords[data.planet_coord_index].floor_type_id = dirty.floor_types[floor_type_index].id;
+                dirty.planet_coords[data.planet_coord_index].has_change = true;
+
+                io.to("planet_" + dirty.planet_coords[data.planet_coord_index].planet_id).emit('planet_coord_info', { 'planet_coord': dirty.planet_coords[data.planet_coord_index] });
+            } else if(typeof data.ship_coord_index !== "undefined") {
+                dirty.ship_coords[data.ship_coord_index].floor_type_id = dirty.floor_types[floor_type_index].id;
+                dirty.ship_coords[data.ship_coord_index].has_change = true;
+                io.to("ship_" + dirty.ship_coords[data.ship_coord_index].ship_id).emit('ship_coord_info', { 'ship_coord': dirty.ship_coords[data.ship_coord_index] });
+            } else if(typeof data.coord_index !== "undefined") {
+                dirty.coords[data.coord_index].floor_type_id = dirty.floor_types[floor_type_index].id;
+                dirty.coords[data.coord_index].has_change = true;
+                io.to("galaxy").emit('coord_info', { 'coord': dirty.coords[data.coord_index] });
+            }
+
+
 
             // send the new planet coord info to the room
-            io.to("planet_" + dirty.planet_coords[coord_index].planet_id).emit('planet_coord_info', { 'planet_coord': dirty.planet_coords[coord_index] });
+
         } catch(error) {
-            log(chalk.red("Error in world.changePlanetCoordFloor: " + error));
+            log(chalk.red("Error in world.changeFloor: " + error));
+            console.error(error);
         }
 
 
     }
 
-    module.changePlanetCoordFloor = changePlanetCoordFloor;
+    module.changeFloor = changeFloor;
 
 
     // Right now this function is assuming that it's being called on things the monster is supposed
@@ -1292,8 +1324,8 @@ module.exports = function(main, io, mysql, pool, chalk, log, uuid, PF) {
 
 
             // we can create the faction
-            let sql = "INSERT INTO factions(name, player_id) VALUES(?,?)";
-            let inserts = [name, dirty.players[player_index].id];
+            let sql = "INSERT INTO factions(name, player_id,player_count,requires_invite) VALUES(?,?,?,true)";
+            let inserts = [name, dirty.players[player_index].id, 1];
 
             let [result] = await (pool.query(sql, inserts));
 
@@ -1312,14 +1344,23 @@ module.exports = function(main, io, mysql, pool, chalk, log, uuid, PF) {
                 // and have the player join!
                 dirty.players[player_index].faction_id = dirty.factions[new_faction_index].id;
                 dirty.players[player_index].has_change = true;
+
+                // and send the new player info
+                let player_info = getPlayerCoordAndRoom(dirty, player_index);
+                if(player_info.room) {
+                    io.to(player_info.room).emit('player_info', { 'player': dirty.players[player_index] });
+                }
             }
 
 
         } catch(error) {
             log(chalk.red("Error in world.createFaction"));
+            console.error(error);
         }
 
     }
+
+    module.createFaction = createFaction;
 
     //  data:   coord_floor_type_ids   |   coord_monster_type_ids   |   coord_object_type_ids   |   level   |   tile_x
     //          tile_y
@@ -1450,6 +1491,10 @@ module.exports = function(main, io, mysql, pool, chalk, log, uuid, PF) {
 
             // Didn't find an AI, no use in checking rules
             if(ai_index === -1) {
+                if(data.show_output && data.show_output === true) {
+                    console.log("No AI was found");
+                }
+
                 return -1;
             }
 
@@ -1482,6 +1527,10 @@ module.exports = function(main, io, mysql, pool, chalk, log, uuid, PF) {
 
             // Didn't find an AI, no use in checking rules
             if(ai_index === -1) {
+                if(data.show_output && data.show_output === true) {
+                    console.log("No AI was found");
+                }
+
                 return -1;
             }
 
@@ -1505,11 +1554,18 @@ module.exports = function(main, io, mysql, pool, chalk, log, uuid, PF) {
 
 
         if(!is_protected) {
+            if(data.show_output && data.show_ouput === true) {
+                console.log("Not protected");
+            }
             return -1;
         }
 
         // See if there's enough energy
         if(dirty.objects[ai_index].energy < data.damage_amount) {
+
+            if(data.show_output && data.show_output === true) {
+                console.log("AI does not have enough energy");
+            }
             return -1;
         }
 
@@ -1841,7 +1897,45 @@ module.exports = function(main, io, mysql, pool, chalk, log, uuid, PF) {
 
     module.enslave = enslave;
 
-// data:    planet_index
+    async function leaveFaction(socket, dirty, data) {
+        try {
+
+
+            if(isNaN(dirty.players[socket.player_index].faction_id)) {
+                log(chalk.yellow("Player doesn't seem to have a faction"));
+                return false;
+            }
+
+            let faction_index = main.getFactionIndex(dirty.players[socket.player_index].faction_id);
+
+
+
+            dirty.players[socket.player_index].faction_id = false;
+            dirty.players[socket.player_index].has_change = true;
+
+            let player_info = getPlayerCoordAndRoom(dirty, socket.player_index);
+
+            if(player_info.room) {
+                io.to(player_info.room).emit('player_info', { 'player': dirty.players[socket.player_index] });
+            }
+
+            // Decrease the faction's player count
+            if(faction_index !== -1) {
+                dirty.factions[faction_index].player_count--;
+                dirty.factions[faction_index].has_change = true;
+            }
+
+            return;
+
+        } catch(error) {
+            log(chalk.red("Error in world.leaveFaction: " + error));
+            console.error(error);
+        }
+    }
+
+    module.leaveFaction = leaveFaction;
+
+    // data:    planet_index
     async function loadEntirePlanet(dirty, data) {
         try {
 
@@ -2260,14 +2354,14 @@ module.exports = function(main, io, mysql, pool, chalk, log, uuid, PF) {
 
 
                 if(linker.spawns_monster_type_id) {
-                    sql = "INSERT INTO ship_coords(ship_id, tile_x, tile_y, object_type_id, floor_type_id, spawns_monster_type_id) VALUES(?,?,?,?,?,?)";
-                    inserts = [dirty.objects[ship_index].id, linker.position_x, linker.position_y, linker.object_type_id, linker.floor_type_id,
+                    sql = "INSERT INTO ship_coords(ship_id, tile_x, tile_y, level, object_type_id, floor_type_id, spawns_monster_type_id) VALUES(?,?,?,?,?,?,?)";
+                    inserts = [dirty.objects[ship_index].id, linker.position_x, linker.position_y, linker.level, linker.object_type_id, linker.floor_type_id,
                         linker.spawns_monster_type_id];
 
                 } else {
 
-                    sql = "INSERT INTO ship_coords(ship_id, tile_x, tile_y, object_type_id, floor_type_id) VALUES(?,?,?,?,?)";
-                    inserts = [dirty.objects[ship_index].id, linker.position_x, linker.position_y, linker.object_type_id, linker.floor_type_id];
+                    sql = "INSERT INTO ship_coords(ship_id, tile_x, tile_y, level, object_type_id, floor_type_id) VALUES(?,?,?,?,?,?)";
+                    inserts = [dirty.objects[ship_index].id, linker.position_x, linker.position_y, linker.level, linker.object_type_id, linker.floor_type_id];
 
 
                 }
@@ -2300,13 +2394,14 @@ module.exports = function(main, io, mysql, pool, chalk, log, uuid, PF) {
                     let new_object_index = await main.getObjectIndex(new_object_id);
 
 
-                    await main.placeObject(socket, dirty, { 'object_index': new_object_index, 'ship_coord_index': new_ship_coord_index });
+                    await main.placeObject(socket, dirty, { 'object_index': new_object_index, 'ship_coord_index': new_ship_coord_index, 'reason': 'generate_ship' });
                 }
 
 
             }
         } catch(error) {
-            log(chalk.red("Error in game.generateShip: " + error));
+            log(chalk.red("Error in world.generateShip: " + error));
+            console.error(error);
         }
     }
 
@@ -2925,7 +3020,7 @@ module.exports = function(main, io, mysql, pool, chalk, log, uuid, PF) {
                         }
                     } else if(dirty.objects[object_index].ship_coord_id) {
                         let ship_coord_data = { 'ship_id': dirty.ship_coords[coord_index].planet_id,
-                            'tile_x': i, 'tile_y': j };
+                            'level': dirty.ship_coords[coord_index].level, 'tile_x': i, 'tile_y': j };
                         checking_coord_index = await main.getShipCoordIndex(ship_coord_data);
 
                         if(checking_coord_index !== -1) {

@@ -113,6 +113,8 @@ module.exports = function(main, io, mysql, pool, chalk, log, world, map) {
                 return false;
             }
 
+            console.log("going to place player on ship coord id: " + dirty.ship_coords[ship_coord_index].id);
+
 
             // get the galaxy coord that the player was on
             let coord_index = await main.getCoordIndex({'coord_id': dirty.players[player_index].coord_id });
@@ -123,7 +125,7 @@ module.exports = function(main, io, mysql, pool, chalk, log, world, map) {
             }
 
             await main.updateCoordGeneric(socket, { 'coord_index': coord_index, 'player_id': false, 'object_id': false });
-            await main.updateCoordGeneric(socket, { 'ship_coord_index': ship_coord_index, 'player_id': socket.player_id });
+            await main.updateCoordGeneric(socket, { 'ship_coord_index': ship_coord_index, 'player_id': dirty.players[socket.player_index].id });
 
 
             dirty.players[player_index].previous_coord_id = false;
@@ -1731,6 +1733,163 @@ module.exports = function(main, io, mysql, pool, chalk, log, world, map) {
                 moveThroughPortal(socket, dirty, dirty.ship_coords[ship_coord_index].object_id);
 
             }
+            // HOLES
+            else if (dirty.ship_coords[ship_coord_index].object_type_id && dirty.object_types[object_type_index].is_hole) {
+                console.log("Player is trying to go down a hole");
+
+                let new_ship_level = dirty.ship_coords[previous_ship_coord_index].level - 1;
+                let stairs_index = await main.getShipCoordIndex({'ship_id': dirty.ship_coords[ship_coord_index].ship_id,
+                    'level': new_ship_level, 'tile_x': dirty.ship_coords[ship_coord_index].tile_x, 'tile_y': dirty.ship_coords[ship_coord_index].tile_y});
+
+                if(stairs_index !== -1) {
+                    console.log("Found stairs");
+
+                    let moving_to_coord_index = -1;
+
+                    // In most cases, we can just put them on the stairs
+
+                    let can_place_result = await main.canPlacePlayer({ 'scope': 'ship',
+                        'coord': dirty.ship_coords[stairs_index], 'player_index': socket.player_index });
+
+                    if(can_place_result) {
+                        moving_to_coord_index = stairs_index;
+                    }
+
+                    // If the stairs coord is blocked, we try the coords around it
+                    if(moving_to_coord_index === -1) {
+                        for(let x = dirty.ship_coords[stairs_index].tile_x - 1; x <= dirty.ship_coords[stairs_index].tile_x + 1 && moving_to_coord_index === -1; x++) {
+                            for(let y = dirty.ship_coords[stairs_index].tile_y -1; y <= dirty.ship_coords[stairs_index].tile_y + 1 && moving_to_coord_index === -1; y++) {
+
+                                let trying_index = await main.getShipCoordIndex({'ship_id': dirty.ship_coords[ship_coord_index].ship_id,
+                                    'ship_level': new_ship_level, 'tile_x': x, 'tile_y': y });
+
+                                if(trying_index !== -1) {
+                                    can_place_result = await main.canPlacePlayer({ 'scope': 'ship',
+                                        'coord': dirty.ship_coords[trying_index], 'player_index': socket.player_index });
+
+                                    if(can_place_result) {
+                                        moving_to_coord_index = trying_index;
+                                    }
+                                }
+
+
+
+
+                            }
+                        }
+                    }
+
+                    if(moving_to_coord_index !== -1) {
+
+                        // we basically skip moving onto the actual hole, and move directly to the stairs
+                        await main.updateCoordGeneric(socket, {'ship_coord_index': previous_ship_coord_index, 'player_id': false });
+
+                        // SKIP THE HOLE!!!!
+                        //await main.updateCoordGeneric(socket, {'ship_coord_index': hole_index, 'player_id': false });
+
+                        await main.updateCoordGeneric(socket, {'ship_coord_index': moving_to_coord_index, 'player_id': socket.player_id });
+
+                        dirty.players[socket.player_index].ship_coord_id = dirty.ship_coords[moving_to_coord_index].id;
+                        dirty.players[socket.player_index].has_change = true;
+                        // send the updated player info
+                        await world.sendPlayerInfo(socket, "ship_" + dirty.ship_coords[moving_to_coord_index].ship_id, dirty,
+                            dirty.players[socket.player_index].id);
+
+                        socket.emit('clear_map');
+
+                        await map.updateMap(socket, dirty);
+                        world.removeBattleLinkers(dirty, { 'player_id': dirty.players[socket.player_index].id });
+                    } else {
+                        console.log("Something is blocking the stairs and the area around the stairs");
+                        socket.emit('move_failure', { 'failed_ship_coord_id': dirty.ship_coords[moving_to_coord_index].id,
+                            'return_to_ship_coord_id': dirty.players[socket.player_index].ship_coord_id });
+                        socket.emit('result_info', { 'status': 'failure', 'text': 'Something is blocking the stairs below' });
+                    }
+                } else {
+                    console.log("Unable to find hole above stairs");
+                }
+
+            }
+            // STAIRS
+            else if (dirty.ship_coords[ship_coord_index].object_type_id && dirty.object_types[object_type_index].is_stairs) {
+
+
+                // get the coord we would actually be moving to ( think warp to the ship coord above )
+                let new_ship_level = dirty.ship_coords[previous_ship_coord_index].level + 1;
+                let hole_index = await main.getShipCoordIndex({'ship_id': dirty.ship_coords[ship_coord_index].ship_id,
+                    'level': new_ship_level, 'tile_x': dirty.ship_coords[ship_coord_index].tile_x, 'tile_y': dirty.ship_coords[ship_coord_index].tile_y });
+
+                if(hole_index !== -1) {
+
+                    let moving_to_coord_index = -1;
+
+                    // In most cases, we can just put them on the hole
+                    let can_place_result = await main.canPlacePlayer({ 'scope': 'ship',
+                        'coord': dirty.ship_coords[hole_index], 'player_index': socket.player_index });
+
+                    if(can_place_result) {
+                        moving_to_coord_index = hole_index;
+                    }
+
+                    // If the hole coord is blocked, we try the coords around it
+                    if(moving_to_coord_index === -1) {
+                        for(let x = dirty.ship_coords[hole_index].tile_x - 1; x <= dirty.ship_coords[hole_index].tile_x + 1 && moving_to_coord_index === -1; x++) {
+                            for(let y = dirty.ship_coords[hole_index].tile_y -1; y <= dirty.ship_coords[hole_index].tile_y + 1 && moving_to_coord_index === -1; y++) {
+
+                                let trying_index = await main.getShipCoordIndex({'ship_id': dirty.ship_coords[ship_coord_index].ship_id,
+                                    'ship_level': new_ship_level, 'tile_x': x, 'tile_y': y });
+
+                                if(trying_index !== -1) {
+                                    can_place_result = await main.canPlacePlayer({ 'scope': 'ship',
+                                        'coord': dirty.ship_coords[trying_index], 'player_index': socket.player_index });
+
+                                    if(can_place_result) {
+                                        moving_to_coord_index = trying_index;
+                                    }
+                                }
+
+
+
+
+                            }
+                        }
+                    }
+
+
+
+                    if(moving_to_coord_index !== -1) {
+
+                        // MOVE DIRECTLY ONTO THE HOLE
+                        await main.updateCoordGeneric(socket, { 'ship_coord_index': previous_ship_coord_index, 'player_id': false });
+
+                        //await main.updateCoordGeneric(socket, {'ship_coord_index': stairs_index, 'player_id': false });
+
+                        await main.updateCoordGeneric(socket, {'ship_coord_index': moving_to_coord_index, 'player_id': socket.player_id });
+
+                        dirty.players[socket.player_index].ship_coord_id = dirty.ship_coords[moving_to_coord_index].id;
+                        dirty.players[socket.player_index].has_change = true;
+                        await world.sendPlayerInfo(socket, "ship_" + dirty.ship_coords[moving_to_coord_index].ship_id, dirty, dirty.players[socket.player_index].id);
+
+                        socket.emit('clear_map');
+                        world.removeBattleLinkers(dirty, { 'player_id': dirty.players[socket.player_index].id});
+                        await map.updateMap(socket, dirty);
+
+                    } else {
+                        console.log("Something is blocking the hole, AND the space around it!");
+                        socket.emit('move_failure', { 'failed_ship_coord_id': dirty.ship_coords[moving_to_coord_index].id,
+                            'return_to_ship_coord_id': dirty.players[socket.player_index].ship_coord_id });
+                        socket.emit('result_info', { 'status': 'failure', 'text': 'Something is blocking the hole above' });
+
+                    }
+                } else {
+                    console.log("Unable to find hole above stairs");
+                }
+
+
+
+
+
+            }
             // Basic move
             else {
 
@@ -1798,7 +1957,8 @@ module.exports = function(main, io, mysql, pool, chalk, log, world, map) {
                         // coords don't exist < 0
                         if(i >= 0 && j >= 0) {
                             //console.log("Sending planet coord x,y: " + i + "," + j + " due to move");
-                            let ship_coord_data = {  'ship_id': dirty.ship_coords[ship_coord_index].ship_id, 'tile_x': i, 'tile_y': j };
+                            let ship_coord_data = {  'ship_id': dirty.ship_coords[ship_coord_index].ship_id,
+                                'level': dirty.ship_coords[ship_coord_index].level, 'tile_x': i, 'tile_y': j };
                             let additional_ship_coord_index = await main.getShipCoordIndex(ship_coord_data);
 
                             if(additional_ship_coord_index !== -1) {
@@ -1872,6 +2032,7 @@ module.exports = function(main, io, mysql, pool, chalk, log, world, map) {
 
         } catch(error) {
             log(chalk.red("Error in movement.moveShip: " + error));
+            console.error(error);
 
         }
 

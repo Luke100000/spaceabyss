@@ -3,22 +3,31 @@
 DOING NOW:
 
 
+    Lets work on adding in factions
+    Should be able to put batteries into AI Batteries (is_converter thing)
+        TEST THIS
 
-    Have a doctor NPCs surgery skill slowly tick up
 
-
-        For now, we could just have the planet slowly tick/recover hp
-            Code it in!
-
+    For now, we could just have the planet slowly tick/recover hp
+        Code it in!
 
 
     See if we can make it to a warmind
         Can't reasonably get to one with chitin armor set - need exodium set at a minimum I think
 
 
-    Need to start on augments
+    Need to expand on augments
+
+    I should invest time in making the designing of ships easier. Like admins can draw floor tiles in space.
+    Also should make our station multi level - adding in support for that (big task!)
+        CURRENT: Currently I am going through getShipCoordIndex, and I need to also do the map stuff.
+        Maybe search by planet coord level instances in the code or something too
 
 
+    Make those merchant spots do stuff!
+
+    Have a derelict spaceship type that spawns as an event in the galaxy. Comes with multiple levels, and monsters spawn on it.
+        and it's salvagable, and there is salvage contained within
 
 
 NEED TO DRAW

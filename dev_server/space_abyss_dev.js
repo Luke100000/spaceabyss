@@ -735,7 +735,11 @@ inits.init(function(callback) {
         if(rows[0]) {
             // Editing out the admin description
             for(let i = 0; i < rows.length; i++) {
-                dirty.objects.push(rows[i]);
+
+
+                getObjectIndex(rows[i].id);
+                // This is butt for ships
+                //dirty.objects.push(rows[i]);
             }
         }
 
@@ -1313,8 +1317,8 @@ io.sockets.on('connection', function (socket) {
 
     socket.on('attack_stop_data', function (data) {
 
-        console.log("Got attack_stop_data:");
-        console.log(data);
+        //console.log("Got attack_stop_data:");
+        //console.log(data);
         battle.attackStop(socket, dirty, data);
     });
 
@@ -1401,6 +1405,10 @@ io.sockets.on('connection', function (socket) {
     socket.on('give_data', function(data) {
         inventory.transferInventory(socket, dirty, data);
 
+    });
+
+    socket.on('leave_faction_data', function(data) {
+        world.leaveFaction(socket, dirty, data);
     });
 
     socket.on('login_data', function (data) {
@@ -2226,46 +2234,54 @@ function getPlanetTypeIndex(planet_type_id) {
 module.exports.getPlanetTypeIndex = getPlanetTypeIndex;
 
 
-//  data:   ship_coord_id   OR   (   ship_id   |   tile_x   |   tile_y   )
+//  data:   ship_coord_id   OR   (   ship_id   |   level   |   tile_x   |   tile_y   )
 
 async function getShipCoordIndex(data) {
-    let ship_coord_index = -1;
 
-    if(data.ship_coord_id) {
-        ship_coord_index = dirty.ship_coords.findIndex(function(obj) {
-            return obj && obj.id === parseInt(data.ship_coord_id);
-        });
-    } else {
-        ship_coord_index = dirty.ship_coords.findIndex(function(obj) {
-            return obj && obj.ship_id === parseInt(data.ship_id) && obj.tile_x === parseInt(data.tile_x) && obj.tile_y === parseInt(data.tile_y)
-        });
-    }
+    try {
+        let ship_coord_index = -1;
 
-    // we need to add it
-    if(ship_coord_index === -1) {
-
-        let where_part;
-        let inserts;
         if(data.ship_coord_id) {
-            where_part = 'WHERE ship_coords.id = ?';
-            inserts = [data.ship_coord_id];
-
+            ship_coord_index = dirty.ship_coords.findIndex(function(obj) {
+                return obj && obj.id === parseInt(data.ship_coord_id);
+            });
         } else {
-            where_part = 'WHERE ship_coords.ship_id = ? AND ship_coords.tile_x = ? AND ship_coords.tile_y = ?';
-            inserts = [data.ship_id, data.tile_x, data.tile_y];
+            ship_coord_index = dirty.ship_coords.findIndex(function(obj) {
+                return obj && obj.ship_id === parseInt(data.ship_id) && obj.level === parseInt(data.level) &&
+                    obj.tile_x === parseInt(data.tile_x) && obj.tile_y === parseInt(data.tile_y)
+            });
         }
 
-        let [rows, fields] = await (pool.query("SELECT * FROM ship_coords " + where_part,
-            inserts));
+        // we need to try and find it in the database
+        if(ship_coord_index === -1) {
 
-        if(rows[0]) {
-            let adding_ship_coord = rows[0];
-            adding_ship_coord.has_change = false;
-            ship_coord_index = dirty.ship_coords.push(adding_ship_coord) - 1;
+            let where_part;
+            let inserts;
+            if(data.ship_coord_id) {
+                where_part = 'WHERE ship_coords.id = ?';
+                inserts = [data.ship_coord_id];
+
+            } else {
+                where_part = 'WHERE ship_coords.ship_id = ? AND ship_coords.level = ? AND ship_coords.tile_x = ? AND ship_coords.tile_y = ?';
+                inserts = [data.ship_id, data.level, data.tile_x, data.tile_y];
+            }
+
+            let [rows, fields] = await (pool.query("SELECT * FROM ship_coords " + where_part,
+                inserts));
+
+            if(rows[0]) {
+                let adding_ship_coord = rows[0];
+                adding_ship_coord.has_change = false;
+                ship_coord_index = dirty.ship_coords.push(adding_ship_coord) - 1;
+            }
         }
+
+        return ship_coord_index;
+    } catch(error) {
+        log(chalk.red("Error in getShipCoordIndex: " + error));
+        console.error(error);
     }
 
-    return ship_coord_index;
 }
 
 module.exports.getShipCoordIndex = getShipCoordIndex;
@@ -2693,6 +2709,15 @@ async function loginPlayer(socket, dirty, data) {
         world.sendPlayerShips(socket, dirty, player_index);
         world.sendPlayerAreas(socket, dirty, player_index);
 
+        // If the player has a faction, we send that faction info
+        if(dirty.players[player_index].faction_id) {
+            let faction_index = getFactionIndex(dirty.players[player_index].faction_id);
+
+            if(faction_index !== -1) {
+                socket.emit('faction_info', { 'faction': dirty.factions[faction_index] });
+            }
+        }
+
 
 
 
@@ -2765,6 +2790,7 @@ async function canPlaceObject(data) {
                     }
                 } else if(data.scope === 'ship') {
                     checking_coord_index = await getShipCoordIndex({ 'ship_id': data.coord.ship_id,
+                        'level': data.coord.level,
                         'tile_x': checking_x, 'tile_y': checking_y });
 
                     if(checking_coord_index !== -1) {
@@ -2975,6 +3001,7 @@ async function canPlacePlayer(data) {
                         }
                     } else if(data.scope === 'ship') {
                         checking_coord_index = await getShipCoordIndex({ 'ship_id': coord.ship_id,
+                            'level': coord.level,
                             'tile_x': x, 'tile_y': y });
 
                         if(checking_coord_index !== -1) {
@@ -3217,6 +3244,7 @@ async function canPlace(scope, coord, placing_type, placing_id, data = false) {
                         }
                     } else if(scope === 'ship') {
                         checking_coord_index = await getShipCoordIndex({ 'ship_id': coord.ship_id,
+                            'level': coord.level,
                             'tile_x': x, 'tile_y': y });
 
                         if(checking_coord_index !== -1) {
@@ -3720,6 +3748,17 @@ async function getCoordIndex(data) {
 
 module.exports.getCoordIndex = getCoordIndex;
 
+function getFactionIndex(faction_id) {
+    try {
+
+        return dirty.factions.findIndex(function(obj) { return obj && obj.id === parseInt(faction_id); });
+    } catch(error) {
+        log(chalk.red("Error in getFactionIndex: " + error));
+        console.error(error);
+    }
+}
+
+module.exports.getFactionIndex = getFactionIndex;
 
 async function getNpcInventory(npc_id) {
     try {
@@ -3964,9 +4003,9 @@ async function getObjectIndex(object_id) {
                     //console.log("Object type id: " + dirty.object_types[object_type_index].id + " is_ship: " + dirty.object_types[object_type_index].is_ship);
                     if(dirty.object_types[object_type_index].is_ship) {
 
-                        if(dirty.objects[object_index].id === 78563) {
-                            log(chalk.cyan("Should be loading ship coords for that annoying space station"));
-                        }
+
+                        log(chalk.cyan("Loading ship coords for object id: " + object.id));
+
                         await getShipCoords(object.id);
                         await world.attachShipEngines(dirty, object_index);
 
@@ -5019,6 +5058,21 @@ async function writeDirty(show_output = false) {
             dirty.equipment_linkers[i].has_change = false;
         }
     });
+
+
+    dirty.factions.forEach(function(faction, i) {
+
+        if(faction.has_change) {
+            let sql = "UPDATE factions SET player_count = ? WHERE id = ?";
+            let inserts = [faction.player_count, faction.id];
+            pool.query(sql, inserts, function(err, result) {
+                if(err) throw err;
+            });
+
+            dirty.factions[i].has_change = false;
+        }
+    });
+
 
 
     dirty.inventory_items.forEach(function(inventory_item, i) {

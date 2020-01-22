@@ -12,7 +12,7 @@ game.processAdminChatMessage
 /moveplanet PLANET_ID coord_id
 /replacefloor COORD_TYPE(planet|ship|galaxy) COORD_ID NEW_FLOOR_TYPE_ID
 /setplanettype PLANET_ID PLANET_TYPE_ID
-/spawnevent PLANET_COORD_ID EVENT_ID
+/spawnevent COORD_TYPE(planet|ship|galaxy) COORD_ID EVENT_ID
 /spawnmonster MONSTER_TYPE_ID
 /spawnnpc NPC_JOB_ID
 /spawnobject AMOUNT OBJECT_TYPE_NAME
@@ -49,6 +49,9 @@ A new version of Space Domination
 Possibly something like gravity well
 A Kingdom-like ACP Game
 7th Continent-esque exploration ACP Game
+
+Sites:
+http://www.projectrho.com/public_html/rocket/
 
 
 LEVELS

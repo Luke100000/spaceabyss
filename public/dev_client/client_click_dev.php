@@ -50,6 +50,7 @@
     function submitCreateFaction() {
         console.log("In submitCreateFaction");
         let faction_name = $('#faction_name').val();
+        console.log("Sending faction name: " + faction_name);
         socket.emit('create_faction_data', { 'name': faction_name });
 
     }
@@ -661,6 +662,12 @@
             $("#management_object_" + object_id).removeClass('shown-options');
         }
 
+        if(split_name[0] === 'leavefaction') {
+            console.log("Player clicked to leave their faction");
+
+            socket.emit('leave_faction_data', {});
+
+        }
 
         if(split_name[0] === 'manage' && split_name[1] && split_name[1] === 'areas') {
 

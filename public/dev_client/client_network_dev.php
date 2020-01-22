@@ -1087,6 +1087,23 @@
 
     });
 
+    socket.on('faction_info', function(data) {
+
+        console.log("Got faction info for faction with name: " + data.faction.name);
+
+        let faction_index = factions.findIndex(function(obj) { return obj && obj.id === parseInt(data.faction.id); });
+
+        if(faction_index === -1) {
+            factions.push(data.faction);
+
+            // If we just pushed our player's faction, lets update that faction display!
+            if(client_player_index !== -1 && data.faction.id === players[client_player_index].faction_id) {
+                console.log("This is the faction our player is in!");
+                generateFactionDisplay();
+            }
+        }
+    });
+
 
     socket.on('floor_type_info', function(data) {
 
@@ -2710,7 +2727,13 @@
 
             players[player_index].name = data.player.name;
             players[player_index].exp = data.player.exp;
-            players[player_index].faction_id = data.player.faction_id;
+
+            if(players[player_index].faction_id !== data.player.faction_id) {
+                players[player_index].faction_id = data.player.faction_id;
+                generateFactionDisplay();
+            }
+
+
             players[player_index].level = data.player.level;
             players[player_index].energy = data.player.energy;
             players[player_index].cooking_skill_points = data.player.cooking_skill_points;
@@ -3260,11 +3283,12 @@
             return false;
         }
 
-        console.log("Got ship coord info");
+        console.log("Got ship coord info. player id: " + data.ship_coord.player_id);
 
         let coord_index = ship_coords.findIndex(function(obj) { return obj && obj.id === parseInt(data.ship_coord.id) });
 
         if(coord_index === -1) {
+            console.log("Adding ship coord");
             coord_index = ship_coords.push(data.ship_coord) - 1;
             drawCoord('ship', ship_coords[coord_index]);
 
@@ -3290,6 +3314,7 @@
             }
         } else {
 
+            console.log("Updating ship coord");
 
             // The coord has changes that we should redraw
             if(ship_coords[coord_index].monster_id !== data.ship_coord.monster_id) {

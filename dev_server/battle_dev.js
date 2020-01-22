@@ -988,8 +988,18 @@ module.exports = function(main, io, mysql, pool, chalk, log, world, inventory, g
             // See if there's an AI that comes into play
             let damage_amount = monster_attack.damage_amount - defense;
 
-            let ai_index = await world.getAIProtector(dirty, { 'damage_amount': damage_amount,
-                'player_index': player_index, 'coord': player_info.coord });
+            let ai_index = -1;
+
+            // We skip the ai protection step if it's an AI attacking someone
+
+            if(dirty.monsters[monster_index].monster_type_id === 33 || dirty.monsters[monster_index].monster_type_id === 57) {
+
+            } else {
+                ai_index = await world.getAIProtector(dirty, { 'damage_amount': damage_amount,
+                    'player_index': player_index, 'coord': player_info.coord });
+            }
+
+
 
 
             if(ai_index !== -1) {
@@ -1826,7 +1836,7 @@ module.exports = function(main, io, mysql, pool, chalk, log, world, inventory, g
                                     }
                                 } else if(monster_info.scope === 'ship') {
                                     let ship_coord_index = await main.getShipCoordIndex({
-                                        'ship_id': monster_info.coord.ship_id, 'tile_x': x, 'tile_y': y
+                                        'ship_id': monster_info.coord.ship_id, 'level': monster_info.coord.level, 'tile_x': x, 'tile_y': y
                                     });
                                     if(ship_coord_index !== -1) {
                                         damageTile(dirty, {'ship_coord_index': ship_coord_index,
@@ -2068,8 +2078,9 @@ module.exports = function(main, io, mysql, pool, chalk, log, world, inventory, g
             let damage_amount = attack - defense;
 
             let ai_index = await world.getAIProtector(dirty, { 'damage_amount': damage_amount,
-                'object_index': object_index, 'coord': object_info.coord });
+                'object_index': object_index, 'coord': object_info.coord, 'show_output': true });
 
+            console.log("AI index returned: " + ai_index);
 
             if(ai_index !== -1) {
                 dirty.objects[ai_index].energy -= damage_amount;
