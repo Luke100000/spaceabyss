@@ -3,6 +3,7 @@
 DOING NOW:
 
 
+
     Lets work on adding in factions
     Should be able to put batteries into AI Batteries (is_converter thing)
         TEST THIS
@@ -17,11 +18,6 @@ DOING NOW:
 
 
     Need to expand on augments
-
-    I should invest time in making the designing of ships easier. Like admins can draw floor tiles in space.
-    Also should make our station multi level - adding in support for that (big task!)
-        CURRENT: Currently I am going through getShipCoordIndex, and I need to also do the map stuff.
-        Maybe search by planet coord level instances in the code or something too
 
 
     Make those merchant spots do stuff!

@@ -1,3 +1,5 @@
+const { Worker, isMainThread, parentPort } = require('worker_threads');
+
 module.exports = function(main, io, mysql, pool, chalk, log, uuid, world, map, inventory, movement, npc) {
 
     var module = {};
@@ -1588,6 +1590,9 @@ module.exports = function(main, io, mysql, pool, chalk, log, uuid, world, map, i
                 } else {
                     dirty.monsters[data.monster_index].current_hp = new_monster_hp;
                     dirty.monsters[data.monster_index].has_change = true;
+
+                    // send the monster info to players in the room
+                    io.to(data.monster_info.room).emit('monster_info', { 'monster': dirty.monsters[data.monster_index]});
                 }
 
 
@@ -3587,6 +3592,8 @@ module.exports = function(main, io, mysql, pool, chalk, log, uuid, world, map, i
 
 
 
+
+
             /************ STEP 1. DETERMINE THE DESTINATION COORD!!!!!! *****************/
             let new_x = -1;
             let new_y = -1;
@@ -3594,10 +3601,12 @@ module.exports = function(main, io, mysql, pool, chalk, log, uuid, world, map, i
             let old_coord_index = -1;
             let scope;
             let room;
+            let planet_coord_index = -1;
+            let attacking_coord = false;
 
             if(dirty.monsters[i].planet_coord_id) {
 
-                let planet_coord_index = await main.getPlanetCoordIndex(
+                planet_coord_index = await main.getPlanetCoordIndex(
                     { 'planet_coord_id': dirty.monsters[i].planet_coord_id });
 
                 if(planet_coord_index === -1) {
@@ -3622,161 +3631,184 @@ module.exports = function(main, io, mysql, pool, chalk, log, uuid, world, map, i
                 room = "ship_" + old_coord.ship_id;
             }
 
-            let change_x = -1;
-            let change_y = -1;
 
-            if(data.reason === 'idle' && (dirty.monster_types[data.monster_type_index].idle_movement_type === 'default' ||
-                !dirty.monster_types[data.monster_type_index].idle_movement_type)) {
+            // If we already have a path, we just use that!
+            if(dirty.monsters[i].path && dirty.monsters[i].path !== false && dirty.monsters[i].path[0]) {
 
-                //console.log("Doing idle movement");
-                // get a random x/y around this coord
+                new_x = dirty.monsters[i].path[0][0];
+                new_y = dirty.monsters[i].path[0][1];
+                console.log("Reading from path to send monster to x,y: " + new_x + "," + new_y);
 
 
-                if (main.getRandomIntInclusive(0, 1) === 1) {
-                    change_x = 1;
-                }
+                // Remove the part of the path we just used
+                dirty.monsters[i].path.splice(0, 1);
 
-                if (main.getRandomIntInclusive(0, 1) === 1) {
-                    change_y = 1;
-                }
+            } else {
 
-                // randomly set one to 0 - so we aren't moving diagonal
-                if (main.getRandomIntInclusive(0, 1) === 1) {
-                    change_x = 0;
-                } else {
-                    change_y = 0;
-                }
+                let change_x = -1;
+                let change_y = -1;
 
-                new_x = old_coord.tile_x + change_x;
-                new_y = old_coord.tile_y + change_y;
-            } else if(data.reason === 'battle') {
-                //console.log("Doing default battle move");
 
-                // get the thing the monster is attacking
-                let attacking_coord;
-                if(data.battle_linker.being_attacked_type === 'player') {
-                    let player_index = await main.getPlayerIndex({ 'player_id': data.battle_linker.being_attacked_id });
+                if(data.reason === 'idle' && (dirty.monster_types[data.monster_type_index].idle_movement_type === 'default' ||
+                    !dirty.monster_types[data.monster_type_index].idle_movement_type)) {
 
-                    if(dirty.players[player_index].planet_coord_id) {
-                        let player_planet_coord_index = await main.getPlanetCoordIndex({ 'planet_coord_id': dirty.players[player_index].planet_coord_id });
-                        attacking_coord = dirty.planet_coords[player_planet_coord_index];
-                    } else if(dirty.players[player_index].ship_coord_id) {
-                        let player_ship_coord_index = await main.getShipCoordIndex({ 'ship_coord_id': dirty.players[player_index].ship_coord_id });
-                        attacking_coord = dirty.ship_coords[player_ship_coord_index];
+                    //console.log("Doing idle movement");
+                    // get a random x/y around this coord
+
+
+                    if (main.getRandomIntInclusive(0, 1) === 1) {
+                        change_x = 1;
                     }
-                } else if(data.battle_linker.being_attacked_type === 'object') {
-                    let object_index = await main.getObjectIndex(data.battle_linker.being_attacked_id);
 
-                    if(dirty.objects[object_index].planet_coord_id) {
-                        let object_planet_coord_index = await main.getPlanetCoordIndex({ 'planet_coord_id': dirty.objects[object_index].planet_coord_id });
-                        attacking_coord = dirty.planet_coords[object_planet_coord_index];
-                    } else if(dirty.objects[object_index].ship_coord_id) {
-                        let object_ship_coord_index = await main.getShipCoordIndex({ 'ship_coord_id': dirty.objects[object_index].ship_coord_id });
-                        attacking_coord = dirty.ship_coords[object_ship_coord_index];
+                    if (main.getRandomIntInclusive(0, 1) === 1) {
+                        change_y = 1;
                     }
-                }
 
-                let x_difference = main.diff(attacking_coord.tile_x, old_coord.tile_x);
-                let y_difference = main.diff(attacking_coord.tile_y, old_coord.tile_y);
-
-
-                if( dirty.monster_types[data.monster_type_index].attack_movement_type === 'default' ||
-                    !dirty.monster_types[data.monster_type_index].attack_movement_type ) {
-
-                    let rand_move = main.getRandomIntInclusive(1,2);
-
-                    if(x_difference !== 0 && rand_move === 1) {
-                        if(attacking_coord.tile_x > old_coord.tile_x) {
-                            new_x = old_coord.tile_x + 1;
-                            change_x = 1;
-                        } else {
-                            new_x = old_coord.tile_x - 1;
-                            change_x = -1;
-                        }
-
-                        new_y = old_coord.tile_y;
-                        change_y = 0;
-                    } else if(y_difference !== 0 && rand_move === 2) {
-                        if(attacking_coord.tile_y > old_coord.tile_y) {
-                            new_y = old_coord.tile_y + 1;
-                            change_y = 1;
-                        } else {
-                            new_y = old_coord.tile_y - 1;
-                            change_y = -1;
-                        }
-
-                        new_x = old_coord.tile_x;
+                    // randomly set one to 0 - so we aren't moving diagonal
+                    if (main.getRandomIntInclusive(0, 1) === 1) {
                         change_x = 0;
+                    } else {
+                        change_y = 0;
                     }
 
-                } else if(dirty.monster_types[data.monster_type_index].attack_movement_type === 'warp_to') {
+                    new_x = old_coord.tile_x + change_x;
+                    new_y = old_coord.tile_y + change_y;
+                } else if(data.reason === 'battle') {
+                    //console.log("Doing default battle move");
 
-                    let found_coord = false;
+                    // get the thing the monster is attacking
 
-                    for(let x = attacking_coord.tile_x - 1;
-                        x <= attacking_coord.tile_x + 1; x++) {
-                        for(let y = attacking_coord.tile_y - 1;
-                            y <= attacking_coord.tile_y + 1; y++) {
+                    if(data.battle_linker.being_attacked_type === 'player') {
+                        let player_index = await main.getPlayerIndex({ 'player_id': data.battle_linker.being_attacked_id });
 
-                            if(!found_coord) {
-                                let checking_data = {};
+                        if(dirty.players[player_index].planet_coord_id) {
+                            let player_planet_coord_index = await main.getPlanetCoordIndex({ 'planet_coord_id': dirty.players[player_index].planet_coord_id });
+                            attacking_coord = dirty.planet_coords[player_planet_coord_index];
+                        } else if(dirty.players[player_index].ship_coord_id) {
+                            let player_ship_coord_index = await main.getShipCoordIndex({ 'ship_coord_id': dirty.players[player_index].ship_coord_id });
+                            attacking_coord = dirty.ship_coords[player_ship_coord_index];
+                        }
+                    } else if(data.battle_linker.being_attacked_type === 'object') {
+                        let object_index = await main.getObjectIndex(data.battle_linker.being_attacked_id);
 
-                                if(scope === 'planet') {
+                        if(dirty.objects[object_index].planet_coord_id) {
+                            let object_planet_coord_index = await main.getPlanetCoordIndex({ 'planet_coord_id': dirty.objects[object_index].planet_coord_id });
+                            attacking_coord = dirty.planet_coords[object_planet_coord_index];
+                        } else if(dirty.objects[object_index].ship_coord_id) {
+                            let object_ship_coord_index = await main.getShipCoordIndex({ 'ship_coord_id': dirty.objects[object_index].ship_coord_id });
+                            attacking_coord = dirty.ship_coords[object_ship_coord_index];
+                        }
+                    }
 
-                                    let checking_data = { 'planet_id': attacking_coord.planet_id,
-                                        'planet_level': attacking_coord.level,
-                                        'tile_x': x, 'tile_y':y };
-                                    let checking_coord_index = await main.getPlanetCoordIndex(checking_data);
+                    let x_difference = main.diff(attacking_coord.tile_x, old_coord.tile_x);
+                    let y_difference = main.diff(attacking_coord.tile_y, old_coord.tile_y);
 
-                                    if(checking_coord_index !== -1 && await main.canPlace('planet', dirty.planet_coords[checking_coord_index], 'monster', false,
-                                        { 'monster_type_id': dirty.monster_types[data.monster_type_index].id }) ) {
+                    // Pretty sure we don't need to do all this if we are already next to the player
+                    if(x_difference <= 1 && y_difference <= 1) {
+                        return;
+                    }
 
-                                        new_x = dirty.planet_coords[checking_coord_index].tile_x;
-                                        new_y = dirty.planet_coords[checking_coord_index].tile_y;
 
-                                        change_x = new_x - old_coord.tile_x;
-                                        change_y = new_y - old_coord.tile_y;
-                                        found_coord = true;
+                    if( dirty.monster_types[data.monster_type_index].attack_movement_type === 'default' ||
+                        !dirty.monster_types[data.monster_type_index].attack_movement_type ) {
+
+                        let rand_move = main.getRandomIntInclusive(1,2);
+
+                        if(x_difference !== 0 && rand_move === 1) {
+                            if(attacking_coord.tile_x > old_coord.tile_x) {
+                                new_x = old_coord.tile_x + 1;
+                                change_x = 1;
+                            } else {
+                                new_x = old_coord.tile_x - 1;
+                                change_x = -1;
+                            }
+
+                            new_y = old_coord.tile_y;
+                            change_y = 0;
+                        } else if(y_difference !== 0 && rand_move === 2) {
+                            if(attacking_coord.tile_y > old_coord.tile_y) {
+                                new_y = old_coord.tile_y + 1;
+                                change_y = 1;
+                            } else {
+                                new_y = old_coord.tile_y - 1;
+                                change_y = -1;
+                            }
+
+                            new_x = old_coord.tile_x;
+                            change_x = 0;
+                        }
+
+                    } else if(dirty.monster_types[data.monster_type_index].attack_movement_type === 'warp_to') {
+
+                        let found_coord = false;
+
+                        for(let x = attacking_coord.tile_x - 1;
+                            x <= attacking_coord.tile_x + 1; x++) {
+                            for(let y = attacking_coord.tile_y - 1;
+                                y <= attacking_coord.tile_y + 1; y++) {
+
+                                if(!found_coord) {
+                                    let checking_data = {};
+
+                                    if(scope === 'planet') {
+
+                                        let checking_data = { 'planet_id': attacking_coord.planet_id,
+                                            'planet_level': attacking_coord.level,
+                                            'tile_x': x, 'tile_y':y };
+                                        let checking_coord_index = await main.getPlanetCoordIndex(checking_data);
+
+                                        if(checking_coord_index !== -1 && await main.canPlace('planet', dirty.planet_coords[checking_coord_index], 'monster', false,
+                                            { 'monster_type_id': dirty.monster_types[data.monster_type_index].id }) ) {
+
+                                            new_x = dirty.planet_coords[checking_coord_index].tile_x;
+                                            new_y = dirty.planet_coords[checking_coord_index].tile_y;
+
+                                            change_x = new_x - old_coord.tile_x;
+                                            change_y = new_y - old_coord.tile_y;
+                                            found_coord = true;
+
+                                        }
+                                    } else if(scope === 'ship') {
+
+                                        let checking_data = { 'ship_id': attacking_coord.ship_id,
+                                            'level': attacking_coord.level,
+                                            'tile_x': x, 'tile_y':y };
+                                        let checking_coord_index = await main.getShipCoordIndex(checking_data);
+
+                                        if(checking_coord_index !== -1 && await main.canPlace('ship', dirty.ship_coords[checking_coord_index], 'monster', false,
+                                            { 'monster_type_id': dirty.monster_types[data.monster_type_index].id }) ) {
+
+                                            new_x = dirty.ship_coords[checking_coord_index].tile_x;
+                                            new_y = dirty.ship_coords[checking_coord_index].tile_y;
+
+                                            change_x = new_x - old_coord.tile_x;
+                                            change_y = new_y - old_coord.tile_y;
+
+                                            found_coord = true;
+
+                                        }
 
                                     }
-                                } else if(scope === 'ship') {
 
-                                    let checking_data = { 'ship_id': attacking_coord.ship_id,
-                                        'level': attacking_coord.level,
-                                        'tile_x': x, 'tile_y':y };
-                                    let checking_coord_index = await main.getShipCoordIndex(checking_data);
-
-                                    if(checking_coord_index !== -1 && await main.canPlace('ship', dirty.ship_coords[checking_coord_index], 'monster', false,
-                                        { 'monster_type_id': dirty.monster_types[data.monster_type_index].id }) ) {
-
-                                        new_x = dirty.ship_coords[checking_coord_index].tile_x;
-                                        new_y = dirty.ship_coords[checking_coord_index].tile_y;
-
-                                        change_x = new_x - old_coord.tile_x;
-                                        change_y = new_y - old_coord.tile_y;
-
-                                        found_coord = true;
-
-                                    }
 
                                 }
 
 
                             }
-
-
                         }
+
                     }
 
                 }
 
+                else {
+                    log(chalk.yellow("Not sure what move we are doing on this monster. reason: " + data.reason +
+                        " idle movement type: " + dirty.monster_types[data.monster_type_index].idle_movement_type));
+                    return false;
+                }
             }
 
-            else {
-                log(chalk.yellow("Not sure what move we are doing on this monster. reason: " + data.reason +
-                    " idle movement type: " + dirty.monster_types[data.monster_type_index].idle_movement_type));
-                return false;
-            }
+
 
             if(new_x === -1 || new_y === -1) {
                 return false;
@@ -3853,10 +3885,82 @@ module.exports = function(main, io, mysql, pool, chalk, log, uuid, world, map, i
             let can_place = await main.canPlace(scope, new_coord, 'monster', dirty.monsters[i].id, can_place_data);
 
             if(!can_place) {
+
+
+                // If we have a path and we just failed to place, the path is invalid!
+                if(dirty.monsters[i].path) {
+                    console.log("Monster path failed");
+                    dirty.monsters[i].path = false;
+                    dirty.monsters[i].ticks_until_next_path = 4;
+                }
+
                 //if(dirty.monsters[i].id === 5128) {
                 //    console.log("Can't do the move");
                 //}
+
+
+                // We can only do pathfinding for monsters that are 1 tile
+                // TODO this is currently limited to just planet coords - lets add in support for other coord types
+                if(attacking_coord !== false && dirty.monsters[i].planet_coord_id &&
+                    dirty.monster_types[data.monster_type_index].movement_tile_width === 1 &&
+                    dirty.monster_types[data.monster_type_index].movement_tile_height === 1) {
+
+                    // Lets delay pathfinding attempts a bit
+                    if(dirty.monsters[i].ticks_until_next_path && dirty.monsters[i].ticks_until_next_path > 1) {
+                        dirty.monsters[i].ticks_until_next_path--;
+                        return false;
+                    }
+                    //log(chalk.cyan("MONSTER PATHFINDING TIME!"));
+
+                    const worker = new Worker('./worker_pathfinding.js');
+
+
+                    worker.on('message', (path) => {
+                        //console.log("Got a path from the worker: ");
+                        console.log(path);
+                        dirty.monsters[i].path = path;
+                    });
+
+                    worker.on('error', (error) => {
+                        console.log("Worker error!");
+                        console.error(error);
+                    });
+
+                    worker.on('exit', (code) => {
+                        //console.log("Worker exited! Code: ");
+                        //console.log(code);
+
+
+                    });
+
+                    worker.on('online', () => {
+                        //console.log("Worker is online");
+                    });
+
+
+                    let pathfinding_coords = [];
+                    for(let c = 0; c < dirty.planet_coords.length; c++) {
+                        if(dirty.planet_coords[c] && dirty.planet_coords[c].planet_id === dirty.planet_coords[planet_coord_index].planet_id &&
+                            dirty.planet_coords[c].level === dirty.planet_coords[planet_coord_index].level &&
+                            dirty.planet_coords[c].tile_x >= dirty.planet_coords[planet_coord_index].tile_x - 3 &&
+                            dirty.planet_coords[c].tile_x <= dirty.planet_coords[planet_coord_index].tile_x + 3 &&
+                            dirty.planet_coords[c].tile_y >= dirty.planet_coords[planet_coord_index].tile_y - 3 &&
+                            dirty.planet_coords[c].tile_y <= dirty.planet_coords[planet_coord_index].tile_y + 3) {
+                            pathfinding_coords.push(dirty.planet_coords[c]);
+                        }
+                    }
+
+                    console.log("Sending " + pathfinding_coords.length + " coords into the pathfinding worker");
+
+                    worker_data = { 'coords': pathfinding_coords, 'monster': dirty.monsters[i],
+                        'origin_x': dirty.planet_coords[planet_coord_index].tile_x, 'origin_y': dirty.planet_coords[planet_coord_index].tile_y,
+                        'destination_x': attacking_coord.tile_x, 'destination_y': attacking_coord.tile_y };
+
+                    worker.postMessage(worker_data);
+                }
                 return false;
+
+
             }
 
 

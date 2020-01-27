@@ -3827,6 +3827,7 @@ async function getPlanetCoordIndex(data) {
             log(chalk.red("Odd data sent into getPlanetCoordIndex data.planet_coord_id: " + data.planet_coord_id +
                 " data.planet_id: " + data.planet_id + " data.planet_level: " + data.planet_level + " data.tile_x: " + data.tile_x +
                 " data.tile_y: " + data.tile_y));
+            console.trace("TRACED!");
             return -1;
         }
 

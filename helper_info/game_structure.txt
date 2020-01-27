@@ -103,7 +103,7 @@ Territe:
                         Crystadmantium (Crystonium):
                             Description:    Stable artificial elements, the continent of stability, above atomic weight 900.
                                             Requires tons of energy to produce. Not found in nature. Chrysadmantium.
-                                            Even a star can't melt it. Built one atam at a time in a supercollider.
+                                            Even a star can't melt it. Built one atom at a time in a supercollider.
                             Requirements:
                                 Crystals must be researched
                             Complexity: 102

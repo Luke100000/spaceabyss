@@ -12,7 +12,7 @@
         if(data.damage_types && data.damage_types.length > 0) {
             for(let i = 0; i < data.damage_types.length; i++ ) {
 
-                console.log("Going to try to add effect for damage type: " + data.damage_types[i] + " from attacker at x,y: " + data.attacker_x + ", " + data.attacker_y);
+                //console.log("Going to try to add effect for damage type: " + data.damage_types[i] + " from attacker at x,y: " + data.attacker_x + ", " + data.attacker_y);
 
 
 
@@ -83,7 +83,20 @@
                         addiction_sprite.setVisible(true);
                         addiction_sprite.anims.play('addiction-effect');
                     }
-                } else if(data.damage_types[i] === 'healing') {
+                } else if(data.damage_types[i] === 'electric') {
+                    if(electric_effect_sprite === false) {
+                        electric_effect_sprite = scene_game.add.sprite(data.x + 32, data.y, 'electric-effect');
+                        //fire_attack_sprite.on('animationcomplete', fireCompleteCallback, this);
+                        electric_effect_sprite.anims.play('electric-effect');
+                    } else {
+                        electric_effect_sprite.x = data.x + 32;
+                        electric_effect_sprite.y = data.y + 32;
+                        electric_effect_sprite.setVisible(true);
+                        electric_effect_sprite.anims.play('electric-effect');
+                    }
+                }
+
+                else if(data.damage_types[i] === 'healing') {
                     // TODO healing stuff
                 }
 
@@ -606,7 +619,7 @@
             if(!players[client_player_index].sprite) {
                 createPlayerSprite(client_player_index);
 
-                let client_player_info = getPlayerInfo(client_player_index);
+                client_player_info = getPlayerInfo(client_player_index);
 
                 if(client_player_info.coord && players[client_player_index].sprite) {
 
@@ -2851,7 +2864,7 @@
             return false;
         }
 
-        let client_player_info = getPlayerInfo(client_player_index);
+        client_player_info = getPlayerInfo(client_player_index);
 
         if(!client_player_info.coord) {
             spaceport_display_needs_regeneration = true;
@@ -5678,7 +5691,7 @@
                 console.log("ship coord move denied based on player id: " + ship_coords[checking_coord_index].player_id);
             }
         } else if(players[client_player_index].coord_id) {
-            console.log("Moving in galaxy");
+            //console.log("Moving in galaxy");
 
 
             // Special cases like if there's a planet
@@ -5687,7 +5700,7 @@
             }
             // Normal cases
             else {
-                let can_place_result = canPlacePlayer({ 'scope':'galaxy', 'coord':coords[checking_coord_index], 'player_index':client_player_index, 'show_output': true });
+                let can_place_result = canPlacePlayer({ 'scope':'galaxy', 'coord':coords[checking_coord_index], 'player_index':client_player_index });
 
                 if(can_place_result === false) {
                     deny_move = true;
@@ -7200,6 +7213,19 @@
 
         // and center our player
         movePlayerInstant(client_player_index, player_info.coord.tile_x * tile_size + tile_size / 2, player_info.coord.tile_y * tile_size + tile_size / 2);
+
+        // and draw any monsters we now need to
+        for(let i = 0; i < monsters.length; i++) {
+            if(monsters[i]) {
+                let monster_info = getMonsterInfo(i);
+
+                if(shouldDraw(client_player_info.coord, monster_info.coord, "monster_info")) {
+                    console.log("%c Drawing monster from redrawMap", log_success);
+                    createMonsterSprite(i);
+                }
+            }
+
+        }
     }
 
     // So this seems to create a ton of slowdown. Probably the old one not getting removed, or something else bad

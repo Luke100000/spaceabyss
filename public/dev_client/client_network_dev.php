@@ -341,7 +341,7 @@
     //  data:   damage_types (piercing,laser,repairing,healing,etc)   |   damage_source_type (monster,npc,player,object,etc)   |   damage_source_id
     socket.on('damaged_data', function(data) {
 
-        console.log(data.damage_types);
+        //console.log(data.damage_types);
 
         let drawing_x = -100;
         let drawing_y = -100;
@@ -1209,7 +1209,7 @@
             client_player_id = parseInt(data.player_id);
             $("#login_container").hide();
             $("#chat_container").show();
-            redrawMap();
+
 
 
 
@@ -1226,7 +1226,7 @@
                 if(!players[client_player_index].sprite) {
                     console.log("Creating our sprite");
                     createPlayerSprite(client_player_index);
-                    let client_player_info = getPlayerInfo(client_player_index);
+                    client_player_info = getPlayerInfo(client_player_index);
 
 
                     if(client_player_info.coord && players[client_player_index.sprite]) {
@@ -1247,7 +1247,7 @@
 
             console.log("Got starting view as: " + current_view);
 
-            redrawMap();
+
 
             // populate the launch button so we can navigate out of our starting view
             if(current_view === 'galaxy') {
@@ -1269,6 +1269,8 @@
             }
 
             generateEquipmentDisplay();
+
+            redrawMap();
 
         } else {
             $('#login_status').append("<span style='color:red;'>Login Failed</span>");
@@ -1464,10 +1466,13 @@
 
     socket.on('monster_info', function(data) {
 
+
         if(!data.monster) {
             console.log("%c Received monster info without a monster", log_warning);
             return false;
         }
+
+        //console.log("Got monster info for monster id: " + data.monster.id);
 
         let monster_index = monsters.findIndex(function(obj) { return obj && obj.id === parseInt(data.monster.id); });
 
@@ -1477,7 +1482,7 @@
             return;
         }
 
-        let client_player_info = getPlayerInfo(client_player_index);
+        client_player_info = getPlayerInfo(client_player_index);
 
         //console.log("Got monster info for monster id: " + data.monster.id);
 
@@ -1494,6 +1499,15 @@
 
             if(shouldDraw(client_player_info.coord, monster_info.coord, "monster_info")) {
                 createMonsterSprite(monster_index);
+            } else {
+                console.log("%c Not drawing monster", log_warning);
+                if(!client_player_info.coord) {
+                    console.log("Client player doesn't have a coord yet");
+                }
+
+                if(!monster_info.coord) {
+                    console.log("Don't have a coord for the monster yet");
+                }
             }
 
 
@@ -1615,6 +1629,12 @@
 
             // selectively push new values that would have changed from the server
 
+            let need_redraw_bars = false;
+            if(monsters[monster_index].current_hp !== data.monster.current_hp && monsters[monster_index].sprite) {
+                console.log("Have monster info with an hp change. Going to redraw bars");
+                need_redraw_bars = true;
+            }
+
             monsters[monster_index].current_hp = data.monster.current_hp;
             monsters[monster_index].planet_id = data.monster.planet_id;
             monsters[monster_index].planet_level = data.monster.planet_level;
@@ -1623,6 +1643,10 @@
             // Can't use this when we are giving the monster a sprite
             //monsters[monster_index] = data.monster;
             //showMonster(monsters[monster_index]);
+
+            if(need_redraw_bars) {
+                redrawBars();
+            }
 
         }
 
@@ -1795,7 +1819,7 @@
             return;
         }
 
-        let client_player_info = getPlayerInfo(client_player_index);
+        client_player_info = getPlayerInfo(client_player_index);
 
         if(npc_index === -1) {
             //console.log("Pushing npc");
@@ -1995,7 +2019,7 @@
                 createPlayerSprite(client_player_index);
                 if(players[client_player_index].sprite) {
                     //console.log("We have a sprite now");
-                    let client_player_info = getPlayerInfo(client_player_index);
+                    client_player_info = getPlayerInfo(client_player_index);
                     if(client_player_info.coord) {
                         players[client_player_index].sprite.x = client_player_info.coord.tile_x * tile_size + tile_size / 2;
                         players[client_player_index].sprite.y = client_player_info.coord.tile_y * tile_size + tile_size / 2;
@@ -2020,7 +2044,7 @@
                 console.log("Have our ship object. Attempting to create and place our sprite");
                 createPlayerSprite(client_player_index);
                 if(players[client_player_index].sprite) {
-                    let client_player_info = getPlayerInfo(client_player_index);
+                    client_player_info = getPlayerInfo(client_player_index);
                     if(client_player_info.coord) {
                         players[client_player_index].sprite.x = client_player_info.coord.tile_x * tile_size + tile_size / 2;
                         players[client_player_index].sprite.y = client_player_info.coord.tile_y * tile_size + tile_size / 2;
@@ -2320,7 +2344,7 @@
                     let object_coord_index = coords.findIndex(function(obj) { return obj &&
                         obj.id === objects[object_index].coord_id; });
 
-                    let client_player_info = getPlayerInfo(client_player_index);
+                    client_player_info = getPlayerInfo(client_player_index);
                     if(object_coord_index !== -1 && shouldDraw(client_player_info.coord, coords[object_coord_index])) {
                         drawCoord('galaxy', coords[object_coord_index]);
                     }
@@ -2328,7 +2352,7 @@
                     let object_coord_index = planet_coords.findIndex(function(obj) { return obj &&
                         obj.id === objects[object_index].planet_coord_id; });
 
-                    let client_player_info = getPlayerInfo(client_player_index);
+                    client_player_info = getPlayerInfo(client_player_index);
                     if(object_coord_index !== -1 && shouldDraw(client_player_info.coord, planet_coords[object_coord_index])) {
                         drawCoord('planet', planet_coords[object_coord_index]);
                     }
@@ -2336,7 +2360,7 @@
                     let object_coord_index = ship_coords.findIndex(function(obj) { return obj &&
                         obj.id === objects[object_index].ship_coord_id; });
 
-                    let client_player_info = getPlayerInfo(client_player_index);
+                    client_player_info = getPlayerInfo(client_player_index);
                     if(object_coord_index !== -1 && shouldDraw(client_player_info.coord, ship_coords[object_coord_index])) {
                         drawCoord('ship', ship_coords[object_coord_index]);
                     }
@@ -2465,7 +2489,7 @@
         let draw_coord = true;
 
 
-        // if we don't have the planet coord, add it
+        // If we don't have the planet coord, add it
         let coord_index = planet_coords.findIndex(function(obj) { return obj && obj.id === parseInt(data.planet_coord.id); });
         if(coord_index === -1) {
 
@@ -2514,6 +2538,13 @@
             // Only want to draw coords we should draw
             if(player_index === -1 || shouldDraw(player_info.coord, planet_coords[coord_index], 'planet_coord_info')) {
 
+                // So we'll be receiving planet coord info for planet coords off our screen when monsters move around on them
+                // So I'm testing just always drawing the coord here. Otherwise we could do an additional check to see if there
+                // is nothing on the floor layer, and draw based on that or changes.
+
+                drawCoord('planet', data.planet_coord);
+
+                /*
                 if(planet_coords[coord_index].monster_id !== data.planet_coord.monster_id) {
                     //console.log("Drawing coord because monster id: " + data.planet_coord.monster_id + " moved");
                     drawCoord('planet', data.planet_coord);
@@ -2530,6 +2561,7 @@
                     //console.log(coords[coord_index].floor_type_id + " doesn't match " + data.coord.floor_type_id + " redrawing coord");
                     drawCoord('planet', data.planet_coord);
                 }
+                */
             }
 
 
@@ -2549,6 +2581,21 @@
             if(npc_index === -1) {
                 console.log("We don't have this npc. Requesting it");
                 socket.emit('request_npc_info', { 'npc_id': planet_coords[coord_index].npc_id });
+            }
+        }
+
+        // In the case that we got the monster info before we got the coord the monster was on
+        // we want to now show the monster since we have complete information
+        if(planet_coords[coord_index].monster_id) {
+            let monster_index = getMonsterIndex(planet_coords[coord_index].monster_id);
+            if(monster_index !== -1) {
+                let monster_info = getMonsterInfo(monster_index);
+
+                if(shouldDraw(client_player_info.coord, monster_info.coord, "monster_info")) {
+                    createMonsterSprite(monster_index);
+                } else {
+                    console.log("Not drawing monster");
+                }
             }
         }
 

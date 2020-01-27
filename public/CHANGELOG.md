@@ -1,3 +1,13 @@
+## [0.0.10] - 2020-01-27
+
+### Fixed
+- The floor of planet coords that were brought in during monster movement will now be drawn
+- Added a couple of conditions in which monsters are drawn, so in general monster sprites should be drawn quicker
+
+### Added
+- Electric effect for an electric damage type
+- Pathfinding for monsters that take up a single tile of space
+
 ## [0.0.9] - 2020-01-22
 ### Fixed
 - When objects are placed on a planet or ship, set a planet_id/ship_id for that object (this is used for AIs associating
