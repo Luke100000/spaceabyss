@@ -245,93 +245,103 @@ AUGMENTS
 
 PLAYER WEAPONS
 
-Just your fists is the most basic
 
-MELEE **********
-
-Quick Matter Knife
-
-    Hull Welder
-        Plasma Torch
-            Heat Lance
-
-    Mimetic Arm
-
-Laser Wire
-
-Stabbing fist. Requires parts from spiked enemy + titanium. Could be from an urchin type monster
-
-
-Prion Attack (Radiation?)
-
-Diamond Claw
-
-RANGE **********************
-
-
-Bolt Thrower
-
-Laser Gun
-    Megawatt Laser Gun
-
-Laser Rifle
-    Megawatt Laser Rifle
+FREE
+    TIER 1 - Territe, Batteries, Chitin
+        TIER 2 - Syntite, Batteries, Keratin, AI Fragments, Parasites
+            TIER 3 - Exodium, Power cells, Living Wood, Silk, Thiol
+                TIER 4 - Refined Exodium, Power Cells,
+                    TIER 5 - Diamond
+                        TIER 6 - Spun Diamond
+                            TIER 7 - HyperDiamond
+                                TIER 8 - Crystal
+                                    TIER 9 Hypercrystal
+                                        TIER 10 - Crystadmantium (Crystonium), Antimatter
 
 
 
+ANTIMATTER
+                                        Antimatter Rifle
+
+CONTROL
+        Mind Control Injector
 
 
-Flame thrower
-    Damage Type: heat
+CORROSIVE
 
-Blaster
-Blaster Rifle
+ELECTRIC
+            Volt Rifle
 
-
-Pulse Pistol
-Pulse Rifle
-
-Gauss rifle
-
-Energy Disk
-
-Electromagnetic coil gun
-
-Plasma Pistol
-Plasma Rifle
-
-Railgun
-
-Antimatter Rifle
-
-Airborne Code Injectors
-
-Hack Dust
-
-Microtearer
-
-Atom Piercer
-
-Graviblaster
-
-Pyrorifle
-
-Chiller
-
-Icer Pistol
-
-Volt Rifle
+EXPLOSION
+    Corrupted Battery Pack
+        Thiol Bomb
+            Corrupted Power Cell
+                    Nuke
+                            Planet Buster
+                                Stardriller
 
 
+FREEZING
+            Icer Pistol
+                    Chiller
 
-EXPLOSIVE **************
+HACKING
+    Hacking Knife
+        Hack Dust
+                Airborne Code Injectors *RANGE*
+                    Black ice viruses
 
-shorted battery pack
-corrupted battery pack
+HEAT
+        Hull Welder
+            Plasma Torch
+                Heat Lance
 
-nukes - planet buster , planet driver
+                Flamethrower *RANGE*
 
-Stardriller
+
+GRAVITY
+            Graviblaster
+                Microtearer
+
+LASER
+        Laser Wire
+        Laser Gun *RANGE*
+                Megawatt Laser Gun *RANGE*
+            Laser Rifle
+                    Megawatt Laser Rifle
+
+
+MELEE
+No Equip (Fists - Melee)
+    Quick Matter Knife
+                    Diamond Claw
+
+
+PIERCING
+    Stabbing gloves. Requires parts from spiked enemy + exodium. Could be from an urchin type monster
+
+        Mimetic Arm
+
+
+        Bolt Thrower *RANGE*
+            Railgun *RANGE*
+
+                    Atom Piercer
+
+POISON
+
+PLASMA
+            Blaster
+                Blaster Rifle
+
+RADIATION
+            Prion Gloves
+
+
+
+
+
+
 
 
 
@@ -357,7 +367,15 @@ Liquid Hydrogen Weapons
 proton pack
 Chrysalis gun
 Erasure Cannon
-Black ice viruses
+Pulse Pistol
+Pulse Rifle
+Gauss rifle
+Energy Disk
+Electromagnetic coil gun
+Plasma Pistol
+Plasma Rifle
+Pyrorifle
+
 
 
 
@@ -528,14 +546,15 @@ PLAYER SHIPS
 
 FREE
     TIER 1 - Territe, Batteries, Chitin
-        TIER 2 - Syntite, Batteries, Keratin
-            TIER 3 - Exodium, Power cells, Living Wood, Silk
+        TIER 2 - Syntite, Batteries, Keratin, AI Fragments
+            TIER 3 - Exodium, Power cells, Living Wood, Silk, Thiol
                 TIER 4 - Refined Exodium, Power Cells,
                     TIER 5 - Diamond
                         TIER 6 - Spun Diamond
                             TIER 7 - HyperDiamond
                                 TIER 8 - Crystal
-                                    TIER 9 - Crystadmantium (Crystonium)
+                                    TIER 9 Hypercrystal
+                                        TIER 10 - Crystadmantium (Crystonium), Antimatter
 
 
 Pod ( drawn )

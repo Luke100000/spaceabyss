@@ -805,6 +805,7 @@ module.exports = function(main, io, mysql, pool, chalk, log, world) {
             }
         } catch(error) {
             log(chalk.red("Error in inventory.sendInventoryItem: " + error));
+            console.error(error);
         }
 
 

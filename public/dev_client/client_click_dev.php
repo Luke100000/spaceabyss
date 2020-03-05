@@ -817,6 +817,8 @@
 
             if($('#' + clicked_id).attr('object_id')) {
                 socket.emit("pick_up_data", { 'object_id': $('#' + clicked_id).attr('object_id') });
+            } else if($('#' + clicked_id).attr('monster_id')) {
+                socket.emit("pick_up_data", {'monster_id': $('#' + clicked_id).attr('monster_id')});
             } else if($('#' + clicked_id).attr('planet_coord_id')) {
                 socket.emit("pick_up_data", { 'planet_coord_id': $('#' + clicked_id).attr('planet_coord_id') });
             } else if($('#' + clicked_id).attr('ship_coord_id')) {

@@ -860,6 +860,19 @@
         for(let checking_coord of checking_coords) {
             //console.log("Checking coord id: " + checking_coord.id);
 
+            let object_type_index = -1;
+            if(checking_coord.object_type_id) {
+                object_type_index = getObjectTypeIndex(checking_coord.object_type_id);
+            }
+
+            let object_index = -1;
+            if(checking_coord.object_id) {
+                object_index = getObjectIndex(checking_coord.object_id);
+            } else if(checking_coord.belongs_to_object_id) {
+                object_index = getObjectIndex(checking_coord.belongs_to_object_id);
+            }
+
+
             if(checking_coord.floor_type_id) {
                 let floor_type_index = getFloorTypeIndex(checking_coord.floor_type_id);
 
@@ -875,6 +888,7 @@
                 }
             }
 
+            // Coord has a monster
             if(checking_coord.monster_id || checking_coord.belongs_to_monster_id) {
 
                 if(data.show_output) {
@@ -884,6 +898,7 @@
                 return false;
             }
 
+            // Coord has an npc
             if(checking_coord.npc_id) {
 
                 if(data.show_output) {
@@ -895,10 +910,16 @@
 
             // We have a base object type here - no object/belongs object
             if(checking_coord.object_type_id && !checking_coord.object_id && !checking_coord.belongs_to_object_id) {
-                let object_type_index = getObjectTypeIndex(checking_coord.object_type_id);
+
 
                 if(object_type_index !== -1) {
-                    if(!object_types[object_type_index].can_walk_on) {
+
+                    // We want to be able to move onto dockable ships
+
+                    if(object_types[object_type_index].is_ship && object_types[object_type_index].is_dockable) {
+                        // we good!
+
+                    } else if(!object_types[object_type_index].can_walk_on) {
 
                         if(data.show_output) {
                             console.log("Checking coord id: " + checking_coord.id + " scope: " + data.scope);
@@ -911,6 +932,7 @@
                 }
             }
 
+            // The coord has an object - either directly, or belonging to that object
             if(checking_coord.object_id || checking_coord.belongs_to_object_id) {
 
 
@@ -922,15 +944,12 @@
                     checking_coord.belongs_to_object_id === players[data.player_index].ship_id) {
 
                 } else {
-                    let object_index = -1;
-                    if(checking_coord.object_id) {
-                        object_index = getObjectIndex(checking_coord.object_id);
-                    } else if(checking_coord.belongs_to_object_id) {
-                        object_index = getObjectIndex(checking_coord.belongs_to_object_id);
-                    }
+
 
                     if(object_index !== -1) {
                         let object_type_index = getObjectTypeIndex(objects[object_index].object_type_id);
+
+
                         if(!object_types[object_type_index].can_walk_on && !object_types[object_type_index].is_dockable) {
 
                             if(data.show_output) {
@@ -1004,6 +1023,8 @@
                 return false;
             }
 
+            /*
+            * I want to say that the checks above  ( if(checking_coord.object_id || checking_coord.belongs_to_object_id) { ) cover this case
             if(checking_coord.belongs_to_object_id && checking_coord.belongs_to_object_id !== players[data.player_index].body_id &&
                 checking_coord.belongs_to_object_id !== players[data.player_index].ship_id) {
                 if(data.show_output) {
@@ -1012,6 +1033,7 @@
 
                 return false;
             }
+            */
 
         }
 
@@ -1315,7 +1337,9 @@
             }  else if(objects[ship_index].object_type_id === 155) {
                 new_texture_key = 'player-space-station';
                 new_texture_animation_key = 'player-space-station-animation';
-                new_movement_display = 'flip';
+                // Not sure I want any movement display
+                //new_movement_display = 'flip';
+                new_movement_display = 'static';
                 new_sprite_x_offset = 32;
                 new_sprite_y_offset = 32;
             } else if(objects[ship_index].object_type_id === 271) {
@@ -1337,7 +1361,6 @@
                 new_texture_animation_key = 'player-pod-animation';
             }
 
-            console.log("New texture key: " + new_texture_key);
 
         } else if(current_view === 'planet' || current_view === 'ship') {
             //console.log("View is planet or ship");
@@ -1387,7 +1410,9 @@
 
             if(player_info.coord) {
 
+
                 players[player_index].sprite = scene_game.add.sprite(-1000,-1000, new_texture_key);
+
                 players[player_index].sprite.anims.play(new_texture_animation_key);
 
                 players[player_index].sprite.x = player_info.coord.tile_x * tile_size + tile_size / 2 + new_sprite_x_offset;
@@ -3710,17 +3735,24 @@
 
             html_string += "<div class='center'>Assemble: ";
 
-            html_string += " <button id='assemble_" + object_type.id + "_all' class='button is-default is-small' ";
-            html_string += " object_type_id='" + object_type.id + "' ";
-            html_string += " being_assembled_in_object_id='" + assembling_object.id + "' amount='all'>All</button>";
+            if(assembling_object === false || assembling_object.object_type_id !== 116) {
+                html_string += " <button id='assemble_" + object_type.id + "_all' class='button is-default is-small' ";
+                html_string += " object_type_id='" + object_type.id + "' ";
+                html_string += " being_assembled_in_object_id='" + assembling_object.id + "' amount='all'>All</button>";
 
-            html_string += " <button id='assemble_" + object_type.id + "_10' class='button is-default is-small' ";
-            html_string += " object_type_id='" + object_type.id + "' ";
-            html_string += " being_assembled_in_object_id='" + assembling_object.id + "' amount='10'>10</button>";
+                html_string += " <button id='assemble_" + object_type.id + "_10' class='button is-default is-small' ";
+                html_string += " object_type_id='" + object_type.id + "' ";
+                html_string += " being_assembled_in_object_id='" + assembling_object.id + "' amount='10'>10</button>";
 
-            html_string += " <button id='assemble_" + object_type.id + "_1' class='button is-default is-small' ";
-            html_string += " object_type_id='" + object_type.id + "' ";
-            html_string += " being_assembled_in_object_id='" + assembling_object.id + "' amount='1'>1</button>";
+                html_string += " <button id='assemble_" + object_type.id + "_1' class='button is-default is-small' ";
+                html_string += " object_type_id='" + object_type.id + "' ";
+                html_string += " being_assembled_in_object_id='" + assembling_object.id + "' amount='1'>1</button>";
+
+            } else {
+                html_string += " <button id='assemble_" + object_type.id + "_1' class='button is-default is-small' ";
+                html_string += " object_type_id='" + object_type.id + "' ";
+                html_string += " being_assembled_in_object_id='" + assembling_object.id + "' amount='1'>Assemble</button>";
+            }
 
             html_string += "</div>";
 
@@ -5185,7 +5217,7 @@
                             coord_below = planet_coords[below_index];
                         }
                     } else {
-                        console.log("Current view is not ship or planet: " + current_view);
+                        //console.log("Current view is not ship or planet: " + current_view);
                     }
 
 
@@ -5643,6 +5675,7 @@
             console.log("Set movement direction to: " + movement_direction);
             console.log("Player tile_x,tile_y: " + player_info.coord.tile_x + "," + player_info.coord.tile_y);
         }
+        /*********************** END MOBILE PART? *********************/
 
         if(!player_trying_to_move) {
             //console.log("Player is not trying to move");
@@ -5700,7 +5733,8 @@
             }
             // Normal cases
             else {
-                let can_place_result = canPlacePlayer({ 'scope':'galaxy', 'coord':coords[checking_coord_index], 'player_index':client_player_index });
+                let can_place_result = canPlacePlayer({ 'scope':'galaxy', 'coord':coords[checking_coord_index],
+                    'player_index':client_player_index, 'show_output': true });
 
                 if(can_place_result === false) {
                     deny_move = true;
@@ -6288,13 +6322,17 @@
                         //console.log("Set angle to 0");
                     }
 
-                } else {
+                } else if(players[player_index].movement_display && players[player_index].movement_display === 'flip') {
                     if(players[player_index].destination_x < players[player_index].sprite.x && !players[player_index].sprite.flipX) {
                         //console.log("X flipping player sprite");
                         players[player_index].sprite.flipX = true;
                     } else if(players[player_index].destination_x > players[player_index].sprite.x && players[player_index].sprite.flipX) {
                         players[player_index].sprite.flipX = false;
                     }
+                } else {
+
+                    // Default is NONE! Currently the Space Station sets us to 'static'
+
                 }
 
 
@@ -7426,7 +7464,7 @@
         }
 
 
-        console.log("Set player move delay to: " + players[player_index].current_move_delay);
+        console.log("Set player id: " + players[player_index].id + " move delay to: " + players[player_index].current_move_delay);
 
     }
 
@@ -7871,6 +7909,14 @@
                 $('#click_menu').append("<button id='attack_" + monsters[monster_index].id + "' " +
                     "monster_id='" + monsters[monster_index].id + "' class='button is-warning is-small'>" +
                     "Attack " + monster_types[monster_type_index].name + "</button><br>");
+            }
+
+            // It's also possible that the monster type is something that spawns stuff
+            if(monsters[monster_index].has_spawned_object) {
+                $('#click_menu').append("<button class='button is-default' id='pickup_" + coord.monster_id +
+                    "' monster_id='" + coord.monster_id + "'>Harvest " + monster_types[monster_type_index].name + "</button><br>");
+            } else {
+                console.log("Monster does not have spawned object: " + monsters[monster_index].has_spawned_object);
             }
 
         }

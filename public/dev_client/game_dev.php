@@ -811,8 +811,8 @@ include('config.php');
             this.load.spritesheet('player-royal-cruiser', 'https://space.alphacoders.com/royal-cruiser-animated.png',
                 { 'frameWidth': 64, 'frameHeight': 128, endFrame: 2 });
 
-            this.load.spritesheet('player-space-station', 'https://space.alphacoders.com/space-station.png',
-                { 'frameWidth': 128, 'frameHeight': 128, endFrame: 1});
+            this.load.spritesheet('player-space-station', 'https://space.alphacoders.com/space-station-animated.png',
+                { 'frameWidth': 96, 'frameHeight': 96, endFrame: 12});
 
             // MONSTER SPRITESHEETS - end frame is total frame count
             this.load.spritesheet('acid-fiend', 'https://space.alphacoders.com/acid-fiend.png',
@@ -1381,14 +1381,11 @@ include('config.php');
 
             let player_space_station_config = {
                 key: 'player-space-station-animation',
-                frames: this.anims.generateFrameNumbers('player-space-station', { start: 0, end: 0, first: 0 }),
+                frames: this.anims.generateFrameNumbers('player-space-station', { start: 0, end: 11, first: 11 }),
                 frameRate: 2,
                 repeat: -1
             };
             this.anims.create(player_space_station_config);
-
-
-
 
 
 
@@ -2073,6 +2070,7 @@ include('config.php');
                     if(player_move_speed === 0) {
                         console.log("%c Movement speed shouldn't be 0", log_warning);
                         player_move_speed = 1;
+                        //player_move_speed = 2;
                     }
 
                     // Maybe a better way of doing it is going to be to see how many pixels we have left, and how

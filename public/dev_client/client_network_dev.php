@@ -1500,9 +1500,9 @@
             if(shouldDraw(client_player_info.coord, monster_info.coord, "monster_info")) {
                 createMonsterSprite(monster_index);
             } else {
-                console.log("%c Not drawing monster", log_warning);
+                //console.log("%c Not drawing monster", log_warning);
                 if(!client_player_info.coord) {
-                    console.log("Client player doesn't have a coord yet");
+                    //console.log("Client player doesn't have a coord yet");
                 }
 
                 if(!monster_info.coord) {
@@ -3330,12 +3330,10 @@
             return false;
         }
 
-        console.log("Got ship coord info. player id: " + data.ship_coord.player_id);
-
         let coord_index = ship_coords.findIndex(function(obj) { return obj && obj.id === parseInt(data.ship_coord.id) });
 
         if(coord_index === -1) {
-            console.log("Adding ship coord");
+            //console.log("Adding ship coord");
             coord_index = ship_coords.push(data.ship_coord) - 1;
             drawCoord('ship', ship_coords[coord_index]);
 
@@ -3361,7 +3359,6 @@
             }
         } else {
 
-            console.log("Updating ship coord");
 
             // The coord has changes that we should redraw
             if(ship_coords[coord_index].monster_id !== data.ship_coord.monster_id) {

@@ -1100,6 +1100,33 @@ So players and NPCs should be able to bid on the merchant spots in spaceports.
     So players should be able to sell their auto doc services for a price.
 
 
+The idea of having a gaian as a friend. Makes organic things for its friend
+
+Creature that gathers energy and resources as water moves past it.
+
+Finding a quarter in a river. Same idea as breath of the wild. Finding things everywhere. Hide surprises all over the worlds.
+
+A starfaring tree. Metal and junk where you need it for engines, but the rest is a special hard type of wood that grows and
+fixes itself. I would want to integrate this somehow with the biogrove planet, or the things on it.
+
+Queen caterpillar
+
+Start off the create ship as a small space with tough walls sealing off other areas. Did that part.
+    Now I need to spawn it, and code in the ability to modify it based on new linkers.
+    I could link the asteroids moving with now the great ship moves.
+
+The idea that a massive ship or planet gathers mass as it moves through space. Earth size is 45,000 tons/year. So a huge
+    ship being built to take advantage of all this extra mass.
+
+    Tritium bomb
+
+Monsters that spawn meat slowly. Regens. Could have something that you harvest/cut on, and takes a bit to regenerate the
+    mass. I also want milk slerm to produce slerm milk.
+
+It wouldn't be a bad idea to code in more granular control of generating planets - ability to re-generate a specific level.
+
+I've been thinking of having the pathways be a little more wide by default. 2 squares instead of 1.
+
 
 ***************** END UNSORTED IDEAS ************************************************************************
 
@@ -1108,7 +1135,7 @@ So players and NPCs should be able to bid on the merchant spots in spaceports.
 
 ***************** MAYBE IDEAS AND GENERALLY NEAT THOUGHTS ***************************************************
 
-?Avengers used a whole star for forging
+Avengers used a whole star for forging
 
 Multi consciousness. Global. Self was plants, animals, a whole ecosystem feeling and thinkng in different ways
 

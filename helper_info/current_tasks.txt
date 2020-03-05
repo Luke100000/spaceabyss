@@ -2,7 +2,13 @@
 
 DOING NOW:
 
+DOING NOW NOW game.deleteSpawnedEvent - dropping things from multiple tiles
 
+
+    If a ship is dockable, we want to run the sprite all the time
+
+    No 'set autopilot destination' option for large dockable ships. It would be good to see why that isn't showing up.
+        Same with switching to. I think it has to do with the belongs_to coords
 
     Lets work on adding in factions
     Should be able to put batteries into AI Batteries (is_converter thing)
@@ -24,6 +30,16 @@ DOING NOW:
 
     Have a derelict spaceship type that spawns as an event in the galaxy. Comes with multiple levels, and monsters spawn on it.
         and it's salvagable, and there is salvage contained within
+
+    I should do a pass on some of the basic things players get to do as well, and try making videos for some of
+        them on Youtube
+        Traps - I need to expand on this
+        Mining - I definitely want things like exodium and gold be to able to be mined from asteroids.
+            I either want asteroids to have a pre-determined composition, or I want to dynamically pull chances
+            for things based on the mining tools used, and the skill.
+
+            Have asteroids move slowly through space?
+                If an asteroid landed on a planet, would spawn a crashed meteorite or something I guess.
 
 
 NEED TO DRAW

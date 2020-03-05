@@ -5095,8 +5095,8 @@ async function writeDirty(show_output = false) {
             if(monster && monster.has_change) {
                 //console.log("Updating monster id: " + monster.id);
                 //console.log(monster);
-                let sql = "UPDATE monsters SET current_hp = ?, planet_coord_id = ?, ship_coord_id = ?  WHERE id = ?";
-                let inserts = [monster.current_hp, monster.planet_coord_id, monster.ship_coord_id, monster.id];
+                let sql = "UPDATE monsters SET current_hp = ?, has_spawned_object = ?, planet_coord_id = ?, ship_coord_id = ?  WHERE id = ?";
+                let inserts = [monster.current_hp, monster.has_spawned_object, monster.planet_coord_id, monster.ship_coord_id, monster.id];
                 pool.query(sql, inserts, function(err, result) {
                     if(err) throw err;
                 });
@@ -5729,7 +5729,9 @@ setInterval(spawnMonsters, 150000, dirty);
 
 // 300 seconds ( 5 minutes )
 setInterval(tickEvents, 300000, dirty);
-setInterval(tickMonsterSpawns, 300000, dirty);
+// testing 30 seconds
+setInterval(tickMonsterSpawns, 30000, dirty);
+//setInterval(tickMonsterSpawns, 300000, dirty);
 setInterval(tickTraps, 300000, dirty);
 
 // 600 seconds ( 10 minutes )

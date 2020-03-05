@@ -1,3 +1,35 @@
+## [0.0.11] - 2020-03-05
+
+### Added
+- Re-vamped the object and monster spawning system. Monsters can now spawn harvestable items. A current example of 
+this in game right now is Milk Slerms spawning Slerm Milk, which you can harvest from them.
+- Monsters have a new attribute, attack_chance_on_harvest . Now we can have stronger monsters with harvestable 
+things, and some risk involved. Higher farming level decreases the risk of the monster attacking.
+- OUR FIRST LOGO! Courtesy of @UnfuneralOD https://twitter.com/UnfuneralOD
+- New movement style - static. Now sprites can be set to either a simple flip, having up/down/left/right, or just 
+move along with their single animation. This is for large things like Space Stations that look odd if they flip around
+really fast.
+- Failure messages and an immediate bounce back if a large, dockable ship is trying to land on a planet, or dock with 
+ another large ship, (they can't do either)
+
+### Fixed
+- Movement speed for MLM body
+- I believe I have fixed an issue with new players switching back out of their ship
+
+### Changed
+- New ship interior sprites from @UnfuneralOD ( https://twitter.com/UnfuneralOD ). Floor, wall, 
+airlock, ion engines
+- Complexity for Defense Drones (they were the default of 1)
+- The assembly requirements and complexity for Corrupted Battery Packs
+- Hull welder uses heat skill
+- Previously events could only spawn one object type when they de-spawned or were otherwise deleted/killed. I've 
+moved that to the drop linker table, and its associated with the individual event linkers. This way, the 
+drops of an event are basically the same as a drop from a monster. This will let me have random and rare drops 
+when something like a dust storm ends (it's 'uncovering' treasure or something)
+- Removed the option to assemble 'all' and '10' when assembling from a shipyard, since the shipyard gets used up at the
+end of the assembly.
+- 
+
 ## [0.0.10] - 2020-01-27
 
 ### Fixed

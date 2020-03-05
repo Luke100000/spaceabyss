@@ -557,6 +557,9 @@ module.exports = function(main, io, mysql, pool, chalk, log, world, map) {
 
                 if(dirty.object_types[player_ship_type_index].is_dockable) {
                     socket.emit('chat', { 'message': "You cannot dock on another ship with a dockable ship", 'scope': 'system' });
+                    socket.emit('move_failure', { 'failed_coord_id': dirty.coords[coord_index].id,
+                        'return_to_coord_id': dirty.coords[previous_coord_index].id });
+                    socket.emit('result_info', { 'status': 'failure', 'text': "Dockable ships can't dock" });
                 } else {
                     dockOnShip(socket, dirty, dirty.objects[object_index].id);
                 }
@@ -571,6 +574,9 @@ module.exports = function(main, io, mysql, pool, chalk, log, world, map) {
 
                 if(dirty.object_types[player_ship_type_index].is_dockable) {
                     socket.emit('chat', { 'message': "You cannot land on a planet with a large, dockable ship", 'scope': 'system' });
+                    socket.emit('move_failure', { 'failed_coord_id': dirty.coords[coord_index].id,
+                        'return_to_coord_id': dirty.coords[previous_coord_index].id });
+                    socket.emit('result_info', { 'status': 'failure', 'text': "Dockable ships can't land" });
                     return;
                 } else if(dirty.coords[coord_index].planet_id) {
                     console.log("Sending landing on planet " + dirty.coords[coord_index].planet_id);
@@ -2657,6 +2663,7 @@ module.exports = function(main, io, mysql, pool, chalk, log, world, map) {
 
         } catch(error) {
             log(chalk.red("Error switching to galaxy: " + error));
+            console.error(error);
         }
 
 
