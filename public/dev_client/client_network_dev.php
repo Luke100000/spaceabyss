@@ -354,6 +354,12 @@
 
             let monster_info = getMonsterInfo(monster_index);
             if(monster_info.coord) {
+
+                // Don't show damaged data if it's from a different level
+                if( (current_view === 'planet' || current_view === 'ship') && monster_info.coord.level !== client_player_info.coord.level) {
+                    return false;
+                }
+
                 drawing_x = tileToPixel(monster_info.coord.tile_x);
                 drawing_y = tileToPixel(monster_info.coord.tile_y);
             }
@@ -366,6 +372,12 @@
 
             let npc_info = getNpcInfo(npc_index);
             if(npc_info.coord) {
+
+                // Don't show damaged data if it's from a different level
+                if( (current_view === 'planet' || current_view === 'ship') && npc_info.coord.level !== client_player_info.coord.level) {
+                    return false;
+                }
+
                 drawing_x = tileToPixel(npc_info.coord.tile_x);
                 drawing_y = tileToPixel(npc_info.coord.tile_y);
             }
@@ -377,9 +389,43 @@
 
             let object_info = getObjectInfo(object_index);
             if(object_info.coord) {
+
+                // Don't show damaged data if it's from a different level
+                if( (current_view === 'planet' || current_view === 'ship') && object_info.coord.level !== client_player_info.coord.level) {
+                    return false;
+                }
+
                 drawing_x = tileToPixel(object_info.coord.tile_x);
                 drawing_y = tileToPixel(object_info.coord.tile_y);
             }
+        } else if(data.planet_id) {
+
+            console.log("Got damaged data with planet id! " + data.planet_id);
+
+            let planet_index = getPlanetIndex({ 'planet_id': data.planet_id });
+
+            if(planet_index === -1) {
+                console.log("%c Don't have this planet");
+                socket.emit('request_planet_info', { 'planet_id': data.planet_id });
+                return false;
+            }
+
+            let planet_info = getPlanetInfo(planet_index);
+            if(planet_info.coord) {
+
+                // Don't show damaged data for the planet if we aren't in that view
+                if( current_view === 'planet' || current_view === 'ship' ) {
+                    return false;
+                }
+
+                // The + 64 is trying to center on the planet a little more
+                drawing_x = tileToPixel(planet_info.coord.tile_x) + 96;
+                drawing_y = tileToPixel(planet_info.coord.tile_y) + 96;
+                console.log("Got drawing_x,y: " + drawing_x + "," + drawing_y);
+            } else {
+                console.log("%c Could not get planet coord.", log_warning);
+            }
+
         } else if(data.player_id) {
             let player_index = getPlayerIndex(data.player_id);
             if(player_index === -1) {
@@ -388,6 +434,12 @@
 
             let player_info = getPlayerInfo(player_index);
             if(player_info.coord) {
+
+                // Don't show damaged data if it's from a different level
+                if( (current_view === 'planet' || current_view === 'ship') && player_info.coord.level !== client_player_info.coord.level) {
+                    return false;
+                }
+
                 drawing_x = tileToPixel(player_info.coord.tile_x);
                 drawing_y = tileToPixel(player_info.coord.tile_y);
             }
@@ -445,6 +497,7 @@
             } else if(data.damage_source_type === 'object') {
                 let attacking_object_index = getObjectIndex(data.damage_source_id);
                 if(attacking_object_index === -1) {
+                    console.log("Damage source is an object, but we don't have that object yet ( id: " + data.damage_source_id + " ). Requesting and returning false");
                     socket.emit('request_object_info', { 'object_id': data.damage_source_id });
                     return;
                 }
@@ -460,6 +513,10 @@
                 if(attacking_object_info.coord) {
                     attacker_x = tileToPixel(attacking_object_info.coord.tile_x);
                     attacker_y = tileToPixel(attacking_object_info.coord.tile_y);
+                    console.log("Object id: " + objects[attacking_object_index].id + " is attacking. Set attacker x,y: " + attacker_x + "," + attacker_y);
+
+                } else {
+                    console.log("%c Could not get attacker x,y", log_warning);
                 }
             }
         }
@@ -2734,7 +2791,7 @@
 
             players[player_index].ship_coord_id = data.player.ship_coord_id;
 
-            if(moved_on_ship) {
+            if(client_player_id && data.player.id === client_player_id && moved_on_ship) {
                 generateAirlockDisplay();
             }
 
@@ -2748,7 +2805,12 @@
                 // By the time we reach this point with client player. Haven't tested with non-client players
                 players[player_index].body_id = data.player.body_id;
                 //showPlayer(players[player_index]);
-                generateInventoryDisplay();
+
+                // Only re-generate the inventory display if this was us moving!
+                if(client_player_id && data.player.id === client_player_id) {
+                    generateInventoryDisplay();
+                }
+
                 setPlayerMoveDelay(player_index);
 
 

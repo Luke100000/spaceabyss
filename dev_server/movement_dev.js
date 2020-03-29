@@ -733,8 +733,12 @@ module.exports = function(main, io, mysql, pool, chalk, log, world, map) {
 
                 dirty.players[socket.player_index].coord_id = dirty.coords[coord_index].id;
                 dirty.players[socket.player_index].has_change = true;
-
                 await world.sendPlayerInfo(socket, "galaxy", dirty, dirty.players[socket.player_index].id);
+
+                dirty.objects[player_ship_index].coord_id = dirty.coords[coord_index].id;
+                dirty.objects[player_ship_index].has_change = true;
+                await world.sendObjectInfo(socket, "galaxy", dirty, player_ship_index, 'movement.moveGalaxy');
+
                 return;
             }
 
@@ -2440,13 +2444,15 @@ module.exports = function(main, io, mysql, pool, chalk, log, world, map) {
                 return false;
             }
 
-            // Switching to galaxy from planet
+            /***** SWITCH TO GALAXY FROM PLANET ******/
             if (dirty.players[player_index].planet_coord_id ) {
                 console.log("Switching to galaxy from planet");
                 let planet_coord_index = await main.getPlanetCoordIndex({ 'planet_coord_id': dirty.players[player_index].planet_coord_id });
 
                 let planet_index = await main.getPlanetIndex({ 'planet_id': dirty.planet_coords[planet_coord_index].planet_id, 'source': 'movement.switchToGalaxy' });
                 let ship_index = await main.getObjectIndex(dirty.players[player_index].ship_id);
+
+                let ship_type_index = main.getObjectTypeIndex(dirty.objects[ship_index].object_type_id);
 
                 // If the reason isn't death, we need to make sure the player is on a spaceport tile
                 if(reason === false) {
@@ -2458,12 +2464,47 @@ module.exports = function(main, io, mysql, pool, chalk, log, world, map) {
                     }
                 }
 
+
+                // TODO right now we are just choosing two coords. We really need to try all the coords around the actual planet!
+                // So for larger ships - and really ships in general - if we can't spawn around the
+                // top left, we need to try other coordinates around the ship
+
+                // lets create an array of coords we can warp to
+
+                // planet coord
+                let potential_coord_indexes = [];
                 let coord_index = await main.getCoordIndex({ 'coord_id': dirty.planets[planet_index].coord_id });
+                potential_coord_indexes.push(coord_index);
 
-                console.log("Base tile_x,tile_y for planet we are launching from is: " + dirty.coords[coord_index].tile_x + "," + dirty.coords[coord_index].tile_y);
+                // assuming a 3x3 planet.... eeek....
+                let bottom_right_tile_x = dirty.coords[coord_index].tile_x + 3;
+                let bottom_right_tile_y = dirty.coords[coord_index].tile_y + 3;
+                let bottom_right_coord_index = await main.getCoordIndex({ 'tile_x': bottom_right_tile_x, 'tile_y': bottom_right_tile_y});
+                console.log("Bottom right coord index: " + bottom_right_coord_index);
+                potential_coord_indexes.push(bottom_right_coord_index);
 
-                await warpTo(socket, dirty, { 'player_index': player_index, 'warping_to': 'galaxy', 'base_coord_index': coord_index });
+                let warp_to_coord_index = -1;
 
+                for(let i = 0; i < potential_coord_indexes.length && warp_to_coord_index === -1; i++) {
+                    if(potential_coord_indexes === -1 ) {
+                        log(chalk.yellow("Invalid potential_coord_index"));
+                    } else {
+                        console.log("Trying to warp to tile_x,tile_y: " + dirty.coords[coord_index].tile_x + "," + dirty.coords[coord_index].tile_y);
+                        warp_to_coord_index = await warpTo(socket, dirty, { 'player_index': player_index, 'warping_to': 'galaxy', 'base_coord_index': potential_coord_indexes[i] });
+                    }
+
+                }
+
+
+                if(warp_to_coord_index === -1) {
+                    log(chalk.yellow("Warp failed"));
+                    socket.emit('chat', { 'message': "The area of space around the planet is too full for your ship to launch" });
+                    socket.emit('result_info', { 'status': 'failure', 'text': "Space around planet is too full", 'scope': 'system' });
+                    return false;
+                }
+
+
+                log(chalk.green("Warp was successful!"));
 
                 socket.map_needs_cleared = true;
 
@@ -2852,6 +2893,12 @@ module.exports = function(main, io, mysql, pool, chalk, log, world, map) {
 
             }
 
+            if(typeof data.base_coord_index !== 'undefined' && data.base_coord_index === -1) {
+                log(chalk.yellow("Warning: Invalid base_coord_index passed into movement.warpTo"));
+                console.trace("Here");
+                return -1;
+            }
+
 
             /************** FIND A DESTINATION BEFORE DOING ALL THE UPDATING ******************/
             let destination_coord_index = -1;
@@ -2944,7 +2991,7 @@ module.exports = function(main, io, mysql, pool, chalk, log, world, map) {
                                     if(placing_type === 'player') {
 
                                         can_place_result = await main.canPlacePlayer({ 'scope': 'galaxy',
-                                            'coord': dirty.coords[coord_index], 'player_index': player_index });
+                                            'coord': dirty.coords[coord_index], 'player_index': player_index, 'show_output': true });
                                     } else if(placing_type === 'npc') {
                                         can_place_result = await main.canPlaceNpc('galaxy', dirty.coords[coord_index], placing_id);
                                     }

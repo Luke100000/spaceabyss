@@ -1104,7 +1104,7 @@ module.exports = function(main, io, mysql, pool, chalk, log, uuid, world, map, i
                 return false;
             }
 
-            // Pick our conversion lnker
+            // Pick our conversion linker
             let using_conversion_linker = false;
             if(conversion_linkers.length > 1) {
                 using_conversion_linker = conversion_linkers[Math.floor(Math.random()*conversion_linkers.length)];
@@ -1157,6 +1157,14 @@ module.exports = function(main, io, mysql, pool, chalk, log, uuid, world, map, i
                                 // and remove
                                 await inventory.removeFromInventory(socket, dirty, { 'inventory_item_id': dirty.inventory_items[inventory_item_index].id, 'amount': 1 });
 
+                            }
+
+                            // Give the player some response about what happened.
+                            // The converter was already full of energy
+                            if(i === 0) {
+                                socket.emit('result_info', { 'status': 'success', 'text': 'Energy was full' });
+                            } else {
+                                socket.emit('result_info', { 'status': 'success', 'text': "Converted " + i + " into energy" });
                             }
 
                         }
@@ -1728,6 +1736,64 @@ module.exports = function(main, io, mysql, pool, chalk, log, uuid, world, map, i
 
     module.damageObject = damageObject;
 
+    //      planet_index   |   damage_amount   |   battle_linker (OPTIONAL)   |   planet_info   |   calculating_range (OPTIONAL)
+    //      reason   |   damage_types   |   damage_source_type   |   damage_source_id
+    async function damagePlanet(dirty, data) {
+        try {
+
+            console.log("In damagePlanet with planet " + dirty.planets[data.planet_index].id);
+
+            if(!data.damage_types) {
+                data.damage_types = [];
+            }
+
+            //let object_type_index = main.getObjectTypeIndex(dirty.objects[data.object_index].object_type_id);
+
+
+            let new_planet_hp = dirty.planets[data.planet_index].current_hp - data.damage_amount;
+
+            // send new object info to the room
+            if(data.battle_linker) {
+                io.to(data.planet_info.room).emit('damaged_data',
+                    {'planet_id': dirty.planets[data.planet_index].id, 'damage_amount': data.damage_amount, 'was_damaged_type': 'hp',
+                        'damage_source_type': data.battle_linker.attacking_type, 'damage_source_id': data.battle_linker.attacking_id,
+                        'damage_types': data.damage_types,
+                        'calculating_range': data.calculating_range });
+
+            }
+            // We know the damage source type
+            else if(data.damage_source_type) {
+                io.to(data.planet_info.room).emit('damaged_data',
+                    {'planet_id': dirty.planets[data.planet_index].id, 'damage_amount': data.damage_amount, 'was_damaged_type': 'hp',
+                        'damage_source_type': data.damage_source_type, 'damage_source_id': data.damage_source_id,
+                        'damage_types': data.damage_types,
+                        'calculating_range': data.calculating_range });
+            }
+
+            else {
+                io.to(data.planet_info.room).emit('damaged_data',
+                    {   'planet_id': dirty.planets[data.planet_index].id, 'damage_amount': data.damage_amount,
+                        'was_damaged_type': 'hp', 'damage_types': data.damage_types });
+
+            }
+
+
+
+
+            dirty.planets[data.planet_index].current_hp = new_planet_hp;
+            dirty.planets[data.planet_index].has_change = true;
+            world.sendPlanetInfo(false, data.planet_info.room, dirty, { 'planet_index': data.planet_index });
+
+
+
+        } catch(error) {
+            log(chalk.red("Error in game.damagePlanet: " + error));
+            console.error(error);
+        }
+    }
+
+    module.damagePlanet = damagePlanet;
+
     // player_index   |   damage_amount   |   battle_linker (optional)  |   damage_types (array) |   calculating_range   |   flavor_text
     async function damagePlayer(dirty, data) {
         try {
@@ -2087,20 +2153,20 @@ module.exports = function(main, io, mysql, pool, chalk, log, uuid, world, map, i
             let origin_tile_y = 0;
             let origin_coord_index = -1;
 
-            if(dirty.spawned_events[i].origin_planet_coord_id) {
-                origin_coord_index = await main.getPlanetCoordIndex({ 'planet_coord_id': dirty.spawned_events[i].origin_planet_coord_id });
+            if(dirty.spawned_events[spawned_event_index].origin_planet_coord_id) {
+                origin_coord_index = await main.getPlanetCoordIndex({ 'planet_coord_id': dirty.spawned_events[spawned_event_index].origin_planet_coord_id });
                 if(origin_coord_index !== -1) {
                     origin_tile_x = dirty.planet_coords[origin_coord_index].tile_x;
                     origin_tile_y = dirty.planet_coords[origin_coord_index].tile_y;
                 }
-            } else if(dirty.spawned_events[i].origin_ship_coord_id) {
-                origin_coord_index = await main.getShipCoordIndex({ 'ship_coord_id': dirty.spawned_events[i].origin_ship_coord_id });
+            } else if(dirty.spawned_events[spawned_event_index].origin_ship_coord_id) {
+                origin_coord_index = await main.getShipCoordIndex({ 'ship_coord_id': dirty.spawned_events[spawned_event_index].origin_ship_coord_id });
                 if(origin_coord_index !== -1) {
                     origin_tile_x = dirty.ship_coords[origin_coord_index].tile_x;
                     origin_tile_y = dirty.ship_coords[origin_coord_index].tile_y;
                 }
-            } else if(dirty.spawned_events[i].origin_coord_id) {
-                let origin_coord_index = await main.getCoordIndex({ 'coord_id': dirty.spawned_events[i].origin_coord_id });
+            } else if(dirty.spawned_events[spawned_event_index].origin_coord_id) {
+                let origin_coord_index = await main.getCoordIndex({ 'coord_id': dirty.spawned_events[spawned_event_index].origin_coord_id });
                 if(origin_coord_index !== -1) {
                     origin_tile_x = dirty.coords[origin_coord_index].tile_x;
                     origin_tile_y = dirty.coords[origin_coord_index].tile_y;
@@ -2179,65 +2245,6 @@ module.exports = function(main, io, mysql, pool, chalk, log, uuid, world, map, i
 
                 }
             }
-
-
-
-            if(dirty.spawned_events[i].origin_planet_coord_id) {
-                for(let e = 0; e < dirty.event_linkers.length; e++) {
-
-                    if(dirty.event_linkers[e].event_id === dirty.spawned_events[i].event_id && dirty.event_linkers[e].gives_object_type_id) {
-
-                        // We need to find the coord
-                        let origin_planet_coord_index = await main.getPlanetCoordIndex({ 'planet_coord_id': dirty.spawned_events[i].origin_planet_coord_id});
-                        if(origin_planet_coord_index !== -1) {
-
-                            let tile_x = dirty.planet_coords[origin_planet_coord_index].tile_x + dirty.event_linkers[e].position_x;
-                            let tile_y = dirty.planet_coords[origin_planet_coord_index].tile_y + dirty.event_linkers[e].position_y;
-
-                            let linker_planet_coord_index = await main.getPlanetCoordIndex({ 'planet_id': dirty.planet_coords[origin_planet_coord_index].planet_id,
-                                'planet_level': dirty.planet_coords[origin_planet_coord_index].level, 'tile_x': tile_x, 'tile_y': tile_y });
-
-                            if(linker_planet_coord_index !== -1) {
-
-                                if(dirty.planet_coords[linker_planet_coord_index].object_id) {
-
-
-
-                                    /*
-                                    let coord_object_type_index = main.getObjectTypeIndex(dirty.planet_coords[linker_planet_coord_index].object_type_id);
-
-                                    // see if there's a conversion linker that matches the coord object type, and the event_linker give
-                                    for(let c = 0; c < dirty.object_type_conversion_linkers.length; c++) {
-                                        if(dirty.object_type_conversion_linkers[c].object_type_id === dirty.planet_coords[linker_planet_coord_index].object_type_id &&
-                                            dirty.object_type_conversion_linkers[c].input_object_type_id === dirty.event_linkers[e].gives_object_type_id) {
-
-
-                                            let object_index = -1;
-                                            if(dirty.planet_coords[linker_planet_coord_index].object_id) {
-                                                object_index = await main.getObjectIndex(dirty.planet_coords[linker_planet_coord_index].object_id);
-                                            }
-                                            // WE PERFORM THE CONVERSION
-                                            convert(false, dirty, { 'converter_object_id': dirty.planet_coords[linker_planet_coord_index].object_id})
-
-                                            convertInput(dirty, { 'planet_coord_index': linker_planet_coord_index, 'object_index': object_index,
-                                                'object_type_conversion_linker_index': c });
-
-
-
-                                        }
-                                    }
-
-                                    */
-                                }
-                            }
-                        }
-
-                    }
-                }
-            }
-
-
-
 
         } catch(error) {
             log(chalk.red("Error in game.deleteSpawnedEvent: " + error));
@@ -2644,7 +2651,10 @@ module.exports = function(main, io, mysql, pool, chalk, log, uuid, world, map, i
             }
 
             // We can only drop this on specific classes of floors ( think Spaceport and galaxy )
-            if(dirty.object_types[object_type_index].drop_requires_floor_type_class) {
+            // TODO I really need to figure out a better solution for database 0/ /NULL
+            if(dirty.object_types[object_type_index].drop_requires_floor_type_class && dirty.object_types[object_type_index].drop_requires_floor_type_class !== 0 &&
+                dirty.object_types[object_type_index].drop_requires_floor_type_class !== "0" && dirty.object_types[object_type_index].drop_requires_floor_type_class !== false &&
+                dirty.object_types[object_type_index].drop_requires_floor_type_class !== "") {
                 let floor_type_index = main.getFloorTypeIndex(temp_coord.floor_type_id);
                 if(floor_type_index === -1 || dirty.floor_types[floor_type_index].class !== dirty.object_types[object_type_index].drop_requires_floor_type_class) {
                     socket.emit('result_info', { 'status': 'failure', 'text': "Must place on " + dirty.object_types[object_type_index].drop_requires_floor_type_class + " floor"});
@@ -5349,7 +5359,12 @@ module.exports = function(main, io, mysql, pool, chalk, log, uuid, world, map, i
                     return false;
                 }
 
-                let planet_type_index = main.getPlanetTypeIndex(dirty.planets[planet_index].planet_type_id);
+                let planet_type_index = main.getPlanetTypeIndex(planet_type_id);
+
+                if(planet_type_index === -1) {
+                    log(chalk.yellow("Could not get the planet type index"));
+                    return false;
+                }
 
                 world.setPlanetType(socket, dirty, { 'planet_index': planet_index, 'planet_type_index': planet_type_index });
 
@@ -5902,6 +5917,7 @@ module.exports = function(main, io, mysql, pool, chalk, log, uuid, world, map, i
                 dirty.players[player_index].has_change = true;
                 world.sendPlayerInfo(mining_socket, false, dirty, dirty.players[player_index].id);
                 mining_socket.emit('chat', {'message': 'Mining Failed'});
+                mining_socket.emit('result_info', { 'status': 'failure', 'text': "Your beam is a bit weak"});
                 return false;
             }
 
@@ -7008,7 +7024,7 @@ module.exports = function(main, io, mysql, pool, chalk, log, uuid, world, map, i
     async function tickAddictions(dirty) {
         try {
 
-            dirty.addiction_linkers.forEach(async function(addiction_linker, i) {
+            dirty.addiction_linkers.forEach(await async function(addiction_linker, i) {
 
                 try {
                     let addicted_object_type_index = main.getObjectTypeIndex(addiction_linker.addicted_to_object_type_id);
@@ -7106,6 +7122,7 @@ module.exports = function(main, io, mysql, pool, chalk, log, uuid, world, map, i
 
         } catch(error) {
             log(chalk.red("Error in game.tickAddiction: " + error));
+            console.error(error);
         }
     }
 
@@ -7121,7 +7138,20 @@ module.exports = function(main, io, mysql, pool, chalk, log, uuid, world, map, i
             dirty.assemblies.forEach(await async function(assembly, i) {
 
                 try {
+
                     let player_index = await main.getPlayerIndex({'player_id':assembly.player_id});
+
+                    // Player has been deleted or something? Crazy!
+                    if(player_index === -1) {
+                        console.log("No longer have player for assembly. Removing");
+                        await (pool.query("DELETE FROM assemblies WHERE id = ?", [assembly.id]));
+
+                        delete dirty.assemblies[i];
+                        return false;
+                    }
+
+                    let player_socket = await world.getPlayerSocket(dirty, player_index);
+
                     let assembler_object_index = await main.getObjectIndex(assembly.assembler_object_id);
 
 
@@ -7146,335 +7176,330 @@ module.exports = function(main, io, mysql, pool, chalk, log, uuid, world, map, i
                         obj.object_type_id === assembly.being_assembled_object_type_id &&
                         obj.assembled_in_object_type_id === dirty.objects[assembler_object_index].object_type_id; });
 
-                    if(player_index !== -1) {
 
 
-                        // Continue the assembly process
-                        if(assembly.current_tick_count < dirty.assembled_in_linkers[assembled_in_linker_index].tick_count) {
-                            //console.log("Have assembly. Not done yet. Ticking. " + assembly.current_tick_count + " != " + dirty.object_types[object_type_index].assembly_time);
-                            dirty.assemblies[i].current_tick_count++;
-                            dirty.assemblies[i].has_change = true;
 
-                            if(assembler_object_info) {
-                                io.to(assembler_object_info.room).emit('assembly_info', { 'assembly': assembly });
-                            }
+                    let assembly_is_finished = false;
 
+                    // The assembly has ticked to completion, or it's an admin and we don't want to wait to test everything
+                    if(assembly.current_tick_count >= dirty.assembled_in_linkers[assembled_in_linker_index].tick_count ||
+                        (player_socket !== false && player_socket.is_admin === true) ) {
+                        assembly_is_finished = true;
+                    }
+
+                    if(!assembly_is_finished) {
+                        dirty.assemblies[i].current_tick_count++;
+                        dirty.assemblies[i].has_change = true;
+
+                        if(assembler_object_info) {
+                            io.to(assembler_object_info.room).emit('assembly_info', { 'assembly': assembly });
+                        }
+                        return;
+                    }
+
+
+
+                    /************** ASSEMBLY IS FINISHED ********************/
+
+                    log(chalk.green("\nAssembly Finished"));
+
+                    let assembled_object_type_index = main.getObjectTypeIndex(assembly.being_assembled_object_type_id);
+
+
+                    // We need to do a complexity check
+                    // Cooking
+                    let level = 1;
+                    if(dirty.objects[assembler_object_index].object_type_id === 119) {
+                        level = await world.getPlayerLevel(dirty, { 'player_index': player_index, 'skill_type': 'cooking' });
+
+                    }
+                    // Manufacturing
+                    else {
+                        level = await world.getPlayerLevel(dirty, { 'player_index': player_index, 'skill_type': 'manufacturing' });
+
+                    }
+
+                    let success = world.complexityCheck(level, dirty.object_types[assembled_object_type_index].complexity);
+
+                    if(success) {
+
+                        let new_object_index = -1;
+                        let new_object_id = false;
+
+                        // we just have to do an object_type_id insert into the assembler's inventory
+                        if(!dirty.object_types[assembled_object_type_index].assembled_as_object) {
+                            let adding_to_data = { 'adding_to_type': 'object', 'adding_to_id': assembly.assembler_object_id,
+                                'amount':1,  'object_type_id': assembly.being_assembled_object_type_id  };
+
+                            await inventory.addToInventory(socket, dirty, adding_to_data);
+                        } else {
+                            let object_data = {'object_type_id': assembly.being_assembled_object_type_id,
+                                'player_id': dirty.objects[assembler_object_index].player_id };
+                            new_object_id = await world.insertObjectType(false, dirty, object_data);
+                            console.log("Got new object id: " + new_object_id);
+                            new_object_index = await main.getObjectIndex(new_object_id);
+                            console.log("Got new_object_index as: " + new_object_index);
 
                         }
 
-                        /************** ASSEMBLY IS FINISHED ********************/
-                        else {
-                            log(chalk.green("\nAssembly Finished"));
+                        if(player_socket) {
+                            player_socket.emit('result_info', { 'status': 'success',
+                                'text': "Assembling " + dirty.object_types[assembled_object_type_index].name + " Succeeded!",
+                                'object_id': dirty.objects[assembler_object_index].id });
+                        }
 
-                            let assembled_object_type_index = main.getObjectTypeIndex(assembly.being_assembled_object_type_id);
+                        //console.log("Deleted assembly and spliced out of dirty.assemblies");
+
+                        // If it was a food processer, we use the cooking skill
+                        if(dirty.objects[assembler_object_index].object_type_id === 119) {
+                            log(chalk.cyan("Assembly finished in a food processor"));
+                            dirty.players[player_index].cooking_skill_points++;
+                        } else {
+                            // Otherwise we use the manufacturing skill points
+                            dirty.players[player_index].manufacturing_skill_points++;
+
+                        }
+
+                        dirty.players[player_index].has_change = true;
 
 
 
-                            // We need to do a complexity check
-                            // Cooking
-                            let level = 1;
-                            if(dirty.objects[assembler_object_index].object_type_id === 119) {
-                                level = await world.getPlayerLevel(dirty, { 'player_index': player_index, 'skill_type': 'cooking' });
+                        //console.log("Just finished assembling object type id: " + assembly.being_assembled_object_type_id);
 
-                            }
-                            // Manufacturing
-                            else {
-                                level = await world.getPlayerLevel(dirty, { 'player_index': player_index, 'skill_type': 'manufacturing' });
+                        // In most cases, we add the object to the inventory of the assembler
+                        // In the case of ships, we remove the assembler, and place the new ship on the tile it was at
+                        if(dirty.object_types[assembled_object_type_index].is_ship) {
+                            console.log("Ship was assembled. Deleting assembler and putting the ship where it was");
 
-                            }
+                            // Assembled on a planet - not currently supporting this
+                            /*
+                            if(dirty.objects[assembler_object_index].planet_coord_id) {
+                                console.log("Getting planet coord index for planet coord id: " + dirty.objects[assembler_object_index].planet_coord_id);
+                                let assembler_coord_index = await main.getPlanetCoordIndex({ 'planet_coord_id': dirty.objects[assembler_object_index].planet_coord_id });
 
-                            let player_socket = await world.getPlayerSocket(dirty, player_index);
+                                await game.deleteObject(dirty, { 'object_index': assembler_object_index });
 
-                            let success = world.complexityCheck(level, dirty.object_types[assembled_object_type_index].complexity);
-
-                            if(success) {
-
-                                let new_object_index = -1;
-                                let new_object_id = false;
-
-                                // we just have to do an object_type_id insert into the assembler's inventory
-                                if(!dirty.object_types[assembled_object_type_index].assembled_as_object) {
-                                    let adding_to_data = { 'adding_to_type': 'object', 'adding_to_id': assembly.assembler_object_id,
-                                        'amount':1,  'object_type_id': assembly.being_assembled_object_type_id  };
-
-                                    await inventory.addToInventory(socket, dirty, adding_to_data);
+                                if(assembler_coord_index === -1) {
+                                    console.log("Could not get planet coord index");
                                 } else {
-                                    let object_data = {'object_type_id': assembly.being_assembled_object_type_id,
-                                        'player_id': dirty.objects[assembler_object_index].player_id };
-                                    new_object_id = await world.insertObjectType(false, dirty, object_data);
-                                    console.log("Got new object id: " + new_object_id);
-                                    new_object_index = await main.getObjectIndex(new_object_id);
-                                    console.log("Got new_object_index as: " + new_object_index);
+                                    console.log("Adding assembled ship to planet coord. new_object_index: " +
+                                        new_object_index + " assembler_coord_index: " + assembler_coord_index);
+                                    // Place the new object on the coord
+                                    await main.placeObject(false, dirty, { 'object_index': new_object_index.id,
+                                        'planet_coord_index': assembler_coord_index });
 
-                                }
-
-                                if(player_socket) {
-                                    player_socket.emit('result_info', { 'status': 'success',
-                                        'text': "Assembling " + dirty.object_types[assembled_object_type_index].name + " Succeeded!",
-                                        'object_id': dirty.objects[assembler_object_index].id });
-                                }
-
-                                //console.log("Deleted assembly and spliced out of dirty.assemblies");
-
-                                // If it was a food processer, we use the cooking skill
-                                if(dirty.objects[assembler_object_index].object_type_id === 119) {
-                                    log(chalk.cyan("Assembly finished in a food processor"));
-                                    dirty.players[player_index].cooking_skill_points++;
-                                } else {
-                                    // Otherwise we use the manufacturing skill points
-                                    dirty.players[player_index].manufacturing_skill_points++;
-
-                                }
-
-                                dirty.players[player_index].has_change = true;
-
-
-
-                                //console.log("Just finished assembling object type id: " + assembly.being_assembled_object_type_id);
-
-                                // In most cases, we add the object to the inventory of the assembler
-                                // In the case of ships, we remove the assembler, and place the new ship on the tile it was at
-                                if(dirty.object_types[assembled_object_type_index].is_ship) {
-                                    console.log("Ship was assembled. Deleting assembler and putting the ship where it was");
-
-                                    // Assembled on a planet - not currently supporting this
-                                    /*
-                                    if(dirty.objects[assembler_object_index].planet_coord_id) {
-                                        console.log("Getting planet coord index for planet coord id: " + dirty.objects[assembler_object_index].planet_coord_id);
-                                        let assembler_coord_index = await main.getPlanetCoordIndex({ 'planet_coord_id': dirty.objects[assembler_object_index].planet_coord_id });
-
-                                        await game.deleteObject(dirty, { 'object_index': assembler_object_index });
-
-                                        if(assembler_coord_index === -1) {
-                                            console.log("Could not get planet coord index");
-                                        } else {
-                                            console.log("Adding assembled ship to planet coord. new_object_index: " +
-                                                new_object_index + " assembler_coord_index: " + assembler_coord_index);
-                                            // Place the new object on the coord
-                                            await main.placeObject(false, dirty, { 'object_index': new_object_index.id,
-                                                'planet_coord_index': assembler_coord_index });
-
-                                            // we gotta generate the ship
-                                            console.log("Calling game.generateShip");
-                                            await world.generateShip(dirty, new_object_index);
-                                            await world.attachShipEngines(dirty, new_object_index);
-                                            //await main.getShipCoords(new_object_id);
-                                        }
-
-
-
-                                    }
-                                    */
-                                    // Assembled on a ship - Not sure if we are supporting this either
-                                    if(dirty.objects[assembler_object_index].ship_coord_id) {
-                                        log(chalk.red("Ship assembled on a ship. Not sure about this one"));
-                                        let assembler_coord_index = await main.getShipCoordIndex({ 'ship_coord_id': dirty.objects[assembler_object_index].ship_coord_id });
-                                        await game.deleteObject(dirty, { 'object_index':assembler_object_index });
-
-                                        console.log("Adding assembled ship to ship coord. EEEEEK");
-                                        // Place the new object on the coord
-                                        await main.placeObject(false, dirty, { 'object_index': new_object_index,
-                                            'ship_coord_index': assembler_coord_index });
-                                        /*
-                                        await world.addObjectToShipCoord(dirty, new_object_index, assembler_coord_index);
-                                        await world.sendShipCoordInfo(false, "ship_" + dirty.ship_coords[assembler_coord_index].ship_id, dirty,
-                                            { 'ship_coord_index': assembler_coord_index});
-
-                                         */
-                                    }
-                                    // Assembled in the galaxy
-                                    else if(dirty.objects[assembler_object_index].coord_id) {
-                                        let assembler_coord_index = await main.getCoordIndex({ 'coord_id': dirty.objects[assembler_object_index].coord_id });
-                                        await game.deleteObject(dirty, { 'object_index': assembler_object_index });
-
-                                        console.log("Adding assembled ship to coord. EEEEEK");
-                                        // Place the new object on the coord
-                                        await main.placeObject(false, dirty, { 'object_index': new_object_index,
-                                            'coord_index': assembler_coord_index });
-                                        /*
-                                        await world.addObjectToCoord(dirty, new_object_index, assembler_coord_index);
-                                        await world.sendCoordInfo(false, "galaxy", dirty,
-                                            { 'coord_index': assembler_coord_index});
-
-                                         */
-                                    }
-
-
-                                    // I believe this is being taken care of in world.insertObjectType
-                                    //await world.generateShip(dirty, new_object_index);
-                                    //await world.attachShipEngines(dirty, new_object_index);
+                                    // we gotta generate the ship
+                                    console.log("Calling game.generateShip");
+                                    await world.generateShip(dirty, new_object_index);
+                                    await world.attachShipEngines(dirty, new_object_index);
                                     //await main.getShipCoords(new_object_id);
-
-                                    console.log("Done generating and getting ship coords");
-
-                                }
-                                /**************** DIDN'T ASSEMBLE A SHIP ************************/
-                                else {
-
-                                    if(dirty.object_types[assembled_object_type_index].assembled_as_object) {
-                                        //console.log("Going to add new object " + new_object_id + " to inventory of assembler");
-
-                                        let adding_to_data = { 'adding_to_type': 'object', 'adding_to_id': assembly.assembler_object_id,
-                                            'amount':1, 'object_id': dirty.objects[new_object_index].id, 'object_type_id': assembly.being_assembled_object_type_id  };
-
-                                        await inventory.addToInventory(socket, dirty, adding_to_data);
-                                    }
-
-
-
-                                    if(dirty.players[player_index].socket_id) {
-                                        //console.log("Assembly player has socket_id: " + dirty.players[player_index].socket_id);
-
-                                        let player_socket = io.sockets.connected[dirty.players[player_index].socket_id];
-
-                                        if(player_socket) {
-                                            console.log("Found player socket as connected. Sending assembly_info");
-                                            player_socket.emit('assembly_info', { 'finished': true, 'assembly': dirty.assemblies[i] });
-                                        }
-
-                                    }
-
-
-
-
-                                    // send the new information to anyone in the room
-                                    // TODO it's possible someone could use this data to know what other people are building. Maybe tighten it up?
-                                    if(dirty.objects[assembler_object_index].ship_coord_id) {
-                                        let assembler_ship_coord_index = await main.getShipCoordIndex({ 'ship_coord_id': dirty.objects[assembler_object_index].ship_coord_id });
-                                        if(assembler_ship_coord_index !== false) {
-//                                            console.log("Calling sendObjectInfo from game.tickAssemblies");
-                                            await world.sendObjectInfo(false, "ship_" + dirty.ship_coords[assembler_ship_coord_index].ship_id,
-                                                dirty, assembler_object_index, 'game.tickAssemblies');
-                                            inventory.sendInventory(false, "ship_" + dirty.ship_coords[assembler_ship_coord_index].ship_id, dirty,
-                                                'object', dirty.objects[assembler_object_index].id);
-                                        }
-
-                                    } else if(dirty.objects[assembler_object_index].planet_coord_id) {
-                                        let assembler_planet_coord_index = await main.getPlanetCoordIndex({
-                                            'planet_coord_id': dirty.objects[assembler_object_index].planet_coord_id });
-                                        if(assembler_planet_coord_index !== false) {
-                                            //console.log("Calling sendObjectInfo from game.tickAssemblies");
-                                            await world.sendObjectInfo(false, "planet_" + dirty.planet_coords[assembler_planet_coord_index].planet_id,
-                                                dirty, assembler_object_index, 'game.tickAssemblies');
-                                            inventory.sendInventory(false, "planet_" + dirty.planet_coords[assembler_planet_coord_index].planet_id,
-                                                dirty, 'object', dirty.objects[assembler_object_index].id);
-                                        }
-                                    }
-
-                                }
-
-
-                                // Increment the amount completed
-                                assembly.amount_completed++;
-                                console.log("Have now completed " + dirty.assemblies[i].amount_completed + " out of " + dirty.assemblies[i].total_amount);
-
-                                if(dirty.assemblies[i].amount_completed >= dirty.assemblies[i].total_amount) {
-                                    console.log("We are now going to delete the assembly");
-
-                                    //console.log("Going to delete the assembly now");
-                                    await (pool.query("DELETE FROM assemblies WHERE id = ?", [dirty.assemblies[i].id]));
-
-                                    // let the room know the assembly is finished
-                                    io.to(assembler_object_info.room).emit('assembly_info', { 'assembly': dirty.assemblies[i], 'finished': true });
-
-                                    delete dirty.assemblies[i];
-
-                                    // Set it to not active if it isn't already deleted
-                                    if(dirty.objects[assembler_object_index]) {
-                                        dirty.objects[assembler_object_index].is_active = false;
-                                        world.sendObjectInfo(false, assembler_object_info.room, dirty, assembler_object_index, 'game.tickAssemblies');
-                                    }
-
-                                } else {
-                                    dirty.assemblies[i].current_tick_count = 0;
-                                    dirty.assemblies[i].has_change = true;
-                                    // Just send the updated info
-                                    io.to(assembler_object_info.room).emit('assembly_info', { 'assembly': dirty.assemblies[i] });
                                 }
 
 
 
                             }
+                            */
+                            // Assembled on a ship - Not sure if we are supporting this either
+                            if(dirty.objects[assembler_object_index].ship_coord_id) {
+                                log(chalk.red("Ship assembled on a ship. Not sure about this one"));
+                                let assembler_coord_index = await main.getShipCoordIndex({ 'ship_coord_id': dirty.objects[assembler_object_index].ship_coord_id });
+                                await game.deleteObject(dirty, { 'object_index':assembler_object_index });
 
-                            /****************************** ASSEMBLY FAILED *********************************/
-                            else {
+                                console.log("Adding assembled ship to ship coord. EEEEEK");
+                                // Place the new object on the coord
+                                await main.placeObject(false, dirty, { 'object_index': new_object_index,
+                                    'ship_coord_index': assembler_coord_index });
+                                /*
+                                await world.addObjectToShipCoord(dirty, new_object_index, assembler_coord_index);
+                                await world.sendShipCoordInfo(false, "ship_" + dirty.ship_coords[assembler_coord_index].ship_id, dirty,
+                                    { 'ship_coord_index': assembler_coord_index});
 
+                                 */
+                            }
+                            // Assembled in the galaxy
+                            else if(dirty.objects[assembler_object_index].coord_id) {
+                                let assembler_coord_index = await main.getCoordIndex({ 'coord_id': dirty.objects[assembler_object_index].coord_id });
+                                await game.deleteObject(dirty, { 'object_index': assembler_object_index });
+
+                                console.log("Adding assembled ship to coord. EEEEEK");
+                                // Place the new object on the coord
+                                await main.placeObject(false, dirty, { 'object_index': new_object_index,
+                                    'coord_index': assembler_coord_index });
+                                /*
+                                await world.addObjectToCoord(dirty, new_object_index, assembler_coord_index);
+                                await world.sendCoordInfo(false, "galaxy", dirty,
+                                    { 'coord_index': assembler_coord_index});
+
+                                 */
+                            }
+
+
+                            // I believe this is being taken care of in world.insertObjectType
+                            //await world.generateShip(dirty, new_object_index);
+                            //await world.attachShipEngines(dirty, new_object_index);
+                            //await main.getShipCoords(new_object_id);
+
+                            console.log("Done generating and getting ship coords");
+
+                        }
+                        /**************** DIDN'T ASSEMBLE A SHIP ************************/
+                        else {
+
+                            if(dirty.object_types[assembled_object_type_index].assembled_as_object) {
+                                //console.log("Going to add new object " + new_object_id + " to inventory of assembler");
+
+                                let adding_to_data = { 'adding_to_type': 'object', 'adding_to_id': assembly.assembler_object_id,
+                                    'amount':1, 'object_id': dirty.objects[new_object_index].id, 'object_type_id': assembly.being_assembled_object_type_id  };
+
+                                await inventory.addToInventory(socket, dirty, adding_to_data);
+                            }
+
+
+
+                            if(dirty.players[player_index].socket_id) {
+                                //console.log("Assembly player has socket_id: " + dirty.players[player_index].socket_id);
+
+                                let player_socket = io.sockets.connected[dirty.players[player_index].socket_id];
 
                                 if(player_socket) {
-
-
-                                    // Send a system message that the research has failed
-                                    player_socket.emit('chat', { 'message': dirty.object_types[assembled_object_type_index].name +
-                                            " Assembly Failed. The complexity eluded you this time", 'scope': 'system'});
-
-                                    player_socket.emit('result_info', { 'status': 'failure',
-                                        'text': "Assembling " + dirty.object_types[assembled_object_type_index].name + " Failed",
-                                        'object_id': dirty.objects[assembler_object_index].id });
-                                } else {
-                                    console.log("This socket is not connected");
+                                    console.log("Found player socket as connected. Sending assembly_info");
+                                    player_socket.emit('assembly_info', { 'finished': true, 'assembly': dirty.assemblies[i] });
                                 }
 
-
-                                // Increment the amount completed
-                                dirty.assemblies[i].amount_completed++;
-                                console.log("Have now completed " + dirty.assemblies[i].amount_completed + " out of " + dirty.assemblies[i].total_amount);
-
-                                if(dirty.assemblies[i].amount_completed >= dirty.assemblies[i].total_amount) {
-                                    console.log("We are now going to delete the assembly");
-
-                                    //console.log("Going to delete the assembly now");
-                                    await (pool.query("DELETE FROM assemblies WHERE id = ?", [dirty.assemblies[i].id]));
-
-                                    // let the room know the assembly is finished
-                                    io.to(assembler_object_info.room).emit('assembly_info', { 'assembly': dirty.assemblies[i], 'finished': true });
-
-                                    delete dirty.assemblies[i];
-
-
-                                    dirty.objects[assembler_object_index].is_active = false;
-                                    await world.sendObjectInfo(false, assembler_object_info.room, dirty, assembler_object_index);
-                                } else {
-
-                                    dirty.assemblies[i].current_tick_count = 0;
-                                    dirty.assemblies[i].has_change = true;
-                                    // Just send the updated info
-                                    io.to(assembler_object_info.room).emit('assembly_info', { 'assembly': dirty.assemblies[i] });
-
-                                }
-
-
-
-                                // extra skill points for a failed assembly
-                                // If it was a food processer, we use the cooking skill
-                                // It's possible the assembling objet is already deleted at this point
-                                if(assembler_object_type_id === 119) {
-                                    log(chalk.cyan("Assembly finished in a food processor"));
-                                    dirty.players[player_index].cooking_skill_points += dirty.object_types[assembled_object_type_index].complexity;
-                                } else {
-                                    // Otherwise we use the manufcaturing skill points
-                                    dirty.players[player_index].manufacturing_skill_points += dirty.object_types[assembled_object_type_index].complexity;
-
-                                }
-
-                                dirty.players[player_index].has_change = true;
                             }
 
 
 
 
+                            // send the new information to anyone in the room
+                            // TODO it's possible someone could use this data to know what other people are building. Maybe tighten it up?
+                            if(dirty.objects[assembler_object_index].ship_coord_id) {
+                                let assembler_ship_coord_index = await main.getShipCoordIndex({ 'ship_coord_id': dirty.objects[assembler_object_index].ship_coord_id });
+                                if(assembler_ship_coord_index !== false) {
+//                                            console.log("Calling sendObjectInfo from game.tickAssemblies");
+                                    await world.sendObjectInfo(false, "ship_" + dirty.ship_coords[assembler_ship_coord_index].ship_id,
+                                        dirty, assembler_object_index, 'game.tickAssemblies');
+                                    inventory.sendInventory(false, "ship_" + dirty.ship_coords[assembler_ship_coord_index].ship_id, dirty,
+                                        'object', dirty.objects[assembler_object_index].id);
+                                }
 
+                            } else if(dirty.objects[assembler_object_index].planet_coord_id) {
+                                let assembler_planet_coord_index = await main.getPlanetCoordIndex({
+                                    'planet_coord_id': dirty.objects[assembler_object_index].planet_coord_id });
+                                if(assembler_planet_coord_index !== false) {
+                                    //console.log("Calling sendObjectInfo from game.tickAssemblies");
+                                    await world.sendObjectInfo(false, "planet_" + dirty.planet_coords[assembler_planet_coord_index].planet_id,
+                                        dirty, assembler_object_index, 'game.tickAssemblies');
+                                    inventory.sendInventory(false, "planet_" + dirty.planet_coords[assembler_planet_coord_index].planet_id,
+                                        dirty, 'object', dirty.objects[assembler_object_index].id);
+                                }
+                            }
 
                         }
 
 
-                    } else {
-                        console.log("No longer have player for assembly. Removing");
-                        await (pool.query("DELETE FROM assemblies WHERE id = ?", [assembly.id]));
+                        // Increment the amount completed
+                        assembly.amount_completed++;
+                        console.log("Have now completed " + dirty.assemblies[i].amount_completed + " out of " + dirty.assemblies[i].total_amount);
 
-                        delete dirty.assemblies[i];
+                        if(dirty.assemblies[i].amount_completed >= dirty.assemblies[i].total_amount) {
+                            console.log("We are now going to delete the assembly");
+
+                            //console.log("Going to delete the assembly now");
+                            await (pool.query("DELETE FROM assemblies WHERE id = ?", [dirty.assemblies[i].id]));
+
+                            // let the room know the assembly is finished
+                            io.to(assembler_object_info.room).emit('assembly_info', { 'assembly': dirty.assemblies[i], 'finished': true });
+
+                            delete dirty.assemblies[i];
+
+                            // Set it to not active if it isn't already deleted
+                            if(dirty.objects[assembler_object_index]) {
+                                dirty.objects[assembler_object_index].is_active = false;
+                                world.sendObjectInfo(false, assembler_object_info.room, dirty, assembler_object_index, 'game.tickAssemblies');
+                            }
+
+                        } else {
+                            dirty.assemblies[i].current_tick_count = 0;
+                            dirty.assemblies[i].has_change = true;
+                            // Just send the updated info
+                            io.to(assembler_object_info.room).emit('assembly_info', { 'assembly': dirty.assemblies[i] });
+                        }
+
 
 
                     }
+
+                    /****************************** ASSEMBLY FAILED *********************************/
+                    else {
+
+
+                        if(player_socket) {
+
+
+                            // Send a system message that the research has failed
+                            player_socket.emit('chat', { 'message': dirty.object_types[assembled_object_type_index].name +
+                                    " Assembly Failed. The complexity eluded you this time", 'scope': 'system'});
+
+                            player_socket.emit('result_info', { 'status': 'failure',
+                                'text': "Assembling " + dirty.object_types[assembled_object_type_index].name + " Failed",
+                                'object_id': dirty.objects[assembler_object_index].id });
+                        } else {
+                            console.log("This socket is not connected");
+                        }
+
+
+                        // Increment the amount completed
+                        dirty.assemblies[i].amount_completed++;
+                        console.log("Have now completed " + dirty.assemblies[i].amount_completed + " out of " + dirty.assemblies[i].total_amount);
+
+                        if(dirty.assemblies[i].amount_completed >= dirty.assemblies[i].total_amount) {
+                            console.log("We are now going to delete the assembly");
+
+                            //console.log("Going to delete the assembly now");
+                            await (pool.query("DELETE FROM assemblies WHERE id = ?", [dirty.assemblies[i].id]));
+
+                            // let the room know the assembly is finished
+                            io.to(assembler_object_info.room).emit('assembly_info', { 'assembly': dirty.assemblies[i], 'finished': true });
+
+                            delete dirty.assemblies[i];
+
+
+                            dirty.objects[assembler_object_index].is_active = false;
+                            await world.sendObjectInfo(false, assembler_object_info.room, dirty, assembler_object_index);
+                        } else {
+
+                            dirty.assemblies[i].current_tick_count = 0;
+                            dirty.assemblies[i].has_change = true;
+                            // Just send the updated info
+                            io.to(assembler_object_info.room).emit('assembly_info', { 'assembly': dirty.assemblies[i] });
+
+                        }
+
+
+
+                        // extra skill points for a failed assembly
+                        // If it was a food processer, we use the cooking skill
+                        // It's possible the assembling objet is already deleted at this point
+                        if(assembler_object_type_id === 119) {
+                            log(chalk.cyan("Assembly finished in a food processor"));
+                            dirty.players[player_index].cooking_skill_points += dirty.object_types[assembled_object_type_index].complexity;
+                        } else {
+                            // Otherwise we use the manufcaturing skill points
+                            dirty.players[player_index].manufacturing_skill_points += dirty.object_types[assembled_object_type_index].complexity;
+
+                        }
+
+                        dirty.players[player_index].has_change = true;
+                    }
+
+
+
+
+
+
+
+
                 } catch(error) {
                     log(chalk.red("Error in game.tickAssemblies - assembly: " + error));
                     console.error(error);

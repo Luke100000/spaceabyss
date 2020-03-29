@@ -1,3 +1,27 @@
+## [0.0.12] - 2020-03-29
+
+### Fixed
+- Bug with deleting spawned events. A bit of bad copy/pasta.
+- Rock wall was still using the old image location. It has been updated.
+- Multi tile ships can successfully launch from planets if they are designed to do so.
+- Bug that caused a clean clearing of a previous level/display to fail when multiple players were nearby
+- Damage occurring on a different level than the client won't show up anymore
+- Bug that made a different player switching to their ship view cause your client to think you needed 
+to generate an airlock display as well, which made your 'View Ship' option disappear.
+- Bug with new object info not being sent to the room if it was also being sent to the socket
+- The admin function to set a planet type wasn't working - it is now.
+
+
+### Added
+- Visual response to the client when converting things into energy
+- Crystal Bee, Crystal Golem, AI Forge, and Corrupted Scientist - @UnfuneralOD https://twitter.com/UnfuneralOD
+- Failure message when there is a failed mining complexity check
+- Allow admin users to bypass the ticking of assemblies. Things still have to tick once, but for testing purposes 
+it was a pain to reduce the tick amount, test, and then increase the tick amount again. I can always test the feel 
+with actual tick amounts on a non-admin character.
+- Players can now attack planets.
+
+
 ## [0.0.11] - 2020-03-05
 
 ### Added
@@ -28,7 +52,6 @@ drops of an event are basically the same as a drop from a monster. This will let
 when something like a dust storm ends (it's 'uncovering' treasure or something)
 - Removed the option to assemble 'all' and '10' when assembling from a shipyard, since the shipyard gets used up at the
 end of the assembly.
-- 
 
 ## [0.0.10] - 2020-01-27
 

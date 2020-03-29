@@ -563,14 +563,22 @@ Pod ( drawn )
 
     Cargo Ship ( drawn )
 
-                Freighter ( have image idea )
+     Light freighter
+
+                    Freighter ( have image idea )
+
+        Tanker
+
+            Blockade Runner (being drawn)
 
 
 
-        Cutter ( have image idea ) Movement speed: 500 10 Batteries 10 Circuits 20 Exodium
 
 
-            Lancer ( have image idea )
+        Cutter ( have image ) Movement speed: 500 10 Batteries 10 Circuits 20 Exodium
+
+
+            Lancer ( being drawn )
             Striker ( have image idea )
                 Corvette
                 Destroyer ( have image idea )

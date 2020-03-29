@@ -1,22 +1,37 @@
 
 
+
 DOING NOW:
 
-DOING NOW NOW game.deleteSpawnedEvent - dropping things from multiple tiles
+    THE BOYS WANT MILK SLERMS TO DROP STUFF!
+        I think it would be neat if there was the option to just take some of what something spawned
+        With the Milk Slerm, you could take one or two, and it could generate more, but if you took all,
+            it would de-spawn.
 
 
-    If a ship is dockable, we want to run the sprite all the time
+    Gabriel trying to drop Territe
+    'Must place on 0 Floor'
+        I think I've fixed this
 
-    No 'set autopilot destination' option for large dockable ships. It would be good to see why that isn't showing up.
-        Same with switching to. I think it has to do with the belongs_to coords
+    Slime berry tree should have a sprite
+    Shuttle should have a sprite
 
-    Lets work on adding in factions
-    Should be able to put batteries into AI Batteries (is_converter thing)
-        TEST THIS
+    Crystal flowers should have a sprite
 
-
+    Have cadian in the cutter attack a planet -> damage planet -> watch planet recover
     For now, we could just have the planet slowly tick/recover hp
         Code it in!
+
+    on client check to support planet_id in on('damaged_data'
+
+
+    Lets work on adding in factions
+
+
+
+
+    I want to try and track failed logins, # of logins, etc to see if people are finding the game and leaving,
+        finding the game and failing to login, finding the game and then just.... dying?
 
 
     See if we can make it to a warmind
@@ -41,6 +56,13 @@ DOING NOW NOW game.deleteSpawnedEvent - dropping things from multiple tiles
             Have asteroids move slowly through space?
                 If an asteroid landed on a planet, would spawn a crashed meteorite or something I guess.
 
+    No 'set autopilot destination' option for large dockable ships. It would be good to see why that isn't showing up.
+        Same with switching to. I think it has to do with the belongs_to coords
+
+    If a ship is dockable, we want to run the sprite all the time
+
+        The ability to add in a spawn without re-generating the entire level
+        The ability to re-generate a single level
 
 NEED TO DRAW
 
@@ -59,6 +81,13 @@ NEED TO DRAW
         Sandstone floor
         Sandstone wall
 
+
+
+
+PLANET TYPES THAT I'VE ADDED THINGS TO (THEY SHOULD BE RE-GENERATED)
+Mountain
+Corporation
+Inferno
 
 
 CHANGES TO GAME FILE

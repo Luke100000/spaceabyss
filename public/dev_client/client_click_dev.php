@@ -241,6 +241,11 @@
                 socket.emit("attack_data", { object_id: $('#' + clicked_id).attr('object_id') });
             }
 
+            if($('#' + clicked_id).attr('planet_id')) {
+                console.log("Player clicked to attack planet id: " + $('#' + clicked_id).attr('planet_id'));
+                socket.emit("attack_data", { 'planet_id': $('#' + clicked_id).attr('planet_id') });
+            }
+
             if($('#' + clicked_id).attr('player_id')) {
                 socket.emit("attack_data", { player_id: $('#' + clicked_id).attr('player_id') });
             }
@@ -263,6 +268,11 @@
 
             if($('#' + clicked_id).attr('object_id')) {
                 socket.emit("attack_stop_data", { object_id: $('#' + clicked_id).attr('object_id') });
+            }
+
+            if($('#' + clicked_id).attr('planet_id')) {
+                console.log("User clicked to stop attacking planet");
+                socket.emit("attack_stop_data", { planet_id: $('#' + clicked_id).attr('planet_id') });
             }
 
             if($('#' + clicked_id).attr('player_id')) {

@@ -607,6 +607,34 @@
     */
 
 
+    function addLagText() {
+        // Let see if adding some text helps players
+        base_x = players[client_player_index].sprite.x;
+        base_y = players[client_player_index].sprite.y;
+        let rand_x = getRandomIntInclusive(-32, 32);
+        let rand_y = getRandomIntInclusive(0, 32);
+        result_text = 'Lag.';
+        fill = '#f44242';
+        let info_number_index = info_numbers.push({ 'amount': 0, 'was_damaged_type': false, 'pixels_moved': 0}) - 1;
+
+        // We're going to need to wrap this text if it's gonna go off the edge
+        let game_width = 64 * show_cols;
+        // Our max width game width - our start
+        let text_width = game_width - rand_x;
+
+        info_numbers[info_number_index].text = scene_game.add.text(base_x + rand_x, base_y - rand_y,
+            result_text, { fontSize: 16,
+                padding: { x: 10, y: 5},
+                fill: fill,
+                wordWrap: { width: text_width }
+
+            });
+        info_numbers[info_number_index].text.setFontStyle('bold');
+        // Layer above is depth 10
+        info_numbers[info_number_index].text.setDepth(11);
+    }
+
+
     function addPlayer(player_index, player_info) {
 
 
@@ -1110,6 +1138,11 @@
                 return false;
             }
 
+            // I THINK we can just destroy the other players always - if it looks like we need to have these conditions back in,
+            // we need to filter by view too.
+            destroyPlayerSprite(player);
+
+            /*
             let other_planet_coord_index = planet_coords.findIndex(function(obj) { return obj &&
                 obj.id === player.planet_coord_id; });
 
@@ -1122,6 +1155,7 @@
                 planet_coords[other_planet_coord_index].level === planet_coords[new_planet_coord_index].level) {
                 createPlayerSprite(i);
             }
+            */
 
         });
 
@@ -2678,6 +2712,27 @@
                 coord = ship_coords[coord_index];
             }
         }
+
+        return { 'coord_index': coord_index, 'coord': coord, 'scope': scope };
+    }
+
+    function getPlanetInfo(planet_index) {
+
+        if(planet_index === -1) {
+            return false;
+        }
+
+        let coord_index = -1;
+        let scope = false;
+        let coord = false;
+
+
+        coord_index = coords.findIndex(function(obj) { return obj && obj.id === planets[planet_index].coord_id; });
+        if(coord_index !== -1) {
+            scope = "galaxy";
+            coord = coords[coord_index];
+        }
+
 
         return { 'coord_index': coord_index, 'coord': coord, 'scope': scope };
     }
@@ -5535,6 +5590,11 @@
                     let been_this_way_time = our_time - players[client_player_index].move_start_time;
                     if(been_this_way_time > 2000) {
                         console.log("Been this way too long. " + been_this_way_time + "ms. Resetting player");
+                        addLagText();
+
+
+
+
                         client_move_ship_coord_id = 0;
                         let return_to_ship_coord_index = ship_coords.findIndex(function(obj) { return obj && obj.id === players[client_player_index].ship_coord_id; });
                         if(return_to_ship_coord_index !== -1) {
@@ -5563,6 +5623,7 @@
                     let been_this_way_time = our_time - players[client_player_index].move_start_time;
                     if(been_this_way_time > 2000) {
                         console.log("Been this way too long. " + been_this_way_time + "ms. Resetting player");
+                        addLagText();
                         client_move_coord_id = 0;
                         let return_to_coord_index = coords.findIndex(function(obj) { return obj && obj.id === players[client_player_index].coord_id; });
                         if(return_to_coord_index !== -1) {
@@ -5590,6 +5651,7 @@
                     let been_this_way_time = our_time - players[client_player_index].move_start_time;
                     if(been_this_way_time > 2000) {
                         console.log("Been this way too long. " + been_this_way_time + "ms. Resetting player");
+                        addLagText();
                         client_move_planet_coord_id = 0;
                         let return_to_planet_coord_index = planet_coords.findIndex(function(obj) { return obj && obj.id === players[client_player_index].planet_coord_id; });
                         if(return_to_planet_coord_index !== -1) {
@@ -5734,7 +5796,7 @@
             // Normal cases
             else {
                 let can_place_result = canPlacePlayer({ 'scope':'galaxy', 'coord':coords[checking_coord_index],
-                    'player_index':client_player_index, 'show_output': true });
+                    'player_index':client_player_index });
 
                 if(can_place_result === false) {
                     deny_move = true;
@@ -5991,7 +6053,7 @@
         // Some extra things if we are moving our client player
         if(client_player_index !== -1 && player_index === client_player_index) {
 
-            console.log("Sending move data");
+            //console.log("Sending move data");
             socket.emit('move_data', { 'destination_coord_type': destination_coord_type, 'destination_coord_id': destination_coord.id });
             last_move_sent = our_time;
 
@@ -7617,6 +7679,11 @@
 
             }
 
+            if(current_view === "galaxy" && (coord.planet_id || coord.belongs_to_planet_id)) {
+                console.log("Going to show click menu for planet id: " + coord.planet_id + " / " + coord.belongs_to_planet_id);
+                showClickMenuPlanet(coord);
+            }
+
 
             // Player
             if(coord.player_id && coord.player_id !== client_player_id && current_view !== 'galaxy') {
@@ -8736,6 +8803,67 @@
             }
 
         }
+    }
+
+    function showClickMenuPlanet(coord) {
+
+        console.log("Showing click menu for planet id: " + coord.planet_id + "/" + coords.belongs_to_planet_id);
+
+        if(client_player_index === -1) {
+            return false;
+        }
+
+        // If we aren't in a pod, we can potentially attack it
+        let client_ship_index = getObjectIndex(players[client_player_index].ship_id);
+        let client_ship_type_index = getObjectTypeIndex(objects[client_ship_index].object_type_id);
+
+        if(object_types[client_ship_type_index].id === 114) {
+            return false;
+        }
+
+        let planet_id = 0;
+        if(coord.planet_id) {
+            planet_id = coord.planet_id;
+        } else if(coord.belongs_to_planet_id) {
+            planet_id = coord.belongs_to_planet_id;
+        }
+
+        let planet_index = getPlanetIndex({'planet_id': planet_id });
+
+        // see if we are already attacking based on the battle linkers we have
+        let player_is_attacking = false;
+
+        for(let i = 0; i < battle_linkers.length && player_is_attacking === false; i++) {
+            if(battle_linkers[i] && battle_linkers[i].attacking_type === 'object' && battle_linkers[i].attacking_id === players[client_player_index].ship_id &&
+                battle_linkers[i].being_attacked_type === 'planet' && battle_linkers[i].being_attacked_id === planet_id ) {
+                player_is_attacking = true;
+                console.log("Player is already attacking this planet!");
+            }
+        }
+
+
+
+        if(player_is_attacking) {
+            console.log("Player is attacking the planet");
+            $('#click_menu').append("<button id='attackstop_planet_" + planet_id + "' " +
+                "planet_id='" + planet_id + "' class='button is-warning is-small'>" +
+                "Stop Attacking</button>");
+        } else {
+            console.log("Going to give the playet the opportunity to attack the planet");
+
+            let attack_text = "Attack Planet";
+
+            if(planet_index !== -1) {
+                attack_text = "Attack Planet " + planets[planet_index].name;
+            }
+
+            // Can't just use coord.planet_id here because the coord could be a belongs_to_planet_id coord
+            $('#click_menu').append("<br><button id='attack_planet_" + planet_id + "' planet_id='" + planet_id +
+                "' class='button is-warning is-small' source='planet_attack'>" + attack_text + "</button><br>");
+
+        }
+
+
     }
 
     function showDockedShip(ship) {

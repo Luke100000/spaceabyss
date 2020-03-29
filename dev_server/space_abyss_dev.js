@@ -1220,19 +1220,20 @@ io.sockets.on('connection', function (socket) {
 
                 data.object_id = parseInt(data.object_id);
 
-                //console.log("Player is attacking object with ID: " + data.object_id);
-
-                // If we are in the galaxy view, it's gonna be object v object, not player v object
-                let attacking_player_index = await getPlayerIndex({'player_id': socket.player_id, 'source': 'on attack_data' });
-
-                if(attacking_player_index === -1) {
+                if(typeof socket.player_index === 'undefined' || socket.player_index === -1) {
                     return false;
                 }
 
+                //console.log("Player is attacking object with ID: " + data.object_id);
+
+                // If we are in the galaxy view, it's gonna be object v object, not player v object
+
+
                 // Attacking player is in the galaxy view
-                if(dirty.players[attacking_player_index].coord_id && !dirty.players[attacking_player_index].ship_coord_id) {
+                if(dirty.players[socket.player_index].coord_id && !dirty.players[socket.player_index].ship_coord_id) {
+
                     console.log("Attack is happening in the galaxy");
-                    let attacking_ship_index = await getObjectIndex(dirty.players[attacking_player_index].ship_id);
+                    let attacking_ship_index = await getObjectIndex(dirty.players[socket.player_index].ship_id);
 
                     if(attacking_ship_index === -1) {
                         return false;
@@ -1294,7 +1295,30 @@ io.sockets.on('connection', function (socket) {
 
 
 
-            } else if(data.player_id) {
+            }
+            // ATTACKING A PLANET!
+            else if(data.planet_id) {
+
+                console.log("Player is attacking a planet");
+
+                data.planet_id = parseInt(data.planet_id);
+
+                let attacking_ship_index = await getObjectIndex(dirty.players[socket.player_index].ship_id);
+
+                if(attacking_ship_index === -1) {
+                    return false;
+                }
+
+                let battle_linker_data = {
+                    'attacking_id': dirty.objects[attacking_ship_index].id, 'attacking_type': 'object',
+                    'being_attacked_id': data.planet_id, 'being_attacked_type': 'planet' };
+
+                world.addBattleLinker(socket, dirty, battle_linker_data);
+
+
+            }
+            // ATTACKING A PLAYER!
+            else if(data.player_id) {
 
                 data.player_id = parseInt(data.player_id);
 
@@ -1317,7 +1341,7 @@ io.sockets.on('connection', function (socket) {
 
     socket.on('attack_stop_data', function (data) {
 
-        //console.log("Got attack_stop_data:");
+        console.log("Got attack_stop_data:");
         //console.log(data);
         battle.attackStop(socket, dirty, data);
     });
@@ -1571,6 +1595,11 @@ io.sockets.on('connection', function (socket) {
     socket.on('request_object_type_equipment_linker_data', function(data) {
         game.sendObjectTypeEquipmentLinkerData(socket, dirty);
     });
+
+    socket.on('request_planet_info', function(data) {
+        world.sendPlanetInfo(socket, false, dirty, { 'planet_id': data.planet_id });
+    });
+
 
     socket.on('request_planet_type_data', function(data) {
         game.sendPlanetTypeData(socket, dirty);
@@ -2191,6 +2220,7 @@ module.exports.getNpcIndex = getNpcIndex;
 
 
 
+// data:    planet_id
 async function getPlanetIndex(data) {
     try {
         let planet_index = dirty.planets.findIndex(function(obj) { return obj && obj.id === parseInt(data.planet_id) });
@@ -2228,6 +2258,8 @@ module.exports.getPlanetIndex = getPlanetIndex;
 
 
 function getPlanetTypeIndex(planet_type_id) {
+
+    planet_type_id = parseInt(planet_type_id);
     return dirty.planet_types.findIndex(function(obj) { return obj && obj.id === planet_type_id; });
 }
 
@@ -3154,7 +3186,7 @@ async function canPlacePlayer(data) {
                         if(display_linker_index !== -1 && !dirty.planet_type_display_linkers[display_linker_index].only_visual) {
 
                             if(data.show_output) {
-                                console.log("Something about visual stuff");
+                                console.log("Returning false on " + checking_coord.tile_x + "," + checking_coord.tile_y + " belongs to planet");
                             }
                             return false;
                         }
@@ -5305,47 +5337,7 @@ async function writePlayerDirty(player, i, show_output = false) {
 
 }
 
-// 5 SECONDS
-setInterval(async function() {
-    try {
-        //console.log("Going to tick food, update map, and do battle linkers");
 
-        let connected_count = 0;
-
-        Object.keys(io.sockets.sockets).forEach(function(id) {
-            //console.log("ID:" + id);
-
-            socket = io.sockets.connected[id];
-
-            game.tickEnergy(socket, dirty);
-            connected_count++;
-
-        });
-
-        if(connected_count > 0) {
-
-            await battle.doLinkers(io, dirty);
-
-            // we reset the player's defended count after all the battle linkers have been executed
-            dirty.players.forEach(function(player) {
-               if(player.attacks_defended  && player.attacks_defended > 0) {
-                   player.attacks_defended = 0;
-               }
-            });
-
-
-
-        }
-
-        game.tickAI(dirty);
-    } catch(error) {
-        log(chalk.red("Error in our old 5 second interval stuff: " + error));
-    }
-
-
-
-
-}, 5000);
 
 
 
@@ -5508,6 +5500,47 @@ async function tickAutopilots(dirty) {
     }
 
 }
+
+
+async function tickBattleLinkers(dirty) {
+
+    try {
+
+        let connected_count = 0;
+
+        Object.keys(io.sockets.sockets).forEach(function(id) {
+            //console.log("ID:" + id);
+
+            socket = io.sockets.connected[id];
+
+            game.tickEnergy(socket, dirty);
+            connected_count++;
+
+        });
+
+        if(connected_count > 0) {
+
+            await battle.doLinkers(io, dirty);
+
+            // we reset the player's defended count after all the battle linkers have been executed
+            dirty.players.forEach(function(player) {
+                if(player.attacks_defended && player.attacks_defended > 0) {
+                    player.attacks_defended = 0;
+                }
+            });
+
+
+
+        }
+
+        game.tickAI(dirty);
+
+    } catch(error) {
+        log(chalk.red("Error calling battle.doLinkers: " + error));
+        console.error(error);
+    }
+}
+
 
 async function tickDecay(dirty) {
     try {
@@ -5701,6 +5734,7 @@ setInterval(tickNextMoves, 100, dirty);
 // 5 seconds
 setInterval(spawnAsteroids, 5000, dirty);
 setInterval(tickAutopilots, 5000, dirty);
+setInterval(tickBattleLinkers, 5000, dirty);
 setInterval(tickFloors, 5000, dirty);
 setInterval(tickFood, 5000, dirty);
 setInterval(tickMining, 5000, dirty);

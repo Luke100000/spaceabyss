@@ -10,8 +10,6 @@ module.exports = function(main, io, mysql, pool, chalk, log, uuid, PF) {
     /*
      data:       attacking_id   |   attacking_type   |   ?attacking_socket_id?   |   being_attacked_id   |   being_attacked_type   |   ?being_attacked_socket_id?
      */
-
-    // TODO this function is kind of a mess right now
     async function addBattleLinker(socket, dirty, data) {
 
         try {
@@ -1771,6 +1769,40 @@ module.exports = function(main, io, mysql, pool, chalk, log, uuid, PF) {
 
     module.getObjectCoordAndRoom = getObjectCoordAndRoom;
 
+    async function getPlanetCoordAndRoom(dirty, planet_index) {
+
+        try {
+
+            let room = false;
+            let coord_index = -1;
+            let scope = false;
+            let coord = false;
+
+            if(!dirty.planets[planet_index]) {
+                log(chalk.yellow("Could not find the planet. Planet index: " + planet_index));
+                return { 'room': room, 'coord_index': coord_index, 'coord': coord, 'scope': scope };
+            }
+
+
+            coord_index = await main.getCoordIndex(
+                { 'coord_id': dirty.planets[planet_index].coord_id });
+            if(coord_index !== -1) {
+                room = "galaxy";
+                scope = "galaxy";
+                coord = dirty.coords[coord_index];
+            }
+
+            return { 'room': room, 'coord_index': coord_index, 'coord': coord, 'scope': scope };
+        } catch(error) {
+            log(chalk.red("Error in world.getPlanetCoordAndRoom: " + error));
+            console.error(error);
+            return false;
+        }
+
+    }
+
+    module.getPlanetCoordAndRoom = getPlanetCoordAndRoom;
+
 
     //  data:   planet_index
     async function destroyPlanet(socket, dirty, data) {
@@ -2614,6 +2646,7 @@ module.exports = function(main, io, mysql, pool, chalk, log, uuid, PF) {
             return returning_socket;
         } catch(error) {
             log(chalk.red("Error in world.getPlayerSocket: " + error));
+            console.error(error);
         }
 
 
@@ -3580,7 +3613,9 @@ module.exports = function(main, io, mysql, pool, chalk, log, uuid, PF) {
 
             if(socket !== false) {
                 socket.emit('object_info', { 'object': dirty.objects[object_index] });
-            } else if(room !== false) {
+            }
+
+            if(room !== false) {
                 io.to(room).emit('object_info', { 'object': dirty.objects[object_index] });
             }
 
@@ -3643,61 +3678,74 @@ module.exports = function(main, io, mysql, pool, chalk, log, uuid, PF) {
     }
     module.sendObjectInfo = sendObjectInfo;
 
-    // data:    planet_id
+    // data:    planet_id   |   planet_index
     async function sendPlanetInfo(socket, room, dirty, data) {
 
         try {
-            let planet_id = parseInt(data.planet_id);
 
-            if(!data.source) {
-                data.source = false;
+            if(data.planet_id) {
+                let planet_id = parseInt(data.planet_id);
+
+                if(!data.source) {
+                    data.source = false;
+                }
+
+                if(isNaN(planet_id)) {
+                    log(chalk.red("NaN planet_id sent into sendPlanetInfo. Source: " + data.source));
+                    console.trace("RRRRR");
+                    return false;
+                }
+
+                data.planet_index = await main.getPlanetIndex({ 'planet_id': planet_id, 'source': 'world.sendPlanetInfo' });
+
+            } else if(data.planet_index) {
+
             }
 
-            if(isNaN(planet_id)) {
-                log(chalk.red("NaN planet_id sent into sendPlanetInfo. Source: " + data.source));
-                return false;
-            }
 
-            let planet_index = await main.getPlanetIndex({ 'planet_id': planet_id, 'source': 'world.sendPlanetInfo' });
+            if(typeof data.planet_index === 'undefined' || data.planet_index === -1) {
+                log(chalk.red("Could not send planet info"));
 
-            if(planet_index === -1) {
-                log(chalk.red("Could not send planet info for planet we do not have: " + planet_id));
+                if(data.source) {
+                    log(chalk.yellow("Source: " + data.source));
+                }
                 return false;
             }
 
 
             if(socket !== false) {
-                socket.emit('planet_info', { 'planet': dirty.planets[planet_index] });
+                socket.emit('planet_info', { 'planet': dirty.planets[data.planet_index] });
             }
 
             if(room !== false) {
-                io.to(room).emit('planet_info', { 'planet': dirty.planets[planet_index] });
+                io.to(room).emit('planet_info', { 'planet': dirty.planets[data.planet_index] });
             }
 
 
             // we need to send things related to the planet. If there's a player, AI, AI rules
-            if(dirty.planets[planet_index].player_id) {
-                await sendPlayerInfo(socket, room, dirty, dirty.planets[planet_index].player_id);
+            if(dirty.planets[data.planet_index].player_id) {
+                await sendPlayerInfo(socket, room, dirty, dirty.planets[data.planet_index].player_id);
             }
 
             // see if there is an AI on this planet
-            if(dirty.planets[planet_index].ai_id) {
+            if(dirty.planets[data.planet_index].ai_id) {
                 //console.log("Calling sendObjectInfo from world.sendPlanetInfo");
-                let ai_index = await main.getObjectIndex(dirty.planets[planet_index].ai_id);
+                let ai_index = await main.getObjectIndex(dirty.planets[data.planet_index].ai_id);
 
                 if(ai_index !== -1) {
                     await sendObjectInfo(socket, room, dirty, ai_index);
                 }
                 // AI is gone for some reason
                 else {
-                    dirty.planets[planet_index].ai_id = false;
-                    dirty.lpanets[planet_index].has_change = true;
+                    dirty.planets[data.planet_index].ai_id = false;
+                    dirty.lpanets[data.planet_index].has_change = true;
                 }
 
             }
 
         } catch(error) {
             log(chalk.red("Error in world.sendPlanetInfo: " + error + " source: " + data.source));
+            console.error(error);
         }
 
 
@@ -3971,6 +4019,8 @@ module.exports = function(main, io, mysql, pool, chalk, log, uuid, PF) {
 
             }
 
+            console.log("Setting planet id: " + dirty.planets[data.planet_index].id + " to planet type id: " + dirty.planet_types[data.planet_type_index].id);
+
             let coord_index = await main.getCoordIndex({ 'coord_id': dirty.planets[data.planet_index].coord_id });
 
 
@@ -3988,39 +4038,53 @@ module.exports = function(main, io, mysql, pool, chalk, log, uuid, PF) {
                         let checking_coord_index = await main.getCoordIndex({ 'tile_x': checking_tile_x, 'tile_y': checking_tile_y });
 
                         if(checking_coord_index === -1 || dirty.coords[checking_coord_index].player_id || dirty.coords[checking_coord_index].object_id ||
-                            dirty.coords[checking_coord_index].planet_id || dirty.coords[checking_coord_index].belongs_to_planet_id ||
+                            (dirty.coords[checking_coord_index].planet_id && dirty.coords[checking_coord_index].planet_id !== dirty.planets[data.planet_index].id) ||
+                            (dirty.coords[checking_coord_index].belongs_to_planet_id  && dirty.coords[checking_coord_index].belongs_to_planet_id !== dirty.planets[data.planet_index].id ) ||
                             dirty.coords[checking_coord_index].npc_id) {
+
+                            if(checking_coord_index === -1) {
+                                console.log("Returning false. Did not find coord at tile_x,y: " + checking_tile_x + "," + checking_tile_y);
+                            } else {
+                                console.log("Returning false on coord id: " + dirty.coords[checking_coord_index].id +
+                                    " tile_x,y: " + dirty.coords[checking_coord_index].tile_x + "," + dirty.coords[checking_coord_index].tile_y);
+                            }
                             can_place_all_tiles = false;
                         }
                     }
                 }
             }
 
-            if(can_place_all_tiles && planet_type_has_display_linkers) {
-                console.log("Can place all tiles");
-                for(let i = 0; i < dirty.planet_type_display_linkers.length; i++) {
-                    if(dirty.planet_type_display_linkers[i].planet_type_id === dirty.planet_types[data.planet_type_index].id) {
+            if(can_place_all_tiles === false) {
+                log(chalk.yellow("Can't place all tiles. Returning false."));
+                return false;
+            }
 
-                        if(dirty.planet_type_display_linkers[i].position_x === 0 && dirty.planet_type_display_linkers[i].position_y === 0) {
+            if(!planet_type_has_display_linkers) {
+                log(chalk.yellow("Player type doesn't have display linkers"));
+                return false;
+            }
 
+            console.log("Can place all tiles");
+            for(let i = 0; i < dirty.planet_type_display_linkers.length; i++) {
+                if(dirty.planet_type_display_linkers[i].planet_type_id === dirty.planet_types[data.planet_type_index].id) {
+
+                    if(dirty.planet_type_display_linkers[i].position_x === 0 && dirty.planet_type_display_linkers[i].position_y === 0) {
+
+                    } else {
+                        let checking_tile_x = dirty.coords[coord_index].tile_x + dirty.planet_type_display_linkers[i].position_x;
+                        let checking_tile_y = dirty.coords[coord_index].tile_y + dirty.planet_type_display_linkers[i].position_y;
+
+                        let checking_coord_index = await main.getCoordIndex({ 'tile_x': checking_tile_x, 'tile_y': checking_tile_y });
+
+                        if(checking_coord_index !== -1 ) {
+                            console.log("Set belongs_to_planet_id");
+                            dirty.coords[checking_coord_index].belongs_to_planet_id = dirty.planets[data.planet_index].id;
+                            dirty.coords[checking_coord_index].has_change = true;
                         } else {
-                            let checking_tile_x = dirty.coords[coord_index].tile_x + dirty.planet_type_display_linkers[i].position_x;
-                            let checking_tile_y = dirty.coords[coord_index].tile_y + dirty.planet_type_display_linkers[i].position_y;
-
-                            let checking_coord_index = await main.getCoordIndex({ 'tile_x': checking_tile_x, 'tile_y': checking_tile_y });
-
-                            if(checking_coord_index !== -1 ) {
-                                console.log("Set belongs_to_planet_id");
-                                dirty.coords[checking_coord_index].belongs_to_planet_id = dirty.planets[data.planet_index].id;
-                                dirty.coords[checking_coord_index].has_change = true;
-                            } else {
-                                console.log("Couldn't find coord at " + checking_tile_x + "," + checking_tile_y);
-                            }
+                            console.log("Couldn't find coord at " + checking_tile_x + "," + checking_tile_y);
                         }
                     }
                 }
-            } else {
-                log(chalk.yellow("Can't place all tiles"));
             }
 
 

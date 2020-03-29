@@ -823,6 +823,8 @@ include('config.php');
                 { frameWidth: 64, frameHeight: 64, endFrame: 2 });
             this.load.spritesheet('ai-edifice', 'https://space.alphacoders.com/ai-edifice.png',
                 { frameWidth: 64, frameHeight: 64, endFrame: 2 });
+            this.load.spritesheet('ai-forge', 'https://space.alphacoders.com/ai-forge.png',
+                { frameWidth: 64, frameHeight: 64, endFrame: 12 });
             this.load.spritesheet('ananke', 'https://space.alphacoders.com/ananke.png',
                 { frameWidth: 64, frameHeight: 64, endFrame: 3 });
             this.load.spritesheet('bird', 'https://space.alphacoders.com/bird.png',
@@ -831,12 +833,18 @@ include('config.php');
                 { frameWidth: 64, frameHeight: 64, endFrame: 3 });
             this.load.spritesheet('carnivorous-plant-baby', 'https://space.alphacoders.com/carnivorous-plant-baby.png',
                 { frameWidth: 64, frameHeight: 64, endFrame: 2 });
+            this.load.spritesheet('corrupted-scientist', 'https://space.alphacoders.com/corrupted-scientist.png',
+                { frameWidth: 64, frameHeight: 64, endFrame: 12 });
             this.load.spritesheet('crab-slerm', 'https://space.alphacoders.com/crab-slerm.png',
                 { frameWidth: 64, frameHeight: 64, endFrame: 3 });
+            this.load.spritesheet('crystal-bee', 'https://space.alphacoders.com/crystal-bee.png',
+                { frameWidth: 64, frameHeight: 64, endFrame: 12 });
             this.load.spritesheet('crystal-spider', 'https://space.alphacoders.com/crystal-spider.png',
                 { frameWidth: 64, frameHeight: 64, endFrame: 4 });
             this.load.spritesheet('crystal-spider-baby', 'https://space.alphacoders.com/crystal-spider-baby.png',
                 { frameWidth: 64, frameHeight: 64, endFrame: 7 });
+            this.load.spritesheet('crystal-golem', 'https://space.alphacoders.com/crystal-golem.png',
+                { frameWidth: 64, frameHeight: 64, endFrame: 12 });
             this.load.spritesheet('cyberskell', 'https://space.alphacoders.com/cyberskell.png',
                 { frameWidth: 64, frameHeight: 64, endFrame: 2 });
             this.load.spritesheet('ddrone', 'https://space.alphacoders.com/ddrone.png',
@@ -1426,6 +1434,14 @@ include('config.php');
             };
             this.anims.create(ai_edifice_config);
 
+            let ai_forge_config = {
+                key: 'ai-forge-animation',
+                frames: this.anims.generateFrameNumbers('ai-forge', { start: 0, end: 11, first: 11 }),
+                frameRate: 2,
+                repeat: -1
+            };
+            this.anims.create(ai_forge_config);
+
             let ananke_config = {
                 key: 'ananke-animation',
                 frames: this.anims.generateFrameNumbers('ananke', { start: 0, end: 2, first: 2 }),
@@ -1459,6 +1475,14 @@ include('config.php');
             };
             this.anims.create(carnivorous_plant_baby_config);
 
+            let corrupted_scientist_config = {
+                key: 'corrupted-scientist-animation',
+                frames: this.anims.generateFrameNumbers('corrupted-scientist', { start: 0, end: 11, first: 11 }),
+                frameRate: 2,
+                repeat: -1
+            };
+            this.anims.create(corrupted_scientist_config);
+
             let crab_slerm_config = {
                 key: 'crab-slerm-animation',
                 frames: this.anims.generateFrameNumbers('crab-slerm', { start: 0, end: 2, first: 2 }),
@@ -1474,6 +1498,23 @@ include('config.php');
                 repeat: -1
             };
             this.anims.create(crystal_spider_config);
+
+
+            let crystal_bee_config = {
+                key: 'crystal-bee-animation',
+                frames: this.anims.generateFrameNumbers('crystal-bee', { start: 0, end: 11, first: 11 }),
+                frameRate: 2,
+                repeat: -1
+            };
+            this.anims.create(crystal_bee_config);
+
+            let crystal_golem_config = {
+                key: 'crystal-golem-animation',
+                frames: this.anims.generateFrameNumbers('crystal-golem', { start: 0, end: 11, first: 11 }),
+                frameRate: 2,
+                repeat: -1
+            };
+            this.anims.create(crystal_golem_config);
 
             let crystal_spider_baby_config = {
                 key: 'crystal-spider-baby-animation',

@@ -9,6 +9,7 @@ module.exports = function(main, io, mysql, pool, chalk, log, world, inventory, g
     });
 
 
+    //  data:   monster_id   |   npc_id   |   object_id   |   player_id   |   planet_id
     async function attackStop(socket, dirty, data) {
 
         try {
@@ -50,7 +51,14 @@ module.exports = function(main, io, mysql, pool, chalk, log, world, inventory, g
                 }
 
             }
+            else if(data.planet_id) {
+                console.log("Was sent in planet id: " + data.planet_id);
 
+                battle_linker_index = dirty.battle_linkers.findIndex(function(obj) {
+                    return obj && obj.attacking_type === 'object' && obj.attacking_id === dirty.players[socket.player_index].ship_id
+                        && obj.being_attacked_type === 'planet' && obj.being_attacked_id === parseInt(data.planet_id); });
+
+            }
             else if(data.player_id) {
                 battle_linker_index = dirty.battle_linkers.findIndex(function(obj) {
                     return obj && obj.attacking_type === 'player' && obj.attacking_id === socket.player_id
@@ -861,6 +869,8 @@ module.exports = function(main, io, mysql, pool, chalk, log, world, inventory, g
                     await npcAttackPlayer(dirty, battle_linker);
                 } else if(battle_linker.attacking_type === 'object' && battle_linker.being_attacked_type === 'object') {
                     await objectAttackObject(dirty, battle_linker);
+                } else if(battle_linker.attacking_type === 'object' && battle_linker.being_attacked_type === 'planet') {
+                    await objectAttackPlanet(dirty, battle_linker);
                 } else if(battle_linker.attacking_type === 'object' && battle_linker.being_attacked_type === 'player') {
                     await objectAttackPlayer(dirty, battle_linker);
                 } else if(battle_linker.attacking_type === 'player' && battle_linker.being_attacked_type === 'monster') {
@@ -1554,6 +1564,188 @@ module.exports = function(main, io, mysql, pool, chalk, log, world, inventory, g
 
         } catch(error) {
             log(chalk.red("Error in battle.objectAttackObject: " + error));
+            console.error(error);
+        }
+    }
+
+
+    //  data:   attacking_object_index   |   defending_planet_index
+    async function objectAttackPlanet(dirty, battle_linker, data = false) {
+        try {
+
+            let attacking_object_index = -1;
+            let defending_planet_index = -1;
+
+            if(battle_linker) {
+                attacking_object_index = await main.getObjectIndex(battle_linker.attacking_id);
+                defending_planet_index = await main.getPlanetIndex({ 'planet_id': battle_linker.being_attacked_id });
+            } else if(typeof data.attacking_object_index !== 'undefined' && typeof data.defending_object_index !== 'undefined') {
+                attacking_object_index = data.attacking_object_index;
+                defending_planet_index = data.defending_planet_index;
+            }
+
+
+
+            if(attacking_object_index === -1) {
+                log(chalk.yellow("Could not get the attacking object"));
+                if(battle_linker) {
+                    world.removeBattleLinkers(dirty, { 'battle_linker_id': battle_linker.id });
+                }
+
+                return false;
+            }
+
+            if(defending_planet_index === -1) {
+                log(chalk.yellow("Could not get the defending planet"));
+
+                if(battle_linker) {
+                    world.removeBattleLinkers(dirty, { 'battle_linker_id': battle_linker.id });
+                }
+
+                return false;
+            }
+
+            let attacking_object_info = await world.getObjectCoordAndRoom(dirty, attacking_object_index);
+            let defending_planet_info = await world.getPlanetCoordAndRoom(dirty, defending_planet_index);
+
+            if(attacking_object_info.coord === false) {
+                log(chalk.yellow("Could not get the attacking object coord"));
+                if(battle_linker) {
+                    world.removeBattleLinkers(dirty, { 'battle_linker_id': battle_linker.id });
+                }
+
+                return false;
+            }
+
+            if(defending_planet_info.coord === false) {
+                log(chalk.yellow("Could not get the defending planet coord"));
+                if(battle_linker) {
+                    world.removeBattleLinkers(dirty, { 'battle_linker_id': battle_linker.id });
+                }
+
+                return false;
+            }
+
+            if(attacking_object_info.room !== 'galaxy') {
+                log(chalk.yellow("Can't attack a planet if you aren't in the galaxy"));
+                if(battle_linker) {
+                    world.removeBattleLinkers(dirty, { 'battle_linker_id': battle_linker.id });
+                }
+
+                return false;
+            }
+
+
+            let attacking_object_type_index = main.getObjectTypeIndex(dirty.objects[attacking_object_index].object_type_id);
+
+
+            let calculating_range = await calculateRange(
+                attacking_object_info.coord.tile_x, attacking_object_info.coord.tile_y,
+                defending_planet_info.coord.tile_x, defending_planet_info.coord.tile_y);
+
+            if(calculating_range > 10) {
+                log(chalk.yellow("Object and planet are too far apart"));
+                world.removeBattleLinkers(dirty, { 'battle_linker_id': battle_linker.id });
+                return false;
+            }
+
+            //console.log("Attacking object index: " + attacking_object_index + " id: " + dirty.objects[attacking_object_index].id);
+
+            let object_attack_profile = await calculateObjectAttack(dirty, attacking_object_index);
+            let attack = object_attack_profile.damage_amount;
+            console.log("Got attack object damage types as: ");
+            console.log(object_attack_profile.damage_types);
+
+            // Woo complex planet defense calculation!
+            let defense = 1;
+
+            // For whatever reason, the object has no more attacking power (ships, batteries, etc). Remove the battle linker
+            if(attack === 0) {
+                console.log("No attack value. Removing battle linker");
+
+                await world.removeBattleLinkers(dirty, { 'battle_linker_id': battle_linker.id });
+
+                return false;
+            }
+
+            if(attack <= defense) {
+                io.to(defending_object_info.room).emit('damaged_data',
+                    {'planet_id': dirty.planets[defending_planet_index].id, 'damage_amount': 0, 'was_damaged_type': 'hp',
+                        'damage_source_type':'object', 'damage_source_id': dirty.objects[attacking_object_index].id,
+                        'damage_types': object_attack_profile.damage_types,
+                        'calculating_range': calculating_range });
+                return false;
+
+            }
+
+
+            let damage_amount = attack - defense;
+
+            // TODO - if an AI is present, we would want the AI to spawn something in space!!!!
+
+            /*
+            let shielded = await world.shielded(dirty, damage_amount, defending_object_index);
+
+            if(shielded) {
+                io.to(defending_object_info.room).emit('damaged_data',
+                    {'object_id': dirty.objects[defending_object_index].id, 'damage_amount': damage_amount, 'was_damaged_type': 'energy',
+                        'damage_source_type':'object', 'damage_source_id': dirty.objects[attacking_object_index].id,
+                        'calculating_range': calculating_range, 'damage_types': object_attack_profile.damage_types });
+
+                return;
+            }
+
+            // See if there's an AI that comes into play
+            let ai_index = await world.getAIProtector(dirty, { 'damage_amount': damage_amount,
+                'object_index': defending_object_index, 'coord': defending_object_info.coord });
+
+            if(ai_index !== -1) {
+                dirty.objects[ai_index].energy -= damage_amount;
+                dirty.objects[ai_index].has_change = true;
+
+                io.to(defending_object_info.room).emit('damaged_data',
+                    {'object_id': dirty.objects[defending_object_index].id, 'damage_amount': damage_amount, 'was_damaged_type': 'energy',
+                        'damage_source_type':'object', 'damage_source_id': dirty.objects[attacking_object_index].id,
+                        'calculating_range': calculating_range, 'damage_types': object_attack_profile.damage_types });
+
+                await world.aiRetaliate(dirty, ai_index, battle_linker.attacking_type, battle_linker.attacking_id);
+                return;
+            }
+            // Adding in code for a spacelane beacon to help out
+            else if(defending_object_info.room === 'galaxy' && defending_object_info.coord.watched_by_object_id &&
+                dirty.objects[attacking_object_index].id !== defending_object_info.coord.watched_by_object_id) {
+                console.log("Coord is watched");
+
+                let watching_object_index = await main.getObjectIndex(defending_object_info.coord.watched_by_object_id);
+                if(watching_object_index !== -1 && dirty.objects[watching_object_index].energy > damage_amount) {
+                    log(chalk.green("Watcher is helping out!"));
+                    dirty.objects[watching_object_index].energy -= damage_amount;
+                    dirty.objects[watching_object_index].has_change = true;
+
+                    let watching_object_type_index = main.getObjectTypeIndex(dirty.objects[watching_object_index].object_type_id);
+
+                    io.to(defending_object_info.room).emit('damaged_data',
+                        {'object_id': dirty.objects[defending_object_index].id, 'damage_amount': damage_amount, 'was_damaged_type': 'energy',
+                            'damage_source_type':'object', 'damage_source_id': dirty.objects[attacking_object_index].id,
+                            'calculating_range': calculating_range, 'damage_types': object_attack_profile.damage_types });
+                    objectAttackObject(dirty, false, { 'attacking_object_index': watching_object_index, 'defending_object_index': attacking_object_index });
+                }
+
+                return;
+            }
+
+
+            */
+
+            // No AI - Do the attack/defense normally
+            await game.damagePlanet(dirty, { 'planet_index': defending_planet_index, 'damage_amount': damage_amount,
+                'battle_linker': battle_linker, 'planet_info': defending_planet_info, 'calculating_range': calculating_range,
+                'damage_types': object_attack_profile.damage_types,
+                'damage_source_type': 'object', 'damage_source_id': dirty.objects[attacking_object_index].id });
+
+
+        } catch(error) {
+            log(chalk.red("Error in battle.objectAttackPlanet: " + error));
             console.error(error);
         }
     }
