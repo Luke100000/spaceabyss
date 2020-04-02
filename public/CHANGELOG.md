@@ -1,3 +1,19 @@
+## [0.0.13] - 2020-04-02
+
+### Added
+- A bit of work on Frozen Planets. They can now generate successfully - and added an ice block event.
+
+
+### Changed
+- COMPLETELY reworked the spawning system to incorporate the growing system, and turned it into a linker - so monsters and 
+objects can spawn/turn into different things with different % chances, rarities, requirements, etc. The system is 
+vastly more flexible, and the code that runs it is better.
+
+
+### Fixed
+- I didn't realize how broken the event system was. Even just spawning a basic small block of ice as an event wasn't
+working properly. Spent a lot of time improving and fixing bugs with the event system.
+
 ## [0.0.12] - 2020-03-29
 
 ### Fixed

@@ -1,7 +1,130 @@
 
 
-
 DOING NOW:
+
+
+    Kick plants not harvesting right
+
+    Make ice blocks weak to heat
+
+
+    I want things like a life herb cluster to be easier to grow if someone is a good farmer.
+        Could have a player skill linked to specific spawn linkers
+        I could also just put the max HP for negative things at 100% hp, and then if a farmer gives life water to stuff
+            and get HP > 100%, the bad option goes away.
+
+
+    check things like asteroids that spawn on create
+
+
+    Gotta make sure we harvest the right thing when we harvest from something with multiple spawn options
+
+
+
+
+    Want to go over the example of a life herb seedling turning into a monster while in inventory
+        Have the monster just spawn adjacent to the player?
+
+    Examples I want to make fit
+
+        Small Ice Block takes a long time, multiple ticks, to turn into an Ice Block
+
+        Algae Vat spawning normal algae, and spawning super good algae
+
+        Matriarch Spawning Eggs, special eggs, and having an attack chance
+
+        STILL HAVE DROP LINKER TABLE
+
+        create table spawn_linkers(id int unsigned not null auto_increment primary key,
+            monster_type_id int,
+            object_type_id int,
+            rarity int,
+            ticks_required int,
+            spawns_object_type_id int,
+            spawns_monster_type_id int,
+            spawns_amount int,
+            spawns_location varchar(20),
+            spawns_on_create boolean default false,
+            minimum_hp_percent int,
+            maximum_hp_percent int,
+            created_at datetime,
+            updated_at datetime);
+
+
+            Parts to maybe keep in the object_types table:
+                spawns_object_type_depleted
+                has_spawned_object
+
+            Parts to maybe keep in the monster_types table:
+                attack_chance_on_harvest
+                spawns_object_type_depleted
+
+            Parts to maybe keep in objects table:
+                has_spawned_object
+
+            Parts to maybe keep in monsters table:
+                has_spawned_object
+
+
+        EXAMPLES:
+            Milk Slerm:
+                Monster Table:
+                    spawns_object_type_depleted: ded
+
+                Change Linker Table:
+                    spawns_object_type_id -> Slerm Milk
+                    spawns_amount -> 2
+                    spawns_location -> has_spawned_object
+
+            Matriarch:
+                Monster Types Table:
+                    attack_chance_on_harvest -> 30%... doesn't apply in the egg scenario I guess. Unless it could spawn some 'in it'
+
+                Change Linker Table:
+                    spawns_object_type_id -> Voon Egg
+                    spawns_amount -> 1
+                    spawns_location -> adjacent
+
+
+            Small Ice Block
+                Objects Table:
+                Change Linker Table:
+                    spawns_object_type_id -> Ice Block
+                    ticks_required -> a lot
+                    spawns_location -> self
+
+            Algae Vat
+                Objects Table:
+                Change Linker Table:
+                    spawns_object_type_id -> Algae
+                    rarity -> common
+                    spawns_amount -> 2
+                    spawns_location -> has_spawned_object
+
+                    spawns_object_type_id -> Blue Algae
+                    rarity -> rare
+                    spawns_amount -> 2
+                    spawns_location -> has_spawned_object
+                    minimum_hp_percent -> 100
+                    maximum_hp_percent -> 1000
+
+
+            I THINK IT WILL WORK. SO LETS JUST ADD THIS NEW WAY IN
+
+    Allow grows_into_object_type_id to take an amount of ticks
+        Should I break it into its own table?
+            grows_into_object_type_id
+            Could have different grows into things with different chances
+            ticks_required, etc
+
+            Trae could 90% chance grow into a normal one, or 10% chance grow into a special one. That type of thing.
+
+            I FEEL like this is similar to something I've already done. I don't want to re-code. Find out what it is that
+            feels so similar. Algae vats?
+
+
+
+    MONSTERS IN SPACE!
 
     THE BOYS WANT MILK SLERMS TO DROP STUFF!
         I think it would be neat if there was the option to just take some of what something spawned
@@ -9,21 +132,11 @@ DOING NOW:
             it would de-spawn.
 
 
-    Gabriel trying to drop Territe
-    'Must place on 0 Floor'
-        I think I've fixed this
-
     Slime berry tree should have a sprite
     Shuttle should have a sprite
 
-    Crystal flowers should have a sprite
 
-    Have cadian in the cutter attack a planet -> damage planet -> watch planet recover
-    For now, we could just have the planet slowly tick/recover hp
-        Code it in!
-
-    on client check to support planet_id in on('damaged_data'
-
+    Make it so that a planet's HP is viewable, and have the HP tick
 
     Lets work on adding in factions
 

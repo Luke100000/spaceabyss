@@ -1697,6 +1697,7 @@
             monsters[monster_index].planet_level = data.monster.planet_level;
             monsters[monster_index].planet_coord_id = data.monster.planet_coord_id;
             monsters[monster_index].ship_coord_id = data.monster.ship_coord_id;
+            monsters[monster_index].has_spawned_object = data.monster.has_spawned_object;
             // Can't use this when we are giving the monster a sprite
             //monsters[monster_index] = data.monster;
             //showMonster(monsters[monster_index]);

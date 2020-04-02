@@ -1,5 +1,13 @@
 
 
+I keep going back to the idea of having a larger top, 0 level, and smaller deep levels if we want
+
+
+Maybe turn Slime Berry Tree into Slerm Berry Tree - and make the berries into Slerm Berries, which maybe grow into
+    a different type of slerm if they are dropped on like a ship or corporation world.
+
+I think I want the adult Trae to decay back into seeds to cycle the environment on Biogrove planets
+
 So we have a doctor NPC
     The goal: To let the player pay the NPC to perform a surgery on them
     Requirement 1. Player is standing on an auto doc owned by the npc

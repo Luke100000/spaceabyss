@@ -2389,12 +2389,18 @@ include('config.php');
                 for(let i = 0; i < info_numbers.length; i++) {
                     if(info_numbers[i]) {
                         if(info_numbers[i].pixels_moved < 120) {
-                            info_numbers[i].text.y -= .5;
-                            info_numbers[i].pixels_moved += .5;
 
-                            if(info_numbers[i].pixels_moved > 60) {
-                                info_numbers[i].text.alpha -= 0.010;
+                            if(info_numbers[i].text) {
+                                info_numbers[i].text.y -= .5;
+                                info_numbers[i].pixels_moved += .5;
+
+                                if(info_numbers[i].pixels_moved > 60) {
+                                    info_numbers[i].text.alpha -= 0.010;
+                                }
+                            } else {
+                                delete info_numbers[i];
                             }
+
                         } else {
                             info_numbers[i].text.destroy();
                             info_numbers[i].text = false;

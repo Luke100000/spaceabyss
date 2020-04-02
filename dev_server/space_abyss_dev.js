@@ -147,6 +147,7 @@ dirty.researches = [];
 dirty.repairing_linkers = [];
 dirty.rules = [];
 dirty.salvage_linkers = [];
+dirty.spawn_linkers = [];
 dirty.spawned_events = [];
 // Ships are just objects. dirty.objects
 // dirty.ships = [];
@@ -1007,6 +1008,20 @@ inits.init(function(callback) {
         }
 
         console.log("Loaded Ship Linkers Into Memory");
+
+        callback(null);
+    });
+});
+
+inits.init(function(callback) {
+    pool.query("SELECT * FROM spawn_linkers", function(err, rows, fields) {
+        if(err) throw err;
+
+        if(rows[0]) {
+            dirty.spawn_linkers = rows;
+        }
+
+        console.log("Loaded Spawn Linkers Into Memory");
 
         callback(null);
     });
@@ -2720,7 +2735,7 @@ async function loginPlayer(socket, dirty, data) {
         }
 
         // send any AIs the player has, and any AI rules attached to them
-        console.log("Searching for ais for player id: " + dirty.players[player_index].id);
+        //console.log("Searching for ais for player id: " + dirty.players[player_index].id);
 
         world.sendPlayerAIs(socket, false, dirty, dirty.players[player_index].id);
 
@@ -2764,11 +2779,49 @@ async function loginPlayer(socket, dirty, data) {
 module.exports.loginPlayer = loginPlayer;
 
 
+//      data:   scope   |   coord   |   floor_type_id
+async function canPlaceFloor(data) {
+    try {
+
+        let debug_floor_type_id = 0;
+
+        // we need to have an object type id
+        let floor_type_id = 0;
+
+        // We can pass it in directly
+        if(data.floor_type_id) {
+            floor_type_id = parseInt(data.floor_type_id);
+        }
+
+
+        // No matter the coord, if the floor type doesn't allow it, it doesn't allow it
+        let coord_floor_type_index = getFloorTypeIndex(data.coord.floor_type_id);
+        if(coord_floor_type_index !== -1) {
+            if(!dirty.floor_types[coord_floor_type_index].can_build_on || dirty.floor_types[coord_floor_type_index].is_protected) {
+
+                if(data.show_output || floor_type_id === debug_floor_type_id) {
+                    log(chalk.yellow("Can't build on that floor type"));
+                }
+                return false;
+            }
+        }
+
+        return true;
+
+    } catch(error) {
+        log(chalk.red("Error in main.canPlaceFloor: " + error));
+        console.error(error);
+    }
+}
+
+module.exports.canPlaceFloor = canPlaceFloor;
+
 
 //      data:   scope   |   coord   |   object_index   |   show_output   |   object_type_id
 async function canPlaceObject(data) {
     try {
 
+        let debug_object_type_id = 315;
 
         let checking_coords = [];
 
@@ -2799,6 +2852,10 @@ async function canPlaceObject(data) {
             linker.object_type_id === dirty.object_types[object_type_index].id && !linker.only_visual);
 
         if(display_linkers.length > 0) {
+
+            if(dirty.object_types[object_type_index].id === debug_object_type_id) {
+                console.log("Object type has display linkers");
+            }
 
             for(let linker of display_linkers) {
 
@@ -2848,6 +2905,10 @@ async function canPlaceObject(data) {
 
         //************ GO THROUGH EACH OF THE COORDS THAT WE HAVE **********************//
         for(let checking_coord of checking_coords) {
+
+            if(dirty.object_types[object_type_index].id === debug_object_type_id) {
+                console.log("Checking coord id: " + checking_coord.id + " with floor type id: " + checking_coord.floor_type_id);
+            }
 
 
             // No matter the coord, if the floor type doesn't allow it, it doesn't allow it
@@ -5127,8 +5188,8 @@ async function writeDirty(show_output = false) {
             if(monster && monster.has_change) {
                 //console.log("Updating monster id: " + monster.id);
                 //console.log(monster);
-                let sql = "UPDATE monsters SET current_hp = ?, has_spawned_object = ?, planet_coord_id = ?, ship_coord_id = ?  WHERE id = ?";
-                let inserts = [monster.current_hp, monster.has_spawned_object, monster.planet_coord_id, monster.ship_coord_id, monster.id];
+                let sql = "UPDATE monsters SET current_hp = ?, current_spawn_linker_id = ?, has_spawned_object = ?, planet_coord_id = ?, ship_coord_id = ?, spawner_tick_count = ? WHERE id = ?";
+                let inserts = [monster.current_hp, monster.current_spawn_linker_id, monster.has_spawned_object, monster.planet_coord_id, monster.ship_coord_id, monster.spawner_tick_count, monster.id];
                 pool.query(sql, inserts, function(err, result) {
                     if(err) throw err;
                 });
@@ -5164,14 +5225,14 @@ async function writeDirty(show_output = false) {
     dirty.objects.forEach(function(object, i) {
         if(object.has_change) {
             //console.log("Object has a change (energy, id) (" + object.energy + "," + object.id + ")");
-            let sql = "UPDATE objects SET ai_id = ?, attached_to_id = ?, coord_id = ?, current_hp = ?, docked_at_object_id = ?, docked_at_planet_id = ?, energy = ?, " +
+            let sql = "UPDATE objects SET ai_id = ?, attached_to_id = ?, coord_id = ?, current_hp = ?, current_spawn_linker_id = ?, docked_at_object_id = ?, docked_at_planet_id = ?, energy = ?, " +
                 "has_inventory = ?, has_spawned_object = ?, name = ?, " +
                 "npc_id = ?, planet_coord_id = ?, planet_id = ?, player_id = ?, ship_id = ?, ship_coord_id = ?, " +
-                "spawned_object_type_amount = ?, spawns_object = ?, tint = ? WHERE id = ?";
-            let inserts = [object.ai_id, object.attached_to_id, object.coord_id, object.current_hp, object.docked_at_object_id, object.docked_at_planet_id,
+                "spawned_object_type_amount = ?, spawner_tick_count = ?, spawns_object = ?, tint = ? WHERE id = ?";
+            let inserts = [object.ai_id, object.attached_to_id, object.coord_id, object.current_hp, object.current_spawn_linker_id, object.docked_at_object_id, object.docked_at_planet_id,
                 object.energy, object.has_inventory, object.has_spawned_object,
                 object.name, object.npc_id, object.planet_coord_id, object.planet_id, object.player_id, object.ship_id, object.ship_coord_id,
-                object.spawned_object_type_amount, object.spawns_object, object.tint, object.id];
+                object.spawned_object_type_amount, object.spawner_tick_count, object.spawns_object, object.tint, object.id];
             pool.query(sql, inserts, function(err, result) {
                 if(err) throw err;
             });
@@ -5453,6 +5514,31 @@ function getRandomIntInclusive(min, max) {
 module.exports.getRandomIntInclusive = getRandomIntInclusive;
 
 
+function isFalse(the_value) {
+
+    if(typeof the_value === "undefined" || the_value === 0 || the_value === "0" ||
+        the_value === false || the_value === null || the_value === "null") {
+        return true;
+    }
+
+    return false;
+}
+
+module.exports.isFalse = isFalse;
+
+function notFalse(the_value) {
+
+    if(typeof the_value === "undefined" || the_value === 0 || the_value === "0" ||
+        the_value === false || the_value === null || the_value === "null") {
+        return false;
+    }
+
+    return true;
+}
+
+module.exports.notFalse = notFalse;
+
+
 async function npcActions(dirty) {
     //console.log("In npcActions");
 
@@ -5572,6 +5658,7 @@ async function tickEvents(dirty) {
     }
 }
 
+/*
 async function tickGrowths(dirty) {
     try {
         game.tickGrowths(dirty);
@@ -5580,6 +5667,8 @@ async function tickGrowths(dirty) {
         log(chalk.red("Error calling game.tickGrowths: " + error));
     }
 }
+
+*/
 
 async function tickMarketLinkers(dirty) {
     try {
@@ -5613,6 +5702,7 @@ async function tickMonsterDecay(dirty) {
 }
 
 
+/*
 async function tickMonsterSpawns(dirty) {
     try {
         game.tickMonsterSpawns(dirty);
@@ -5620,6 +5710,8 @@ async function tickMonsterSpawns(dirty) {
         log(chalk.red("Error in calling game.tickMonsterSpawns: " + error));
     }
 }
+
+*/
 
 async function tickMoveMonsters(dirty) {
     try {
@@ -5670,6 +5762,7 @@ async function tickNpcSkills() {
     }
 }
 
+/*
 async function tickObjectSpawners(dirty) {
     try {
 
@@ -5680,6 +5773,8 @@ async function tickObjectSpawners(dirty) {
         log(chalk.red("Error in tickObjectSpawners"));
     }
 }
+
+*/
 
 
 async function tickRepairs(dirty) {
@@ -5696,6 +5791,10 @@ async function tickResearches(dirty) {
     //console.log("In tickResearches");
 
     game.tickResearches(dirty);
+}
+
+async function tickSpawners(dirty) {
+    game.tickSpawners(dirty);
 }
 
 async function tickSalvaging(dirty) {
@@ -5762,14 +5861,14 @@ setInterval(spawnMonsters, 150000, dirty);
 
 
 // 300 seconds ( 5 minutes )
-setInterval(tickEvents, 300000, dirty);
-// testing 30 seconds
-setInterval(tickMonsterSpawns, 30000, dirty);
-//setInterval(tickMonsterSpawns, 300000, dirty);
+// Testing at 30 seconds
+setInterval(tickEvents, 30000, dirty);
+//setInterval(tickEvents, 300000, dirty);
+
 setInterval(tickTraps, 300000, dirty);
 
 // 600 seconds ( 10 minutes )
-setInterval(tickGrowths, 600000, dirty);
+//setInterval(tickGrowths, 600000, dirty);
 setInterval(tickMarketLinkers, 600000, dirty);
 setInterval(tickDecay, 600000, dirty);
 
@@ -5779,7 +5878,11 @@ setInterval(tickNpcSkills, 3600000);
 // 2 hours
 // Testing at 30 seconds
 //setInterval(tickObjectSpawners, 30000, dirty);
-setInterval(tickObjectSpawners, 7200000, dirty);
+//setInterval(tickObjectSpawners, 7200000, dirty);
+//setInterval(tickMonsterSpawns, 30000, dirty);
+// Testing at 30 seconds
+setInterval(tickSpawners, 30000, dirty);
+setInterval(tickSpawners, 7200000, dirty);
 
 
 /*

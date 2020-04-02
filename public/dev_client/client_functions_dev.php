@@ -608,6 +608,7 @@
 
 
     function addLagText() {
+        let scene_game = game.scene.getScene('sceneGame');
         // Let see if adding some text helps players
         base_x = players[client_player_index].sprite.x;
         base_y = players[client_player_index].sprite.y;

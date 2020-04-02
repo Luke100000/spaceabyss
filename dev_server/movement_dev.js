@@ -579,7 +579,7 @@ module.exports = function(main, io, mysql, pool, chalk, log, world, map) {
                     socket.emit('result_info', { 'status': 'failure', 'text': "Dockable ships can't land" });
                     return;
                 } else if(dirty.coords[coord_index].planet_id) {
-                    console.log("Sending landing on planet " + dirty.coords[coord_index].planet_id);
+                    //console.log("Sending landing on planet " + dirty.coords[coord_index].planet_id);
                     switchToPlanet(socket, dirty, { 'planet_id': dirty.coords[coord_index].planet_id,
                         'previous_coord_index': previous_coord_index });
                     return;
@@ -598,7 +598,7 @@ module.exports = function(main, io, mysql, pool, chalk, log, world, map) {
                             obj.position_x === x_difference && obj.position_y === y_difference; });
 
                     if(display_linker_index && !dirty.planet_type_display_linkers[display_linker_index].only_visual) {
-                        console.log("Sending landing on planet (via belong to) " + dirty.coords[coord_index].belongs_to_planet_id);
+                        //console.log("Sending landing on planet (via belong to) " + dirty.coords[coord_index].belongs_to_planet_id);
                         switchToPlanet(socket, dirty, { 'planet_id': dirty.coords[coord_index].belongs_to_planet_id,
                             'previous_coord_index': previous_coord_index });
                         return;
@@ -2261,7 +2261,7 @@ module.exports = function(main, io, mysql, pool, chalk, log, world, map) {
     async function switchToPlanet(socket, dirty, data) {
 
         try {
-            console.log("Landing on planet " + data.planet_id + " lets see if there's a spaceport tile available");
+            //console.log("Landing on planet " + data.planet_id + " lets see if there's a spaceport tile available");
 
             let player_index = await main.getPlayerIndex({'player_id':socket.player_id});
 
@@ -2295,7 +2295,7 @@ module.exports = function(main, io, mysql, pool, chalk, log, world, map) {
                 // If the ship has an ion drive, the spaceport fills it back up
 
                 try {
-                    console.time("spaceportFillUp");
+                    //console.time("spaceportFillUp");
 
 
 
@@ -2319,7 +2319,7 @@ module.exports = function(main, io, mysql, pool, chalk, log, world, map) {
                         }
 
                     }
-                    console.timeEnd("spaceportFillUp");
+                    //console.timeEnd("spaceportFillUp");
                 } catch(error) {
                     log(chalk.red("Error in refueling:"  + error));
                     console.error(error);
@@ -2363,7 +2363,7 @@ module.exports = function(main, io, mysql, pool, chalk, log, world, map) {
     async function switchToPlanetNpc(dirty, npc_index, planet_id) {
 
         try {
-            console.log("NPC Landing on planet " + planet_id + " lets see if there's a spaceport tile available");
+            //console.log("NPC Landing on planet " + planet_id + " lets see if there's a spaceport tile available");
 
 
             await main.grabPlanetCoords(planet_id, 'spaceport');

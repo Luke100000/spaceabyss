@@ -2272,7 +2272,7 @@ module.exports = function(main, io, mysql, pool, chalk, log, world, inventory, g
             let ai_index = await world.getAIProtector(dirty, { 'damage_amount': damage_amount,
                 'object_index': object_index, 'coord': object_info.coord, 'show_output': true });
 
-            console.log("AI index returned: " + ai_index);
+            //console.log("AI index returned: " + ai_index);
 
             if(ai_index !== -1) {
                 dirty.objects[ai_index].energy -= damage_amount;

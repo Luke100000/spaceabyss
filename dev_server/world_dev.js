@@ -254,7 +254,7 @@ module.exports = function(main, io, mysql, pool, chalk, log, uuid, PF) {
     async function addObjectToCoord(dirty, object_index, coord_index) {
 
         try {
-            log(chalk.red("CALLING OUTDATED FUNCTION"));
+            log(chalk.red("CALLING OUTDATED FUNCTION. Instead of this use world.insertObjectType and then main.placeObject"));
             return false;
             console.log("Adding info to the galaxy coord");
             dirty.coords[coord_index].object_id = dirty.objects[object_index].id;
@@ -1490,7 +1490,7 @@ module.exports = function(main, io, mysql, pool, chalk, log, uuid, PF) {
             // Didn't find an AI, no use in checking rules
             if(ai_index === -1) {
                 if(data.show_output && data.show_output === true) {
-                    console.log("No AI was found");
+                    //console.log("No AI was found");
                 }
 
                 return -1;
@@ -1526,7 +1526,7 @@ module.exports = function(main, io, mysql, pool, chalk, log, uuid, PF) {
             // Didn't find an AI, no use in checking rules
             if(ai_index === -1) {
                 if(data.show_output && data.show_output === true) {
-                    console.log("No AI was found");
+                    //console.log("No AI was found");
                 }
 
                 return -1;
@@ -3794,7 +3794,7 @@ module.exports = function(main, io, mysql, pool, chalk, log, uuid, PF) {
 
             for(let a = 0; a < dirty.objects.length; a++) {
                 if(dirty.objects[a] && dirty.objects[a].player_id === player_id && dirty.objects[a].object_type_id === 72) {
-                    log(chalk.cyan("Player has an ai. Sending that object"));
+                    //log(chalk.cyan("Player has an ai. Sending that object"));
 
 
                     sendObjectInfo(socket, room, dirty, a);
@@ -4138,10 +4138,10 @@ module.exports = function(main, io, mysql, pool, chalk, log, uuid, PF) {
 
         try {
 
-            console.log("In setPlayerMoveDelay");
+            //console.log("In setPlayerMoveDelay");
 
             if(dirty.players[player_index].planet_coord_id || dirty.players[player_index].ship_coord_id) {
-                console.log("Player is on planet or ship");
+                //console.log("Player is on planet or ship");
 
                 let body_index = await main.getObjectIndex(dirty.players[player_index].body_id);
 
@@ -4188,7 +4188,7 @@ module.exports = function(main, io, mysql, pool, chalk, log, uuid, PF) {
             // With any move_delay change, the old average isn't going to apply.
             socket.move_totals = 0;
             socket.move_count = 0;
-            log(chalk.magenta("Set client move_delay to: " + socket.move_delay));
+            //log(chalk.magenta("Set client move_delay to: " + socket.move_delay));
 
         } catch(error) {
             log(chalk.red("Error in world.setPlayerMoveDelay: " + error));
