@@ -12,7 +12,7 @@
         if(data.damage_types && data.damage_types.length > 0) {
             for(let i = 0; i < data.damage_types.length; i++ ) {
 
-                //console.log("Going to try to add effect for damage type: " + data.damage_types[i] + " from attacker at x,y: " + data.attacker_x + ", " + data.attacker_y);
+                console.log("Going to try to add effect for damage type: " + data.damage_types[i] + " from attacker at x,y: " + data.attacker_x + ", " + data.attacker_y);
 
 
 
@@ -232,35 +232,78 @@
     }
 
     // data:    x   |   y   |   damage_amount   |   was_damaged_type   |   damage_source_type  |   damage_types
-    function addInfoNumber(data) {
+    /**
+     * @param {number} x
+     * @param {number} y
+     * @param {Object} data
+     * @param {number=} data.damage_amount
+     * @param {string=} data.was_damaged_type
+     * @param {string=} data.damage_source_type
+     * @param {string[]=} data.damage_types
+     * @param {string=} data.fill_color - The color of the text
+     * @param {string=} data.text - Specific text to add
+     *
+    */
+    function addInfoNumber(x, y, data) {
         let scene_game = game.scene.getScene('sceneGame');
 
-        // Testing performance with this off
+        if(typeof data.damage_amount === "undefined") {
+            data.damage_amount = 0;
+        }
+        if(typeof data.was_damaged_type === "undefined") {
+            data.was_damaged_type = false;
+        }
+        if(typeof data.damage_source_type === "undefined") {
+            data.damage_source_type = false;
+        }
+        if(typeof data.damage_types === "undefined") {
+            data.damage_types = [];
+        }
+
+
         let info_number_index = info_numbers.push({ 'amount': data.damage_amount, 'was_damaged_type': data.was_damaged_type, 'pixels_moved': 0}) - 1;
 
         let fill = '#6982f4';
 
-        // For things like healing and repairing, they should be the only entry in the damage_types array
-        if(data.damage_types && (data.damage_types[0] === "repairing" || data.damage_types[0] === 'mining') ) {
-            fill = '#6982f4';
-        } else if(data.damage_types && data.damage_types[0] === 'healing' ) {
-            fill = '#34f425';
-        } else if(data.was_damaged_type === "hp") {
-            fill = '#f44242';
-        } else if(data.damage_amount <= 0) {
-            fill = '#969696';
+        if(data.fill_color) {
+            fill = data.fill_color;
+        } else {
+            // For things like healing and repairing, they should be the only entry in the damage_types array
+            if(data.damage_types && (data.damage_types[0] === "repairing" || data.damage_types[0] === 'mining') ) {
+                fill = '#6982f4';
+            } else if(data.damage_types && data.damage_types[0] === 'healing' ) {
+                fill = '#34f425';
+            } else if(data.was_damaged_type === "hp") {
+                fill = '#f44242';
+            } else if(data.damage_amount <= 0) {
+                fill = '#969696';
+            }
         }
+
+
 
 
         // lets randomize the starting x/y a bit
         let starting_x = getRandomIntInclusive(-32, 32);
         let starting_y = getRandomIntInclusive(0, 32);
 
+        let game_width = 64 * show_cols;
+        // Our max width game width - our start
+        let text_width = game_width - starting_x;
 
-        info_numbers[info_number_index].text = scene_game.add.text(data.x + starting_x, data.y - starting_y,
-            data.damage_amount, { fontSize: 24,
+        let the_text = "";
+        if(data.text) {
+            the_text = data.text;
+        } else {
+            the_text = data.damage_amount
+        }
+
+        info_numbers[info_number_index].text = scene_game.add.text(x + starting_x, y - starting_y,
+            the_text, { fontSize: 20,
                 padding: { x: 10, y: 5},
-                fill: fill});
+                fill: fill,
+                wordWrap: { width: text_width }
+            });
 
         info_numbers[info_number_index].text.setFontStyle('bold');
     }
@@ -607,7 +650,11 @@
     */
 
 
+    // Basically just calls addInfoNumber. I could deprecate this entirely if I wanted to
     function addLagText() {
+        addInfoNumber(players[client_player_index].sprite.x, players[client_player_index].sprite.y,
+            { 'fill_color': "#f44242", 'text': "Lag." });
+        /*
         let scene_game = game.scene.getScene('sceneGame');
         // Let see if adding some text helps players
         base_x = players[client_player_index].sprite.x;
@@ -633,6 +680,7 @@
         info_numbers[info_number_index].text.setFontStyle('bold');
         // Layer above is depth 10
         info_numbers[info_number_index].text.setDepth(11);
+        */
     }
 
 
@@ -1208,27 +1256,32 @@
         //console.log("Setting texture/animation to: " + new_texture_key + " , " + new_texture_animation_key);
 
         if(!monsters[monster_index].sprite) {
-            monsters[monster_index].sprite = scene_game.add.sprite(-1000,-1000, new_texture_key);
-            monsters[monster_index].sprite.anims.play(new_texture_animation_key);
 
-            // and move it to where it needs to be
-            let monster_info = getMonsterInfo(monster_index);
+            if(scene_game.textures.exists(new_texture_key)) {
+                monsters[monster_index].sprite = scene_game.add.sprite(-1000,-1000, new_texture_key);
+                monsters[monster_index].sprite.anims.play(new_texture_animation_key);
 
-            monsters[monster_index].sprite_x_offset = 0;
-            monsters[monster_index].sprite_y_offset = 0;
+                // and move it to where it needs to be
+                let monster_info = getMonsterInfo(monster_index);
 
-            if(new_texture_key === "slaver-guard") {
-                monsters[monster_index].sprite_y_offset = -6;
+                monsters[monster_index].sprite_x_offset = 0;
+                monsters[monster_index].sprite_y_offset = 0;
+
+                if(new_texture_key === "slaver-guard") {
+                    monsters[monster_index].sprite_y_offset = -6;
+                }
+
+                if(new_texture_key === "robot-janitor") {
+                    monsters[monster_index].sprite_y_offset = -6;
+                }
+
+                if(monster_info.coord) {
+                    monsters[monster_index].sprite.x = monster_info.coord.tile_x * tile_size + tile_size / 2 + monsters[monster_index].sprite_x_offset;
+                    monsters[monster_index].sprite.y = monster_info.coord.tile_y * tile_size + tile_size / 2 + monsters[monster_index].sprite_y_offset;
+                }
             }
 
-            if(new_texture_key === "robot-janitor") {
-                monsters[monster_index].sprite_y_offset = -6;
-            }
 
-            if(monster_info.coord) {
-                monsters[monster_index].sprite.x = monster_info.coord.tile_x * tile_size + tile_size / 2 + monsters[monster_index].sprite_x_offset;
-                monsters[monster_index].sprite.y = monster_info.coord.tile_y * tile_size + tile_size / 2 + monsters[monster_index].sprite_y_offset;
-            }
 
         }
 
@@ -1618,6 +1671,10 @@
             $('#coord_data').append("&nbsp;&nbsp;Owned By NPC ID: " + objects[object_index].npc_id);
         }
 
+        if(objects[object_index].current_hp !== object_types[object_type_index].hp) {
+            $('#coord_data').append("&nbsp;&nbsp;HP: " + objects[object_index].current_hp + "/" + object_types[object_type_index].hp);
+        }
+
         if(debug_mode) {
             $('#coord_data').append("&nbsp;&nbsp;Object ID: " + object_id + "<br>");
             $('#coord_data').append("&nbsp;&nbsp;Has inventory: " + objects[object_index].has_inventory + "<br>");
@@ -1740,6 +1797,11 @@
 
     // We don't actually draw players in this
     function drawCoord(type, coord) {
+
+
+        if(coord.object_type_id === 138) {
+            console.log("In drawCoord on a coord with an asteroid!");
+        }
 
         // We might get coords before we have a player - if that's happening just always draw them
         if(client_player_index !== -1) {
@@ -2345,46 +2407,79 @@
 
 
         // CONTROL
-        html_string += "Control (Enslaving) : " + players[client_player_index].control_skill_points + "<br>";
+        html_string += "Control: " + players[client_player_index].control_skill_points;
+        // lets start doing some client side level stuff just to see how it shows
         let control_level = 1 + Math.floor(level_modifier * Math.sqrt(players[client_player_index].control_skill_points));
-        html_string += "&nbsp;&nbsp;Level: " + control_level;
+
+        html_string += " Level: " + control_level;
 
         if(control_level > 1) {
             let additional_damage = control_level - 1;
-            html_string += " +" + additional_damage + " <i class=\"fas fa-swords\"></i><br>";
+            html_string += " <span class='tag is-success'>+" + additional_damage + "  <i class=\"fas fa-swords\"></i></span>";
 
         }
-
         html_string += "<br>";
 
+
         // CORROSIVE
-        html_string += "Corrosive : " + players[client_player_index].corrosive_skill_points;
+        html_string += "Corrosive: " + players[client_player_index].corrosive_skill_points;
+        // lets start doing some client side level stuff just to see how it shows
         let corrosive_level = 1 + Math.floor(level_modifier * Math.sqrt(players[client_player_index].corrosive_skill_points));
-        html_string += "&nbsp;&nbsp;Level: " + corrosive_level;
+
+        html_string += " Level: " + corrosive_level;
 
         if(corrosive_level > 1) {
             let additional_damage = corrosive_level - 1;
-            html_string += " +" + additional_damage + " <i class=\"fas fa-swords\"></i>";
+            html_string += " <span class='tag is-success'>+" + additional_damage + "  <i class=\"fas fa-swords\"></i></span>";
 
         }
-
         html_string += "<br>";
+
 
 
         // ELECTRIC
-        html_string += "Electric : " + players[client_player_index].electric_skill_points + "<br>";
+        html_string += "Electric: " + players[client_player_index].electric_skill_points;
+        // lets start doing some client side level stuff just to see how it shows
         let electric_level = 1 + Math.floor(level_modifier * Math.sqrt(players[client_player_index].electric_skill_points));
-        html_string += "&nbsp;&nbsp;Level: " + electric_level;
+
+        html_string += " Level: " + electric_level;
 
         if(electric_level > 1) {
             let additional_damage = electric_level - 1;
-            html_string += " +" + additional_damage + " <i class=\"fas fa-swords\"></i>";
+            html_string += " <span class='tag is-success'>+" + additional_damage + "  <i class=\"fas fa-swords\"></i></span>";
 
         }
-
         html_string += "<br>";
 
+        // EXPLOSION
+        html_string += "Explosion: " + players[client_player_index].explosion_skill_points;
+        // lets start doing some client side level stuff just to see how it shows
+        let explosion_level = 1 + Math.floor(level_modifier * Math.sqrt(players[client_player_index].explosion_skill_points));
+
+        html_string += " Level: " + explosion_level;
+
+        if(explosion_level > 1) {
+            let additional_damage = explosion_level - 1;
+            html_string += " <span class='tag is-success'>+" + additional_damage + "  <i class=\"fas fa-swords\"></i></span>";
+
+        }
+        html_string += "<br>";
+
+
         // FREEZE
+        html_string += "Freeze: " + players[client_player_index].freeze_skill_points;
+        // lets start doing some client side level stuff just to see how it shows
+        let freeze_level = 1 + Math.floor(level_modifier * Math.sqrt(players[client_player_index].freeze_skill_points));
+
+        html_string += " Level: " + freeze_level;
+
+        if(freeze_level > 1) {
+            let additional_damage = freeze_level - 1;
+            html_string += " <span class='tag is-success'>+" + additional_damage + "  <i class=\"fas fa-swords\"></i></span>";
+
+        }
+        html_string += "<br>";
+
 
 
         // HACKING
@@ -2402,19 +2497,45 @@
         html_string += "<br>";
 
         // HEAT
+        html_string += "Heat: " + players[client_player_index].heat_skill_points;
+        // lets start doing some client side level stuff just to see how it shows
+        let heat_level = 1 + Math.floor(level_modifier * Math.sqrt(players[client_player_index].heat_skill_points));
 
-        // GRAVITY
+        html_string += " Level: " + heat_level;
 
-        // LASER
-        html_string += "Laser Skill: " + players[client_player_index].laser_skill_points + "<br>";
-        let laser_level = 1 + Math.floor(level_modifier * Math.sqrt(players[client_player_index].laser_skill_points));
-        html_string += "&nbsp;&nbsp;Level: " + laser_level;
-        if(laser_level > 1) {
-            let additional_damage = laser_level - 1;
-            html_string += " +" + additional_damage + " Damage";
+        if(heat_level > 1) {
+            let additional_damage = heat_level - 1;
+            html_string += " <span class='tag is-success'>+" + additional_damage + "  <i class=\"fas fa-swords\"></i></span>";
 
         }
+        html_string += "<br>";
 
+        // GRAVITY
+        html_string += "Gravity: " + players[client_player_index].gravity_skill_points;
+        // lets start doing some client side level stuff just to see how it shows
+        let gravity_level = 1 + Math.floor(level_modifier * Math.sqrt(players[client_player_index].gravity_skill_points));
+
+        html_string += " Level: " + gravity_level;
+
+        if(gravity_level > 1) {
+            let additional_damage = gravity_level - 1;
+            html_string += " <span class='tag is-success'>+" + additional_damage + "  <i class=\"fas fa-swords\"></i></span>";
+
+        }
+        html_string += "<br>";
+
+        // LASER
+        html_string += "Laser: " + players[client_player_index].laser_skill_points;
+        // lets start doing some client side level stuff just to see how it shows
+        let laser_level = 1 + Math.floor(level_modifier * Math.sqrt(players[client_player_index].laser_skill_points));
+
+        html_string += " Level: " + laser_level;
+
+        if(laser_level > 1) {
+            let additional_damage = laser_level - 1;
+            html_string += " <span class='tag is-success'>+" + additional_damage + "  <i class=\"fas fa-swords\"></i></span>";
+
+        }
         html_string += "<br>";
 
         // MELEE
@@ -2434,15 +2555,62 @@
 
 
         // PIERCING
+        html_string += "Piercing: " + players[client_player_index].piercing_skill_points;
+        // lets start doing some client side level stuff just to see how it shows
+        let piercing_level = 1 + Math.floor(level_modifier * Math.sqrt(players[client_player_index].piercing_skill_points));
+
+        html_string += " Level: " + piercing_level;
+
+        if(piercing_level > 1) {
+            let additional_damage = piercing_level - 1;
+            html_string += " <span class='tag is-success'>+" + additional_damage + "  <i class=\"fas fa-swords\"></i></span>";
+
+        }
+        html_string += "<br>";
 
 
         // PLASMA
-        html_string += 'Plasma Skill: ' + players[client_player_index].plasma_skill_points + '<br>';
+        html_string += "Piercing: " + players[client_player_index].plasma_skill_points;
+        // lets start doing some client side level stuff just to see how it shows
+        let plasma_level = 1 + Math.floor(level_modifier * Math.sqrt(players[client_player_index].plasma_skill_points));
+
+        html_string += " Level: " + plasma_level;
+
+        if(plasma_level > 1) {
+            let additional_damage = plasma_level - 1;
+            html_string += " <span class='tag is-success'>+" + additional_damage + "  <i class=\"fas fa-swords\"></i></span>";
+
+        }
+        html_string += "<br>";
 
         // POISON
+        html_string += "Poison: " + players[client_player_index].poison_skill_points;
+        // lets start doing some client side level stuff just to see how it shows
+        let poison_level = 1 + Math.floor(level_modifier * Math.sqrt(players[client_player_index].poison_skill_points));
+
+        html_string += " Level: " + poison_level;
+
+        if(poison_level > 1) {
+            let additional_damage = poison_level - 1;
+            html_string += " <span class='tag is-success'>+" + additional_damage + "  <i class=\"fas fa-swords\"></i></span>";
+
+        }
+        html_string += "<br>";
 
 
         // RADIATION
+        html_string += "Radiation: " + players[client_player_index].radiation_skill_points;
+        // lets start doing some client side level stuff just to see how it shows
+        let radiation_level = 1 + Math.floor(level_modifier * Math.sqrt(players[client_player_index].radiation_skill_points));
+
+        html_string += " Level: " + radiation_level;
+
+        if(radiation_level > 1) {
+            let additional_damage = radiation_level - 1;
+            html_string += " <span class='tag is-success'>+" + additional_damage + "  <i class=\"fas fa-swords\"></i></span>";
+
+        }
+        html_string += "<br>";
 
 
         html_string += "</div></div>";
@@ -2456,17 +2624,49 @@
         html_string += "<div class='message message-inline'><div class='message-body'>";
 
         html_string += "<strong>Life Skills</strong><br>";
-        html_string += "Farming Skill: " + players[client_player_index].farming_skill_points + "<br>";
-        html_string += "Cooking Skill: " + players[client_player_index].cooking_skill_points + "<br>";
+
+        // COOKING
+        html_string += "Cooking: " + players[client_player_index].cooking_skill_points;
+        // lets start doing some client side level stuff just to see how it shows
+        let cooking_level = 1 + Math.floor(difficult_level_modifier * Math.sqrt(players[client_player_index].cooking_skill_points));
+
+        html_string += " Level: " + cooking_level;
+
+        if(cooking_level > 1) {
+            let additional_skill = cooking_level - 1;
+            html_string += " <span class='tag is-success'>+" + additional_skill + " </span>";
+
+        }
+        html_string += "<br>";
+
+
+        // FARMING
+        html_string += "Farming: " + players[client_player_index].farming_skill_points;
+        // lets start doing some client side level stuff just to see how it shows
+        let farming_level = 1 + Math.floor(difficult_level_modifier * Math.sqrt(players[client_player_index].farming_skill_points));
+
+        html_string += " Level: " + farming_level;
+
+        if(farming_level > 1) {
+            let additional_skill = farming_level - 1;
+            html_string += " <span class='tag is-success'>+" + additional_skill + " </span>";
+
+        }
+        html_string += "<br>";
+
+
 
 
         // MANUFACTURING
-        html_string += "Manufacturing Skill: " + players[client_player_index].manufacturing_skill_points + "<br>";
+        html_string += "Manufacturing: " + players[client_player_index].manufacturing_skill_points;
+        // lets start doing some client side level stuff just to see how it shows
         let manufacturing_level = 1 + Math.floor(difficult_level_modifier * Math.sqrt(players[client_player_index].manufacturing_skill_points));
-        html_string += "&nbsp;&nbsp;Level: " + manufacturing_level;
+
+        html_string += " Level: " + manufacturing_level;
+
         if(manufacturing_level > 1) {
-            let additional_damage = manufacturing_level - 1;
-            html_string += " +" + additional_damage + " Ability";
+            let additional_skill = manufacturing_level - 1;
+            html_string += " <span class='tag is-success'>+" + additional_skill + " </span>";
 
         }
         html_string += "<br>";
@@ -2474,66 +2674,77 @@
 
 
         // MINING
-        html_string += 'Mining Skill: ' + players[client_player_index].mining_skill_points + '<br>';
-
+        html_string += "Mining: " + players[client_player_index].mining_skill_points;
+        // lets start doing some client side level stuff just to see how it shows
         let mining_level = 1 + Math.floor(level_modifier * Math.sqrt(players[client_player_index].mining_skill_points));
-        html_string += '&nbsp;&nbsp;Level: ' + mining_level;
+
+        html_string += " Level: " + mining_level;
+
         if(mining_level > 1) {
-            let additional_damage = mining_level - 1;
-            html_string += ' +' + additional_damage + ' Ability';
-        }
-        html_string += "<br>";
-
-
-        // RESEARCHING
-        html_string += 'Researching Skill: ' + players[client_player_index].researching_skill_points + '<br>';
-
-        let researching_level = 1 + Math.floor(difficult_level_modifier * Math.sqrt(players[client_player_index].researching_skill_points));
-        html_string += '&nbsp;&nbsp;Level: ' + researching_level;
-
-        if(researching_level > 1) {
-            let additional_damage = researching_level - 1;
-            html_string += ' +' + additional_damage + ' Ability';
+            let additional_skill = mining_level - 1;
+            html_string += " <span class='tag is-success'>+" + additional_skill + " </span>";
 
         }
         html_string += "<br>";
 
 
         // REPAIRING
-        html_string += 'Repairing Skill: ' + players[client_player_index].repairing_skill_points + '<br>';
-
+        html_string += "Repairing: " + players[client_player_index].repairing_skill_points;
+        // lets start doing some client side level stuff just to see how it shows
         let repairing_level = 1 + Math.floor(level_modifier * Math.sqrt(players[client_player_index].repairing_skill_points));
-        html_string += '&nbsp;&nbsp;Level: ' + repairing_level;
+
+        html_string += " Level: " + repairing_level;
 
         if(repairing_level > 1) {
-            let additional_damage = repairing_level - 1;
-            html_string += ' +' + additional_damage + ' Ability';
+            let additional_skill = repairing_level - 1;
+            html_string += " <span class='tag is-success'>+" + additional_skill + " </span>";
 
         }
         html_string += "<br>";
+
+
+        // RESEARCHING
+        html_string += "Researching: " + players[client_player_index].researching_skill_points;
+        // lets start doing some client side level stuff just to see how it shows
+        let researching_level = 1 + Math.floor(difficult_level_modifier * Math.sqrt(players[client_player_index].researching_skill_points));
+
+        html_string += " Level: " + researching_level;
+
+        if(researching_level > 1) {
+            let additional_skill = researching_level - 1;
+            html_string += " <span class='tag is-success'>+" + additional_skill + " </span>";
+
+        }
+        html_string += "<br>";
+
 
 
         // SALVAGING
-        html_string += 'Salvaging Skill: ' + players[client_player_index].salvaging_skill_points + '<br>';
+        html_string += "Salvaging: " + players[client_player_index].salvaging_skill_points;
+        // lets start doing some client side level stuff just to see how it shows
         let salvaging_level = 1 + Math.floor(level_modifier * Math.sqrt(players[client_player_index].salvaging_skill_points));
-        html_string += '&nbsp;&nbsp;Level: ' + salvaging_level;
+
+        html_string += " Level: " + salvaging_level;
 
         if(salvaging_level > 1) {
-            let additional_damage = salvaging_level - 1;
-            html_string += ' +' + additional_damage + ' Ability';
+            let additional_skill = salvaging_level - 1;
+            html_string += " <span class='tag is-success'>+" + additional_skill + " </span>";
 
         }
         html_string += "<br>";
 
-        // SURGERY
-        html_string += 'Surgery Skill: ' + players[client_player_index].surgery_skill_points + '<br>';
 
+
+        // SURGERY
+        html_string += "Surgery: " + players[client_player_index].surgery_skill_points;
+        // lets start doing some client side level stuff just to see how it shows
         let surgery_level = 1 + Math.floor(difficult_level_modifier * Math.sqrt(players[client_player_index].surgery_skill_points));
-        html_string += '&nbsp;&nbsp;Level: ' + surgery_level;
+
+        html_string += " Level: " + surgery_level;
 
         if(surgery_level > 1) {
-            let additional_damage = surgery_level - 1;
-            html_string += ' +' + additional_damage + ' Ability';
+            let additional_skill = surgery_level - 1;
+            html_string += " <span class='tag is-success'>+" + additional_skill + " </span>";
 
         }
         html_string += "<br>";
@@ -2818,7 +3029,6 @@
 
 
         let ship_coord_index = ship_coords.findIndex(function(obj) { return obj && obj.id === players[client_player_index].ship_coord_id; });
-        console.log("ship_coord_index: " + ship_coord_index);
 
 
         if(client_ship_index === -1 || ship_coord_index === -1) {
@@ -2929,7 +3139,7 @@
             $('#launch').append('<button class="button is-danger" id="buy_pod" object_type_id="114">Use Emergency Pod</button>');
 
         } else {
-            console.log("Player ship coord id: " + players[client_player_index].ship_coord_id);
+            //console.log("Player ship coord id: " + players[client_player_index].ship_coord_id);
         }
 
 
@@ -5895,6 +6105,344 @@
         */
     }
 
+
+
+    var monster_sprites = [];
+    monster_sprites.push({ 'key': 'trae', 'planet_type_id': 29, 'frame_width': 104, 'frame_height': 104, 'frame_count': 10, 'frame_rate': 6 });
+    monster_sprites.push({ 'key': 'trae-seedling', 'planet_type_id': 29, 'frame_width': 72, 'frame_height': 72, 'frame_count': 6, 'frame_rate': 8 });
+    monster_sprites.push({ 'key': 'trae-sproutling', 'planet_type_id': 29, 'frame_width': 64, 'frame_height': 64, 'frame_count': 5, 'frame_rate': 8 });
+
+    // Not sure how to do it more efficiently than just calculate the new and old level for... every skill!
+    function checkLevelIncrease(old_player_data, new_player_data) {
+
+        if(client_player_index === -1 || !players[client_player_index].sprite) {
+            return false;
+        }
+
+        let drawing_x = players[client_player_index].sprite.x;
+        let drawing_y = players[client_player_index].sprite.y;
+
+        let old_control_level = 1 + Math.floor(level_modifier * Math.sqrt(old_player_data.control_skill_points));
+        let new_control_level = 1 + Math.floor(level_modifier * Math.sqrt(new_player_data.control_skill_points));
+        if(new_control_level > old_control_level) {
+            addInfoNumber(drawing_x, drawing_y, { 'fill_color': '#FFFFFF','text': 'Control Skill Leveled Up!'});
+            text_important.setText("Control Skill Leveled Up!");
+            text_important.setVisible(true);
+            text_important_time = our_time;
+        }
+
+        let old_cooking_level = 1 + Math.floor(difficult_level_modifier * Math.sqrt(old_player_data.cooking_skill_points));
+        let new_cooking_level = 1 + Math.floor(difficult_level_modifier * Math.sqrt(new_player_data.cooking_skill_points));
+        if(new_cooking_level > old_cooking_level) {
+            addInfoNumber(drawing_x, drawing_y, { 'fill_color': '#FFFFFF','text': 'Cooking Skill Leveled Up!'});
+            text_important.setText("Cooking Skill Leveled Up!");
+            text_important.setVisible(true);
+            text_important_time = our_time;
+        }
+
+        let old_corrosive_level = 1 + Math.floor(level_modifier * Math.sqrt(old_player_data.corrosive_skill_points));
+        let new_corrosive_level = 1 + Math.floor(level_modifier * Math.sqrt(new_player_data.corrosive_skill_points));
+        if(new_corrosive_level > old_corrosive_level) {
+            addInfoNumber(drawing_x, drawing_y, { 'fill_color': '#FFFFFF','text': 'Corrosive Skill Leveled Up!'});
+            text_important.setText("Corrosive Skill Leveled Up!");
+            text_important.setVisible(true);
+            text_important_time = our_time;
+        }
+
+        let old_defending_level = 1 + Math.floor(level_modifier * Math.sqrt(old_player_data.defending_skill_points));
+        let new_defending_level = 1 + Math.floor(level_modifier * Math.sqrt(new_player_data.defending_skill_points));
+        if(new_defending_level > old_defending_level) {
+            addInfoNumber(drawing_x, drawing_y, { 'fill_color': '#FFFFFF','text': 'Defending Skill Leveled Up!'});
+            text_important.setText("Defending Skill Leveled Up!");
+            text_important.setVisible(true);
+            text_important_time = our_time;
+        }
+
+        let old_electric_level = 1 + Math.floor(level_modifier * Math.sqrt(old_player_data.electric_skill_points));
+        let new_electric_level = 1 + Math.floor(level_modifier * Math.sqrt(new_player_data.electric_skill_points));
+        if(new_electric_level > old_electric_level) {
+            addInfoNumber(drawing_x, drawing_y, { 'fill_color': '#FFFFFF','text': 'Electric Skill Leveled Up!'});
+            text_important.setText("Electric Skill Leveled Up!");
+            text_important.setVisible(true);
+            text_important_time = our_time;
+        }
+
+        let old_explosion_level = 1 + Math.floor(level_modifier * Math.sqrt(old_player_data.explosion_skill_points));
+        let new_explosion_level = 1 + Math.floor(level_modifier * Math.sqrt(new_player_data.explosion_skill_points));
+        if(new_explosion_level > old_explosion_level) {
+            addInfoNumber(drawing_x, drawing_y, { 'fill_color': '#FFFFFF','text': 'Explosion Skill Leveled Up!'});
+            text_important.setText("Explosion Skill Leveled Up!");
+            text_important.setVisible(true);
+            text_important_time = our_time;
+        }
+
+        let old_farming_level = 1 + Math.floor(difficult_level_modifier * Math.sqrt(old_player_data.farming_skill_points));
+        let new_farming_level = 1 + Math.floor(difficult_level_modifier * Math.sqrt(new_player_data.farming_skill_points));
+        if(new_farming_level > old_farming_level) {
+            addInfoNumber(drawing_x, drawing_y, { 'fill_color': '#FFFFFF','text': 'Farming Skill Leveled Up!'});
+            text_important.setText("Farming Skill Leveled Up!");
+            text_important.setVisible(true);
+            text_important_time = our_time;
+        }
+
+        let old_freeze_level = 1 + Math.floor(level_modifier * Math.sqrt(old_player_data.freeze_skill_points));
+        let new_freeze_level = 1 + Math.floor(level_modifier * Math.sqrt(new_player_data.freeze_skill_points));
+        if(new_freeze_level > old_freeze_level) {
+            addInfoNumber(drawing_x, drawing_y, { 'fill_color': '#FFFFFF','text': 'Freeze Skill Leveled Up!'});
+            text_important.setText("Freeze Skill Leveled Up!");
+            text_important.setVisible(true);
+            text_important_time = our_time;
+        }
+
+        let old_hacking_level = 1 + Math.floor(level_modifier * Math.sqrt(old_player_data.hacking_skill_points));
+        let new_hacking_level = 1 + Math.floor(level_modifier * Math.sqrt(new_player_data.hacking_skill_points));
+        if(new_hacking_level > old_hacking_level) {
+            addInfoNumber(drawing_x, drawing_y, { 'fill_color': '#FFFFFF','text': 'Hacking Skill Leveled Up!'});
+            text_important.setText("Hacking Skill Leveled Up!");
+            text_important.setVisible(true);
+            text_important_time = our_time;
+        }
+
+        let old_heat_level = 1 + Math.floor(level_modifier * Math.sqrt(old_player_data.heat_skill_points));
+        let new_heat_level = 1 + Math.floor(level_modifier * Math.sqrt(new_player_data.heat_skill_points));
+        if(new_heat_level > old_heat_level) {
+            addInfoNumber(drawing_x, drawing_y, { 'fill_color': '#FFFFFF','text': 'heat Skill Leveled Up!'});
+            text_important.setText("heat Skill Leveled Up!");
+            text_important.setVisible(true);
+            text_important_time = our_time;
+        }
+
+        let old_gravity_level = 1 + Math.floor(level_modifier * Math.sqrt(old_player_data.gravity_skill_points));
+        let new_gravity_level = 1 + Math.floor(level_modifier * Math.sqrt(new_player_data.gravity_skill_points));
+        if(new_gravity_level > old_gravity_level) {
+            addInfoNumber(drawing_x, drawing_y, { 'fill_color': '#FFFFFF','text': 'gravity Skill Leveled Up!'});
+            text_important.setText("gravity Skill Leveled Up!");
+            text_important.setVisible(true);
+            text_important_time = our_time;
+        }
+
+        let old_laser_level = 1 + Math.floor(level_modifier * Math.sqrt(old_player_data.laser_skill_points));
+        let new_laser_level = 1 + Math.floor(level_modifier * Math.sqrt(new_player_data.laser_skill_points));
+        if(new_laser_level > old_laser_level) {
+            addInfoNumber(drawing_x, drawing_y, { 'fill_color': '#FFFFFF','text': 'laser Skill Leveled Up!'});
+            text_important.setText("laser Skill Leveled Up!");
+            text_important.setVisible(true);
+            text_important_time = our_time;
+        }
+
+
+        let old_melee_level = 1 + Math.floor(level_modifier * Math.sqrt(old_player_data.melee_skill_points));
+        let new_melee_level = 1 + Math.floor(level_modifier * Math.sqrt(new_player_data.melee_skill_points));
+        if(new_melee_level > old_melee_level) {
+            addInfoNumber(drawing_x, drawing_y, { 'fill_color': '#FFFFFF','text': 'melee Skill Leveled Up!'});
+            text_important.setText("melee Skill Leveled Up!");
+            text_important.setVisible(true);
+            text_important_time = our_time;
+        }
+
+        let old_manufacturing_level = 1 + Math.floor(difficult_level_modifier * Math.sqrt(old_player_data.manufacturing_skill_points));
+        let new_manufacturing_level = 1 + Math.floor(difficult_level_modifier * Math.sqrt(new_player_data.manufacturing_skill_points));
+        if(new_manufacturing_level > old_manufacturing_level) {
+            addInfoNumber(drawing_x, drawing_y, { 'fill_color': '#FFFFFF','text': 'manufacturing Skill Leveled Up!'});
+            text_important.setText("manufacturing Skill Leveled Up!");
+            text_important.setVisible(true);
+            text_important_time = our_time;
+        }
+
+        let old_mining_level = 1 + Math.floor(level_modifier * Math.sqrt(old_player_data.mining_skill_points));
+        let new_mining_level = 1 + Math.floor(level_modifier * Math.sqrt(new_player_data.mining_skill_points));
+        if(new_mining_level > old_mining_level) {
+            addInfoNumber(drawing_x, drawing_y, { 'fill_color': '#FFFFFF','text': 'mining Skill Leveled Up!'});
+            text_important.setText("mining Skill Leveled Up!");
+            text_important.setVisible(true);
+            text_important_time = our_time;
+        }
+
+        let old_piercing_level = 1 + Math.floor(level_modifier * Math.sqrt(old_player_data.piercing_skill_points));
+        let new_piercing_level = 1 + Math.floor(level_modifier * Math.sqrt(new_player_data.piercing_skill_points));
+        if(new_piercing_level > old_piercing_level) {
+            addInfoNumber(drawing_x, drawing_y, { 'fill_color': '#FFFFFF','text': 'piercing Skill Leveled Up!'});
+            text_important.setText("piercing Skill Leveled Up!");
+            text_important.setVisible(true);
+            text_important_time = our_time;
+        }
+
+        let old_plasma_level = 1 + Math.floor(level_modifier * Math.sqrt(old_player_data.plasma_skill_points));
+        let new_plasma_level = 1 + Math.floor(level_modifier * Math.sqrt(new_player_data.plasma_skill_points));
+        if(new_plasma_level > old_plasma_level) {
+            addInfoNumber(drawing_x, drawing_y, { 'fill_color': '#FFFFFF','text': 'plasma Skill Leveled Up!'});
+            text_important.setText("plasma Skill Leveled Up!");
+            text_important.setVisible(true);
+            text_important_time = our_time;
+        }
+
+        let old_poison_level = 1 + Math.floor(level_modifier * Math.sqrt(old_player_data.poison_skill_points));
+        let new_poison_level = 1 + Math.floor(level_modifier * Math.sqrt(new_player_data.poison_skill_points));
+        if(new_poison_level > old_poison_level) {
+            addInfoNumber(drawing_x, drawing_y, { 'fill_color': '#FFFFFF','text': 'poison Skill Leveled Up!'});
+            text_important.setText("poison Skill Leveled Up!");
+            text_important.setVisible(true);
+            text_important_time = our_time;
+        }
+
+        let old_radiation_level = 1 + Math.floor(level_modifier * Math.sqrt(old_player_data.radiation_skill_points));
+        let new_radiation_level = 1 + Math.floor(level_modifier * Math.sqrt(new_player_data.radiation_skill_points));
+        if(new_radiation_level > old_radiation_level) {
+            addInfoNumber(drawing_x, drawing_y, { 'fill_color': '#FFFFFF','text': 'radiation Skill Leveled Up!'});
+            text_important.setText("radiation Skill Leveled Up!");
+            text_important.setVisible(true);
+            text_important_time = our_time;
+        }
+
+        let old_repairing_level = 1 + Math.floor(level_modifier * Math.sqrt(old_player_data.repairing_skill_points));
+        let new_repairing_level = 1 + Math.floor(level_modifier * Math.sqrt(new_player_data.repairing_skill_points));
+        if(new_repairing_level > old_repairing_level) {
+            addInfoNumber(drawing_x, drawing_y, { 'fill_color': '#FFFFFF','text': 'repairing Skill Leveled Up!'});
+            text_important.setText("repairing Skill Leveled Up!");
+            text_important.setVisible(true);
+            text_important_time = our_time;
+        }
+
+        let old_researching_level = 1 + Math.floor(difficult_level_modifier * Math.sqrt(old_player_data.researching_skill_points));
+        let new_researching_level = 1 + Math.floor(difficult_level_modifier * Math.sqrt(new_player_data.researching_skill_points));
+        if(new_researching_level > old_researching_level) {
+            addInfoNumber(drawing_x, drawing_y, { 'fill_color': '#FFFFFF','text': 'researching Skill Leveled Up!'});
+            text_important.setText("researching Skill Leveled Up!");
+            text_important.setVisible(true);
+            text_important_time = our_time;
+        }
+
+        let old_salvaging_level = 1 + Math.floor(level_modifier * Math.sqrt(old_player_data.salvaging_skill_points));
+        let new_salvaging_level = 1 + Math.floor(level_modifier * Math.sqrt(new_player_data.salvaging_skill_points));
+        if(new_salvaging_level > old_salvaging_level) {
+            addInfoNumber(drawing_x, drawing_y, { 'fill_color': '#FFFFFF','text': 'salvaging Skill Leveled Up!'});
+            text_important.setText("salvaging Skill Leveled Up!");
+            text_important.setVisible(true);
+            text_important_time = our_time;
+        }
+
+        let old_surgery_level = 1 + Math.floor(difficult_level_modifier * Math.sqrt(old_player_data.surgery_skill_points));
+        let new_surgery_level = 1 + Math.floor(difficult_level_modifier * Math.sqrt(new_player_data.surgery_skill_points));
+        if(new_surgery_level > old_surgery_level) {
+            addInfoNumber(drawing_x, drawing_y, { 'fill_color': '#FFFFFF','text': 'surgery Skill Leveled Up!'});
+            text_important.setText("surgery Skill Leveled Up!");
+            text_important.setVisible(true);
+            text_important_time = our_time;
+        }
+
+
+
+    }
+
+    function loadMonsterSprites(planet_type_id) {
+
+        console.log("In loadMonsterSprites for planet type id: " + planet_type_id);
+
+        if(planet_type_id !== 29) {
+            return true;
+        }
+
+        let scene_game = game.scene.getScene('sceneGame');
+
+        for(let i = 0; i < monster_sprites.length; i++) {
+            if(monster_sprites[i] && monster_sprites[i].planet_type_id === planet_type_id && !scene_game.textures.exists(monster_sprites[i].key)) {
+
+                scene_game.load.on('filecomplete', processFile, this);
+                scene_game.load.spritesheet(monster_sprites[i].key, "https://space.alphacoders.com/" + monster_sprites[i].key + ".png",
+                    { frameWidth: monster_sprites[i].frame_width, frame_height: monster_sprites[i].frame_height, endFrame: monster_sprites[i].frame_count });
+                scene_game.load.start();
+            }
+        }
+
+        /*
+        if(!scene_game.textures.exists('trae')) {
+
+            console.log("Don't have trae loaded in. Loading now");
+
+            scene_game.load.on('filecomplete', processFile, this);
+            scene_game.load.spritesheet('trae', 'https://space.alphacoders.com/trae.png',
+                { frameWidth: 104, frameHeight: 104, endFrame: 10 });
+
+
+            scene_game.load.start();
+
+            console.log("Started load");
+        } else {
+            console.log("Already have trae image loaded in");
+        }
+
+        if(!scene_game.textures.exists('trae-seedling')) {
+
+            console.log("Don't have trae-seedling loaded in. Loading now");
+
+            scene_game.load.on('filecomplete', processFile, this);
+            scene_game.load.spritesheet('trae-seedling', 'https://space.alphacoders.com/trae-seedling.png',
+                { frameWidth: 72, frameHeight: 72, endFrame: 6 });
+
+
+            scene_game.load.start();
+
+            console.log("Started load");
+        } else {
+            console.log("Already have trae seedling image loaded in");
+        }
+        */
+
+
+
+    }
+
+    function processFile(key, type, texture) {
+
+        let scene_game = game.scene.getScene('sceneGame');
+
+        console.log("In processFile for key: " + key);
+
+        let monster_sprites_index = monster_sprites.findIndex(function(obj) { return obj && obj.key === key; });
+
+        if(monster_sprites_index === -1) {
+            console.log("%c Could not find " + key + " in monster_sprites");
+        }
+
+        let frame_count_minus_one = monster_sprites[monster_sprites_index].frame_count - 1;
+
+        let anims_config = {};
+        anims_config.key = key + "-animation";
+        anims_config.frames = scene_game.anims.generateFrameNumbers(key, { 'start': 0, end: frame_count_minus_one, first: frame_count_minus_one });
+        anims_config.frameRate = monster_sprites[monster_sprites_index].frame_rate;
+        anims_config.repeat = -1;
+        scene_game.anims.create(anims_config);
+
+        /*
+        if(key === 'trae') {
+            let trae_config = {
+                key: 'trae-animation',
+                frames: scene_game.anims.generateFrameNumbers('trae', { start: 0, end: 9, first: 9 }),
+                frameRate: 6,
+                repeat: -1
+            };
+            scene_game.anims.create(trae_config);
+
+            console.log("Created trae animation");
+        } else if(key === 'trae-seedling') {
+            let trae_seedling_config = {
+                key: 'trae-seedling-animation',
+                frames: scene_game.anims.generateFrameNumbers('trae-seedling', { start: 0, end: 5, first: 5 }),
+                frameRate: 8,
+                repeat: -1
+            };
+            scene_game.anims.create(trae_seedling_config);
+
+            console.log("Created trae seedling animation");
+        }
+        */
+
+
+
+
+
+    }
+
     function moveMonsterInstant(monster_index, to_coord) {
 
         if(!monsters[monster_index].sprite) {
@@ -5917,6 +6465,11 @@
     function moveMonsterFlow(monster_index, to_coord) {
         if(!monsters[monster_index].sprite) {
             createMonsterSprite(monster_index);
+
+            if(!monsters[monster_index].sprite) {
+                console.log("%c Failing to load monster sprite for monster type id: " + monsters[monster_index].monster_type_id, log_warning);
+                return false;
+            }
         }
 
         let destination_x = to_coord.tile_x * tile_size + tile_size / 2 + monsters[monster_index].sprite_x_offset;
@@ -6849,7 +7402,7 @@
                 return false;
             }
 
-            if(object.current_hp >= object_types[object_type_index].hp) {
+            if(object.current_hp === object_types[object_type_index].hp) {
                 return false;
             }
 
@@ -6880,7 +7433,9 @@
             //console.log("Got map coord HP percent as: " + map_coords[i].hp_percent);
 
             // some simple colour changing to make it look like a health bar
-            if (object.hp_percent < 32) {
+            if(object.hp_percent > 100) {
+                graphics.fillStyle(0x4287f5);
+            } else if (object.hp_percent < 32) {
                 graphics.fillStyle(0xff0000);
             }
             else if (object.hp_percent < 64) {
@@ -6891,6 +7446,11 @@
             }
 
             let hp_bar_length = 64 * object.hp_percent / 100;
+
+            if(hp_bar_length > 64) {
+                hp_bar_length = 64;
+            }
+
 
             //console.log("Drawing at x,y: " + drawing_x + "," + drawing_y);
             let rect = new Phaser.Geom.Rectangle(drawing_x, drawing_y, hp_bar_length, 8);
@@ -7527,20 +8087,28 @@
         }
 
 
-        console.log("Set player id: " + players[player_index].id + " move delay to: " + players[player_index].current_move_delay);
+        //console.log("Set player id: " + players[player_index].id + " move delay to: " + players[player_index].current_move_delay);
 
     }
 
     // Seeing if we should draw the other coord, based on the base coord
-    function shouldDraw(base_coord, other_coord, source = false) {
+    function shouldDraw(base_coord, other_coord, source = false, debug = false) {
 
+
+        let debug_other_coord_ids = [442333];
         if(!base_coord) {
-            //console.log("No base coord in shouldDraw. source: " + source);
+            if(debug_other_coord_ids.indexOf(other_coord.id) !== -1) {
+                console.log("No base coord in shouldDraw. source: " + source);
+            }
+
             return false;
         }
 
         if(!other_coord) {
-            //console.log("No other coord in shouldDraw. source: " + source);
+            if(debug_other_coord_ids.indexOf(other_coord.id) !== -1) {
+                console.log("No other coord in shouldDraw. source: " + source);
+            }
+
             return false;
         }
 
@@ -7548,7 +8116,10 @@
         let tile_y_difference = Math.abs(base_coord.tile_y - other_coord.tile_y);
 
         if(tile_x_difference > 10 || tile_y_difference > 10) {
-            //console.log("Tile difference is too high");
+            if(debug_other_coord_ids.indexOf(other_coord.id) !== -1) {
+                console.log("Tile difference is too high. Returning false");
+            }
+
             return false;
         }
 
@@ -7568,6 +8139,14 @@
             base_coord.level === other_coord.level) {
             return true;
         }
+
+        if(debug_other_coord_ids.indexOf(other_coord.id) !== -1) {
+            console.log("Default return false. base_coord:");
+            console.log(base_coord);
+            console.log("other_coord:");
+            console.log(other_coord);
+        }
+
 
         return false;
 
@@ -7723,7 +8302,7 @@
                     if(object_type_index === -1) {
                         console.log("Couldn't find object type for inventory item id: " + inventory_item.id);
                     } else {
-                        console.log(object_types[object_type_index].drop_requires_floor_type_class);
+
                         if(object_types[object_type_index].drop_requires_floor_type_class === 'galaxy') {
 
                             $('#click_menu').append("<br>" + object_types[object_type_index].name + ": ");
@@ -8379,22 +8958,34 @@
         if(object_types[object_type_index].is_converter) {
             $('#click_menu').append("<div>");
 
-            // We don't actually send the object_type_conversion_linkers to the client - to create some... mystery.
-            // So we've just hardcoded that the life extractor expects HP
-            if(object_types[object_type_index].id === 241 ) {
-                $('#click_menu').append("<button class='button is-default' id='convert_hp' converter_object_id='" + objects[object_index].id + "'>Get paid for some life force</button>");
-            } else {
-                // let players put their stuff in and see what happens!
-                let player_inventory_items = inventory_items.filter(inventory_item => inventory_item.player_id === client_player_id);
+            console.log("Object type is converter");
+            console.log("Have " + object_type_conversion_linkers.length + " conversion linkers in client");
+            let conversion_linkers = object_type_conversion_linkers.filter(linker => linker.object_type_id === object_types[object_type_index].id);
 
-                player_inventory_items.forEach(function (inventory_item) {
-                    let item_object_type_index = object_types.findIndex(function(obj) { return obj && obj.id === inventory_item.object_type_id; });
-                    if(item_object_type_index !== -1) {
-                        $('#click_menu').append(object_types[item_object_type_index].name +
-                            "<button class='button is-default' id='convert_" + inventory_item.id + "' converter_object_id='" + objects[object_index].id + "' " +
-                            " inventory_item_id='" + inventory_item.id + "'>Convert</button><br>");
+            if(conversion_linkers) {
+                conversion_linkers.forEach(function (conversion_linker) {
+
+                    console.log("Found conversion linker for object type!");
+
+                    if(conversion_linker.input_type === "hp") {
+                        $('#click_menu').append("<button class='button is-default' id='convert_hp' converter_object_id='" + objects[object_index].id + "'>Get paid for some life force</button>");
                     }
 
+                    if(conversion_linker.input_type === "object_type") {
+                        console.log("Conversion linker input type is object_type");
+                        // let players put their stuff in and see what happens!
+                        let player_inventory_items = inventory_items.filter(inventory_item => inventory_item.player_id === client_player_id);
+
+                        player_inventory_items.forEach(function (inventory_item) {
+                            let item_object_type_index = object_types.findIndex(function(obj) { return obj && obj.id === inventory_item.object_type_id; });
+                            if(item_object_type_index !== -1 && object_types[item_object_type_index].id === conversion_linker.input_object_type_id) {
+                                $('#click_menu').append(object_types[item_object_type_index].name +
+                                    "<button class='button is-default' id='convert_" + inventory_item.id + "' converter_object_id='" + objects[object_index].id + "' " +
+                                    " inventory_item_id='" + inventory_item.id + "'>Convert</button><br>");
+                            }
+
+                        });
+                    }
                 });
             }
 
@@ -8613,7 +9204,6 @@
 
         // If it's our object, let try offering setting tint and name options
         if(objects[object_index].player_id === client_player_id) {
-            console.log("Going to try to show manage button");
             let options_string = "<br><button class='button is-default is-small is-primary' id='manage_" + objects[object_index].id + "' object_id='" + objects[object_index].id + "'>Manage</button>";
 
             $('#click_menu').append(options_string);
@@ -8621,8 +9211,6 @@
 
         // Salvaging
         if(object_types[object_type_index].can_be_salvaged) {
-
-            console.log("Object type can be salvaged");
 
             // If we are already salvaging it, give us the option to stop
             let is_being_salvaged = false;
@@ -9301,7 +9889,9 @@
         } else if(current_view === 'galaxy') {
 
             if(!data.player.coord_id || data.player.coord_id === 0) {
-                destroyPlayerSprite(players[player_index]);
+                // Just gonna comment this out for now. What we have happening is that when other players are switching
+                // to their ship views, it's removing the ship from the galaxy view. This is not ideal.
+                //destroyPlayerSprite(players[player_index]);
             } else {
                 let coord_index = coords.findIndex(function(obj) { return obj && obj.id === data.player.coord_id; });
 
@@ -9363,6 +9953,10 @@
 
                 // Player switched ships on a planet - so switching in a spaceport
                 if(players[client_player_index].ship_id !== data.player.ship_id) {
+                    update_spaceport_display = true;
+                }
+
+                if(players[client_player_index].planet_coord_id !== data.player.planet_coord_id) {
                     update_spaceport_display = true;
                 }
 

@@ -25,6 +25,16 @@ HACKING. THE VIEW I HAVEN'T MADE YET! Need a way to enter into virtual realm
 A player body type that is resistant to acid - or armor that is especially useful for it. (I LIKE BOTH :p )
 
 
+Have something like a geothermal well that can be put on any planet - and produces stored energy (batteries?)
+    But universally decreases the HP of the planet
+
+
+Repairman NPC that sits at a spaceport and will buy broken junk off you, repair it, and sell it
+    Kind of a side note - but we could have a larger spaceport with more merchant spots for the Azure and Corporation planet
+        have lots of space for NPCs and market stalls
+        Names for market stalls shown in the client above the spot? "Bob's Repair" for an NPC that repairs named Bob
+
+
 There's a high fail chance for complex things. Manufacturing skill helps. Certain monsters drop blueprints that will
  99% the success rate of manufacturing the item. Not really sure how I would want to implement blueprints. One time use?
  X times use?
@@ -34,8 +44,6 @@ Biogrove planets can be our gaia type planets. Have a tree of life (think of a c
 
 Quirks for AIs. Like the idea of an AI that gets focused/obsessed on a particular thing. Clockmaker builds clocks.
 
-I don't hate the idea of planets and other super large things taking up multiple tiles. Really no idea how I would code that
-    though
 
 Maybe have a super attack on a crazy long cooldown. Mob psycho 100, Goku going all out, etc
 
@@ -115,6 +123,9 @@ Could have temporary bodies. Ephemeral, transient bodies that are built just to 
 
 Implementing the market linkers, the bidding linkers, etc.
     Gotta get merchant npcs bidding on these things too
+
+
+Kind of a crazy one - could have living wood spaceships
 
 
 

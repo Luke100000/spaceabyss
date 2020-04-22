@@ -317,8 +317,8 @@ async function placeObject(socket, dirty, data) {
             }
 
             // see if we can place an object on that below coord
-            if(!already_have_stairs && !await canPlaceObject({'scope': 'planet', 'coord': dirty.planet_coords[below_coord_index],
-                'object_type_id': dirty.objects[object_index].object_type_id })) {
+            if(!already_have_stairs && !await canPlaceObject('planet', dirty.planet_coords[below_coord_index],
+                { 'object_type_id': dirty.objects[object_index].object_type_id })) {
                 console.log("Something is blocking us from placing the stairs below");
                 return false;
             }
@@ -403,8 +403,8 @@ async function placeObject(socket, dirty, data) {
             }
 
             // see if we can place an object on that above coord
-            if(!already_have_hole && !await canPlaceObject({'scope': 'planet', 'coord': dirty.planet_coords[above_coord_index],
-                'object_type_id': dirty.objects[object_index].object_type_id })) {
+            if(!already_have_hole && !await canPlaceObject('planet', dirty.planet_coords[above_coord_index],
+                { 'object_type_id': dirty.objects[object_index].object_type_id })) {
                 console.log("Something is blocking us from placing the hole above");
                 socket.emit('chat', { 'message': 'Something is blocking the hole above from being created', 'scope': 'system' });
                 return false;

@@ -403,6 +403,10 @@ Algae:
     Addiction Chance: 0%
 
 
+Battery
+
+    Power Cell
+
 Beer
 
 Bioplast
@@ -412,6 +416,12 @@ Circuit:
     Obtained Via: Circuit Deposit, Monsters
     Positive Effects: +1 HP
     Addiction Chance: 0%
+
+    Microcontroller
+
+        System Chip
+
+            Alpha Circuit
 
 CNS Stim:
     Obtained Via:
@@ -435,6 +445,15 @@ Combat Utility Fog
 Cricket Crunch
 
 Cup of Noodles
+
+
+Life Herb
+
+    Life Soup (need a better name) : Life Herb + Life Water
+
+    Life Herb + AI Dust
+
+
 
 Nano Bandage:
     Obtained Via: Unknown so far.
@@ -563,7 +582,7 @@ Pod ( drawn )
 
     Cargo Ship ( drawn )
 
-     Light freighter
+        Light freighter
 
                     Freighter ( have image idea )
 
@@ -573,9 +592,8 @@ Pod ( drawn )
 
 
 
+            Cutter ( have image ) Movement speed: 500 10 Batteries 10 Circuits 20 Exodium
 
-
-        Cutter ( have image ) Movement speed: 500 10 Batteries 10 Circuits 20 Exodium
 
 
             Lancer ( being drawn )
@@ -641,6 +659,34 @@ Generation ship
 Starship
 Transport ship
 Yacht
+
+
+ENGINE TYPES
+
+    I think I like the idea of having most engine types having specific fuel types that they excell with,
+        but I like the idea of turning things like algae into fuel. So letting algae get turned into an algae cell and
+        be inputted into a fusion/thiol/drive
+
+Hidden/None
+Pod
+    Ion Drive
+
+        Algae
+        Electric - Batteries
+        Fusion - Water
+
+
+            Thiol
+
+            Mass Converter (Just put whatever in it!)
+
+                Power Cells (Fuel Cells?)
+                Fusion - Life Water (This is gonna be really limited...)
+
+
+
+                                        Antimatter
+
 
 
 *****************************************

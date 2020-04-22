@@ -10,6 +10,7 @@ game.processAdminChatMessage
 /move (UP|DOWN)
 /movenpc NPC_ID planet_coord_id
 /moveplanet PLANET_ID coord_id
+/reloadevent EVENT_ID
 /replacefloor COORD_TYPE(planet|ship|galaxy) COORD_ID NEW_FLOOR_TYPE_ID
 /setplanettype PLANET_ID PLANET_TYPE_ID
 /spawnevent COORD_TYPE(planet|ship|galaxy) COORD_ID EVENT_ID
@@ -19,7 +20,7 @@ game.processAdminChatMessage
 
 
 
-
+/spawnevent planet 453493 22
 
 
 

@@ -843,6 +843,123 @@ module.exports = function(main, io, mysql, pool, chalk, log, world, map) {
 
     module.moveGalaxy = moveGalaxy;
 
+    async function moveGalaxyObject(dirty, object_index, previous_coord_index, coord_index) {
+        try {
+
+
+
+            // Don't want to move onto an object, dockable ship or something..... yet!
+            if(dirty.coords[coord_index].object_id || dirty.coords[coord_index].object_type_id) {
+                return false;
+            }
+
+
+
+            let can_place = await main.canPlaceObject('galaxy', dirty.coords[coord_index], { 'object_index': object_index });
+
+            if(!can_place) {
+                console.log("Can't do the move - moveGalaxyObject");
+                return false;
+            }
+
+
+            await main.updateCoordGeneric(false, { 'coord_index': previous_coord_index, 'object_id': false });
+            await main.updateCoordGeneric(false, { 'coord_index': coord_index,
+                'object_id': dirty.objects[object_index].id });
+
+
+
+            dirty.objects[object_index].coord_id = dirty.coords[coord_index].id;
+            dirty.objects[object_index].has_change = true;
+
+            await world.sendObjectInfo(false, "galaxy", dirty, object_index);
+
+
+        } catch(error) {
+            log(chalk.red("Error in movement.moveGalaxyObject: " + error));
+            console.error(error);
+        }
+    }
+
+    module.moveGalaxyObject = moveGalaxyObject;
+
+
+    async function moveGalaxyObjects(dirty) {
+
+        try {
+
+            let spawns_in_galaxy_object_type_ids = [];
+            for(let i = 0; i < dirty.object_types.length; i++) {
+                if(dirty.object_types[i] && dirty.object_types[i].spawns_in_galaxy) {
+                    spawns_in_galaxy_object_type_ids.push(dirty.object_types[i].id);
+                }
+            }
+
+
+            let galaxy_object_count = 0;
+            for(let i = 0; i < dirty.objects.length && galaxy_object_count < global.max_asteroid_count; i++) {
+                if(dirty.objects[i] && spawns_in_galaxy_object_type_ids.indexOf(dirty.objects[i].object_type_id) !== -1) {
+
+                    let coord_index = await main.getCoordIndex({ 'coord_id': dirty.objects[i].coord_id });
+
+                    if(coord_index === -1) {
+                        log(chalk.yellow("Could not find the coord that object id: " + dirty.objects[i].id + " is on"));
+
+                    } else {
+
+                        // Lets move this guy!
+                        let move_direction = Math.random();
+                        let up_or_down = Math.random();
+                        let random_x_change = 0;
+                        let random_y_change = 0;
+
+                        if (move_direction > .50) {
+                            move_direction = 'x';
+
+                            if (up_or_down > .50) {
+                                random_x_change = 1;
+                            } else {
+                                random_x_change = -1;
+                            }
+
+                        } else {
+                            move_direction = 'y';
+
+                            if (up_or_down > .50) {
+                                random_y_change = 1;
+                            } else {
+                                random_y_change = -1;
+                            }
+                        }
+
+                        let new_object_x = dirty.coords[coord_index].tile_x + random_x_change;
+                        let new_object_y = dirty.coords[coord_index].tile_y + random_y_change;
+
+                        // lets get the new potential planet coord and see if they can move there
+                        let new_coord_data = {
+                            'tile_x': new_object_x,
+                            'tile_y': new_object_y
+                        };
+                        let new_coord_index = await main.getCoordIndex(new_coord_data);
+
+                        if(new_coord_index !== -1) {
+                            await moveGalaxyObject(dirty, i, coord_index, new_coord_index);
+                        }
+                    }
+
+
+
+                }
+            }
+
+        } catch(error) {
+            log(chalk.red("Error in movement.moveGalaxyObjects: " + error));
+            console.error(error);
+        }
+    }
+
+    module.moveGalaxyObjects = moveGalaxyObjects;
+
     async function moveGalaxyNpc(dirty, npc_index, task_index, coord_index) {
         try {
 
@@ -2134,7 +2251,10 @@ module.exports = function(main, io, mysql, pool, chalk, log, world, map) {
 
                 socket.join("planet_" + dirty.planet_coords[moving_to_coord_index].planet_id);
 
-                socket.emit('view_change_data', { 'view': 'planet' });
+                // We're going to get the planet so we can send a planet type - so we know what monster sprites to dynamically load
+                let moving_to_planet_index = await main.getPlanetIndex({ 'planet_id': temp_coord.planet_id });
+
+                socket.emit('view_change_data', { 'view': 'planet', 'planet_type_id': dirty.planets[moving_to_planet_index].planet_type_id });
 
             } else if (moving_to_scope === 'ship') {
 
@@ -2257,11 +2377,19 @@ module.exports = function(main, io, mysql, pool, chalk, log, world, map) {
 
     module.placePlayer = placePlayer;
 
-    //      data:   planet_id   |   previous_coord_index
+    /**
+     *
+     * @param socket
+     * @param dirty
+     * @param {Object} data
+     * @param {number} data.planet_id
+     * @param {number} data.previous_coord_index
+     * @returns {Promise<boolean>}
+     */
     async function switchToPlanet(socket, dirty, data) {
 
         try {
-            //console.log("Landing on planet " + data.planet_id + " lets see if there's a spaceport tile available");
+            console.log("Landing on planet " + data.planet_id + " lets see if there's a spaceport tile available");
 
             let player_index = await main.getPlayerIndex({'player_id':socket.player_id});
 
@@ -2331,15 +2459,21 @@ module.exports = function(main, io, mysql, pool, chalk, log, world, map) {
                 await world.sendObjectInfo(socket, false, dirty, ship_index, 'movement.switchToPlanet');
             }
 
-            socket.emit('view_change_data', { 'view': 'planet', 'planet_id': dirty.planet_coords[spaceport_index].planet_id });
+            // We're going to get the planet so we can send a planet type - so we know what monster sprites to dynamically load
+            let moving_to_planet_index = await main.getPlanetIndex({ 'planet_id': dirty.planet_coords[spaceport_index].planet_id });
+
+            socket.emit('view_change_data', { 'view': 'planet', 'planet_type_id': dirty.planets[moving_to_planet_index].planet_type_id });
+
 
 
             await world.sendPlayerInfo(socket, false, dirty, dirty.players[player_index].id);
+            console.log("Sent player their updated info");
             await world.sendPlayerInfo(false, "galaxy", dirty, dirty.players[player_index].id);
             await world.sendPlayerInfo(false, "planet_" + dirty.planet_coords[spaceport_index].planet_id, dirty, dirty.players[player_index].id);
 
             // immediately update the map for the socket
             await map.updateMap(socket, dirty);
+            console.log("Sent updated map");
 
             //socket.emit('landed_on_planet_data', { 'planet_id': socket.player_planet_id });
 
@@ -2919,13 +3053,11 @@ module.exports = function(main, io, mysql, pool, chalk, log, world, map) {
                             can_place_result = await main.canPlacePlayer({ 'scope': 'planet',
                                 'coord': dirty.planet_coords[i], 'player_index': player_index });
 
-                            console.log("Can place result: " + can_place_result);
                         } else if(placing_type === 'npc') {
                             can_place_result = await main.canPlaceNpc('planet', dirty.planet_coords[i], placing_id);
                         }
 
                         if(can_place_result) {
-                            console.log("Can place there!");
                             destination_coord_index = i;
                             placing_data.planet_coord_index = i;
                             new_room = "planet_" + dirty.planet_coords[i].planet_id;

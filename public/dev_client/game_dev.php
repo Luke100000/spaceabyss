@@ -626,6 +626,7 @@ include('config.php');
     var npcs = [];
     var object_types = [];
     var object_type_assembly_linkers = [];
+    var object_type_conversion_linkers = [];
     var object_type_display_linkers = [];
     var object_type_equipment_linkers = [];
     var planets = [];
@@ -864,7 +865,7 @@ include('config.php');
             this.load.spritesheet('matriarch', 'https://space.alphacoders.com/matriarch.png',
                 { frameWidth: 64, frameHeight: 128, endFrame: 3 });
             this.load.spritesheet('milk-slerm', 'https://space.alphacoders.com/milk-slerm.png',
-                { frameWidth: 64, frameHeight: 64, endFrame: 2 });
+                { frameWidth: 64, frameHeight: 64, endFrame: 6 });
             this.load.spritesheet('mini-drone', 'https://space.alphacoders.com/mini-drone.png',
                 { frameWidth: 64, frameHeight: 64, endFrame: 2 });
             this.load.spritesheet('monitor', 'https://space.alphacoders.com/monitor.png',
@@ -1590,7 +1591,7 @@ include('config.php');
 
             let milk_slerm_config = {
                 key: 'milk-slerm-animation',
-                frames: this.anims.generateFrameNumbers('milk-slerm', { start: 0, end: 1, first: 1 }),
+                frames: this.anims.generateFrameNumbers('milk-slerm', { start: 0, end: 5, first: 5 }),
                 frameRate: 2,
                 repeat: -1
             };
@@ -2105,7 +2106,9 @@ include('config.php');
                     // E.g. Default speed is 500 ms. 1/2 a second.
                     // tile_width / 1000ms / move_delay * floor_modifier
                     // OLD E.g. 1000 / 500 * 1 = 2 (default) or 1000/500 * .5 = 1 (water)
-                    let player_move_speed = 64 * ( 1000 / players[i].current_move_delay * floor_modifier) / 60;
+                    //let player_move_speed = 64 * ( 1000 / players[i].current_move_delay * floor_modifier) / 60;
+                    // Trying /61 instead of /60 to maybe get a few less instances of the player moving too fast.
+                    let player_move_speed = 64 * ( 1000 / players[i].current_move_delay * floor_modifier) / 62;
                     //let player_move_speed = 1000 / players[i].current_move_delay * floor_modifier;
 
                     if(player_move_speed === 0) {
@@ -2225,7 +2228,6 @@ include('config.php');
 
                     // If the mining beam sprite is visible, we gotta move it!
                     if(i === client_player_index && mining_beam_sprite.visible) {
-                        console.log("Gotta MOVE THE BEAM TOO");
                         mining_beam_sprite.x = players[client_player_index].sprite.x;
                         mining_beam_sprite.y = players[client_player_index].sprite.y;
 
@@ -2238,7 +2240,6 @@ include('config.php');
                         // mining_beam_sprite.rotation = angle_between - 1.4;
                         mining_beam_sprite.rotation = angle_between;
                     } else if(i === client_player_index && salvaging_beam_sprite.visible) {
-                        console.log("Gotta MOVE THE SALVAGING BEAM TOO");
                         salvaging_beam_sprite.x = players[client_player_index].sprite.x;
                         salvaging_beam_sprite.y = players[client_player_index].sprite.y;
 

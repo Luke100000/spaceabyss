@@ -759,6 +759,9 @@ module.exports = function(main, io, mysql, pool, chalk, log, world, inventory, g
                     damage_monster_data.battle_linker = data.battle_linker;
                 } else if(data.damage_source_type) {
                     damage_monster_data.damage_source_type = data.damage_source_type;
+                    damage_monster_data.damage_types = [data.damage_type];
+                    console.log("Radius damage damaged monster. Damage type: " + data.damage_type);
+                    console.log(damage_monster_data.damage_types);
                     damage_monster_data.damage_source_id = data.damage_source_id;
 
                 }
@@ -796,19 +799,21 @@ module.exports = function(main, io, mysql, pool, chalk, log, world, inventory, g
                     return;
                 }
 
-                await game.damagePlayer(dirty, { 'player_index': being_damaged_player_index, 'damage_amount': data.damage_amount });
+                await game.damagePlayer(dirty, { 'player_index': being_damaged_player_index,
+                    'damage_amount': data.damage_amount, 'damage_types': [ data.damage_type ] });
             }
 
 
             // We still want an explosion effect there because IT IS COOL BEANS
             if(nothing_is_damaged) {
+                console.log("Trying to add explosion effect to tile even with no damage!! FUN!");
                 if(data.planet_coord_index) {
-                    io.to(room).emit('hp_change_data', {
-                        'planet_coord_id': dirty.planet_coords[data.planet_coord_index].id, 'damage_amount': 0, 'damage_type': data.damage_type
+                    io.to(room).emit('damaged_data', {
+                        'planet_coord_id': dirty.planet_coords[data.planet_coord_index].id, 'damage_amount': 0, 'damage_types': [data.damage_type]
                     });
                 } else if(data.ship_coord_index) {
                     io.to(room).emit('damaged_data', {
-                        'ship_coord_id': dirty.ship_coords[data.ship_coord_index].id, 'damage_amount': 0, 'damage_type': data.damage_type
+                        'ship_coord_id': dirty.ship_coords[data.ship_coord_index].id, 'damage_amount': 0, 'damage_types': [data.damage_type]
                     });
                 }
 
@@ -2021,9 +2026,10 @@ module.exports = function(main, io, mysql, pool, chalk, log, world, inventory, g
                                         { 'planet_id': monster_info.coord.planet_id,
                                             'planet_level': monster_info.coord.level, 'tile_x': x, 'tile_y': y});
                                     if(planet_coord_index !== -1) {
-                                        damageTile(dirty, {'planet_coord_index': planet_coord_index,
+                                        await damageTile(dirty, {'planet_coord_index': planet_coord_index,
                                             'damage_amount': player_attack_profile.radius_damage_amounts[r].damage_amount,
-                                            'battle_linker': battle_linker, 'damage_type': player_attack_profile.radius_damage_amounts[r].damage_type
+                                            'damage_source_type': 'player', 'damage_source_id': dirty.players[player_index].id,
+                                            'damage_type': player_attack_profile.radius_damage_amounts[r].damage_type
                                             });
                                     }
                                 } else if(monster_info.scope === 'ship') {
@@ -2031,9 +2037,10 @@ module.exports = function(main, io, mysql, pool, chalk, log, world, inventory, g
                                         'ship_id': monster_info.coord.ship_id, 'level': monster_info.coord.level, 'tile_x': x, 'tile_y': y
                                     });
                                     if(ship_coord_index !== -1) {
-                                        damageTile(dirty, {'ship_coord_index': ship_coord_index,
+                                        await damageTile(dirty, {'ship_coord_index': ship_coord_index,
                                             'damage_amount': player_attack_profile.radius_damage_amounts[r].damage_amount,
-                                            'battle_linker': battle_linker, 'damage_type': player_attack_profile.radius_damage_amounts[r].damage_type
+                                            'damage_source_type': 'player', 'damage_source_id': dirty.players[player_index].id,
+                                            'damage_type': player_attack_profile.radius_damage_amounts[r].damage_type
                                         });
                                     }
 

@@ -1,3 +1,47 @@
+## [0.1.0] - 2020-04-21
+
+### Added
+- Monsters can now spawn in space.
+- Comets spawn in the galaxy. They can be mined for ice blocks
+- A new property to object types - spawns_in_galaxy. Boolean. This lets the asteroid system turn into more of a system
+for anything that spawns directly in the galaxy
+- Objects like asteroids and comets can now move around the galaxy
+- Monster types can now be weak or strong to all damage types
+- Object types can now be weak or strong against heat/freezing damage types 
+- Message text whenever something levels up. There was previously intermittent support for this, but it wasn't obvious 
+enough.
+- The server is now sending conversion linkers to the client. The result parts of the conversion linkers aren't sent. 
+This still removes a bit of mystery, but being a farmer in Space Abyss basically sucked when you had to scroll through 
+your entire inventory every time. 
+- Admins can reload an event and all it's linkers and planet linkers from the database while the server is running
+
+### Fixed
+- Some spawners that don't spawn with HP and can't be attacked were failing to spawn things since their
+hp_percent was NaN.
+- Picking up Life Water
+- Equipping wasn't working for some of the Exodium and Quick Matter set
+- Lots of skills weren't updating properly. Lots of little broken bits around that system. Fixed them.
+- Various bugs with switching views
+- Display issue with the Primordial Ooze Pool
+- Asteroids would show up on any view when they moved - made the shouldDraw checks more consistent on all views,
+and fixed quite a few bugs that showed up from that.
+- Spawned events were being deleted from memory, but not the database. This caused a bunch of old spawned events to 
+always appear after a server startup, delaying events.
+
+
+### Changed
+- COMPLETELY changed how monsters and objects spawn on planets. 
+- OLD WAY: Previously, there were set objects and monsters during 
+planet creation. A big downside of this is that I needed to regenerate a planet everytime I added in 
+a new object or monster that I wanted to spawn on the planet. If the number that spawned felt wrong, I had to re-generate 
+the entire planet. If there was a bug and players destroyed something they shouldn't - I could either manually add it back 
+in or... regenerate the planet.
+- NEW WAY: Monsters and objects spawn via the event system. So I can change a monster or objects spawn behavior without 
+regenerating the entire planet. 
+- Changed the frame count and attackability of various spawners to work with the new system.
+- Most edible things have had their duration doubled. I've found that only 10 ticks as a minimum goes by really fast. So 
+the new general minimum is 20 ticks.
+
 ## [0.0.13] - 2020-04-02
 
 ### Added

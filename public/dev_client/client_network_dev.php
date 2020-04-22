@@ -444,6 +444,8 @@
                 drawing_y = tileToPixel(player_info.coord.tile_y);
             }
         } else if(data.planet_coord_id) {
+
+            console.log("Got damaged data with a planet coord id");
             let coord_index = planet_coords.findIndex(function(obj) { return obj && obj.id === parseInt(data.planet_coord_id); });
 
             if(coord_index !== -1) {
@@ -536,6 +538,7 @@
 
 
         let function_data = data;
+
         function_data.x = drawing_x;
         function_data.y = drawing_y;
         function_data.attacker_x = attacker_x;
@@ -544,7 +547,7 @@
 
 
         addEffect(function_data);
-        addInfoNumber(function_data);
+        addInfoNumber(drawing_x, drawing_y, function_data);
 
     });
 
@@ -1081,10 +1084,23 @@
 
         if(coord_index === -1) {
             coord_index = coords.push(data.coord) - 1;
-            drawCoord('galaxy', coords[coord_index]);
+
+            // We will often get the base coord for the planet ahead of time. If we are in the galaxy view ,just always place that
+            // planet coord. We are getting it for a reason!
+            if(client_player_index === -1 || shouldDraw(client_player_info.coord, coords[coord_index], "coord_info") ||
+                (current_view === "galaxy" && coords[coord_index].planet_id)) {
+
+                if(coords[coord_index].object_type_id === 138) {
+                    console.log("Drawing asteroid from coord info");
+                }
+
+                drawCoord('galaxy', coords[coord_index]);
+            }
+
 
             // we just added the coord that the player is on - we should insta center the player there if we are in the galaxy view
             if(coords[coord_index].player_id === client_player_id && current_view === 'galaxy') {
+                client_player_info = getPlayerInfo(client_player_index);
                 movePlayerInstant(client_player_index, coords[coord_index].tile_x * tile_size + tile_size / 2,
                     coords[coord_index].tile_y * tile_size + tile_size / 2);
             }
@@ -1109,27 +1125,40 @@
             }
         } else {
 
-            if(coords[coord_index].object_id !== data.coord.object_id || coords[coord_index].belongs_to_object_id !== data.coord.belongs_to_object_id) {
-                //console.log(coords[coord_index].object_id + " doesn't match " + data.coord.object_id + " redrawing coord");
-                drawCoord('galaxy', data.coord);
+
+            if(client_player_index === -1 || shouldDraw(client_player_info.coord, coords[coord_index], "coord_info - update")) {
+                if(coords[coord_index].object_id !== data.coord.object_id || coords[coord_index].belongs_to_object_id !== data.coord.belongs_to_object_id) {
+
+                    //console.log(coords[coord_index].object_id + " doesn't match " + data.coord.object_id + " redrawing coord");
+                    if(coords[coord_index].object_type_id === 138) {
+                        console.log("Drawing asteroid from updated coord info");
+                    }
+                    drawCoord('galaxy', data.coord);
+                }
+
+                /*
+                else if(coords[coord_index].player_id !== data.coord.player_id) {
+                    //console.log(coords[coord_index].player_id + " doesn't match " + data.coord.player_id + " redrawing coord");
+                    drawCoord('galaxy', data.coord);
+                }
+                */
+
+
+
+                if(coords[coord_index].floor_type_id !== data.coord.floor_type_id) {
+                    //console.log(coords[coord_index].floor_type_id + " doesn't match " + data.coord.floor_type_id + " redrawing coord");
+                    drawCoord('galaxy', data.coord);
+                }
             }
 
-            /*
-            else if(coords[coord_index].player_id !== data.coord.player_id) {
-                //console.log(coords[coord_index].player_id + " doesn't match " + data.coord.player_id + " redrawing coord");
-                drawCoord('galaxy', data.coord);
-            }
-            */
-
-
-
-            if(coords[coord_index].floor_type_id !== data.coord.floor_type_id) {
-                //console.log(coords[coord_index].floor_type_id + " doesn't match " + data.coord.floor_type_id + " redrawing coord");
-                drawCoord('galaxy', data.coord);
-            }
 
 
             coords[coord_index] = data.coord;
+        }
+
+        if(coords[coord_index].player_id === client_player_id && map_needs_redraw) {
+            //console.log("Looks like we now have the galaxy coord the player is on - redrawing map");
+            redrawMap();
         }
 
 
@@ -1259,6 +1288,7 @@
     socket.on('login_data', function(data) {
         //console.log("Got login_data");
         if(data.status == 'success' || data.is_logged_in == 'true') {
+
             logged_in = true;
             current_view = data.starting_view;
             console.log("%c We are logged in and set our starting view to: " + current_view, log_success);
@@ -1272,18 +1302,20 @@
 
 
             let player_index = players.findIndex(function(obj) { return obj && obj.id === parseInt(client_player_id); });
+            client_player_index = player_index;
+            client_player_info = getPlayerInfo(client_player_index);
 
             if(player_index === -1) {
                 console.log("Got login data, but don't have the us (client) in players. Requesting player info");
                 socket.emit('request_player_info', { 'player_id': client_player_id });
             } else {
                 console.log("Got login data, and already have our player in the players array!");
-                client_player_index = player_index;
+
 
                 if(!players[client_player_index].sprite) {
                     console.log("Creating our sprite");
                     createPlayerSprite(client_player_index);
-                    client_player_info = getPlayerInfo(client_player_index);
+
 
 
                     if(client_player_info.coord && players[client_player_index.sprite]) {
@@ -1319,6 +1351,24 @@
             } else if(current_view === 'planet') {
                 //$('#launch').empty();
                 //$('#launch').append('<button class="btn btn-block btn-success" id="viewchange" newview="galaxy">Launch From Planet</button>');
+                console.log("In starting view on planet");
+                if(typeof client_player_info.coord === "undefined" || !client_player_info.coord) {
+                    console.log("Don't have the coord for the player yet");
+                    console.log(client_player_info);
+                } else {
+                    console.log(client_player_info);
+                    let planet_index = getPlanetIndex({ 'planet_id': client_player_info.coord.planet_id });
+                    if(planet_index !== -1) {
+                        console.log("Going to call loadMonsterSprites for planet type id: " + planets[planet_index].planet_type_id);
+                        loadMonsterSprites(planets[planet_index].planet_type_id);
+                    } else {
+                        console.log("Could not get the planet");
+                    }
+
+
+                }
+                //let planet_index = getPlanetIndex({ 'planet_id': })
+
             } else if(current_view === 'ship') {
 
                 generateAirlockDisplay();
@@ -1410,9 +1460,9 @@
             'attacker_id': mining_linkers[mining_linker_index].player_id };
 
 
-        let function_data = {'damage_amount': data.amount, 'x': info_number_x, 'y': info_number_y, 'damage_types': ['mining'] };
+        let function_data = { 'damage_amount': data.amount, 'damage_types': ['mining'] };
         console.log(function_data);
-        addInfoNumber(function_data);
+        addInfoNumber(info_number_x, info_number_y, function_data);
         addEffect(function_data);
         //addInfoNumber(info_number_data);
 
@@ -1688,7 +1738,7 @@
 
             let need_redraw_bars = false;
             if(monsters[monster_index].current_hp !== data.monster.current_hp && monsters[monster_index].sprite) {
-                console.log("Have monster info with an hp change. Going to redraw bars");
+                //console.log("Have monster info with an hp change. Going to redraw bars");
                 need_redraw_bars = true;
             }
 
@@ -1781,8 +1831,6 @@
     });
 
     socket.on('move_failure', function(data) {
-        console.log("Got move failure info");
-        console.log(data);
 
         if(data.failed_planet_coord_id) {
             let back_to_planet_coord_index = planet_coords.findIndex(function(obj) { return obj && obj.id === parseInt(data.return_to_planet_coord_id); });
@@ -1851,6 +1899,7 @@
         socket.emit('request_floor_type_display_linker_data');
         socket.emit('request_monster_type_data');
         socket.emit('request_object_type_data');
+        socket.emit('request_object_type_conversion_linker_data');
         socket.emit('request_object_type_display_linker_data');
         socket.emit('request_object_type_equipment_linker_data');
         socket.emit('request_floor_type_data');
@@ -2049,6 +2098,23 @@
 
             }
 
+            // If there was a salvaging linker associated with this, remove it and the beam
+            for(let i = 0; i < salvaging_linkers.length; i++) {
+                if(salvaging_linkers[i] && salvaging_linkers[i].object_id === data.object.id) {
+
+
+                    delete salvaging_linkers[i];
+                    console.log("Removed salvaging linker");
+                    if(salvaging_beam_sprite) {
+                        salvaging_beam_sprite.setVisible(false);
+                    }
+                    redrawBars();
+
+
+                }
+            }
+
+
             return;
 
         }
@@ -2065,6 +2131,9 @@
 
         // add it
         if(object_index === -1) {
+            if(data.object.object_type_id === 138) {
+                console.log("Got new asteroid object!");
+            }
             //console.log("Don't have this object yet");
 
             object_index = objects.push(data.object) - 1;
@@ -2158,6 +2227,65 @@
                 generateAirlockDisplay();
             }
 
+
+            if(shouldDraw(client_player_info.coord, object_info.coord, "object_info")) {
+
+                if(data.object.object_type_id === 138) {
+                    console.log("Drawing it!");
+                }
+
+                drawCoord(object_info.scope, object_info.coord);
+
+                // If there's a tint, set that
+                if(objects[object_index].tint) {
+
+                    let object_tile = map.getTileAt(object_info.coord.tile_x, object_info.coord.tile_y, false, 'layer_object');
+
+                    if(object_tile) {
+                        object_tile.tint = objects[object_index].tint;
+                    }
+
+                }
+
+                // If there's a name, show that
+                if(objects[object_index].name) {
+
+                    let object_player_index = players.findIndex(function(obj) { return obj && obj.id === objects[object_index].player_id; });
+
+                    if(object_player_index !== -1) {
+                        // Make sure the object doesn't match a current player body or ship
+                        let player_using_index = players.findIndex(function(obj) { return obj &&
+                            (obj.body_id === objects[object_index].id || obj.ship_id === objects[object_index].id);  });
+
+                        if(player_using_index === -1) {
+                            //console.log("Object has name, and is not an active body/ship. Setting that");
+                            if(!objects[object_index].name_text) {
+                                let scene_game = game.scene.getScene('sceneGame');
+
+                                objects[object_index].name_text = scene_game.add.text(tileToPixel(object_info.coord.tile_x) - 18,
+                                    tileToPixel(object_info.coord.tile_y) - 14, objects[object_index].name, {
+                                        fontSize: 14,
+                                        padding: { x: 10, y: 5},
+                                        stroke: '#000000',
+                                        strokeThickness: 3,
+                                        fill: '#ffffff'});
+                                objects[object_index].name_text.setDepth(11);
+
+
+                            }
+                        }
+                    }
+
+
+
+                }
+
+                if(objects[object_index].current_hp !== object_types[object_type_index].hp) {
+                    redrawBars();
+                }
+            }
+
+            /*
             // If it's an object associated with a coord in our curent view, redraw that coord
             if(current_view === "galaxy" && objects[object_index].coord_id) {
 
@@ -2197,48 +2325,18 @@
                 //    " and the object's coord_id: " + objects[object_index].coord_id);
             }
 
-
-            // If there's a tint, set that
-            if(objects[object_index].tint) {
-
-                let object_tile = map.getTileAt(object_info.coord.tile_x, object_info.coord.tile_y, false, 'layer_object');
-
-                if(object_tile) {
-                    object_tile.tint = objects[object_index].tint;
-                }
-
-            }
-
-            // If there's a name, show that
-            if(objects[object_index].name) {
-
-                // Make sure the object doesn't match a current player body or ship
-                let player_using_index = players.findIndex(function(obj) { return obj &&
-                    (obj.body_id === objects[object_index].id || obj.ship_id === objects[object_index].id);  });
-
-                if(player_using_index === -1) {
-                    //console.log("Object has name, and is not an active body/ship. Setting that");
-                    if(!objects[object_index].name_text) {
-                        let scene_game = game.scene.getScene('sceneGame');
-
-                        objects[object_index].name_text = scene_game.add.text(tileToPixel(object_info.coord.tile_x) - 18,
-                            tileToPixel(object_info.coord.tile_y) - 14, objects[object_index].name, {
-                                fontSize: 14,
-                                padding: { x: 10, y: 5},
-                                stroke: '#000000',
-                                strokeThickness: 3,
-                                fill: '#ffffff'});
-                        objects[object_index].name_text.setDepth(11);
+            */
 
 
-                    }
-                }
 
-            }
 
         }
         // Already have the object - don't have to insert, just update
         else {
+
+            if(data.object.object_type_id === 138) {
+                console.log("Got updated asteroid object!");
+            }
 
             object_info = getObjectInfo(object_index);
             //console.log("Already have this object");
@@ -2323,48 +2421,6 @@
             }
 
 
-            // If there's a tint, set that
-            if(data.object.tint && data.object.tint !== objects[object_index].tint) {
-                console.log("Object has tint change. Setting tint");
-                let object_tile = map.getTileAt(object_info.coord.tile_x, object_info.coord.tile_y, false, 'layer_object');
-
-                if(object_tile) {
-                    object_tile.tint = data.object.tint;
-                }
-
-            }
-
-            // If there's a name, show that
-            if(data.object.name && data.object.name !== objects[object_index].name) {
-                console.log("Object has name change. Setting that");
-
-                // The name could be removed
-                if(data.object.name.length === 0) {
-                    if(objects[object_index].name_text) {
-                        objects[object_index].name_text.destroy();
-                    }
-                }
-                if(!objects[object_index].name_text) {
-                    let scene_game = game.scene.getScene('sceneGame');
-
-                    objects[object_index].name_text = scene_game.add.text(tileToPixel(object_info.coord.tile_x) - 18,
-                        tileToPixel(object_info.coord.tile_y) - 14, objects[object_index].name, {
-                            fontSize: 14,
-                            padding: { x: 10, y: 5},
-                            stroke: '#000000',
-                            strokeThickness: 3,
-                            fill: '#ffffff'});
-
-                    objects[object_index].name_text.setDepth(11);
-
-
-                } else {
-                    objects[object_index].name_text.setText(data.object.name);
-                }
-            }
-
-
-
             /*************************** AT THIS POINT IN THE FUNCTION WE LOSE KNOWING DIFFERENCES BETWEEN OLD AND NEW *********************/
             // We have to specifically change things, since objects could have name next associated with them.
             objects[object_index].name = data.object.name;
@@ -2396,6 +2452,59 @@
 
             if(redraw_object === true) {
 
+                if(shouldDraw(client_player_info.coord, object_info.coord, "object_info")) {
+
+                    if(data.object.object_type_id === 138) {
+                        console.log("Drawing existing asteroid object!");
+                    }
+
+                    drawCoord(object_info.scope, object_info.coord);
+
+
+                    // If there's a tint, set that
+                    if(data.object.tint && data.object.tint !== objects[object_index].tint) {
+                        console.log("Object has tint change. Setting tint");
+                        let object_tile = map.getTileAt(object_info.coord.tile_x, object_info.coord.tile_y, false, 'layer_object');
+
+                        if(object_tile) {
+                            object_tile.tint = data.object.tint;
+                        }
+
+                    }
+
+                    // If there's a name, show that
+                    if(data.object.name && data.object.name !== objects[object_index].name) {
+                        console.log("Object has name change. Setting that");
+
+                        // The name could be removed
+                        if(data.object.name.length === 0) {
+                            if(objects[object_index].name_text) {
+                                objects[object_index].name_text.destroy();
+                            }
+                        }
+                        if(!objects[object_index].name_text) {
+                            let scene_game = game.scene.getScene('sceneGame');
+
+                            objects[object_index].name_text = scene_game.add.text(tileToPixel(object_info.coord.tile_x) - 18,
+                                tileToPixel(object_info.coord.tile_y) - 14, objects[object_index].name, {
+                                    fontSize: 14,
+                                    padding: { x: 10, y: 5},
+                                    stroke: '#000000',
+                                    strokeThickness: 3,
+                                    fill: '#ffffff'});
+
+                            objects[object_index].name_text.setDepth(11);
+
+
+                        } else {
+                            objects[object_index].name_text.setText(data.object.name);
+                        }
+                    }
+                }
+
+
+
+                /*
                 //console.log("Redrawing coord with that object on it");
 
                 if(objects[object_index].coord_id && current_view === 'galaxy') {
@@ -2423,6 +2532,7 @@
                         drawCoord('ship', ship_coords[object_coord_index]);
                     }
                 }
+                */
             }
 
             if(redraw_bars === true) {
@@ -2465,9 +2575,13 @@
 
         // We only add the object if it's not our ship
         // TODO or another player's active ship
+
+        // What the POO is this if statement?
+        /*
         if(client_player_index !== -1 && objects[object_index].id !== players[client_player_index].ship_id) {
             mapAddObject(objects[object_index]);
         }
+        */
 
 
         /*
@@ -2518,6 +2632,16 @@
 
     });
 
+    socket.on('object_type_conversion_linker_info', function(data) {
+
+        let object_type_conversion_linker_index = object_type_conversion_linkers.findIndex(function(obj) {
+            return obj && obj.id === parseInt(data.object_type_conversion_linker.id); });
+
+        if(object_type_conversion_linker_index === -1) {
+            object_type_conversion_linkers.push(data.object_type_conversion_linker);
+        }
+    });
+
     socket.on('object_type_display_linker_info', function(data) {
 
         let object_type_display_linker_index = object_type_display_linkers.findIndex(function(obj) {
@@ -2531,13 +2655,7 @@
     socket.on('planet_coord_info', function (data) {
 
 
-
-        let player_index = players.findIndex(function(obj) { return obj && obj.id === player_id; });
-        let player_info;
-        if(player_index !== -1) {
-            player_info = getPlayerInfo(player_index);
-        }
-
+        let debug_planet_coord_ids = [442333];
 
         if(!data.planet_coord) {
             console.log("%c planet_coord_info without planet coord", log_warning);
@@ -2551,19 +2669,30 @@
         let coord_index = planet_coords.findIndex(function(obj) { return obj && obj.id === parseInt(data.planet_coord.id); });
         if(coord_index === -1) {
 
+            if(debug_planet_coord_ids.indexOf(data.planet_coord.id) !== -1) {
+                console.log("Did not have planet coord. Adding it");
+            }
+
             coord_index = planet_coords.push(data.planet_coord) - 1;
 
-            if(player_index === -1 || shouldDraw(player_info.coord, planet_coords[coord_index], 'planet_coord_info')) {
-                //console.log("Didn't have planet coord id: " + planet_coords[coord_index].id + " x,y: " +
-                //    planet_coords[coord_index].tile_x + "," + planet_coords[coord_index].tile_y + ". Adding and drawing");
+            if(client_player_index === -1 || shouldDraw(client_player_info.coord, planet_coords[coord_index], 'planet_coord_info')) {
+
+                if(debug_planet_coord_ids.indexOf(data.planet_coord.id) !== -1) {
+                    console.log("Drawing it");
+                }
                 drawCoord('planet', planet_coords[coord_index]);
             } else {
-                //console.log("Didn't have planet coord id: " + planet_coords[coord_index].id + " x,y: " +
-                //    planet_coords[coord_index].tile_x + "," + planet_coords[coord_index].tile_y + ". Adding. NOT drawing");
+                if(debug_planet_coord_ids.indexOf(data.planet_coord.id) !== -1) {
+                    console.log("Not drawing it");
+                }
             }
 
             // If we are just adding the coord where our player is at, snap them to it
             if(planet_coords[coord_index].player_id === client_player_id) {
+
+                // It looks like we just got the planet coord that we are on
+                // So now if we grab our client_player_info, we should have a coord.
+                client_player_info = getPlayerInfo(client_player_index);
                 console.log("Would maybe insta move player now");
 
                 if(spaceport_display_needs_regeneration) {
@@ -2576,6 +2705,10 @@
 
 
         } else {
+
+            if(debug_planet_coord_ids.indexOf(data.planet_coord.id) !== -1) {
+                console.log("Already have planet coord");
+            }
 
             // if the planet coord changed its floor type - we could possibly have an animation to remove
             // do this before we draw the updated data
@@ -2594,8 +2727,11 @@
 
 
             // Only want to draw coords we should draw
-            if(player_index === -1 || shouldDraw(player_info.coord, planet_coords[coord_index], 'planet_coord_info')) {
+            if(client_player_index === -1 || shouldDraw(client_player_info.coord, planet_coords[coord_index], 'planet_coord_info')) {
 
+                if(debug_planet_coord_ids.indexOf(data.planet_coord.id) !== -1) {
+                    console.log("Drawing planet coord");
+                }
                 // So we'll be receiving planet coord info for planet coords off our screen when monsters move around on them
                 // So I'm testing just always drawing the coord here. Otherwise we could do an additional check to see if there
                 // is nothing on the floor layer, and draw based on that or changes.
@@ -2620,6 +2756,10 @@
                     drawCoord('planet', data.planet_coord);
                 }
                 */
+            } else {
+                if(debug_planet_coord_ids.indexOf(data.planet_coord.id) !== -1) {
+                    console.log("Not drawing planet coord");
+                }
             }
 
 
@@ -2628,9 +2768,10 @@
         }
 
 
-        if(planet_coords[coord_index].player_id === player_id && map_needs_redraw) {
-            console.log("looks like we now have the planet coord the player is on - redrawing map");
+        if(planet_coords[coord_index].player_id === client_player_id && map_needs_redraw) {
+            //console.log("Looks like we now have the planet coord the player is on - redrawing map");
             redrawMap();
+            generateSpaceportDisplay();
         }
 
         if(planet_coords[coord_index].npc_id) {
@@ -2652,7 +2793,7 @@
                 if(shouldDraw(client_player_info.coord, monster_info.coord, "monster_info")) {
                     createMonsterSprite(monster_index);
                 } else {
-                    console.log("Not drawing monster");
+                    //console.log("Not drawing monster");
                 }
             }
         }
@@ -2760,11 +2901,13 @@
             }
 
 
+
+
             // with a player we need to selectively add new values since there will be some client side
             // manipulation of some values
             let needs_redraw = false;
             if(parseInt(players[player_index].current_hp) !== parseInt(data.player.current_hp) && players[player_index].sprite) {
-                console.log("Redrawing bars due to player hp change");
+                //console.log("Redrawing bars due to player hp change");
                 needs_redraw = true;
 
             }
@@ -2785,8 +2928,8 @@
             players[player_index].planet_coord_id = data.player.planet_coord_id;
 
             let moved_on_ship = false;
+            // Object.is is checking for the same value
             if(!Object.is(parseInt(players[player_index].ship_coord_id), parseInt(data.player.ship_coord_id))) {
-                console.log("moved on ship." + parseInt(players[player_index].ship_coord_id) + "!== " + parseInt(data.player.ship_coord_id));
                 moved_on_ship = true;
             }
 
@@ -2846,16 +2989,29 @@
 
             players[player_index].level = data.player.level;
             players[player_index].energy = data.player.energy;
+            if(player_index === client_player_index) {
+                checkLevelIncrease(players[player_index], data.player);
+            }
+
+            players[player_index].control_skill_points = data.player.control_skill_points;
             players[player_index].cooking_skill_points = data.player.cooking_skill_points;
+            players[player_index].corrosive_skill_points = data.player.corrosive_skill_points;
             players[player_index].defending_skill_points = data.player.defending_skill_points;
+            players[player_index].electric_skill_points = data.player.electric_skill_points;
+            players[player_index].explosion_skill_points = data.player.explosion_skill_points;
             players[player_index].farming_skill_points = data.player.farming_skill_points;
-            players[player_index].hacking_skill_poitns = data.player.hacking_skill_points;
+            players[player_index].freeze_skill_points = data.player.freeze_skill_points;
+            players[player_index].hacking_skill_points = data.player.hacking_skill_points;
+            players[player_index].heat_skill_points = data.player.heat_skill_points;
+            players[player_index].gravity_skill_points = data.player.gravity_skill_points;
             players[player_index].melee_skill_points = data.player.melee_skill_points;
             players[player_index].laser_skill_points = data.player.laser_skill_points;
-            //console.log("Got updated laser skill points as: " + data.player.laser_skill_points);
             players[player_index].manufacturing_skill_points = data.player.manufacturing_skill_points;
             players[player_index].mining_skill_points = data.player.mining_skill_points;
+            players[player_index].piercing_skill_points = data.player.piercing_skill_points;
             players[player_index].plasma_skill_points = data.player.plasma_skill_points;
+            players[player_index].poison_skill_points = data.player.poison_skill_points;
+            players[player_index].radiation_skill_points = data.player.radiation_skill_points;
             players[player_index].repairing_skill_points = data.player.repairing_skill_points;
             players[player_index].researching_skill_points = data.player.researching_skill_points;
 
@@ -2934,7 +3090,6 @@
             if(needs_redraw) {
                 redrawBars();
             }
-            //showPlayer(players[player_index]);
         }
 
 
@@ -3091,7 +3246,7 @@
 
 
         addEffect({ 'x': drawing_x, 'y': drawing_y, 'damage_types': ['repairing']});
-        addInfoNumber({'damage_amount': data.repaired_amount, 'x': drawing_x, 'y': drawing_y, 'damage_types': ['repairing']});
+        addInfoNumber(drawing_x, drawing_y, {'damage_amount': data.repaired_amount, 'damage_types': ['repairing']});
 
         //addInfoNumber(info_number_data);
 
@@ -3338,7 +3493,7 @@
             //    'attacker_id': salvaging_linkers[index].player_id };
 
             addEffect({ 'x': drawing_x, 'y': drawing_y, 'damage_types': ['repairing']});
-            addInfoNumber({'damage_amount': data.repaired_amount, 'x': drawing_x, 'y': drawing_y, 'damage_types': ['repairing']});
+            addInfoNumber(drawing_x, drawing_y, {'damage_amount': data.repaired_amount, 'damage_types': ['repairing']});
 
             //addInfoNumber(info_number_data);
             redrawBars();
@@ -3402,10 +3557,11 @@
 
             // we just added the coord that the player is on - we should insta center the player there
             if(client_player_index !== -1 && ship_coords[coord_index].player_id === client_player_id) {
-                console.log("This coord has our player");
+                client_player_info = getPlayerInfo(client_player_index);
+                //console.log("This coord has our player");
 
                 if(!players[client_player_index].sprite) {
-                    console.log("Trying to create our player sprite");
+                    //console.log("Trying to create our player sprite");
                     createPlayerSprite(client_player_index);
                 } else {
                     console.log("Player already has a sprite");
@@ -3447,9 +3603,6 @@
 
             ship_coords[coord_index] = data.ship_coord;
 
-            if(ship_coords[coord_index].player_id === client_player_id) {
-                console.log("Got update on coord with our player");
-            }
 
             if(client_player_index !== -1 && !players[client_player_index].sprite && ship_coords[coord_index].player_id === client_player_id) {
                 console.log("Found the player!");
@@ -3458,6 +3611,10 @@
 
         }
 
+        if(ship_coords[coord_index].player_id === client_player_id && map_needs_redraw) {
+            //console.log("Looks like we now have the ship coord the player is on - redrawing map");
+            redrawMap();
+        }
 
 
 
@@ -3520,7 +3677,7 @@
             console.log("View change to galaxy!");
             on_planet = false;
 
-            console.log("Emptied launch");
+            //console.log("Emptied launch");
             $('#launch').empty();
 
             let html_string = "";
@@ -3562,7 +3719,7 @@
 
         } else if(data.view === 'planet') {
 
-            //console.log("In planet section");
+            console.log("In planet section");
             current_view = 'planet';
 
             //$('#launch').empty();
@@ -3571,6 +3728,13 @@
             battle_linkers = [];
             coords = [];
             ship_coords = [];
+
+            if(data.planet_type_id) {
+                console.log("View change data had a planet type id: " + data.planet_type_id);
+                loadMonsterSprites(data.planet_type_id);
+            } else {
+                console.log("View change data did NOT have a planet_type_id");
+            }
 
 
         } else if(data.view === 'ship') {
