@@ -3,14 +3,14 @@
 DOING NOW:
 
 
-    make sure heat, farming, mining, and cooking skills increase
-
-    Make ice blocks weak to heat
-        Just hit em with a hull welder
-
-
     Maybe spawn the initial non-pod ships with a shield generator and a full energy storage bank
         The idea being that we are already giving them so many new concepts at once.
+
+
+    Heat effect (showing up on ice blocks)
+    Long laser effect (like mining/salvaging)
+    Show planet hp
+
 
 
     I want things like a life herb cluster to be easier to grow if someone is a good farmer.
@@ -18,6 +18,8 @@ DOING NOW:
         I could also just put the max HP for negative things at 100% hp, and then if a farmer gives life water to stuff
             and get HP > 100%, the bad option goes away.
 
+    Gotta fix why the walls are still showing
+    Need something like can_be_claimed so things like the space whale can't be moved around
 
 
 
@@ -25,8 +27,15 @@ DOING NOW:
         Have the monster just spawn adjacent to the player?
 
 
+    random advertisement drones that show up here and there on corporation planets!!!! A little drone with a burger image on it, etc.
+        Holo advertisements
+        NEON!
+
 
     MONSTERS IN SPACE!
+
+
+        Need to limit the # of things that can be stacked on a floor. Limit at 100 Territe/tile or so.
 
 
     I think it would be neat if there was the option to just take some of what something spawned

@@ -1,6 +1,16 @@
-module.exports = function(main, io, mysql, pool, chalk, log, world, map) {
+var io_handler = require('./io' + process.env.FILE_SUFFIX + '.js');
+var io = io_handler.io;
+var database = require('./database' + process.env.FILE_SUFFIX + '.js');
+var pool = database.pool;
+const chalk = require('chalk');
+const log = console.log;
 
-    var module = {};
+const game_object = require('./game_object' + process.env.FILE_SUFFIX + '.js');
+const helper = require('./helper' + process.env.FILE_SUFFIX + '.js');
+const main = require('./space_abyss' + process.env.FILE_SUFFIX + '.js');
+const map = require('./map' + process.env.FILE_SUFFIX + '.js');
+const planet = require('./planet' + process.env.FILE_SUFFIX + '.js');
+const world = require('./world' + process.env.FILE_SUFFIX + '.js');
 
 
     async function adminMoveNpc(socket, dirty, npc_id, planet_coord_id) {
@@ -132,14 +142,14 @@ module.exports = function(main, io, mysql, pool, chalk, log, world, map) {
             dirty.players[player_index].coord_id = false;
             dirty.players[player_index].ship_coord_id = dirty.ship_coords[ship_coord_index].id;
             dirty.players[player_index].has_change = true;
-            await world.sendPlayerInfo(socket, "ship_" + dirty.ship_coords[ship_coord_index].ship_id, dirty, dirty.players[player_index].id);
-            await world.sendPlayerInfo(false, "galaxy", dirty, dirty.players[player_index].id);
+            await world.sendPlayerInfo(io, socket, "ship_" + dirty.ship_coords[ship_coord_index].ship_id, dirty, dirty.players[player_index].id);
+            await world.sendPlayerInfo(io,false, "galaxy", dirty, dirty.players[player_index].id);
 
             socket.leave("galaxy");
             socket.join("ship_" + dirty.ship_coords[ship_coord_index].ship_id);
 
             socket.emit('view_change_data', { 'view': 'ship'});
-            map.updateMap(socket, dirty);
+            map.updateMap(io, socket, dirty);
 
             // give the player's ship that they just used to enter the spaceport an attached to
             let ship_index = await main.getObjectIndex(dirty.players[player_index].ship_id);
@@ -148,7 +158,7 @@ module.exports = function(main, io, mysql, pool, chalk, log, world, map) {
             if(ship_index !== -1) {
                 dirty.objects[ship_index].docked_at_object_id = dirty.ship_coords[ship_coord_index].ship_id;
                 dirty.objects[ship_index].has_change = true;
-                await world.sendObjectInfo(socket, false, dirty, ship_index, 'movement.dockOnShip');
+                await game_object.sendInfo(socket, false, dirty, ship_index, 'movement.dockOnShip');
             }
 
 
@@ -164,7 +174,7 @@ module.exports = function(main, io, mysql, pool, chalk, log, world, map) {
         data:   |   movement_direction   |   destination_coord_type   |   destination_coord_id
      */
 
-    async function move(socket, dirty, data) {
+    async function move(io, socket, dirty, data) {
 
         try {
 
@@ -290,7 +300,11 @@ module.exports = function(main, io, mysql, pool, chalk, log, world, map) {
             //socket.last_move_time = Math.floor(new Date());
             //console.log("Accepted move: " + data.destination_coord_type + " " + data.destination_coord_id);
             socket.last_move_time = Date.now();
-            socket.movement_modifier = false;
+
+            if(typeof socket.movement_modifier === "undefined") {
+                socket.movement_modifier = 1.00;    
+            }
+
 
 
             // not sure with all the different conditions we should put this here
@@ -309,16 +323,16 @@ module.exports = function(main, io, mysql, pool, chalk, log, world, map) {
             // We only send in movement direction when we didn't find a coord to move to. This basically only applies
             // If the player is on a planet, and they are potentially falling
             if(data.movement_direction) {
-                movePlanetFall(socket, dirty, {'player_index': player_index, 'movement_direction': data.movement_direction });
+                await movePlanetFall(socket, dirty, {'player_index': player_index, 'movement_direction': data.movement_direction });
             } else if (dirty.players[player_index].planet_coord_id) {
-                movePlanet(socket, dirty, data.destination_coord_id);
+                await movePlanet(io, socket, dirty, data.destination_coord_id);
             } else if (dirty.players[player_index].ship_coord_id) {
-                moveShip(socket, dirty, data.destination_coord_id);
+                await moveShip(io, socket, dirty, data.destination_coord_id);
             } else {
 
                 let new_coord_index = await main.getCoordIndex({ 'coord_id': data.destination_coord_id });
 
-                moveGalaxy(socket, dirty, new_coord_index);
+                await moveGalaxy(io, socket, dirty, new_coord_index);
             }
 
 
@@ -330,7 +344,7 @@ module.exports = function(main, io, mysql, pool, chalk, log, world, map) {
 
     }
 
-    module.move = move;
+    exports.move = move;
 
     async function moveEntirePlanet(socket, dirty, planet_id, destination_coord_id) {
         try {
@@ -368,7 +382,7 @@ module.exports = function(main, io, mysql, pool, chalk, log, world, map) {
                 dirty.planets[planet_index].coord_id = dirty.coords[new_coord_index].id;
                 dirty.planets[planet_index].has_change = true;
 
-                await world.sendPlanetInfo(socket, "galaxy", dirty, { 'planet_index': planet_index });
+                await planet.sendInfo(socket, "galaxy", dirty, { 'planet_index': planet_index });
                 return;
             }
 
@@ -442,17 +456,17 @@ module.exports = function(main, io, mysql, pool, chalk, log, world, map) {
             // send the updated planet info
             dirty.planets[planet_index].coord_id = dirty.coords[new_coord_index].id;
             dirty.planets[planet_index].has_change = true;
-            await world.sendPlanetInfo(socket, "galaxy", dirty, { 'planet_index': planet_index });
+            await planet.sendInfo(socket, "galaxy", dirty, { 'planet_index': planet_index });
 
         } catch(error) {
             log(chalk.red("Error in movement.moveEntirePlanet: " + error));
         }
     }
 
-    module.moveEntirePlanet = moveEntirePlanet;
+    exports.moveEntirePlanet = moveEntirePlanet;
 
 
-    async function moveGalaxy(socket, dirty, coord_index) {
+    async function moveGalaxy(io, socket, dirty, coord_index) {
         try {
 
             //console.log("in moveGalaxy for player id:" + dirty.players[socket.player_index].id + " socket.player_index: " +
@@ -580,7 +594,7 @@ module.exports = function(main, io, mysql, pool, chalk, log, world, map) {
                     return;
                 } else if(dirty.coords[coord_index].planet_id) {
                     //console.log("Sending landing on planet " + dirty.coords[coord_index].planet_id);
-                    switchToPlanet(socket, dirty, { 'planet_id': dirty.coords[coord_index].planet_id,
+                    await switchToPlanet(io, socket, dirty, { 'planet_id': dirty.coords[coord_index].planet_id,
                         'previous_coord_index': previous_coord_index });
                     return;
                 } else if(dirty.coords[coord_index].belongs_to_planet_id) {
@@ -599,7 +613,7 @@ module.exports = function(main, io, mysql, pool, chalk, log, world, map) {
 
                     if(display_linker_index && !dirty.planet_type_display_linkers[display_linker_index].only_visual) {
                         //console.log("Sending landing on planet (via belong to) " + dirty.coords[coord_index].belongs_to_planet_id);
-                        switchToPlanet(socket, dirty, { 'planet_id': dirty.coords[coord_index].belongs_to_planet_id,
+                        await switchToPlanet(io, socket, dirty, { 'planet_id': dirty.coords[coord_index].belongs_to_planet_id,
                             'previous_coord_index': previous_coord_index });
                         return;
                     }
@@ -628,7 +642,7 @@ module.exports = function(main, io, mysql, pool, chalk, log, world, map) {
                 if(!paid_for_move && dirty.objects[dirty.objects[player_ship_index].engine_indexes[i]].energy >= 1) {
                     dirty.objects[dirty.objects[player_ship_index].engine_indexes[i]].energy--;
                     dirty.objects[dirty.objects[player_ship_index].engine_indexes[i]].has_change = true;
-                    world.sendObjectInfo(socket, false, dirty, dirty.objects[player_ship_index].engine_indexes[i]);
+                    game_object.sendInfo(socket, false, dirty, dirty.objects[player_ship_index].engine_indexes[i]);
 
                     if(dirty.objects[dirty.objects[player_ship_index].engine_indexes[i]].object_type_id === 265 && dirty.objects[dirty.objects[player_ship_index].engine_indexes[i]].energy === 200) {
                         socket.emit('result_info', {'status': 'failure', 'text': 'Engine Low On Fuel' });
@@ -709,7 +723,7 @@ module.exports = function(main, io, mysql, pool, chalk, log, world, map) {
 
                             // Send the socket the planet too
                             if(dirty.coords[galaxy_coord_index].planet_id && dirty.coords[galaxy_coord_index].planet_id !== 0) {
-                                await world.sendPlanetInfo(socket, false, dirty,
+                                await planet.sendInfo(socket, false, dirty,
                                     { 'planet_id': dirty.coords[galaxy_coord_index].planet_id, 'source': 'movement.moveGalaxy' });
                             }
 
@@ -733,11 +747,11 @@ module.exports = function(main, io, mysql, pool, chalk, log, world, map) {
 
                 dirty.players[socket.player_index].coord_id = dirty.coords[coord_index].id;
                 dirty.players[socket.player_index].has_change = true;
-                await world.sendPlayerInfo(socket, "galaxy", dirty, dirty.players[socket.player_index].id);
+                await world.sendPlayerInfo(io, socket, "galaxy", dirty, dirty.players[socket.player_index].id);
 
                 dirty.objects[player_ship_index].coord_id = dirty.coords[coord_index].id;
                 dirty.objects[player_ship_index].has_change = true;
-                await world.sendObjectInfo(socket, "galaxy", dirty, player_ship_index, 'movement.moveGalaxy');
+                await game_object.sendInfo(socket, "galaxy", dirty, player_ship_index, 'movement.moveGalaxy');
 
                 return;
             }
@@ -800,11 +814,11 @@ module.exports = function(main, io, mysql, pool, chalk, log, world, map) {
             dirty.players[socket.player_index].coord_id = dirty.coords[coord_index].id;
             dirty.players[socket.player_index].has_change = true;
 
-            await world.sendPlayerInfo(socket, "galaxy", dirty, dirty.players[socket.player_index].id);
+            await world.sendPlayerInfo(io, socket, "galaxy", dirty, dirty.players[socket.player_index].id);
 
             dirty.objects[player_ship_index].coord_id = dirty.coords[coord_index].id;
             dirty.objects[player_ship_index].has_change = true;
-            await world.sendObjectInfo(socket, "galaxy", dirty, player_ship_index, 'movement.moveGalaxy');
+            await game_object.sendInfo(socket, "galaxy", dirty, player_ship_index, 'movement.moveGalaxy');
 
             //await map.updateMap(socket, dirty);
 
@@ -841,7 +855,7 @@ module.exports = function(main, io, mysql, pool, chalk, log, world, map) {
 
     }
 
-    module.moveGalaxy = moveGalaxy;
+    exports.moveGalaxy = moveGalaxy;
 
     async function moveGalaxyObject(dirty, object_index, previous_coord_index, coord_index) {
         try {
@@ -872,7 +886,7 @@ module.exports = function(main, io, mysql, pool, chalk, log, world, map) {
             dirty.objects[object_index].coord_id = dirty.coords[coord_index].id;
             dirty.objects[object_index].has_change = true;
 
-            await world.sendObjectInfo(false, "galaxy", dirty, object_index);
+            await game_object.sendInfo(false, "galaxy", dirty, object_index);
 
 
         } catch(error) {
@@ -881,7 +895,7 @@ module.exports = function(main, io, mysql, pool, chalk, log, world, map) {
         }
     }
 
-    module.moveGalaxyObject = moveGalaxyObject;
+    exports.moveGalaxyObject = moveGalaxyObject;
 
 
     async function moveGalaxyObjects(dirty) {
@@ -958,7 +972,7 @@ module.exports = function(main, io, mysql, pool, chalk, log, world, map) {
         }
     }
 
-    module.moveGalaxyObjects = moveGalaxyObjects;
+    exports.moveGalaxyObjects = moveGalaxyObjects;
 
     async function moveGalaxyNpc(dirty, npc_index, task_index, coord_index) {
         try {
@@ -1020,16 +1034,16 @@ module.exports = function(main, io, mysql, pool, chalk, log, world, map) {
         }
     }
 
-    module.moveGalaxyNpc = moveGalaxyNpc;
+    exports.moveGalaxyNpc = moveGalaxyNpc;
 
 
-    // data:   destination_coord_id   |   movement_direction
-    async function movePlanet(socket, dirty, destination_coord_id) {
+    async function movePlanet(io, socket, dirty, destination_coord_id) {
 
         try {
 
             if(typeof socket.player_index === 'undefined') {
-                log(chalk.yellow("Can't move - socket doesn't have a playet yet"));
+                log(chalk.yellow("Can't move - socket doesn't have a player yet"));
+                return false;
             }
 
 
@@ -1071,7 +1085,7 @@ module.exports = function(main, io, mysql, pool, chalk, log, world, map) {
 
             if (dirty.planet_coords[planet_coord_index].object_type_id === 47) {
 
-                moveThroughPortal(socket, dirty, dirty.planet_coords[planet_coord_index].object_id);
+                await moveThroughPortal(socket, dirty, dirty.planet_coords[planet_coord_index].object_id);
 
             }
             // HOLES
@@ -1133,13 +1147,13 @@ module.exports = function(main, io, mysql, pool, chalk, log, world, map) {
                         dirty.players[socket.player_index].planet_coord_id = dirty.planet_coords[moving_to_coord_index].id;
                         dirty.players[socket.player_index].has_change = true;
                         // send the updated player info
-                        await world.sendPlayerInfo(socket, "planet_" + dirty.planet_coords[moving_to_coord_index].planet_id, dirty,
+                        await world.sendPlayerInfo(io, socket, "planet_" + dirty.planet_coords[moving_to_coord_index].planet_id, dirty,
                             dirty.players[socket.player_index].id);
 
                         socket.emit('clear_map');
 
-                        await map.updateMap(socket, dirty);
-                        world.removeBattleLinkers(dirty, { 'player_id': dirty.players[socket.player_index].id });
+                        await map.updateMap(io, socket, dirty);
+                        world.removeBattleLinkers(io, dirty, { 'player_id': dirty.players[socket.player_index].id });
                     } else {
                         console.log("Something is blocking the stairs and the area around the stairs");
                         socket.emit('move_failure', { 'failed_planet_coord_id': dirty.planet_coords[moving_to_coord_index].id,
@@ -1209,11 +1223,11 @@ module.exports = function(main, io, mysql, pool, chalk, log, world, map) {
 
                         dirty.players[socket.player_index].planet_coord_id = dirty.planet_coords[moving_to_coord_index].id;
                         dirty.players[socket.player_index].has_change = true;
-                        await world.sendPlayerInfo(socket, "planet_" + dirty.planet_coords[moving_to_coord_index].planet_id, dirty, dirty.players[socket.player_index].id);
+                        await world.sendPlayerInfo(io, socket, "planet_" + dirty.planet_coords[moving_to_coord_index].planet_id, dirty, dirty.players[socket.player_index].id);
 
                         socket.emit('clear_map');
-                        world.removeBattleLinkers(dirty, { 'player_id': dirty.players[socket.player_index].id});
-                        await map.updateMap(socket, dirty);
+                        world.removeBattleLinkers(io, dirty, { 'player_id': dirty.players[socket.player_index].id});
+                        await map.updateMap(io, socket, dirty);
 
                     } else {
                         console.log("Something is blocking the hole, AND the space around it!");
@@ -1332,13 +1346,13 @@ module.exports = function(main, io, mysql, pool, chalk, log, world, map) {
                 // send the updated player info
                 dirty.players[socket.player_index].planet_coord_id = dirty.planet_coords[planet_coord_index].id;
                 dirty.players[socket.player_index].has_change = true;
-                await world.sendPlayerInfo(socket, "planet_" + dirty.planet_coords[planet_coord_index].planet_id, dirty, dirty.players[socket.player_index].id);
+                await world.sendPlayerInfo(io, socket, "planet_" + dirty.planet_coords[planet_coord_index].planet_id, dirty, dirty.players[socket.player_index].id);
 
 
                 // player moved onto a spaceport tile - remove any battle linkers with them. SAFE.
                 if(dirty.planet_coords[planet_coord_index].floor_type_id === 11) {
                     //console.log("Player moved onto spaceport. Removing battle linkers");
-                    await world.removeBattleLinkers(dirty, { 'player_id': socket.player_id });
+                    await world.removeBattleLinkers(io, dirty, { 'player_id': socket.player_id });
                 } else {
 
                     // we need to see if this planet has an AI on it, and if so - if the player violated those rules with
@@ -1379,7 +1393,15 @@ module.exports = function(main, io, mysql, pool, chalk, log, world, map) {
                 let floor_type_index = main.getFloorTypeIndex(dirty.planet_coords[planet_coord_index].floor_type_id);
 
                 if(floor_type_index !== -1 && dirty.floor_types[floor_type_index].movement_modifier) {
-                    socket.movement_modifier = dirty.floor_types[floor_type_index].movement_modifier;
+
+                    if(dirty.floor_types[floor_type_index].movement_modifier !== socket.movement_modifier) {
+                        console.log("Reset player move_count/totals. Floor movement modifier: " + dirty.floor_types[floor_type_index].movement_modifier +
+                            " socket movement modifier: " + socket.movement_modifier);
+                        socket.move_count = 1;
+                        socket.move_totals = 0;
+                        socket.movement_modifier = dirty.floor_types[floor_type_index].movement_modifier;
+                    }
+
                 }
 
 
@@ -1394,7 +1416,7 @@ module.exports = function(main, io, mysql, pool, chalk, log, world, map) {
         }
     }
 
-    module.movePlanet = movePlanet;
+    exports.movePlanet = movePlanet;
 
 
     // data:    player_index    |   movement_direction
@@ -1451,13 +1473,13 @@ module.exports = function(main, io, mysql, pool, chalk, log, world, map) {
                         dirty.players[data.player_index].planet_coord_id = dirty.planet_coords[falling_planet_coord_index].id;
                         dirty.players[data.player_index].has_change = true;
                         // send the updated player info
-                        await world.sendPlayerInfo(socket, "planet_" + dirty.planet_coords[falling_planet_coord_index].planet_id,
+                        await world.sendPlayerInfo(io, socket, "planet_" + dirty.planet_coords[falling_planet_coord_index].planet_id,
                             dirty, dirty.players[data.player_index].id);
 
                         socket.emit('clear_map');
 
-                        await map.updateMap(socket, dirty);
-                        world.removeBattleLinkers(dirty, { 'player_id': dirty.players[data.player_index].id });
+                        await map.updateMap(io, socket, dirty);
+                        world.removeBattleLinkers(io, dirty, { 'player_id': dirty.players[data.player_index].id });
                         return;
                     }
                 }
@@ -1552,7 +1574,7 @@ module.exports = function(main, io, mysql, pool, chalk, log, world, map) {
                                 socket.emit('clear_map');
 
                                 await map.updateMap(socket, dirty);
-                                world.removeBattleLinkers(dirty, { 'player_id': dirty.players[player_index].id });
+                                world.removeBattleLinkers(io, dirty, { 'player_id': dirty.players[player_index].id });
                                 return;
                             }
                         }
@@ -1607,7 +1629,7 @@ module.exports = function(main, io, mysql, pool, chalk, log, world, map) {
                         socket.emit('clear_map');
 
                         await map.updateMap(socket, dirty);
-                        world.removeBattleLinkers(dirty, { 'player_id': dirty.players[player_index].id });
+                        world.removeBattleLinkers(io, dirty, { 'player_id': dirty.players[player_index].id });
                     } else {
                         console.log("Something is already on the stairs");
                     }
@@ -1638,7 +1660,7 @@ module.exports = function(main, io, mysql, pool, chalk, log, world, map) {
                         await world.sendPlayerInfo(socket, "planet_" + dirty.planet_coords[hole_index].planet_id, dirty, dirty.players[player_index].id);
 
                         socket.emit('clear_map');
-                        world.removeBattleLinkers(dirty, { 'player_id': dirty.players[player_index].id});
+                        world.removeBattleLinkers(io, dirty, { 'player_id': dirty.players[player_index].id});
                         await map.updateMap(socket, dirty);
 
                     } else {
@@ -1746,7 +1768,7 @@ module.exports = function(main, io, mysql, pool, chalk, log, world, map) {
                 // player moved onto a spaceport tile - remove any battle linkers with them. SAFE.
                 if(dirty.planet_coords[planet_coord_index].floor_type_id === 11) {
                     //console.log("Player moved onto spaceport. Removing battle linkers");
-                    await world.removeBattleLinkers(dirty, { 'player_id': socket.player_id });
+                    await world.removeBattleLinkers(io, dirty, { 'player_id': socket.player_id });
                 } else {
 
                     // we need to see if this planet has an AI on it, and if so - if the player violated those rules with
@@ -1807,17 +1829,21 @@ module.exports = function(main, io, mysql, pool, chalk, log, world, map) {
         }
     }
 
-    module.movePlanetNpc = movePlanetNpc;
+    exports.movePlanetNpc = movePlanetNpc;
 
-    async function moveShip(socket, dirty, destination_coord_id) {
+    async function moveShip(io, socket, dirty, destination_coord_id) {
 
         try {
-            let player_index = await main.getPlayerIndex({'player_id': socket.player_id});
 
-            if(player_index === -1) {
-                log(chalk.yellow("Unable to find socket player in movement.moveShip"));
-                return;
+
+            if(typeof socket.player_index === "undefined" || socket.player_index === -1) {
+                log(chalk.yellow("Socket does not have a player_index yet"));
+                return false;
             }
+
+            let player_index = socket.player_index;
+
+
 
             let previous_ship_coord_index = await main.getShipCoordIndex({'ship_coord_id': dirty.players[player_index].ship_coord_id});
 
@@ -1857,7 +1883,7 @@ module.exports = function(main, io, mysql, pool, chalk, log, world, map) {
 
             if (dirty.ship_coords[ship_coord_index].object_type_id === 47) {
 
-                moveThroughPortal(socket, dirty, dirty.ship_coords[ship_coord_index].object_id);
+                await moveThroughPortal(socket, dirty, dirty.ship_coords[ship_coord_index].object_id);
 
             }
             // HOLES
@@ -1919,13 +1945,13 @@ module.exports = function(main, io, mysql, pool, chalk, log, world, map) {
                         dirty.players[socket.player_index].ship_coord_id = dirty.ship_coords[moving_to_coord_index].id;
                         dirty.players[socket.player_index].has_change = true;
                         // send the updated player info
-                        await world.sendPlayerInfo(socket, "ship_" + dirty.ship_coords[moving_to_coord_index].ship_id, dirty,
+                        await world.sendPlayerInfo(io, socket, "ship_" + dirty.ship_coords[moving_to_coord_index].ship_id, dirty,
                             dirty.players[socket.player_index].id);
 
                         socket.emit('clear_map');
 
-                        await map.updateMap(socket, dirty);
-                        world.removeBattleLinkers(dirty, { 'player_id': dirty.players[socket.player_index].id });
+                        await map.updateMap(io, socket, dirty);
+                        world.removeBattleLinkers(io, dirty, { 'player_id': dirty.players[socket.player_index].id });
                     } else {
                         console.log("Something is blocking the stairs and the area around the stairs");
                         socket.emit('move_failure', { 'failed_ship_coord_id': dirty.ship_coords[moving_to_coord_index].id,
@@ -1995,11 +2021,11 @@ module.exports = function(main, io, mysql, pool, chalk, log, world, map) {
 
                         dirty.players[socket.player_index].ship_coord_id = dirty.ship_coords[moving_to_coord_index].id;
                         dirty.players[socket.player_index].has_change = true;
-                        await world.sendPlayerInfo(socket, "ship_" + dirty.ship_coords[moving_to_coord_index].ship_id, dirty, dirty.players[socket.player_index].id);
+                        await world.sendPlayerInfo(io, socket, "ship_" + dirty.ship_coords[moving_to_coord_index].ship_id, dirty, dirty.players[socket.player_index].id);
 
                         socket.emit('clear_map');
-                        world.removeBattleLinkers(dirty, { 'player_id': dirty.players[socket.player_index].id});
-                        await map.updateMap(socket, dirty);
+                        world.removeBattleLinkers(io, dirty, { 'player_id': dirty.players[socket.player_index].id});
+                        await map.updateMap(io, socket, dirty);
 
                     } else {
                         console.log("Something is blocking the hole, AND the space around it!");
@@ -2113,7 +2139,7 @@ module.exports = function(main, io, mysql, pool, chalk, log, world, map) {
                 // send the updated player info
                 dirty.players[player_index].ship_coord_id = dirty.ship_coords[ship_coord_index].id;
                 dirty.players[player_index].has_change = true;
-                await world.sendPlayerInfo(socket, "ship_" + dirty.ship_coords[ship_coord_index].ship_id, dirty, dirty.players[player_index].id);
+                await world.sendPlayerInfo(io, socket, "ship_" + dirty.ship_coords[ship_coord_index].ship_id, dirty, dirty.players[player_index].id);
 
 
                 //await map.updateMap(socket, dirty);
@@ -2165,7 +2191,7 @@ module.exports = function(main, io, mysql, pool, chalk, log, world, map) {
 
     }
 
-    module.moveShip = moveShip;
+    exports.moveShip = moveShip;
 
 
 
@@ -2247,7 +2273,7 @@ module.exports = function(main, io, mysql, pool, chalk, log, world, map) {
                 dirty.players[player_index].ship_coord_id = false;
                 dirty.players[player_index].coord_id = false;
                 dirty.players[player_index].has_change = true;
-                await world.sendPlayerInfo(socket, "planet_" + temp_coord.planet_id, dirty, dirty.players[player_index].id);
+                await world.sendPlayerInfo(io, socket, "planet_" + temp_coord.planet_id, dirty, dirty.players[player_index].id);
 
                 socket.join("planet_" + dirty.planet_coords[moving_to_coord_index].planet_id);
 
@@ -2264,14 +2290,14 @@ module.exports = function(main, io, mysql, pool, chalk, log, world, map) {
                 dirty.players[player_index].coord_id = false;
                 dirty.players[player_index].planet_coord_id = false;
                 dirty.players[player_index].has_change = true;
-                await world.sendPlayerInfo(socket, "ship_" + dirty.ship_coords[moving_to_coord_index].ship_id, dirty, dirty.players[player_index].id);
+                await world.sendPlayerInfo(io, socket, "ship_" + dirty.ship_coords[moving_to_coord_index].ship_id, dirty, dirty.players[player_index].id);
 
                 socket.emit('view_change_data', { 'view': 'ship' });
 
                 socket.join("ship_" + dirty.ship_coords[moving_to_coord_index].ship_id);
             }
 
-            map.updateMap(socket, dirty);
+            await map.updateMap(io, socket, dirty);
 
 
             log(chalk.green("Done with portal move"));
@@ -2322,12 +2348,12 @@ module.exports = function(main, io, mysql, pool, chalk, log, world, map) {
                 previous_coord_index = await main.getCoordIndex({ 'tile_x': data.previous_x, 'tile_y': data.previous_y });
             }
 
-            main.updateCoordGeneric(socket, { 'coord_index': previous_coord_index, 'player_id': false });
+            await main.updateCoordGeneric(socket, { 'coord_index': previous_coord_index, 'player_id': false });
 
             let new_coord_index = await main.getCoordIndex({ 'tile_x': data.x, 'tile_y': data.y });
-            main.updateCoordGeneric(socket, { 'cooord_index': new_coord_index, 'player_id': socket.player_id });
+            await main.updateCoordGeneric(socket, { 'cooord_index': new_coord_index, 'player_id': socket.player_id });
 
-            world.sendPlayerInfo(socket, "galaxy", dirty, dirty.players[player_index].id);
+            await world.sendPlayerInfo(io, socket, "galaxy", dirty, dirty.players[player_index].id);
 
 
         } else if(data.scope === 'planet') {
@@ -2363,9 +2389,9 @@ module.exports = function(main, io, mysql, pool, chalk, log, world, map) {
 
             }
 
-            main.updateCoordGeneric(socket, { 'planet_coord_index': previous_planet_coord_index, 'player_id': false });
-            main.updateCoordGeneric(socket, {'planet_coord_index': placing_coord_index, 'player_id': dirty.players[player_index].id });
-            world.sendPlayerInfo(socket, "planet_" + dirty.planet_coords[placing_coord_index].planet_id, dirty, dirty.players[player_index].id);
+            await main.updateCoordGeneric(socket, { 'planet_coord_index': previous_planet_coord_index, 'player_id': false });
+            await main.updateCoordGeneric(socket, {'planet_coord_index': placing_coord_index, 'player_id': dirty.players[player_index].id });
+            await world.sendPlayerInfo(io, socket, "planet_" + dirty.planet_coords[placing_coord_index].planet_id, dirty, dirty.players[player_index].id);
 
 
         } else {
@@ -2375,7 +2401,7 @@ module.exports = function(main, io, mysql, pool, chalk, log, world, map) {
 
     }
 
-    module.placePlayer = placePlayer;
+    exports.placePlayer = placePlayer;
 
     /**
      *
@@ -2386,7 +2412,7 @@ module.exports = function(main, io, mysql, pool, chalk, log, world, map) {
      * @param {number} data.previous_coord_index
      * @returns {Promise<boolean>}
      */
-    async function switchToPlanet(socket, dirty, data) {
+    async function switchToPlanet(io, socket, dirty, data) {
 
         try {
             console.log("Landing on planet " + data.planet_id + " lets see if there's a spaceport tile available");
@@ -2399,7 +2425,7 @@ module.exports = function(main, io, mysql, pool, chalk, log, world, map) {
 
             await main.grabPlanetCoords(data.planet_id, 'spaceport');
 
-            let spaceport_index = await warpTo(socket, dirty, { 'player_index': player_index, 'warping_to': 'spaceport', 'planet_id': data.planet_id });
+            let spaceport_index = await warpTo(io, socket, dirty, { 'player_index': player_index, 'warping_to': 'spaceport', 'planet_id': data.planet_id });
 
             if(spaceport_index === -1) {
                 console.log("Looks like spaceport tiles are full");
@@ -2456,7 +2482,7 @@ module.exports = function(main, io, mysql, pool, chalk, log, world, map) {
 
 
                 dirty.objects[ship_index].has_change = true;
-                await world.sendObjectInfo(socket, false, dirty, ship_index, 'movement.switchToPlanet');
+                await game_object.sendInfo(socket, false, dirty, ship_index, 'movement.switchToPlanet');
             }
 
             // We're going to get the planet so we can send a planet type - so we know what monster sprites to dynamically load
@@ -2466,20 +2492,20 @@ module.exports = function(main, io, mysql, pool, chalk, log, world, map) {
 
 
 
-            await world.sendPlayerInfo(socket, false, dirty, dirty.players[player_index].id);
+            await world.sendPlayerInfo(io, socket, false, dirty, dirty.players[player_index].id);
             console.log("Sent player their updated info");
-            await world.sendPlayerInfo(false, "galaxy", dirty, dirty.players[player_index].id);
-            await world.sendPlayerInfo(false, "planet_" + dirty.planet_coords[spaceport_index].planet_id, dirty, dirty.players[player_index].id);
+            await world.sendPlayerInfo(io,false, "galaxy", dirty, dirty.players[player_index].id);
+            await world.sendPlayerInfo(io,false, "planet_" + dirty.planet_coords[spaceport_index].planet_id, dirty, dirty.players[player_index].id);
 
             // immediately update the map for the socket
-            await map.updateMap(socket, dirty);
+            await map.updateMap(io, socket, dirty);
             console.log("Sent updated map");
 
             //socket.emit('landed_on_planet_data', { 'planet_id': socket.player_planet_id });
 
 
 
-            world.setPlayerMoveDelay(socket, dirty, player_index);
+            await world.setPlayerMoveDelay(socket, dirty, player_index);
 
 
 
@@ -2492,7 +2518,7 @@ module.exports = function(main, io, mysql, pool, chalk, log, world, map) {
 
     }
 
-    module.switchToPlanet = switchToPlanet;
+    exports.switchToPlanet = switchToPlanet;
 
     async function switchToPlanetNpc(dirty, npc_index, planet_id) {
 
@@ -2548,7 +2574,7 @@ module.exports = function(main, io, mysql, pool, chalk, log, world, map) {
             dirty.npcs[npc_index].has_change = true;
 
             console.log("Removing battle linkers");
-            world.removeBattleLinkers(dirty, { 'npc_id': dirty.npcs[npc_index].id });
+            world.removeBattleLinkers(io, dirty, { 'npc_id': dirty.npcs[npc_index].id });
 
 
             await world.sendNpcInfo(false, "galaxy", dirty, dirty.npcs[npc_index].id);
@@ -2564,9 +2590,9 @@ module.exports = function(main, io, mysql, pool, chalk, log, world, map) {
 
     }
 
-    module.switchToPlanetNpc = switchToPlanetNpc;
+    exports.switchToPlanetNpc = switchToPlanetNpc;
 
-    async function switchToGalaxy(socket, dirty, reason = false) {
+    async function switchToGalaxy(io, socket, dirty, reason = false) {
 
         try {
             console.log("In movement.switchToGalaxy");
@@ -2624,7 +2650,7 @@ module.exports = function(main, io, mysql, pool, chalk, log, world, map) {
                         log(chalk.yellow("Invalid potential_coord_index"));
                     } else {
                         console.log("Trying to warp to tile_x,tile_y: " + dirty.coords[coord_index].tile_x + "," + dirty.coords[coord_index].tile_y);
-                        warp_to_coord_index = await warpTo(socket, dirty, { 'player_index': player_index, 'warping_to': 'galaxy', 'base_coord_index': potential_coord_indexes[i] });
+                        warp_to_coord_index = await warpTo(io, socket, dirty, { 'player_index': player_index, 'warping_to': 'galaxy', 'base_coord_index': potential_coord_indexes[i] });
                     }
 
                 }
@@ -2645,7 +2671,7 @@ module.exports = function(main, io, mysql, pool, chalk, log, world, map) {
                 dirty.objects[ship_index].docked_at_planet_id = false;
                 dirty.objects[ship_index].has_change = true;
 
-                world.removeBattleLinkers(dirty, { 'player_id': dirty.players[player_index].id });
+                world.removeBattleLinkers(io, dirty, { 'player_id': dirty.players[player_index].id });
 
 
                 //socket.emit('launched_data');
@@ -2653,9 +2679,9 @@ module.exports = function(main, io, mysql, pool, chalk, log, world, map) {
 
                 socket.emit('view_change_data', { 'view': 'galaxy' });
 
-                map.updateMap(socket, dirty);
+                await map.updateMap(io, socket, dirty);
 
-                world.setPlayerMoveDelay(socket, dirty, player_index);
+                await world.setPlayerMoveDelay(socket, dirty, player_index);
 
 
 
@@ -2787,19 +2813,19 @@ module.exports = function(main, io, mysql, pool, chalk, log, world, map) {
                     dirty.objects[player_ship_index].coord_id = dirty.coords[placing_galaxy_coord_index].id;
                     dirty.objects[player_ship_index].docked_at_object_id = false;
                     dirty.objects[player_ship_index].has_change = true;
-                    await world.sendObjectInfo(socket, "galaxy", dirty, player_ship_index, 'movement.switchToGalaxy');
+                    await game_object.sendInfo(socket, "galaxy", dirty, player_ship_index, 'movement.switchToGalaxy');
 
 
                     await main.updateCoordGeneric(socket, { 'ship_coord_index':ship_coord_index, 'player_id': false });
                     await main.updateCoordGeneric(socket, { 'coord_index': placing_galaxy_coord_index, 'player_id': socket.player_id,
                         'object_id': dirty.players[player_index].ship_id});
-                    await world.sendPlayerInfo(socket, "galaxy", dirty, dirty.players[player_index].id);
-                    await world.sendPlayerInfo(socket, "ship_" + dirty.ship_coords[ship_coord_index].ship_id, dirty, dirty.players[player_index].id);
+                    await world.sendPlayerInfo(io, socket, "galaxy", dirty, dirty.players[player_index].id);
+                    await world.sendPlayerInfo(io, socket, "ship_" + dirty.ship_coords[ship_coord_index].ship_id, dirty, dirty.players[player_index].id);
 
 
                     socket.emit('view_change_data', { 'view': 'galaxy' });
 
-                    await map.updateMap(socket, dirty);
+                    await map.updateMap(io, socket, dirty);
 
 
                 }
@@ -2817,21 +2843,21 @@ module.exports = function(main, io, mysql, pool, chalk, log, world, map) {
                     await main.updateCoordGeneric(socket, { 'ship_coord_index':ship_coord_index, 'player_id': false });
                     await main.updateCoordGeneric(socket, { 'coord_index': ship_galaxy_coord_index, 'player_id': socket.player_id
                     });
-                    await world.sendPlayerInfo(socket, "galaxy", dirty, dirty.players[player_index].id);
-                    await world.sendPlayerInfo(socket, "ship_" + dirty.ship_coords[ship_coord_index].ship_id, dirty, dirty.players[player_index].id);
+                    await world.sendPlayerInfo(io, socket, "galaxy", dirty, dirty.players[player_index].id);
+                    await world.sendPlayerInfo(io, socket, "ship_" + dirty.ship_coords[ship_coord_index].ship_id, dirty, dirty.players[player_index].id);
 
 
                     socket.join('galaxy');
                     socket.leave("ship_" + dirty.objects[ship_index].id);
                     socket.emit('view_change_data', { 'view': 'galaxy' });
 
-                    await map.updateMap(socket, dirty);
+                    await map.updateMap(io, socket, dirty);
                 }
 
             } else {
                 log(chalk.yellow("TRYING THIS SHIT!"));
-                await switchToShip(socket, dirty);
-                await switchToGalaxy(socket, dirty);
+                await switchToShip(io, socket, dirty);
+                await switchToGalaxy(io, socket, dirty);
             }
 
 
@@ -2844,7 +2870,7 @@ module.exports = function(main, io, mysql, pool, chalk, log, world, map) {
 
     }
 
-    module.switchToGalaxy = switchToGalaxy;
+    exports.switchToGalaxy = switchToGalaxy;
 
     async function switchToGalaxyNpc(dirty, npc_index) {
 
@@ -2865,22 +2891,23 @@ module.exports = function(main, io, mysql, pool, chalk, log, world, map) {
                 coord_index = await main.getCoordIndex({ 'coord_id': dirty.objects[ship_index].coord_id });
             }
 
-            await warpTo(false, dirty, { 'npc_index': npc_index, 'warping_to': 'galaxy', 'base_coord_index': coord_index });
+            await warpTo(io, false, dirty, { 'npc_index': npc_index, 'warping_to': 'galaxy', 'base_coord_index': coord_index });
 
 
             return true;
 
         } catch(error) {
             log(chalk.red("Error in movement.switchToPlaner: " + error));
+            console.error(error);
         }
 
 
     }
 
-    module.switchToGalaxyNpc = switchToGalaxyNpc;
+    exports.switchToGalaxyNpc = switchToGalaxyNpc;
 
 
-    async function switchToShip(socket, dirty) {
+    async function switchToShip(io, socket, dirty) {
         try {
 
             let player_index = await main.getPlayerIndex({'player_id':socket.player_id});
@@ -2938,13 +2965,13 @@ module.exports = function(main, io, mysql, pool, chalk, log, world, map) {
 
                 socket.join("ship_" + dirty.ship_coords[ship_coord_index].ship_id);
 
-                await world.sendPlayerInfo(socket, "ship_" + dirty.ship_coords[ship_coord_index].ship_id, dirty, dirty.players[player_index].id);
+                await world.sendPlayerInfo(io, socket, "ship_" + dirty.ship_coords[ship_coord_index].ship_id, dirty, dirty.players[player_index].id);
                 // Players in the galaxy need to know that the player isn't in the galaxy anymore too
-                await world.sendPlayerInfo(socket, "galaxy", dirty, dirty.players[player_index].id);
+                await world.sendPlayerInfo(io, socket, "galaxy", dirty, dirty.players[player_index].id);
 
 
                 socket.emit('view_change_data', { 'view': 'ship'});
-                map.updateMap(socket, dirty);
+                await map.updateMap(io, socket, dirty);
 
 
 
@@ -2956,17 +2983,19 @@ module.exports = function(main, io, mysql, pool, chalk, log, world, map) {
 
 
         } catch(error) {
-            console.error("Error switching to ship view: " + error);
+            log(chalk.red("Error switching to ship view in movement.switchToShip: " + error));
+            console.error(error);
         }
 
 
     }
 
-    module.switchToShip = switchToShip;
+    exports.switchToShip = switchToShip;
 
 
+    // Currently I think this is basically just used for dying and stuff
     //  data:   ( (player_index | npc_index)   |   (player_id | npc_id ) )  /   warping_to (spaceport | galaxy)  /   planet_id   /   base_coord_index
-    async function warpTo(socket, dirty, data) {
+    async function warpTo(io, socket, dirty, data) {
 
         try {
 
@@ -3015,7 +3044,7 @@ module.exports = function(main, io, mysql, pool, chalk, log, world, map) {
                 removing_data.player_id = false;
 
                 // Get the player's socket
-                placing_socket = await world.getPlayerSocket(dirty, player_index);
+                placing_socket = await world.getPlayerSocket(io, dirty, player_index);
 
             } else if(placing_type === 'npc') {
 
@@ -3077,8 +3106,8 @@ module.exports = function(main, io, mysql, pool, chalk, log, world, map) {
                     while(!found_coord && current_tries < max_tries) {
                         current_tries++;
 
-                        let random_galaxy_x = main.getRandomIntInclusive(1, 40);
-                        let random_galaxy_y = main.getRandomIntInclusive(1, 40);
+                        let random_galaxy_x = helper.getRandomIntInclusive(1, 40);
+                        let random_galaxy_y = helper.getRandomIntInclusive(1, 40);
 
                         let coord_data = { 'tile_x': random_galaxy_x, 'tile_y': random_galaxy_y};
                         let coord_index = await main.getCoordIndex(coord_data);
@@ -3223,9 +3252,9 @@ module.exports = function(main, io, mysql, pool, chalk, log, world, map) {
 
             // Remove battle linkers
             if(placing_type === 'player') {
-                world.removeBattleLinkers(dirty, { 'player_id': dirty.players[player_index].id });
+                world.removeBattleLinkers(io, dirty, { 'player_id': dirty.players[player_index].id });
             } else if(placing_type === 'npc') {
-                world.removeBattleLinkers(dirty, { 'npc_id': dirty.npcs[npc_index].id });
+                world.removeBattleLinkers(io, dirty, { 'npc_id': dirty.npcs[npc_index].id });
             }
 
 
@@ -3281,10 +3310,14 @@ module.exports = function(main, io, mysql, pool, chalk, log, world, map) {
         }
     }
 
-    module.warpTo = warpTo;
+    exports.warpTo = warpTo;
 
 
+    module.exports = {
+        move,
+        moveGalaxyObjects,
+        switchToGalaxy,
+        switchToShip
+    }
 
 
-    return module;
-};

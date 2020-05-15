@@ -1,16 +1,12 @@
 const { Worker, isMainThread, parentPort } = require('worker_threads');
 var PF = require('pathfinding');
 
+const helper = require('./helper' + process.env.FILE_SUFFIX + '.js');
+
 
 if(isMainThread) {
     console.log("Worker shouldn't be in main thread");
     return false;
-}
-
-function getRandomIntInclusive(min, max) {
-    min = Math.ceil(min);
-    max = Math.floor(max);
-    return Math.floor(Math.random() * (max - min + 1)) + min; //The maximum is inclusive and the minimum is inclusive
 }
 
 
@@ -166,7 +162,7 @@ parentPort.once('message', (data) => {
         if(!grid.isWalkableAt(grid_destination_x, grid_destination_y)) {
 
             // randomly decrement or increment x or y
-            let rand_num = getRandomIntInclusive(1,4);
+            let rand_num = helper.getRandomIntInclusive(1,4);
             if(rand_num === 1) {
                 grid_destination_y--;
             } else if(rand_num === 2) {

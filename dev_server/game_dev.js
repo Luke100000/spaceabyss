@@ -1,16 +1,28 @@
+var io_handler = require('./io' + process.env.FILE_SUFFIX + '.js');
+var io = io_handler.io;
+var database = require('./database' + process.env.FILE_SUFFIX + '.js');
+var pool = database.pool;
 const { Worker, isMainThread, parentPort } = require('worker_threads');
+const chalk = require('chalk');
+const log = console.log;
+const uuid = require('uuid/v1');
 
-module.exports = function(main, io, mysql, pool, chalk, log, uuid, world, map, inventory, movement, npc) {
+const event = require('./event' + process.env.FILE_SUFFIX + '.js');
+const game_object = require('./game_object' + process.env.FILE_SUFFIX + '.js');
+const helper = require('./helper' + process.env.FILE_SUFFIX + '.js');
+const inventory = require('./inventory' + process.env.FILE_SUFFIX + '.js');
+const monster = require('./monster' + process.env.FILE_SUFFIX + '.js');
+const movement = require('./movement' + process.env.FILE_SUFFIX + '.js');
+const world = require('./world' + process.env.FILE_SUFFIX + '.js');
+const npc = require('./npc' + process.env.FILE_SUFFIX + '.js');
+const main = require('./space_abyss' + process.env.FILE_SUFFIX + '.js');
+const planet = require('./planet' + process.env.FILE_SUFFIX + '.js');
 
-    var module = {};
-
-    io.sockets.on('connection', function (socket) {
-
-    });
 
 
     // I'm kind of making this function a little more general - so the system can build structures, not just npcs
     //  data:   structure_type_id   |   npc_index   |   is_forced   |   starting_tile_x   |   starting_tile_y   |   starting_level   |   planet_id   |   player_index
+
     async function buildStructure(dirty, data) {
 
         try {
@@ -63,17 +75,7 @@ module.exports = function(main, io, mysql, pool, chalk, log, uuid, world, map, i
             let planet_id = 0;
 
 
-            /*
-            let lowest_level = 0;
-            structure_linkers.forEach(function (structure_linker) {
-                if(structure_linker.level < lowest_level) {
-                    lowest_level = structure_linker.level;
-                }
-            });
 
-            let highest_level = 0 + Math.abs(lowest_level);
-
-            */
 
             // If we have an npc_index sent in, we move them around accordingly
             let npc_coord_index = -1;
@@ -132,7 +134,7 @@ module.exports = function(main, io, mysql, pool, chalk, log, uuid, world, map, i
                             if(dirty.planet_coords[checking_coord_index].object_id) {
                                 let object_index = await main.getObjectIndex(dirty.planet_coords[checking_coord_index].object_id);
                                 if(object_index !== -1) {
-                                    await game.deleteObject(dirty, { 'object_index': object_index, 'reason': "Forced in game.buildStructure" });
+                                    await deleteObject(io, pool, dirty, { 'object_index': object_index, 'reason': "Forced in game.buildStructure" });
                                 }
 
                             } else if(dirty.planet_coords[checking_coord_index].object_type_id) {
@@ -179,8 +181,8 @@ module.exports = function(main, io, mysql, pool, chalk, log, uuid, world, map, i
                     // This is where the structure has us placing the npc
                     if(structure_linker.place_npc === true && typeof data.npc_index !== 'undefined' && data.npc_index !== -1) {
                         // Lets move the NPC up there
-                        main.updateCoordGeneric(socket, {'planet_coord_index': npc_coord_index, 'npc_id': false });
-                        main.updateCoordGeneric(socket,  {'planet_coord_index': new_npc_coord_index, 'npc_id': dirty.npcs[data.npc_index].id });
+                        await main.updateCoordGeneric(socket, {'planet_coord_index': npc_coord_index, 'npc_id': false });
+                        await main.updateCoordGeneric(socket,  {'planet_coord_index': new_npc_coord_index, 'npc_id': dirty.npcs[data.npc_index].id });
 
                         dirty.npcs[data.npc_index].planet_coord_id = dirty.planet_coords[new_npc_coord_index].id;
                         dirty.npcs[data.npc_index].has_change = true;
@@ -210,7 +212,8 @@ module.exports = function(main, io, mysql, pool, chalk, log, uuid, world, map, i
         }
 
     }
-    module.buildStructure = buildStructure;
+    exports.buildStructure = buildStructure;
+
 
     /*
             object_id   |   inventory_item_index   |   planet_coord_index   |   ship_coord_index
@@ -275,12 +278,12 @@ module.exports = function(main, io, mysql, pool, chalk, log, uuid, world, map, i
 
 
                 // Sending this to everyone. Taking over a planet seems like a worthy thing to send to everyone
-                // world.sendPlanetInfo doesn't yet support global sends
+                // planet.sendInfo doesn't yet support global sends
                 io.emit('planet_info', { 'planet': dirty.planets[planet_index] });
                 io.emit('chat', {'scope': 'global',
                     'message': dirty.players[player_index].name + " has conquered the planet " + dirty.planets[planet_index].name });
 
-                world.addPlayerLog(socket, dirty, { 'player_index': player_index,
+                await world.addPlayerLog(socket, dirty, { 'player_index': player_index,
                     'message': dirty.players[player_index].name + " has taken over planet " + dirty.planets[planet_index].name });
             } else if(data.ship_coord_index) {
                 await main.updateCoordGeneric(socket, { 'ship_coord_index': data.ship_coord_index, 'object_index': object_index });
@@ -297,7 +300,7 @@ module.exports = function(main, io, mysql, pool, chalk, log, uuid, world, map, i
                 dirty.objects[object_index].has_change = true;
 
                 // Sending this to everyone. Taking over a planet seems like a worthy thing to send to everyone
-                // world.sendPlanetInfo doesn't yet support global sends
+                // planet.sendInfo doesn't yet support global sends
                 io.emit('object_info', { 'object': dirty.objects[ship_index] });
                 io.emit('chat', {'scope': 'global', 'message': dirty.players[player_index].name + " has conquered a ship" });
                 world.addPlayerLog(socket, dirty, { 'player_index': player_index,
@@ -305,14 +308,77 @@ module.exports = function(main, io, mysql, pool, chalk, log, uuid, world, map, i
             }
         } catch(error) {
             log(chalk.red("Error in game.placeAI: " + error));
+            console.error(error);
         }
 
     }
 
-    module.placeAI = placeAI;
+    exports.placeAI = placeAI;
 
 
-    async function addAssembly(socket, dirty, assembler_object_id, being_assembled_object_type_id, amount) {
+    /**
+     *
+     * @param socket
+     * @param dirty
+     * @param object_id
+     * @param {Object} data
+     * @param {number=} data.planet_coord_index
+     * @param {number=} data.ship_coord_index
+     * @returns {Promise<void>}
+     */
+    async function placePortal(io, socket, dirty, object_index, data) {
+
+        try {
+
+            log(chalk.green("Attempting to place portal!"));
+
+
+            if(data.planet_coord_index) {
+
+                await main.updateCoordGeneric(socket, { 'planet_coord_index': data.planet_coord_index,
+                    'object_index': object_index });
+
+
+            } else if(data.ship_coord_index) {
+
+                await main.updateCoordGeneric(socket, { 'ship_coord_index': data.ship_coord_index,
+                    'object_index': object_index });
+
+
+            }
+
+            let unattached_portal_index = dirty.objects.findIndex(function(obj) { return obj &&
+                obj.player_id === dirty.players[socket.player_index].id && obj.object_type_id === 47 && !obj.attached_to_id && obj.id !== dirty.objects[object_index].id; });
+
+            if(unattached_portal_index === -1) {
+                return;
+            }
+
+            // attach the portals
+            dirty.objects[object_index].attached_to_id = dirty.objects[unattached_portal_index].id;
+            dirty.objects[object_index].has_change = true;
+
+
+            dirty.objects[unattached_portal_index].attached_to_id = dirty.objects[object_index].id;
+            dirty.objects[unattached_portal_index].has_change = true;
+
+            await game_object.sendInfo(socket, false, dirty, object_index, 'game.placePortal');
+            await game_object.sendInfo(socket, false, dirty, unattached_portal_index, 'game.placePortal');
+
+            console.log("Finished in game.addPortal");
+
+
+
+        } catch(error) {
+            log(chalk.red("Error in game.placePortal: " + error));
+            console.error(error);
+        }
+    }
+
+    exports.placePortal = placePortal;
+
+
+    async function addAssembly(pool, socket, dirty, assembler_object_id, being_assembled_object_type_id, amount) {
 
         try {
             let [result] = await (pool.query("INSERT INTO assemblies(amount_completed, assembler_object_id, " +
@@ -339,9 +405,9 @@ module.exports = function(main, io, mysql, pool, chalk, log, uuid, world, map, i
 
     }
 
-    module.addAssembly = addAssembly;
+    exports.addAssembly = addAssembly;
 
-    async function addKilledLinker(player_id, monster_type_id) {
+    async function addKilledLinker(pool, player_id, monster_type_id) {
         let [rows, fields] = await (pool.query("SELECT * FROM killed_linkers WHERE player_id = ? AND monster_type_id = ?", [player_id, monster_type_id]));
 
         if(rows[0]) {
@@ -351,12 +417,15 @@ module.exports = function(main, io, mysql, pool, chalk, log, uuid, world, map, i
         }
     }
 
-    module.addKilledLinker = addKilledLinker;
+    exports.addKilledLinker = addKilledLinker;
 
 
     // planet_coord_index   ||   ship_coord_index
     async function addPortal(socket, dirty, data) {
+
         try {
+
+            log(chalk.green("In game.addPortal!"));
 
             let player_index = await main.getPlayerIndex({'player_id': socket.player_id });
 
@@ -397,16 +466,19 @@ module.exports = function(main, io, mysql, pool, chalk, log, uuid, world, map, i
             dirty.objects[unattached_portal_index].attached_to_id = dirty.objects[new_object_index].id;
             dirty.objects[unattached_portal_index].has_change = true;
 
-            world.sendObjectInfo(socket, room, dirty, new_object_index, 'game.addPortal');
-            world.sendObjectInfo(socket, room, dirty, unattached_portal_index, 'game.addPortal');
+            await game_object.sendInfo(socket, room, dirty, new_object_index, 'game.addPortal');
+            await game_object.sendInfo(socket, room, dirty, unattached_portal_index, 'game.addPortal');
+
+            console.log("Finished in game.addPortal");
 
 
         } catch(error) {
             log(chalk.red("Error in game.addPortal: " + error));
+            console.error(error);
         }
     }
 
-    module.addPortal = addPortal;
+    exports.addPortal = addPortal;
 
 
 
@@ -420,9 +492,9 @@ module.exports = function(main, io, mysql, pool, chalk, log, uuid, world, map, i
         */
     }
 
-    module.addTradeLinker = addTradeLinker;
+    exports.addTradeLinker = addTradeLinker;
 
-    async function assemble(socket, dirty, data) {
+    async function assemble(io, pool, socket, dirty, data) {
 
         try {
 
@@ -564,7 +636,7 @@ module.exports = function(main, io, mysql, pool, chalk, log, uuid, world, map, i
                         await removeAssemblyItems(socket, dirty, 'object_type', object_type_id);
                     }
 
-                    await addAssembly(socket, dirty, dirty.objects[assembler_object_index].id, dirty.object_types[object_type_index].id, actual_amount_being_assembled);
+                    await addAssembly(pool, socket, dirty, dirty.objects[assembler_object_index].id, dirty.object_types[object_type_index].id, actual_amount_being_assembled);
 
 
 
@@ -572,9 +644,9 @@ module.exports = function(main, io, mysql, pool, chalk, log, uuid, world, map, i
 
                     // set our assembler object is_active to true
                     dirty.objects[assembler_object_index].is_active = true;
-                    let assembler_info = await world.getObjectCoordAndRoom(dirty, assembler_object_index);
+                    let assembler_info = await game_object.getCoordAndRoom(dirty, assembler_object_index);
                     //console.log("Calling sendObjectInfo from game.assemble");
-                    await world.sendObjectInfo(socket, assembler_info.room, dirty, assembler_object_index, 'game.assemble');
+                    await game_object.sendInfo(socket, assembler_info.room, dirty, assembler_object_index, 'game.assemble');
                     //log(chalk.cyan("Object id: " + dirty.objects[assembler_object_index].id + " is active: " + dirty.objects[assembler_object_index].is_active));
 
 
@@ -595,7 +667,7 @@ module.exports = function(main, io, mysql, pool, chalk, log, uuid, world, map, i
                         'object_id': new_object_id,
                         'object_type_id':dirty.object_types[object_type_index].id, 'amount':1};
 
-                    await inventory.addToInventory(socket, dirty, adding_to_data);
+                    await inventory.addToInventory(pool, socket, dirty, adding_to_data);
 
                     await removeAssemblyItems(socket, dirty, 'object_type', object_type_id);
 
@@ -630,9 +702,9 @@ module.exports = function(main, io, mysql, pool, chalk, log, uuid, world, map, i
                 let adding_to_data = { 'adding_to_type':'player', 'adding_to_id':socket.player_id,
                     'floor_type_id': dirty.floor_types[floor_type_index].id, 'amount':1};
 
-                inventory.addToInventory(socket, dirty, adding_to_data);
+                await inventory.addToInventory(pool, socket, dirty, adding_to_data);
 
-                removeAssemblyItems(socket, dirty, 'floor_type', dirty.floor_types[floor_type_index].id);
+                await removeAssemblyItems(socket, dirty, 'floor_type', dirty.floor_types[floor_type_index].id);
 
 
 
@@ -646,7 +718,7 @@ module.exports = function(main, io, mysql, pool, chalk, log, uuid, world, map, i
 
     }
 
-    module.assemble = assemble;
+    exports.assemble = assemble;
 
 
 
@@ -700,7 +772,7 @@ module.exports = function(main, io, mysql, pool, chalk, log, uuid, world, map, i
                 dirty.objects[new_object_index].docked_at_planet_id = dirty.planet_coords[planet_coord_index].planet_id;
                 dirty.objects[new_object_index].has_change = true;
 
-                await world.sendObjectInfo(socket, false, dirty, new_object_index, 'game.buyObjectType');
+                await game_object.sendInfo(socket, false, dirty, new_object_index, 'game.buyObjectType');
 
             } else if(dirty.players[player_index].ship_coord_id) {
                 let ship_coord_index = await main.getShipCoordIndex({ 'ship_coord_id': dirty.players[player_index].ship_coord_id });
@@ -725,15 +797,15 @@ module.exports = function(main, io, mysql, pool, chalk, log, uuid, world, map, i
 
                     // Switch our ship to the new pod and put it in space near our other ship
                     await switchShip(socket, dirty, { 'ship_id': new_object_id });
-                    await movement.warpTo(socket, dirty, { 'player_index': player_index, 'warping_to': 'galaxy', 'base_coord_index': coord_index });
-                    map.updateMap(socket, dirty);
+                    await movement.warpTo(io, socket, dirty, { 'player_index': player_index, 'warping_to': 'galaxy', 'base_coord_index': coord_index });
+                    await map.updateMap(io, socket, dirty);
 
                 } else {
 
                     dirty.objects[new_object_index].docked_at_object_id = dirty.ship_coords[ship_coord_index].ship_id;
                     dirty.objects[new_object_index].has_change = true;
 
-                    await world.sendObjectInfo(socket, false, dirty, new_object_index, 'game.buyObjectType');
+                    await game_object.sendInfo(socket, false, dirty, new_object_index, 'game.buyObjectType');
                 }
 
 
@@ -748,7 +820,7 @@ module.exports = function(main, io, mysql, pool, chalk, log, uuid, world, map, i
         }
     }
 
-    module.buyObjectType = buyObjectType;
+    exports.buyObjectType = buyObjectType;
 
 
 
@@ -787,7 +859,7 @@ module.exports = function(main, io, mysql, pool, chalk, log, uuid, world, map, i
         }
 
     }
-    module.calculatePlayerStats = calculatePlayerStats;
+    exports.calculatePlayerStats = calculatePlayerStats;
 
 
     // data:        object_id   |   new_object_name
@@ -814,7 +886,7 @@ module.exports = function(main, io, mysql, pool, chalk, log, uuid, world, map, i
             dirty.objects[object_index].has_change = true;
 
             // Everyone should know the object has a new name
-            world.sendObjectInfo(socket, false, dirty, object_index, 'game.changeObjectName');
+            game_object.sendInfo(socket, false, dirty, object_index, 'game.changeObjectName');
 
 
         } catch(error) {
@@ -824,7 +896,7 @@ module.exports = function(main, io, mysql, pool, chalk, log, uuid, world, map, i
         
     }
 
-    module.changeObjectName = changeObjectName;
+    exports.changeObjectName = changeObjectName;
 
 
     // data:        object_id   |   new_object_tint
@@ -855,7 +927,7 @@ module.exports = function(main, io, mysql, pool, chalk, log, uuid, world, map, i
             dirty.objects[object_index].has_change = true;
 
             // Everyone should know the object has a new tint
-            world.sendObjectInfo(socket, false, dirty, object_index, 'game.changeObjectTint');
+            game_object.sendInfo(socket, false, dirty, object_index, 'game.changeObjectTint');
 
 
         } catch(error) {
@@ -865,7 +937,7 @@ module.exports = function(main, io, mysql, pool, chalk, log, uuid, world, map, i
 
     }
 
-    module.changeObjectTint = changeObjectTint;
+    exports.changeObjectTint = changeObjectTint;
 
     async function changePlanetName(socket, dirty, data) {
 
@@ -917,7 +989,7 @@ module.exports = function(main, io, mysql, pool, chalk, log, uuid, world, map, i
         console.log("In game.changePlanetName");
     }
 
-    module.changePlanetName = changePlanetName;
+    exports.changePlanetName = changePlanetName;
 
 
 
@@ -946,8 +1018,8 @@ module.exports = function(main, io, mysql, pool, chalk, log, uuid, world, map, i
             dirty.objects[ship_index].name = new_name;
             dirty.objects[ship_index].has_change = true;
 
-            let object_info = await world.getObjectCoordAndRoom(dirty, ship_index);
-            await world.sendObjectInfo(socket, object_info.room, dirty, ship_index, 'game.changeShipName');
+            let object_info = await game_object.getCoordAndRoom(dirty, ship_index);
+            await game_object.sendInfo(socket, object_info.room, dirty, ship_index, 'game.changeShipName');
 
 
         } catch(error) {
@@ -957,7 +1029,7 @@ module.exports = function(main, io, mysql, pool, chalk, log, uuid, world, map, i
 
     }
 
-    module.changeShipName = changeShipName;
+    exports.changeShipName = changeShipName;
 
 
     async function checkAssemblyRequirements(socket, dirty, type, type_id) {
@@ -1021,7 +1093,7 @@ module.exports = function(main, io, mysql, pool, chalk, log, uuid, world, map, i
         }
 
     }
-    module.checkExp = checkExp;
+    exports.checkExp = checkExp;
 
 
     // Combining the stuff from inventory.place, and game.convertInput
@@ -1049,7 +1121,7 @@ module.exports = function(main, io, mysql, pool, chalk, log, uuid, world, map, i
             }
 
             // Figure our where our converter object is
-            let converter_info = await world.getObjectCoordAndRoom(dirty, converter_object_index);
+            let converter_info = await game_object.getCoordAndRoom(dirty, converter_object_index);
 
             let converter_object_type_index = main.getObjectTypeIndex(dirty.objects[converter_object_index].object_type_id);
 
@@ -1164,7 +1236,7 @@ module.exports = function(main, io, mysql, pool, chalk, log, uuid, world, map, i
                                 }
 
                                 // and remove
-                                await inventory.removeFromInventory(socket, dirty, { 'inventory_item_id': dirty.inventory_items[inventory_item_index].id, 'amount': 1 });
+                                await inventory.removeFromInventory(io, pool, socket, dirty, { 'inventory_item_id': dirty.inventory_items[inventory_item_index].id, 'amount': 1 });
 
                             }
 
@@ -1181,13 +1253,13 @@ module.exports = function(main, io, mysql, pool, chalk, log, uuid, world, map, i
                         else if(dirty.inventory_items[inventory_item_index].object_type_id === using_conversion_linker.input_object_type_id && using_conversion_linker.output_type === "hp") {
 
                             // Reduce our inventory by 1
-                            await inventory.removeFromInventory(socket, dirty, { 'inventory_item_id': dirty.inventory_items[inventory_item_index].id, 'amount': 1 });
+                            await inventory.removeFromInventory(io, pool, socket, dirty, { 'inventory_item_id': dirty.inventory_items[inventory_item_index].id, 'amount': 1 });
                             input_paid = true;
 
                         }
                         // One type of object in, a different type of object out!
                         else if(dirty.inventory_items[inventory_item_index].object_type_id === using_conversion_linker.input_object_type_id && using_conversion_linker.output_type === "object_type") {
-                            await inventory.removeFromInventory(socket, dirty, { 'inventory_item_id': dirty.inventory_items[inventory_item_index].id, 'amount': 1 });
+                            await inventory.removeFromInventory(io, pool, socket, dirty, { 'inventory_item_id': dirty.inventory_items[inventory_item_index].id, 'amount': 1 });
                             input_paid = true;
                         }
 
@@ -1243,13 +1315,13 @@ module.exports = function(main, io, mysql, pool, chalk, log, uuid, world, map, i
 
                 console.log("Sending addToInventory with:");
                 console.log(adding_to_data);
-                await inventory.addToInventory(socket, dirty, adding_to_data);
+                await inventory.addToInventory(pool, socket, dirty, adding_to_data);
 
             } else if(using_conversion_linker.output_destination === 'replace_self') {
 
 
                 // Delete ourself
-                await deleteObject(dirty, { 'object_index': converter_object_index, 'reason': 'game.convert - output replaces us' });
+                await game_object.deleteObject(io, pool, dirty, { 'object_index': converter_object_index, 'reason': 'game.convert - output replaces us' });
 
                 if(using_conversion_linker.output_object_type_id) {
                     let output_object_type_index = main.getObjectTypeIndex(using_conversion_linker.output_object_type_id);
@@ -1308,10 +1380,10 @@ module.exports = function(main, io, mysql, pool, chalk, log, uuid, world, map, i
                 if(!success) {
                     let damage_amount = dirty.object_types[converter_object_type_index].complexity - farming_level;
 
-                    await damageObject(dirty, { 'object_index': converter_object_index, 'damage_amount': damage_amount,
+                    await game_object.damage(dirty, { 'object_index': converter_object_index, 'damage_amount': damage_amount,
                         'object_info': converter_info });
 
-                    world.sendObjectInfo(false, converter_info.room, dirty, converter_object_index);
+                    await game_object.sendInfo(false, converter_info.room, dirty, converter_object_index);
 
 
                     if(socket) {
@@ -1350,7 +1422,7 @@ module.exports = function(main, io, mysql, pool, chalk, log, uuid, world, map, i
                     dirty.objects[converter_object_index].current_hp = new_converter_object_hp;
                     dirty.objects[converter_object_index].has_change = true;
 
-                    await world.sendObjectInfo(socket, converter_info.room, dirty, converter_object_index);
+                    await game_object.sendInfo(socket, converter_info.room, dirty, converter_object_index);
 
 
                     if(socket) {
@@ -1378,7 +1450,7 @@ module.exports = function(main, io, mysql, pool, chalk, log, uuid, world, map, i
         }
     }
 
-    module.convert = convert;
+    exports.convert = convert;
 
 
     async function createArea(socket, dirty, data) {
@@ -1472,160 +1544,9 @@ module.exports = function(main, io, mysql, pool, chalk, log, uuid, world, map, i
 
     }
 
-    module.createArea = createArea;
+    exports.createArea = createArea;
 
 
-
-
-    //   data: monster_index   |   damage_amount   |   battle_linker   |   monster_info   |   calculating_range   |   damage_types
-    //   damage_source_type   |   damage_source_id
-    async function damageMonster(dirty, data) {
-        try {
-
-            let monster_type_index = main.getMonsterTypeIndex(dirty.monsters[data.monster_index].monster_type_id);
-
-            if(monster_type_index === -1) {
-                console.log("Couldn't find monster type");
-                return false;
-            }
-
-            // If we didn't pass in the monster info, grab it now
-            if(!data.monster_info) {
-                data.monster_info = await world.getMonsterCoordAndRoom(dirty, data.monster_index);
-            }
-
-            data.damage_amount = parseInt(data.damage_amount);
-
-            if(isNaN(data.damage_amount)) {
-                log(chalk.yellow("Can't damage monster a NaN amount"));
-                console.trace("Here's the culprit");
-                return false;
-            }
-
-
-            let new_monster_hp = dirty.monsters[data.monster_index].current_hp - data.damage_amount;
-            //console.log("Calculated new_monster_hp as: " + new_monster_hp + " have calculating_range as: " + data.calculating_range);
-
-            if(!data.damage_types) {
-                data.damage_types = [];
-            }
-
-            // send new monster info to the room
-
-            // Normally the monster will be attacked through a direct battle linker
-            if(data.battle_linker) {
-
-                io.to(data.monster_info.room).emit('damaged_data',
-                    {'monster_id': dirty.monsters[data.monster_index].id, 'damage_amount': data.damage_amount, 'damage_types': data.damage_types,
-                        'was_damaged_type': 'hp',
-                        'damage_source_type': data.battle_linker.attacking_type, 'damage_source_id': data.battle_linker.attacking_id,
-                        'calculating_range': data.calculating_range });
-            }
-            // But it's also possible it's not directly through a battle linker (splash, AOE damage, decay)
-            else if(data.damage_source_type) {
-
-
-                if(data.damage_source_type === 'decay') {
-                    io.to(data.monster_info.room).emit('damaged_data',
-                        {   'monster_id': dirty.monsters[data.monster_index].id, 'damage_amount': data.damage_amount,
-                            'damage_types': data.damage_types, 'was_damaged_type': 'hp',
-                            'damage_source_type': data.damage_source_type });
-                } else {
-                    io.to(data.monster_info.room).emit('damaged_data',
-                        {   'monster_id': dirty.monsters[data.monster_index].id, 'damage_amount': data.damage_amount,
-                            'damage_types': data.damage_types, 'was_damaged_type': 'hp',
-                            'damage_source_type': data.damage_source_type, 'damage_source_id': data.damage_source_id,
-                            'calculating_range': data.calculating_range });
-                }
-
-
-
-
-                if(data.damage_source_type !== 'decay') {
-                    // And the monster is going to be PISSED
-
-
-                    console.log("Damage is not from a battle linker. Lets see if we can attack the source of the damage");
-
-                    // If the monster isn't already attacking something, attack the damage source
-                    let existing_battle_linker_index = dirty.battle_linkers.findIndex(function(obj) { return obj &&
-                        obj.attacking_id === dirty.monsters[data.monster_index].id && obj.attacking_type === 'monster' });
-
-                    if(existing_battle_linker_index === -1) {
-                        let battle_linker_data = {
-                            'attacking_id': dirty.monsters[data.monster_index].id, 'attacking_type': 'monster',
-                            'being_attacked_id': data.damage_source_id, 'being_attacked_type': data.damage_source_type };
-
-                        //console.log("Battle linker data: ");
-                        //console.log(battle_linker_data);
-
-                        world.addBattleLinker(socket, dirty, battle_linker_data);
-                    }
-                }
-
-            } else {
-                log(chalk.yellow("Should really add in some data about where this damage is coming from"));
-
-            }
-
-
-
-            if (new_monster_hp <= 0) {
-
-                //console.log("Monster is killed");
-
-
-                // It's a player that killed the monster
-                if(data.battle_linker && data.battle_linker.attacking_type === 'player') {
-                    let player_index = await main.getPlayerIndex({ 'player_id': data.battle_linker.attacking_id });
-                    //console.log("Adding exp to player");
-                    dirty.players[player_index].exp = dirty.players[player_index].exp + dirty.monster_types[monster_type_index].exp;
-                    dirty.players[player_index].has_change = true;
-
-                    addKilledLinker(dirty.players[player_index].player_id, dirty.monsters[data.monster_index].monster_type_id);
-
-                    //console.log("Should be calling game.checkExp");
-                    checkExp(socket, dirty, player_index);
-
-                    if(dirty.monster_types[monster_type_index].race_id) {
-
-                        let race_index = main.getRaceIndex(dirty.monster_types[monster_type_index].race_id);
-
-                        // lets modify the player's relationship with that race
-                        await world.updatePlayerRelationship(io.sockets.connected[data.battle_linker.socket_id], dirty, player_index,
-                            { 'type': 'race', 'type_index': race_index, 'change': -1 });
-
-                    }
-                }
-
-                //console.log("Calling deleteMonster with monster index: " + data.monster_index);
-                await deleteMonster(dirty, { 'monster_index': data.monster_index, 'reason': 'battle', 'battle_linker': data.battle_linker });
-                //console.log("Done with deleteMonster");
-
-            } else {
-                //console.log("monster not dead yet");
-
-                if(isNaN(new_monster_hp)) {
-                    log(chalk.red("We tried setting the monster's current hp to a NaN value: " + new_monster_hp));
-                } else {
-                    dirty.monsters[data.monster_index].current_hp = new_monster_hp;
-                    dirty.monsters[data.monster_index].has_change = true;
-
-                    // send the monster info to players in the room
-                    io.to(data.monster_info.room).emit('monster_info', { 'monster': dirty.monsters[data.monster_index]});
-                }
-
-
-
-            }
-
-        } catch(error) {
-            log(chalk.red("Error in game.damageMonster: " + error));
-            console.error(error);
-        }
-    }
-
-    module.damageMonster = damageMonster;
 
 
     //   npc_index   |   damage_amount   |   battle_linker   |   npc_info   |   calculating_range
@@ -1673,80 +1594,9 @@ module.exports = function(main, io, mysql, pool, chalk, log, uuid, world, map, i
         }
     }
 
-    module.damageNpc = damageNpc;
-
-    
-
-    //      object_index   |   damage_amount   |   battle_linker (OPTIONAL)   |   object_info   |   calculating_range (OPTIONAL)
-    //      reason   |   damage_types   |   damage_source_type   |   damage_source_id
-    async function damageObject(dirty, data) {
-        try {
-
-            if(!data.damage_types) {
-                data.damage_types = [];
-            }
-
-            let object_type_index = main.getObjectTypeIndex(dirty.objects[data.object_index].object_type_id);
+    exports.damageNpc = damageNpc;
 
 
-            let new_object_hp = dirty.objects[data.object_index].current_hp - data.damage_amount;
-
-            // send new object info to the room
-            if(data.battle_linker) {
-                io.to(data.object_info.room).emit('damaged_data',
-                    {'object_id': dirty.objects[data.object_index].id, 'damage_amount': data.damage_amount, 'was_damaged_type': 'hp',
-                        'damage_source_type': data.battle_linker.attacking_type, 'damage_source_id': data.battle_linker.attacking_id,
-                        'damage_types': data.damage_types,
-                        'calculating_range': data.calculating_range });
-
-            }
-            // We know the damage source type
-            else if(data.damage_source_type) {
-                io.to(data.object_info.room).emit('damaged_data',
-                    {'object_id': dirty.objects[data.object_index].id, 'damage_amount': data.damage_amount, 'was_damaged_type': 'hp',
-                        'damage_source_type': data.damage_source_type, 'damage_source_id': data.damage_source_id,
-                        'damage_types': data.damage_types,
-                        'calculating_range': data.calculating_range });
-            }
-
-            else {
-                io.to(data.object_info.room).emit('damaged_data',
-                    {   'object_id': dirty.objects[data.object_index].id, 'damage_amount': data.damage_amount,
-                        'was_damaged_type': 'hp', 'damage_types': data.damage_types });
-
-            }
-
-
-            if (new_object_hp <= 0) {
-
-                console.log("Object is destroyed");
-                if(data.battle_linker) {
-                    await deleteObject(dirty, { 'object_index': data.object_index, 'reason': 'battle' });
-                } else {
-                    await deleteObject(dirty, { 'object_index': data.object_index, 'reason': 'decay' });
-                }
-
-
-
-            } else {
-                //console.log("object not dead yet");
-
-                dirty.objects[data.object_index].current_hp = new_object_hp;
-                dirty.objects[data.object_index].has_change = true;
-                world.sendObjectInfo(false, data.object_info.room, dirty, data.object_index);
-
-                // If the object is a ship
-                if(dirty.object_types[object_type_index].is_ship) {
-                    game.generateShipDamagedTiles(dirty, data.object_index);
-                }
-            }
-
-        } catch(error) {
-            log(chalk.red("Error in game.damageObject: " + error));
-        }
-    }
-
-    module.damageObject = damageObject;
 
     //      planet_index   |   damage_amount   |   battle_linker (OPTIONAL)   |   planet_info   |   calculating_range (OPTIONAL)
     //      reason   |   damage_types   |   damage_source_type   |   damage_source_id
@@ -1794,7 +1644,7 @@ module.exports = function(main, io, mysql, pool, chalk, log, uuid, world, map, i
 
             dirty.planets[data.planet_index].current_hp = new_planet_hp;
             dirty.planets[data.planet_index].has_change = true;
-            world.sendPlanetInfo(false, data.planet_info.room, dirty, { 'planet_index': data.planet_index });
+            await planet.sendInfo(false, data.planet_info.room, dirty, { 'planet_index': data.planet_index });
 
 
 
@@ -1804,7 +1654,7 @@ module.exports = function(main, io, mysql, pool, chalk, log, uuid, world, map, i
         }
     }
 
-    module.damagePlanet = damagePlanet;
+    exports.damagePlanet = damagePlanet;
 
     // player_index   |   damage_amount   |   battle_linker (optional)  |   damage_types (array) |   calculating_range   |   flavor_text
     async function damagePlayer(dirty, data) {
@@ -1831,7 +1681,7 @@ module.exports = function(main, io, mysql, pool, chalk, log, uuid, world, map, i
             if(data.battle_linker && data.battle_linker.being_attacked_socket_id) {
                 player_socket = io.sockets.connected[data.battle_linker.being_attacked_socket_id];
             } else {
-                player_socket = await world.getPlayerSocket(dirty, data.player_index);
+                player_socket = await world.getPlayerSocket(io, dirty, data.player_index);
             }
 
             if(new_player_hp <= 0) {
@@ -1877,17 +1727,17 @@ module.exports = function(main, io, mysql, pool, chalk, log, uuid, world, map, i
 
     }
 
-    module.damagePlayer = damagePlayer;
+    exports.damagePlayer = damagePlayer;
 
 
-    async function decayMonsterType(dirty, monster_type_index) {
+    async function decayMonsterType(io, dirty, monster_type_index) {
 
         try {
 
             for(let i = 0; i < dirty.monsters.length; i++) {
 
                 if(dirty.monsters[i] && dirty.monsters[i].monster_type_id === dirty.monster_types[monster_type_index].id) {
-                    damageMonster(dirty, { 'monster_index': i,
+                    await monster.damage(io, pool, dirty, { 'monster_index': i,
                         'damage_amount': dirty.monster_types[monster_type_index].decay_rate, 'damage_source_type': 'decay',
                         'damage_types': ['decay'] });
                 }
@@ -1911,7 +1761,7 @@ module.exports = function(main, io, mysql, pool, chalk, log, uuid, world, map, i
 
                 if(dirty.objects[i] && dirty.objects[i].object_type_id === dirty.object_types[object_type_index].id) {
 
-                    let object_info = await world.getObjectCoordAndRoom(dirty, i);
+                    let object_info = await game_object.getCoordAndRoom(dirty, i);
 
 
 
@@ -1924,11 +1774,11 @@ module.exports = function(main, io, mysql, pool, chalk, log, uuid, world, map, i
 
                         for(let decay_linker of decay_linkers) {
 
-                            if(main.notFalse(decay_linker.floor_type_id) && decay_linker.floor_type_id === object_info.coord.floor_type_id) {
+                            if(helper.notFalse(decay_linker.floor_type_id) && decay_linker.floor_type_id === object_info.coord.floor_type_id) {
                                 decay_rate = decay_linker.decay_rate;
                             }
 
-                            if(main.notFalse(decay_linker.floor_type_class) && dirty.floor_types[object_floor_type_index] &&
+                            if(helper.notFalse(decay_linker.floor_type_class) && dirty.floor_types[object_floor_type_index] &&
                                 decay_linker.floor_type_class === dirty.floor_types[object_floor_type_index].class) {
                                 decay_rate = decay_linker.decay_rate;
                             }
@@ -1952,7 +1802,7 @@ module.exports = function(main, io, mysql, pool, chalk, log, uuid, world, map, i
                         let new_object_hp = dirty.objects[i].current_hp - hp_decay;
                         //console.log("Object is going from: " + dirty.objects[i].current_hp + " to " + new_object_hp);
 
-                        await game.damageObject(dirty, { 'object_index': i, 'damage_amount': hp_decay,
+                        await game_object.damage(dirty, { 'object_index': i, 'damage_amount': hp_decay,
                             'object_info': object_info, 'reason': 'decay' });
 
                     }
@@ -1984,7 +1834,7 @@ module.exports = function(main, io, mysql, pool, chalk, log, uuid, world, map, i
 
                             // See if it drops anything
                             // Rarity roll
-                            let rarity_roll = main.rarityRoll();
+                            let rarity_roll = helper.rarityRoll();
 
                             console.log("Getting all drop linkers for object type id: " + dirty.object_types[object_type_index].id);
                             let drop_linkers = dirty.drop_linkers.filter(drop_linker =>
@@ -2093,7 +1943,7 @@ module.exports = function(main, io, mysql, pool, chalk, log, uuid, world, map, i
 
     }
 
-    module.deleteNpc = deleteNpc;
+    exports.deleteNpc = deleteNpc;
 
 
     // We use the npc_id instead of npc_index since if things went wrong maybe we don't actually have the NPC anymore but
@@ -2143,149 +1993,8 @@ module.exports = function(main, io, mysql, pool, chalk, log, uuid, world, map, i
 
     }
 
-    module.deleteRule = deleteRule;
+    exports.deleteRule = deleteRule;
 
-    async function deleteSpawnedEvent(dirty, spawned_event_index) {
-
-        try {
-
-            if(!dirty.spawned_events[spawned_event_index]) {
-                log(chalk.yellow("Trying to delete a spawned event that we can't find!"));
-                return false;
-            }
-
-
-            //console.log("Despawning spawned event id: " + dirty.spawned_events[spawned_event_index].id);
-
-            // Remove spawned objects - We skip the check spawned event check because... WE ARE ALREADY DELETING THE SPAWNED EVENT!
-            for(let i = 0; i < dirty.objects.length; i++) {
-                if(dirty.objects[i] && dirty.objects[i].spawned_event_id === dirty.spawned_events[spawned_event_index].id) {
-                    await deleteObject(dirty, { 'object_index': i, 'reason': 'Deleting Spawned Event', 'skip_check_spawned_event': true });
-
-                }
-            }
-
-            // Remove spawned monsters - We skip the check spawned event check because... WE ARE ALREADY DELETING THE SPAWNED EVENT!
-            for(let i = 0; i < dirty.monsters.length; i++) {
-                if(dirty.monsters[i] && dirty.monsters[i].spawned_event_id === dirty.spawned_events[spawned_event_index].id) {
-                    await deleteMonster(dirty, { 'monster_index': i, 'reason': 'Deleting Spawned Event', 'skip_check_spawned_event': true });
-                }
-            }
-
-
-
-            // Event linkers can drop things when they despawn.
-            // Events can 'give' object types when they despawn. Lets see if that is going to happen
-
-            // Various event linkers are going to have drops, get our base tile_x, tile_y
-            let origin_tile_x = 0;
-            let origin_tile_y = 0;
-            let origin_coord_index = -1;
-
-            if(dirty.spawned_events[spawned_event_index].origin_planet_coord_id) {
-                origin_coord_index = await main.getPlanetCoordIndex({ 'planet_coord_id': dirty.spawned_events[spawned_event_index].origin_planet_coord_id });
-                if(origin_coord_index !== -1) {
-                    origin_tile_x = dirty.planet_coords[origin_coord_index].tile_x;
-                    origin_tile_y = dirty.planet_coords[origin_coord_index].tile_y;
-                }
-            } else if(dirty.spawned_events[spawned_event_index].origin_ship_coord_id) {
-                origin_coord_index = await main.getShipCoordIndex({ 'ship_coord_id': dirty.spawned_events[spawned_event_index].origin_ship_coord_id });
-                if(origin_coord_index !== -1) {
-                    origin_tile_x = dirty.ship_coords[origin_coord_index].tile_x;
-                    origin_tile_y = dirty.ship_coords[origin_coord_index].tile_y;
-                }
-            } else if(dirty.spawned_events[spawned_event_index].origin_coord_id) {
-                let origin_coord_index = await main.getCoordIndex({ 'coord_id': dirty.spawned_events[spawned_event_index].origin_coord_id });
-                if(origin_coord_index !== -1) {
-                    origin_tile_x = dirty.coords[origin_coord_index].tile_x;
-                    origin_tile_y = dirty.coords[origin_coord_index].tile_y;
-                }
-            }
-
-
-            // WE PERFORM THE CONVERSION
-            // In the old looping through event_linkers - we had the below in it. Conversions. and I DON'T KNOW WHY.
-            //convert(false, dirty, { 'converter_object_id': dirty.planet_coords[linker_planet_coord_index].object_id,
-            //    'input_type': 'object_type', 'input_object_type_id': dirty.event_linkers[e].gives_object_type_id,
-            //    'input_paid': true });
-
-            for(let e = 0; e < dirty.event_linkers[e].length; e++) {
-
-                // We'll only be interested in event linkers associated with the event type - and for now, just the same level.
-                if(dirty.event_linkers[e] && dirty.event_linkers[e].event_id === dirty.spawned_events[spawned_event_index].event_id &&
-                    dirty.event_linkers[e].level === 0) {
-
-
-
-                    // TODO NOW I need to factor in the rarity here and with monster drops. Find a place I'm already doing it.
-                    // I really guess I just gotta check all the stupid drop linkers
-                    let drop_linkers = dirty.drop_linkers.filter(drop_linker => drop_linker.event_linker_id === dirty.event_linkers[e].id);
-                    if(drop_linkers.length > 0) {
-
-                        let event_linker_tile_x = origin_tile_x + dirty.event_linkers[e].position_x;
-                        let event_linker_tile_y = origin_tile_y + dirty.event_linkers[e].position_y;
-
-
-                        // get a random drop linker - and it will drop that
-                        let drop_linker = drop_linkers[Math.floor(Math.random() * drop_linkers.length)];
-                        //console.log("Going to drop object_type_id: " + drop_linker.dropped_object_type_id);
-
-                        if(dirty.spawned_events[spawned_event_index].origin_planet_coord_id) {
-
-                            let event_linker_coord_index = await main.getPlanetCoordIndex({ 'planet_id': dirty.planet_coords[origin_coord_index].planet_id,
-                                'planet_level': dirty.planet_coords[origin_coord_index].level, 'tile_x': event_linker_tile_x, 'tile_y': event_linker_tile_y });
-
-                            if(drop_linker.dropped_object_type_id) {
-                                if(await main.canPlaceObject('planet',dirty.planet_coords[event_linker_coord_index],
-                                    { 'object_type_id': drop_linker.dropped_object_type_id })) {
-
-                                    //console.log("Monster is dropping amount: " + drop_linker.amount + " of object_type_id: " + drop_linker.dropped_object_type_id);
-                                    await main.updateCoordGeneric(false, { 'planet_coord_index': event_linker_coord_index, 'object_type_id': drop_linker.dropped_object_type_id,
-                                        'amount': drop_linker.amount });
-                                }
-                            }
-
-
-
-                        } else if(dirty.spawned_events[spawned_event_index].origin_ship_coord_id) {
-
-                            let event_linker_coord_index = await main.getShipCoordIndex({ 'ship_id': dirty.ship_coords[origin_coord_index].ship_id,
-                                'level': dirty.ship_coords[origin_coord_index].level, 'tile_x': event_linker_tile_x, 'tile_y': event_linker_tile_y });
-
-                            if(await main.canPlaceObject('ship',dirty.ship_coords[event_linker_coord_index],
-                                { 'object_type_id': drop_linker.dropped_object_type_id })) {
-                                await main.updateCoordGeneric(false, { 'ship_coord_index': event_linker_coord_index, 'object_type_id': drop_linker.dropped_object_type_id,
-                                    'amount': drop_linker.amount });
-                            }
-
-                        } else if(dirty.spawned_events[spawned_event_index].origin_coord_id) {
-
-                            let event_linker_coord_index = await main.geCoordIndex({ 'tile_x': event_linker_tile_x, 'tile_y': event_linker_tile_y });
-
-                            if(await main.canPlaceObject('galaxy',dirty.coords[event_linker_coord_index],
-                                { 'object_type_id': drop_linker.dropped_object_type_id })) {
-                                await main.updateCoordGeneric(false, { 'coord_index': event_linker_coord_index, 'object_type_id': drop_linker.dropped_object_type_id,
-                                    'amount': drop_linker.amount });
-                            }
-
-                        }
-
-                    }
-
-                }
-            }
-
-            // and finally delete the spawned event
-            await (pool.query("DELETE FROM spawned_events WHERE id = ?", [dirty.spawned_events[spawned_event_index].id]));
-            delete dirty.spawned_events[spawned_event_index];
-
-
-
-        } catch(error) {
-            log(chalk.red("Error in game.deleteSpawnedEvent: " + error));
-            console.error(error);
-        }
-    }
 
 
     //  data:   structure_id
@@ -2329,7 +2038,7 @@ module.exports = function(main, io, mysql, pool, chalk, log, uuid, world, map, i
 
                             // Found the object - we can remove it from the planet coord via the deleteObject function
                             if(object_index !== -1) {
-                                await game.deleteObject(dirty, {'object_index': object_index });
+                                await game_object.deleteObject(io, pool, dirty, {'object_index': object_index });
                             }
                             // Didn't find it - just remove it
                             else {
@@ -2382,9 +2091,126 @@ module.exports = function(main, io, mysql, pool, chalk, log, uuid, world, map, i
         }
     }
 
-    module.deleteStructure = deleteStructure;
+    exports.deleteStructure = deleteStructure;
 
 
+    //  data:   planet_index
+    async function destroyPlanet(socket, dirty, data) {
+
+        try {
+
+            console.time("destroyPlanet");
+
+            if(!socket.is_admin) {
+                log(chalk.red("We think a socket with player id: " + socket.player_id + " is trying to be mr hacker man desctructo"));
+                return false;
+            }
+
+
+            // Gotta make sure all the planet coords from the planet are in memory
+            await loadEntirePlanet(dirty, { 'planet_index': data.planet_index });
+
+
+            for(let i = 0; i < dirty.planet_coords.length; i++) {
+                if(dirty.planet_coords[i] && dirty.planet_coords[i].planet_id === dirty.planets[data.planet_index].id) {
+
+                    // Npcs die
+                    if(dirty.planet_coords[i].npc_id) {
+                        await deleteNpc(dirty, dirty.planet_coords[i].npc_id);
+                    }
+
+
+                    // Monsters die
+                    if(dirty.planet_coords[i].monster_id) {
+                        let monster_index = await main.getMonsterIndex(dirty.planet_coords[i].monster_id);
+                        if(monster_index !== -1) {
+                            await monster.deleteMonster(io, pool, dirty, { 'monster_index': monster_index });
+                        }
+
+                    }
+
+                    // Objects die
+                    if(dirty.planet_coords[i].object_id) {
+                        //console.log("Going to kill object id: " + dirty.planet_coords[i].object_id);
+                        let object_index = await main.getObjectIndex(dirty.planet_coords[i].object_id);
+                        if(object_index !== -1) {
+                            await game_object.deleteObject(io, pool, dirty, { 'object_index': object_index });
+                        }
+
+                    }
+
+                    // Players head to space
+                    if(dirty.planet_coords[i].player_id) {
+
+                        let player_index = await main.getPlayerIndex({ 'player_id': dirty.planet_coords[i].player_id });
+                        if(player_index !== -1) {
+                            let player_socket = world.getPlayerSocket(io, dirty, player_index);
+
+                            await movement.switchToGalaxy(io, player_socket, dirty);
+                        }
+
+                    }
+
+                    // LEAVE OUR MEMORY!
+                    delete dirty.planet_coords[i];
+
+                }
+            }
+
+
+            await (pool.query("DELETE FROM planet_coords WHERE planet_id = ?", [dirty.planets[data.planet_index].id]));
+
+            dirty.planets[data.planet_index].ai_id = false;
+            dirty.planets[data.planet_index].player_id = false;
+            dirty.planets[data.planet_index].has_change = true;
+
+            console.timeEnd("destroyPlanet");
+
+        } catch(error) {
+            log(chalk.red("Error in game.destroyPlanet: " + error));
+            console.error(error);
+        }
+    }
+
+    exports.destroyPlanet = destroyPlanet;
+
+
+    // data:    planet_index
+    async function loadEntirePlanet(dirty, data) {
+        try {
+
+            let [rows, fields] = await (pool.query("SELECT * FROM planet_coords WHERE planet_id = ? ", [dirty.planets[data.planet_index].id]));
+
+
+            if(rows[0]) {
+
+                for(let i = 0; i < rows.length; i++) {
+
+                    let adding_planet_coord = rows[i];
+
+                    // lets make sure we weren't retarded and don't already have it
+                    let final_check_index = dirty.planet_coords.findIndex(function(obj) { return obj && obj.id === adding_planet_coord.id; });
+                    if(final_check_index === -1) {
+                        adding_planet_coord.has_change = false;
+                        dirty.planet_coords.push(adding_planet_coord) - 1;
+
+
+                    }
+
+
+                }
+
+
+
+            }
+        } catch(error) {
+            log(chalk.red("Error in global_functions.loadEntirePlanet: " + error));
+            console.error(error);
+        }
+    }
+
+
+    exports.loadEntirePlanet = loadEntirePlanet;
 
     // A client passed in object id  OR coord_id OR planet_coord_id OR ship_coord_id
     async function processDestroyData(socket, dirty, data) {
@@ -2416,10 +2242,10 @@ module.exports = function(main, io, mysql, pool, chalk, log, uuid, world, map, i
                 if(socket.player_id === dirty.objects[object_index].player_id) {
                     console.log("Can destroy. Click and player owns it");
                     socket.emit('object_info', { 'remove': true, 'object': dirty.objects[object_index] });
-                    await game.deleteObject( dirty, { 'object_index': object_index, 'reason': 'click' });
+                    await game_object.deleteObject( dirty, { 'object_index': object_index, 'reason': 'click' });
 
                     // Can't really send it with an object index after its been deleted
-                    //await world.sendObjectInfo(socket, false, dirty, object_index, 'game.processDestroyData');
+                    //await game_object.sendInfo(socket, false, dirty, object_index, 'game.processDestroyData');
                 }
             }
             // Sometimes we might have an object type that is removable
@@ -2519,12 +2345,19 @@ module.exports = function(main, io, mysql, pool, chalk, log, uuid, world, map, i
         }
 
     }
-    module.processDestroyData = processDestroyData;
+    exports.processDestroyData = processDestroyData;
 
 
 
     // Basic dropping of an object or object type. Some objects can be built. This doesn't build them,
     // just places them on the tile
+    /**
+     *
+     * @param socket
+     * @param dirty
+     * @param {Object} data
+     * @returns {Promise<boolean>}
+     */
     async function drop(socket, dirty, data) {
 
         try {
@@ -2644,6 +2477,8 @@ module.exports = function(main, io, mysql, pool, chalk, log, uuid, world, map, i
                     return false;
                 }
 
+                console.log("Ship coord id: " + dirty.ship_coords[coord_index].id + " is_weapon_hardpoint: " + dirty.ship_coords[coord_index].is_weapon_hardpoint);
+
                 temp_coord = dirty.ship_coords[coord_index];
                 scope = 'ship';
                 update_data.ship_coord_index = coord_index;
@@ -2670,8 +2505,9 @@ module.exports = function(main, io, mysql, pool, chalk, log, uuid, world, map, i
             }
 
 
-            // Some things require that they be placed on specific other things ( Thiol Extractor on a Thiol Deposit, Spaceport on Galaxy )
+            // Some things require that they be placed on specific other things ( Thiol Extractor on a Thiol Deposit, Shipyard on Galaxy,  )
             let pre_verified_can_place = false;
+
             if(dirty.object_types[object_type_index].drop_requires_object_type_id) {
                 if(temp_coord.object_type_id === dirty.object_types[object_type_index].drop_requires_object_type_id) {
                     pre_verified_can_place = true;
@@ -2685,8 +2521,20 @@ module.exports = function(main, io, mysql, pool, chalk, log, uuid, world, map, i
                 }
             }
 
+            if(scope === 'ship' && dirty.object_types[object_type_index].is_ship_weapon && temp_coord.is_weapon_hardpoint) {
+                console.log("Pre verified can place TRUE!");
+                pre_verified_can_place = true;
+            } else {
+                console.log("Did not pre-verify. Scope: " + scope + " is_ship_weapon: " +
+                    dirty.object_types[object_type_index].is_ship_weapon + " is_weapon_hardpoint: " + temp_coord.is_weapon_hardpoint);
+            }
+
+            if(scope === 'ship' && dirty.object_types[object_type_index].is_ship_engine && temp_coord.is_engine_hardpoint) {
+                pre_verified_can_place = true;
+            }
+
             // We can only drop this on specific classes of floors ( think Spaceport and galaxy )
-            if(main.notFalse(dirty.object_types[object_type_index].drop_requires_floor_type_class)) {
+            if(helper.notFalse(dirty.object_types[object_type_index].drop_requires_floor_type_class)) {
                 let floor_type_index = main.getFloorTypeIndex(temp_coord.floor_type_id);
                 if(floor_type_index === -1 || dirty.floor_types[floor_type_index].class !== dirty.object_types[object_type_index].drop_requires_floor_type_class) {
                     socket.emit('result_info', { 'status': 'failure', 'text': "Must place on " + dirty.object_types[object_type_index].drop_requires_floor_type_class + " floor"});
@@ -2710,8 +2558,8 @@ module.exports = function(main, io, mysql, pool, chalk, log, uuid, world, map, i
 
                 let remove_inventory_data = { 'inventory_item_id': dirty.inventory_items[inventory_item_index].id,
                     'amount': dropping_amount };
-                await inventory.removeFromInventory(socket, dirty, remove_inventory_data);
-                await inventory.sendInventory(socket, false, dirty, 'player', socket.player_id);
+                await inventory.removeFromInventory(io, pool, socket, dirty, remove_inventory_data);
+                await inventory.sendInventory(io, socket, false, dirty, 'player', socket.player_id);
 
             } else if(pre_verified_can_place || await main.canPlaceObject(scope, temp_coord, { 'object_type_id': dirty.object_types[object_type_index].id })) {
 
@@ -2764,8 +2612,27 @@ module.exports = function(main, io, mysql, pool, chalk, log, uuid, world, map, i
                     if(dirty.object_types[object_type_index].drop_requires_object_type_id && temp_coord.object_id) {
                         let removing_object_index = await main.getObjectIndex(temp_coord.object_id);
                         if(removing_object_index !== -1) {
-                            await deleteObject(dirty, { 'object_index': removing_object_index });
+                            await game_object.deleteObject(io, pool, dirty, { 'object_index': removing_object_index });
                         }
+                    }
+
+                    // In the case of a ship engine or weapon, we would remove whatever was there before too
+                    if(dirty.object_types[object_type_index].is_ship_weapon && temp_coord.object_id) {
+                        let removing_object_index = await main.getObjectIndex(temp_coord.object_id);
+                        if(removing_object_index !== -1) {
+                            await game_object.deleteObject(io, pool, dirty, { 'object_index': removing_object_index });
+                        }
+                    } else if(dirty.object_types[object_type_index].is_ship_weapon && temp_coord.object_type_id) {
+                        await main.updateCoordGeneric(socket, { 'ship_coord_index': coord_index, 'object_type_id': false });
+                    }
+
+                    if(dirty.object_types[object_type_index].is_ship_engine) {
+                        let removing_object_index = await main.getObjectIndex(temp_coord.object_id);
+                        if(removing_object_index !== -1) {
+                            await game_object.deleteObject(io, pool, dirty, { 'object_index': removing_object_index });
+                        }
+                    } else if(dirty.object_types[object_type_index].is_ship_engine && temp_coord.object_type_id) {
+                        await main.updateCoordGeneric(socket, { 'ship_coord_index': coord_index, 'object_type_id': false });
                     }
 
                     let placed_result = await main.placeObject(socket, dirty, object_update_data);
@@ -2773,10 +2640,10 @@ module.exports = function(main, io, mysql, pool, chalk, log, uuid, world, map, i
                     console.log("placed_result: " + placed_result);
 
                     if(placed_result === true) {
-                        await inventory.removeFromInventory(socket, dirty,
+                        await inventory.removeFromInventory(io, pool, socket, dirty,
                             { 'inventory_item_id': dirty.inventory_items[inventory_item_index].id, 'amount': 1 });
 
-                        await inventory.sendInventory(socket, false, dirty, 'player', socket.player_id);
+                        await inventory.sendInventory(io, socket, false, dirty, 'player', socket.player_id);
                     }
 
 
@@ -2787,7 +2654,7 @@ module.exports = function(main, io, mysql, pool, chalk, log, uuid, world, map, i
                         console.log("Object type has a spawn linker, and frames - so we should set it as active");
 
                         dirty.objects[object_index].is_active = true;
-                        await world.sendObjectInfo(socket, false, dirty, object_index);
+                        await game_object.sendInfo(socket, false, dirty, object_index);
                     }
 
 
@@ -2803,8 +2670,8 @@ module.exports = function(main, io, mysql, pool, chalk, log, uuid, world, map, i
 
                     let remove_inventory_data = { 'inventory_item_id': dirty.inventory_items[inventory_item_index].id,
                         'amount': dropping_amount };
-                    await inventory.removeFromInventory(socket, dirty, remove_inventory_data);
-                    await inventory.sendInventory(socket, false, dirty, 'player', socket.player_id);
+                    await inventory.removeFromInventory(io, pool, socket, dirty, remove_inventory_data);
+                    await inventory.sendInventory(io, socket, false, dirty, 'player', socket.player_id);
                 }
 
 
@@ -2818,16 +2685,17 @@ module.exports = function(main, io, mysql, pool, chalk, log, uuid, world, map, i
 
         } catch(error) {
             log(chalk.red("Error in game.drop: " + error));
+            console.error(error);
         }
 
     }
 
-    module.drop = drop;
+    exports.drop = drop;
 
 
 
     //  data:   inventory_item_id   |   equip_slot
-    async function equipItem(socket, dirty, data) {
+    async function equipItem(io, pool, socket, dirty, data) {
 
         try {
 
@@ -2960,7 +2828,7 @@ module.exports = function(main, io, mysql, pool, chalk, log, uuid, world, map, i
 
                                     // remove from us
                                     let remove_inventory_data = { 'inventory_item_id': dirty.inventory_items[i].id, 'amount': surgery_level };
-                                    await inventory.removeFromInventory(socket, dirty, remove_inventory_data);
+                                    await inventory.removeFromInventory(io, pool, socket, dirty, remove_inventory_data);
                                     paid_cost = true;
 
                                     // give to npc
@@ -2968,7 +2836,7 @@ module.exports = function(main, io, mysql, pool, chalk, log, uuid, world, map, i
                                     let adding_to_data = { 'adding_to_type':'npc', 'adding_to_id': dirty.npcs[npc_index].id,
                                         'object_type_id': 74, 'amount': surgery_level };
 
-                                    await inventory.addToInventory(socket, dirty, adding_to_data);
+                                    await inventory.addToInventory(pool, socket, dirty, adding_to_data);
 
                                 }
                                 // Failed to pay for it
@@ -3037,7 +2905,7 @@ module.exports = function(main, io, mysql, pool, chalk, log, uuid, world, map, i
                     });
 
                     // and the inventory item the player was trying this on
-                    inventory.removeFromInventory(socket, dirty, { 'inventory_item_id': dirty.inventory_items[inventory_item_index].id, 'amount': 1 });
+                    inventory.removeFromInventory(io, pool, socket, dirty, { 'inventory_item_id': dirty.inventory_items[inventory_item_index].id, 'amount': 1 });
 
                     // I also want to damage the player based on the resulting complexity that they failed at
                     await damagePlayer(dirty, { 'player_index': socket.player_index, 'damage_amount': resulting_complexity,
@@ -3051,7 +2919,7 @@ module.exports = function(main, io, mysql, pool, chalk, log, uuid, world, map, i
                         dirty.players[socket.player_index].has_change = true;
                     }
 
-                    world.sendPlayerInfo(socket, player_info.room, dirty, dirty.players[socket.player_index].id);
+                    await world.sendPlayerInfo(io, socket, player_info.room, dirty, dirty.players[socket.player_index].id);
 
                     socket.emit('chat', { 'message': "Equipping item failed. Everything in the slot was destroyed", 'scope':'system' });
                     socket.emit('result_info', {'status': 'failure', 'text': "You botched the implant." } );
@@ -3108,15 +2976,15 @@ module.exports = function(main, io, mysql, pool, chalk, log, uuid, world, map, i
             socket.emit('equipment_linker_info', { 'equipment_linker': dirty.equipment_linkers[new_equipment_index]});
 
             if(dirty.inventory_items[inventory_item_index].object_id) {
-                inventory.removeFromInventory(socket, dirty, {
+                inventory.removeFromInventory(io, pool, socket, dirty, {
                     'inventory_item_id': dirty.inventory_items[inventory_item_index].id, 'amount': 1 });
             }
             else if(dirty.inventory_items[inventory_item_index].object_type_id && !dirty.object_types[object_type_index].is_consumed_on_attack) {
-                inventory.removeFromInventory(socket, dirty, {
+                inventory.removeFromInventory(io, pool, socket, dirty, {
                     'inventory_item_id': dirty.inventory_items[inventory_item_index].id, 'amount': 1 });
             }
             else if(dirty.inventory_items[inventory_item_index].object_type_id && dirty.object_types[object_type_index].is_consumed_on_attack) {
-                inventory.removeFromInventory(socket, dirty, {
+                inventory.removeFromInventory(io, pool, socket, dirty, {
                     'inventory_item_id': dirty.inventory_items[inventory_item_index].id, 'amount': dirty.inventory_items[inventory_item_index].amount });
             }
 
@@ -3130,7 +2998,7 @@ module.exports = function(main, io, mysql, pool, chalk, log, uuid, world, map, i
 
 
 
-            world.sendPlayerInfo(socket, false, dirty, dirty.players[socket.player_index].id);
+            await world.sendPlayerInfo(io, socket, false, dirty, dirty.players[socket.player_index].id);
 
             if(current_equip_slot_count > 0 || dirty.object_type_equipment_linkers[equipment_linker_index].auto_doc_required) {
                 socket.emit('chat', { 'message': "Surgery was successful", 'scope':'system' });
@@ -3149,7 +3017,7 @@ module.exports = function(main, io, mysql, pool, chalk, log, uuid, world, map, i
             console.error(error);
         }
     }
-    module.equipItem = equipItem;
+    exports.equipItem = equipItem;
 
     //  data:   spawn_linker_index   |   object_index   |   monster_index
 
@@ -3167,11 +3035,11 @@ module.exports = function(main, io, mysql, pool, chalk, log, uuid, world, map, i
             let spawner_info = false;
 
             if(data.object_index) {
-                spawner_info = await world.getObjectCoordAndRoom(dirty, data.object_index);
+                spawner_info = await game_object.getCoordAndRoom(dirty, data.object_index);
             }
 
             if(data.monster_index) {
-                spawner_info = await world.getMonsterCoordAndRoom(dirty, data.monster_index);
+                spawner_info = await monster.getCoordAndRoom(dirty, data.monster_index);
             }
 
             // HAS SPAWNED OBJECT
@@ -3193,7 +3061,7 @@ module.exports = function(main, io, mysql, pool, chalk, log, uuid, world, map, i
 
                     dirty.objects[data.object_index].has_change = true;
 
-                    world.sendObjectInfo(false, spawner_info.room, dirty, data.object_index);
+                    await game_object.sendInfo(false, spawner_info.room, dirty, data.object_index);
                 }
 
                 if(data.monster_index) {
@@ -3203,7 +3071,7 @@ module.exports = function(main, io, mysql, pool, chalk, log, uuid, world, map, i
                     dirty.monsters[data.monster_index].current_spawn_linker_id = dirty.spawn_linkers[data.spawn_linker_index].id;
                     dirty.monsters[data.monster_index].has_change = true;
 
-                    world.sendMonsterInfo(false, spawner_info.room, dirty, data.monster_index);
+                    await world.sendMonsterInfo(false, spawner_info.room, dirty, data.monster_index);
                 }
 
             } else if(dirty.spawn_linkers[data.spawn_linker_index].spawns_location === 'adjacent') {
@@ -3230,7 +3098,7 @@ module.exports = function(main, io, mysql, pool, chalk, log, uuid, world, map, i
                 }
 
 
-                world.spawnAdjacent(dirty, spawn_adjacent_data);
+                await world.spawnAdjacent(dirty, spawn_adjacent_data);
             } else if(dirty.spawn_linkers[data.spawn_linker_index].spawns_location === 'self') {
                 if(typeof data.object_index !== "undefined" && dirty.objects[data.object_index].object_type_id === debug_object_type_id) {
                     console.log("Spawn linker replaces our object! self!");
@@ -3245,11 +3113,11 @@ module.exports = function(main, io, mysql, pool, chalk, log, uuid, world, map, i
                     spawned_event_id = dirty.monsters[data.monster_index].spawned_event_id;
 
                     let delete_monster_data = { 'monster_index': data.monster_index };
-                    if(main.notFalse(dirty.monsters[data.monster_index].spawned_event_id)) {
+                    if(helper.notFalse(dirty.monsters[data.monster_index].spawned_event_id)) {
                         delete_monster_data.skip_check_spawned_event = true;
                     }
 
-                    await deleteMonster(dirty, delete_monster_data);
+                    await monster.deleteMonster(io, pool, dirty, delete_monster_data);
                 }
 
 
@@ -3262,18 +3130,18 @@ module.exports = function(main, io, mysql, pool, chalk, log, uuid, world, map, i
 
                     let delete_object_data = { 'object_index': data.object_index };
 
-                    if(main.notFalse(dirty.objects[data.object_index].spawned_event_id)) {
+                    if(helper.notFalse(dirty.objects[data.object_index].spawned_event_id)) {
                         log(chalk.green("Telling deleteObject to skip check spawned event"));
                         delete_object_data.skip_check_spawned_event = true;
                     }
 
-                    await deleteObject(dirty, delete_object_data);
+                    await game_object.deleteObject(io, pool, dirty, delete_object_data);
                 }
 
 
 
                 // Spawning a monster where we were
-                if(main.notFalse(dirty.spawn_linkers[data.spawn_linker_index].spawns_monster_type_id)) {
+                if(helper.notFalse(dirty.spawn_linkers[data.spawn_linker_index].spawns_monster_type_id)) {
                     console.log("Spawning a monster where we used to be! Monster type id: " + dirty.spawn_linkers[data.spawn_linker_index].spawns_monster_type_id);
                     let spawn_monster_data = { 'spawned_event_id': spawned_event_id };
 
@@ -3285,11 +3153,11 @@ module.exports = function(main, io, mysql, pool, chalk, log, uuid, world, map, i
                         spawn_monster_data.coord_index = spawner_info.coord_index;
                     }
 
-                    world.spawnMonster(dirty, dirty.spawn_linkers[data.spawn_linker_index].spawns_monster_type_id, spawn_monster_data);
+                    await world.spawnMonster(dirty, dirty.spawn_linkers[data.spawn_linker_index].spawns_monster_type_id, spawn_monster_data);
                 }
 
                 // Spawning an object where we were
-                if(main.notFalse(dirty.spawn_linkers[data.spawn_linker_index].spawns_object_type_id)) {
+                if(helper.notFalse(dirty.spawn_linkers[data.spawn_linker_index].spawns_object_type_id)) {
                     console.log("Spawning an object where we used to be! Object type id: " + dirty.spawn_linkers[data.spawn_linker_index].spawns_object_type_id);
 
                     let insert_object_type_data = { 'object_type_id': dirty.spawn_linkers[data.spawn_linker_index].spawns_object_type_id,
@@ -3313,6 +3181,7 @@ module.exports = function(main, io, mysql, pool, chalk, log, uuid, world, map, i
 
             } else {
                 log(chalk.yellow("Did not find a match for this linker's spawns_location: " + dirty.spawn_linkers[data.spawn_linker_index].spawns_location));
+                console.error(error);
             }
 
         } catch(error) {
@@ -3320,6 +3189,8 @@ module.exports = function(main, io, mysql, pool, chalk, log, uuid, world, map, i
             console.error(error);
         }
     }
+
+    exports.finishSpawnLinker = finishSpawnLinker;
 
 
     function getFloorTypes() {
@@ -3340,7 +3211,7 @@ module.exports = function(main, io, mysql, pool, chalk, log, uuid, world, map, i
         });
 
     }
-    module.getFloorTypes = getFloorTypes;
+    exports.getFloorTypes = getFloorTypes;
 
 
     // If a coord index has been passed in, any healing should be done on that coord of the ship
@@ -3471,7 +3342,7 @@ module.exports = function(main, io, mysql, pool, chalk, log, uuid, world, map, i
         }
     }
 
-    module.generateShipDamagedTiles = generateShipDamagedTiles;
+    exports.generateShipDamagedTiles = generateShipDamagedTiles;
 
 
     /*
@@ -3514,7 +3385,7 @@ module.exports = function(main, io, mysql, pool, chalk, log, uuid, world, map, i
                 // We have an object on a planet coord that doesn't exist. Obviously did something wrong
                 if(dirty.objects[object_index].planet_coord_id) {
                     console.log("Deleting object!");
-                    await game.deleteObject(dirty, { 'object_index': object_index });
+                    await game_object.deleteObject(io, pool, dirty, { 'object_index': object_index });
                 }
                 return false;
             }
@@ -3557,7 +3428,7 @@ module.exports = function(main, io, mysql, pool, chalk, log, uuid, world, map, i
 
             console.log("Deleting old object");
 
-            await game.deleteObject(dirty, { 'object_index': object_index });
+            await game_object.deleteObject(io, pool, dirty, { 'object_index': object_index });
 
             if(success) {
                 // object grows into the next stage
@@ -3731,10 +3602,10 @@ module.exports = function(main, io, mysql, pool, chalk, log, uuid, world, map, i
 
 
             // First thing we do is remove all battle linkers
-            world.removeBattleLinkers(dirty, { 'player_id': dirty.players[player_index].id });
+            world.removeBattleLinkers(io, dirty, { 'player_id': dirty.players[player_index].id });
 
             // Get the socket the player is connected with
-            let player_socket = world.getPlayerSocket(dirty, player_index);
+            let player_socket = world.getPlayerSocket(io, dirty, player_index);
             if(player_socket === false) {
                 console.log("Got player socket as FALSE");
             } else {
@@ -3840,7 +3711,7 @@ module.exports = function(main, io, mysql, pool, chalk, log, uuid, world, map, i
                     }
                     await inventory.removeFromInventory(player_socket, dirty, remove_data);
 
-                    await inventory.addToInventory(player_socket, dirty, add_data);
+                    await inventory.addToInventory(pool, player_socket, dirty, add_data);
                 }
             }
 
@@ -3849,7 +3720,7 @@ module.exports = function(main, io, mysql, pool, chalk, log, uuid, world, map, i
 
             // delete the old body
             console.log("Going to delete the old body. Body index: " + body_index);
-            await game.deleteObject(dirty, { 'object_index': body_index });
+            await game_object.deleteObject(io, pool, dirty, { 'object_index': body_index });
 
             console.log("Deleted the old body");
 
@@ -3867,7 +3738,7 @@ module.exports = function(main, io, mysql, pool, chalk, log, uuid, world, map, i
 
 
 
-            movement.switchToGalaxy(player_socket, dirty, 'death');
+            await movement.switchToGalaxy(io, player_socket, dirty, 'death');
             player_socket.emit('message_data', { 'message': "Your body was killed", 'scope': 'system' });
 
             // and clear out the database queue
@@ -3880,7 +3751,7 @@ module.exports = function(main, io, mysql, pool, chalk, log, uuid, world, map, i
         }
     }
 
-    module.killPlayer = killPlayer;
+    exports.killPlayer = killPlayer;
 
 
     async function mine(socket, dirty, data) {
@@ -3942,7 +3813,7 @@ module.exports = function(main, io, mysql, pool, chalk, log, uuid, world, map, i
         }
     }
 
-    module.mine = mine;
+    exports.mine = mine;
 
 
     //  data:   mining_linker_id   |   object_id
@@ -3983,612 +3854,8 @@ module.exports = function(main, io, mysql, pool, chalk, log, uuid, world, map, i
         }
     }
 
-    module.mineStop = mineStop;
+    exports.mineStop = mineStop;
 
-
-    //  i (monster_index)   data:   reason   |   monster_type_index
-    /**
-     *
-     * @param dirty
-     * @param {number} i - Monster Index
-     * @param {Object} data
-     * @param {number=} data.monster_type_index
-     * @param {string=} data.reason
-     * @returns {Promise<boolean>}
-     */
-    async function moveMonster(dirty, i, data) {
-
-        try {
-
-
-            let battle_linker_index = dirty.battle_linkers.findIndex(function(obj) {
-                return obj && obj.attacking_type === 'monster' && obj.attacking_id === dirty.monsters[i].id;
-            });
-
-            // make sure the monster isn't attacking something if this is an idle movement
-            if(data.reason === 'idle' && battle_linker_index !== -1) {
-                return false;
-            }
-
-
-
-
-
-
-            /************ STEP 1. DETERMINE THE DESTINATION COORD!!!!!! *****************/
-            let new_x = -1;
-            let new_y = -1;
-            let old_coord = false;
-            let old_coord_index = -1;
-            let scope;
-            let room;
-            let planet_coord_index = -1;
-            let attacking_coord = false;
-
-            if(dirty.monsters[i].planet_coord_id) {
-
-                planet_coord_index = await main.getPlanetCoordIndex(
-                    { 'planet_coord_id': dirty.monsters[i].planet_coord_id });
-
-                if(planet_coord_index === -1) {
-                    return false;
-                }
-
-                old_coord = dirty.planet_coords[planet_coord_index];
-                old_coord_index = planet_coord_index;
-                scope = 'planet';
-                room = "planet_" + old_coord.planet_id;
-            } else if(dirty.monsters[i].ship_coord_id) {
-                let ship_coord_index = await main.getShipCoordIndex(
-                    { 'ship_coord_id': dirty.monsters[i].ship_coord_id });
-
-                if(ship_coord_index === -1) {
-                    return false;
-                }
-
-                old_coord = dirty.ship_coords[ship_coord_index];
-                old_coord_index = ship_coord_index;
-                scope = 'ship';
-                room = "ship_" + old_coord.ship_id;
-            }
-
-
-            // If we already have a path, we just use that!
-            if(dirty.monsters[i].path && dirty.monsters[i].path !== false && dirty.monsters[i].path[0]) {
-
-                new_x = dirty.monsters[i].path[0][0];
-                new_y = dirty.monsters[i].path[0][1];
-                console.log("Reading from path to send monster to x,y: " + new_x + "," + new_y);
-
-
-                // Remove the part of the path we just used
-                dirty.monsters[i].path.splice(0, 1);
-
-            } else {
-
-                let change_x = -1;
-                let change_y = -1;
-
-
-                if(data.reason === 'idle' && (dirty.monster_types[data.monster_type_index].idle_movement_type === 'default' ||
-                    !dirty.monster_types[data.monster_type_index].idle_movement_type)) {
-
-                    //console.log("Doing idle movement");
-                    // get a random x/y around this coord
-
-
-                    if (main.getRandomIntInclusive(0, 1) === 1) {
-                        change_x = 1;
-                    }
-
-                    if (main.getRandomIntInclusive(0, 1) === 1) {
-                        change_y = 1;
-                    }
-
-                    // randomly set one to 0 - so we aren't moving diagonal
-                    if (main.getRandomIntInclusive(0, 1) === 1) {
-                        change_x = 0;
-                    } else {
-                        change_y = 0;
-                    }
-
-                    new_x = old_coord.tile_x + change_x;
-                    new_y = old_coord.tile_y + change_y;
-                } else if(data.reason === 'battle') {
-                    //console.log("Doing default battle move");
-
-                    // get the thing the monster is attacking
-
-                    if(data.battle_linker.being_attacked_type === 'player') {
-                        let player_index = await main.getPlayerIndex({ 'player_id': data.battle_linker.being_attacked_id });
-
-                        if(dirty.players[player_index].planet_coord_id) {
-                            let player_planet_coord_index = await main.getPlanetCoordIndex({ 'planet_coord_id': dirty.players[player_index].planet_coord_id });
-                            attacking_coord = dirty.planet_coords[player_planet_coord_index];
-                        } else if(dirty.players[player_index].ship_coord_id) {
-                            let player_ship_coord_index = await main.getShipCoordIndex({ 'ship_coord_id': dirty.players[player_index].ship_coord_id });
-                            attacking_coord = dirty.ship_coords[player_ship_coord_index];
-                        }
-                    } else if(data.battle_linker.being_attacked_type === 'object') {
-                        let object_index = await main.getObjectIndex(data.battle_linker.being_attacked_id);
-
-                        if(dirty.objects[object_index].planet_coord_id) {
-                            let object_planet_coord_index = await main.getPlanetCoordIndex({ 'planet_coord_id': dirty.objects[object_index].planet_coord_id });
-                            attacking_coord = dirty.planet_coords[object_planet_coord_index];
-                        } else if(dirty.objects[object_index].ship_coord_id) {
-                            let object_ship_coord_index = await main.getShipCoordIndex({ 'ship_coord_id': dirty.objects[object_index].ship_coord_id });
-                            attacking_coord = dirty.ship_coords[object_ship_coord_index];
-                        }
-                    }
-
-                    let x_difference = main.diff(attacking_coord.tile_x, old_coord.tile_x);
-                    let y_difference = main.diff(attacking_coord.tile_y, old_coord.tile_y);
-
-                    // Pretty sure we don't need to do all this if we are already next to the player
-                    if(x_difference <= 1 && y_difference <= 1) {
-                        return;
-                    }
-
-
-                    if( dirty.monster_types[data.monster_type_index].attack_movement_type === 'default' ||
-                        !dirty.monster_types[data.monster_type_index].attack_movement_type ) {
-
-                        let rand_move = main.getRandomIntInclusive(1,2);
-
-                        if(x_difference !== 0 && rand_move === 1) {
-                            if(attacking_coord.tile_x > old_coord.tile_x) {
-                                new_x = old_coord.tile_x + 1;
-                                change_x = 1;
-                            } else {
-                                new_x = old_coord.tile_x - 1;
-                                change_x = -1;
-                            }
-
-                            new_y = old_coord.tile_y;
-                            change_y = 0;
-                        } else if(y_difference !== 0 && rand_move === 2) {
-                            if(attacking_coord.tile_y > old_coord.tile_y) {
-                                new_y = old_coord.tile_y + 1;
-                                change_y = 1;
-                            } else {
-                                new_y = old_coord.tile_y - 1;
-                                change_y = -1;
-                            }
-
-                            new_x = old_coord.tile_x;
-                            change_x = 0;
-                        }
-
-                    } else if(dirty.monster_types[data.monster_type_index].attack_movement_type === 'warp_to') {
-
-                        let found_coord = false;
-
-                        for(let x = attacking_coord.tile_x - 1;
-                            x <= attacking_coord.tile_x + 1; x++) {
-                            for(let y = attacking_coord.tile_y - 1;
-                                y <= attacking_coord.tile_y + 1; y++) {
-
-                                if(!found_coord) {
-                                    let checking_data = {};
-
-                                    if(scope === 'planet') {
-
-                                        let checking_data = { 'planet_id': attacking_coord.planet_id,
-                                            'planet_level': attacking_coord.level,
-                                            'tile_x': x, 'tile_y':y };
-                                        let checking_coord_index = await main.getPlanetCoordIndex(checking_data);
-
-                                        let monster_can_place_result = await main.canPlaceMonster('planet',
-                                            dirty.planet_coords[checking_coord_index], {'monster_index': i });
-
-                                        if(checking_coord_index !== -1 && monster_can_place_result === true ) {
-
-                                            new_x = dirty.planet_coords[checking_coord_index].tile_x;
-                                            new_y = dirty.planet_coords[checking_coord_index].tile_y;
-
-                                            change_x = new_x - old_coord.tile_x;
-                                            change_y = new_y - old_coord.tile_y;
-                                            found_coord = true;
-
-                                        }
-                                    } else if(scope === 'ship') {
-
-                                        let checking_data = { 'ship_id': attacking_coord.ship_id,
-                                            'level': attacking_coord.level,
-                                            'tile_x': x, 'tile_y':y };
-                                        let checking_coord_index = await main.getShipCoordIndex(checking_data);
-
-                                        let monster_can_place_result = await main.canPlaceMonster('ship',
-                                            dirty.ship_coords[checking_coord_index], { 'monster_index': i });
-
-                                        if(checking_coord_index !== -1 && monster_can_place_result === true ) {
-
-                                            new_x = dirty.ship_coords[checking_coord_index].tile_x;
-                                            new_y = dirty.ship_coords[checking_coord_index].tile_y;
-
-                                            change_x = new_x - old_coord.tile_x;
-                                            change_y = new_y - old_coord.tile_y;
-
-                                            found_coord = true;
-
-                                        }
-
-                                    }
-
-
-                                }
-
-
-                            }
-                        }
-
-                    }
-
-                }
-
-                else {
-                    log(chalk.yellow("Not sure what move we are doing on this monster. reason: " + data.reason +
-                        " idle movement type: " + dirty.monster_types[data.monster_type_index].idle_movement_type));
-                    return false;
-                }
-            }
-
-
-
-            if(new_x === -1 || new_y === -1) {
-                return false;
-            }
-
-
-
-
-
-            /************* STEP 2. SEE IF WE CAN PLACE ****************/
-            //if(dirty.monsters[i].id === 5128) {
-            //    log(chalk.cyan("\n Trying new multi tile monster movement"));
-            //
-            //    console.log("Monster id: " + dirty.monsters[i].id + " was at: " + old_coord.tile_x + "," + old_coord.tile_y +
-            //        " and is changing x,y: " + change_x + "," + change_y);
-            //}
-
-
-            let last_x = new_x + dirty.monster_types[data.monster_type_index].movement_tile_width - 1;
-            let last_y = new_y + dirty.monster_types[data.monster_type_index].movement_tile_height - 1;
-
-            //if(dirty.monsters[i].id === 5128) {
-            //    console.log("Monster type with width/height : " + dirty.monster_types[monster_type_index].movement_tile_width + "," +
-            //        dirty.monster_types[monster_type_index].movement_tile_height);
-            //
-            //    console.log("Checking from x,y: " + new_x + "," + new_y + " to: " + last_x + "," + last_y);
-            //}
-
-
-
-            // Get the destination coord
-            let new_coord_index = -1;
-            let new_coord = false;
-
-            if(dirty.monsters[i].ship_coord_id) {
-
-                new_coord_index = await main.getShipCoordIndex({
-                    'ship_id': old_coord.ship_id, 'level': old_coord.level, 'tile_x': new_x, 'tile_y': new_y
-                });
-
-                if(new_coord_index === -1) {
-                    return false;
-                }
-
-                new_coord = dirty.ship_coords[new_coord_index];
-
-            } else if(dirty.monsters[i].planet_coord_id) {
-
-                new_coord_index = await main.getPlanetCoordIndex({
-                    'planet_id': old_coord.planet_id, 'planet_level': old_coord.level,
-                    'tile_x': new_x, 'tile_y': new_y
-                });
-
-                if(new_coord_index === -1) {
-                    return false;
-                }
-
-                new_coord = dirty.planet_coords[new_coord_index];
-            }
-
-
-
-
-
-            // We need a list of coords to check based on the movement_tile_width and movement_tile_height
-            // of the monster
-
-            let can_place_data = { 'monster_type_id': dirty.monster_types[data.monster_type_index].id };
-
-            //if(dirty.monsters[i].id === 5128) {
-            //    can_place_data.debug = true;
-            //}
-
-            let can_place = await main.canPlaceMonster(scope, new_coord, { 'monster_index': i });
-
-
-            if(!can_place) {
-
-
-                // If we have a path and we just failed to place, the path is invalid!
-                if(dirty.monsters[i].path) {
-                    console.log("Monster path failed");
-                    dirty.monsters[i].path = false;
-                    dirty.monsters[i].ticks_until_next_path = 4;
-                }
-
-                //if(dirty.monsters[i].id === 5128) {
-                //    console.log("Can't do the move");
-                //}
-
-
-                // We can only do pathfinding for monsters that are 1 tile
-                // TODO this is currently limited to just planet coords - lets add in support for other coord types
-                if(attacking_coord !== false && dirty.monsters[i].planet_coord_id &&
-                    dirty.monster_types[data.monster_type_index].movement_tile_width === 1 &&
-                    dirty.monster_types[data.monster_type_index].movement_tile_height === 1) {
-
-                    // Lets delay pathfinding attempts a bit
-                    if(dirty.monsters[i].ticks_until_next_path && dirty.monsters[i].ticks_until_next_path > 1) {
-                        dirty.monsters[i].ticks_until_next_path--;
-                        return false;
-                    }
-                    //log(chalk.cyan("MONSTER PATHFINDING TIME!"));
-
-                    const worker = new Worker('./worker_pathfinding.js');
-
-
-                    worker.on('message', (path) => {
-                        //console.log("Got a path from the worker: ");
-                        console.log(path);
-                        dirty.monsters[i].path = path;
-                    });
-
-                    worker.on('error', (error) => {
-                        console.log("Worker error!");
-                        console.error(error);
-                    });
-
-                    worker.on('exit', (code) => {
-                        //console.log("Worker exited! Code: ");
-                        //console.log(code);
-
-
-                    });
-
-                    worker.on('online', () => {
-                        //console.log("Worker is online");
-                    });
-
-
-                    let pathfinding_coords = [];
-                    for(let c = 0; c < dirty.planet_coords.length; c++) {
-                        if(dirty.planet_coords[c] && dirty.planet_coords[c].planet_id === dirty.planet_coords[planet_coord_index].planet_id &&
-                            dirty.planet_coords[c].level === dirty.planet_coords[planet_coord_index].level &&
-                            dirty.planet_coords[c].tile_x >= dirty.planet_coords[planet_coord_index].tile_x - 3 &&
-                            dirty.planet_coords[c].tile_x <= dirty.planet_coords[planet_coord_index].tile_x + 3 &&
-                            dirty.planet_coords[c].tile_y >= dirty.planet_coords[planet_coord_index].tile_y - 3 &&
-                            dirty.planet_coords[c].tile_y <= dirty.planet_coords[planet_coord_index].tile_y + 3) {
-                            pathfinding_coords.push(dirty.planet_coords[c]);
-                        }
-                    }
-
-                    console.log("Sending " + pathfinding_coords.length + " coords into the pathfinding worker");
-
-                    worker_data = { 'coords': pathfinding_coords, 'monster': dirty.monsters[i],
-                        'origin_x': dirty.planet_coords[planet_coord_index].tile_x, 'origin_y': dirty.planet_coords[planet_coord_index].tile_y,
-                        'destination_x': attacking_coord.tile_x, 'destination_y': attacking_coord.tile_y };
-
-                    worker.postMessage(worker_data);
-                }
-                return false;
-
-
-            }
-
-
-
-            /**************** STEP 3: COLLECT THE CURRENT COORDS THE MONSTER IS ON ************************/
-            let current_coords = [];
-
-            let old_last_x = old_coord.tile_x + dirty.monster_types[data.monster_type_index].movement_tile_width - 1;
-            let old_last_y = old_coord.tile_y + dirty.monster_types[data.monster_type_index].movement_tile_height - 1
-
-            if(dirty.monster_types[data.monster_type_index].movement_tile_width > 1 ||
-                dirty.monster_types[data.monster_type_index].movement_tile_height > 1) {
-
-                for(let ox = old_coord.tile_x; ox <= old_last_x; ox++) {
-                    for(let oy = old_coord.tile_y; oy <= old_last_y; oy++) {
-
-                        if(dirty.monsters[i].planet_coord_id) {
-                            let current_planet_coord_index = await main.getPlanetCoordIndex({ 'tile_x': ox, 'tile_y': oy,
-                                'planet_level': old_coord.level, 'planet_id': old_coord.planet_id });
-
-                            if(current_planet_coord_index !== -1) {
-                                current_coords.push({'planet_coord_id': dirty.planet_coords[current_planet_coord_index].id,
-                                    'planet_coord_index': current_planet_coord_index, 'still_used': false });
-                            }
-                        } else if(dirty.monsters[i].ship_coord_id) {
-                            let current_ship_coord_index = await main.getShipCoordIndex({ 'tile_x': ox, 'tile_y': oy,
-                                'level': old_coord.level,
-                                'ship_id': old_coord.ship_id });
-                            if(current_ship_coord_index !== -1) {
-                                current_coords.push({ 'ship_coord_id': dirty.ship_coords[current_ship_coord_index].id,
-                                    'ship_coord_index': current_ship_coord_index, 'still_used': false });
-                            }
-                        }
-
-                        //current_coords.push({ 'tile_x': ox, 'tile_y': oy, 'still_used': false });
-                    }
-                }
-            }
-            // We just have to push the current coord the monster is on
-            else {
-
-                if(dirty.monsters[i].planet_coord_id) {
-                    current_coords.push({ 'planet_coord_id': old_coord.id, 'planet_coord_index': old_coord_index,
-                        'still_used': false });
-                } else if(dirty.monsters[i].ship_coord_id) {
-                    current_coords.push({ 'ship_coord_id': old_coord.id, 'ship_coord_index': old_coord_index,
-                        'still_used': false });
-                }
-
-            }
-
-
-
-            /********* STEP 3: PLACE THE MONSTER THERE **************/
-
-
-
-            for(let x = new_x; x <= last_x; x++) {
-                for(let y = new_y; y <= last_y; y++) {
-
-                    let placing_coord_index = -1;
-                    let update_data = {};
-                    if(dirty.monsters[i].planet_coord_id) {
-                        placing_coord_index = await main.getPlanetCoordIndex({
-                            'planet_id': old_coord.planet_id, 'planet_level': old_coord.level,
-                            'tile_x': x, 'tile_y': y
-                        });
-
-                        update_data.planet_coord_index = placing_coord_index;
-                    } else if(dirty.monsters[i].ship_coord_id) {
-                        placing_coord_index = await main.getShipCoordIndex({
-                            'ship_id': old_coord.ship_id, 'level': old_coord.level,
-                            'tile_x': x, 'tile_y': y
-                        });
-
-                        update_data.ship_coord_index = placing_coord_index;
-                    }
-
-
-
-                    if(x === new_x && y === new_y) {
-                        update_data.monster_id = dirty.monsters[i].id;
-                        await main.updateCoordGeneric(false, update_data);
-                    } else {
-
-
-                        // If it's the previous coord, we were on, we need the monster_id to be false
-                        if(x === old_coord.tile_x && y === old_coord.tile_y) {
-                            update_data.monster_id = false;
-                            update_data.belongs_to_monster_id = dirty.monsters[i].id;
-                            await main.updateCoordGeneric(false, update_data);
-                        } else {
-                            update_data.belongs_to_monster_id = dirty.monsters[i].id;
-                            await main.updateCoordGeneric(false, update_data);
-                        }
-
-
-                    }
-
-                    let current_coord_index = -1;
-                    if(dirty.monsters[i].planet_coord_id) {
-                        current_coord_index = current_coords.findIndex(function(obj) { return obj &&
-                            obj.planet_coord_index === placing_coord_index; });
-                    } else if(dirty.monsters[i].ship_coord_id) {
-                        current_coord_index = current_coords.findIndex(function(obj) { return obj &&
-                            obj.ship_coord_index === placing_coord_index; });
-                    }
-
-                    if(current_coord_index !== -1) {
-                        current_coords[current_coord_index].still_used = true;
-                    }
-
-                }
-            }
-
-
-            // foreach current coords not used, remove it!
-
-            for(let oc = 0; oc < current_coords.length; oc++) {
-
-                if(current_coords[oc].still_used === false) {
-                    let update_data = {};
-
-                    if(current_coords[oc].planet_coord_index) {
-                        update_data.planet_coord_index = current_coords[oc].planet_coord_index;
-                    } else if(current_coords[oc].ship_coord_index) {
-                        update_data.ship_coord_index = current_coords[oc].ship_coord_index;
-                    }
-
-                    update_data.monster_id = false;
-                    await main.updateCoordGeneric(false, update_data);
-
-                }
-
-            }
-
-            if(scope === 'planet') {
-                dirty.monsters[i].planet_coord_id = new_coord.id;
-                dirty.monsters[i].has_change = true;
-            } else if(scope === 'ship') {
-                dirty.monsters[i].ship_coord_id = new_coord.id;
-                dirty.monsters[i].has_change = true;
-            }
-
-
-            //if(dirty.monsters[i].id === 5128) {
-            //    log(chalk.cyan("Moved monster from planet coord id: " + old_coord.id +
-            //        " to planet_coord_id: " + new_coord.id));
-            //    log(chalk.yellow("monster id for this new planet coord: " + dirty.planet_coords[new_coord_index].monster_id));
-            //}
-
-
-            // and update our monster
-
-
-            // update the room with the move
-            io.to(room).emit('monster_info', { 'monster': dirty.monsters[i] });
-
-
-
-            /*********************************** TEMP CLEANUP THINGS TO LET US KNOW SOMETHING IS WRONG ****************/
-
-            /*
-            main.clearMonsterExtraCoords(i);
-
-            if(scope === 'planet') {
-                // do a check to see if there's a planet coord with the monster id that doesn't match what the monster has now
-                let monster_planet_coords = dirty.planet_coords.filter(planet_coord => planet_coord.monster_id === dirty.monsters[i].id);
-
-                if(monster_planet_coords.length > 1) {
-                    log(chalk.red("Monster id " + dirty.monsters[i].id + " is on too many planet coords!"));
-                    console.log("We just moved monster from planet coord id: " + old_coord.id +
-                        " to planet coord id: " + new_coord.id);
-
-                    for(let coord of monster_planet_coords) {
-                        console.log("Planet coord id: " + coord.id + " has monster id: " + coord.monster_id);
-
-                        if(coord.id !== dirty.monsters[i].planet_coord_id) {
-                            let removing_index = await main.getPlanetCoordIndex({ 'planet_coord_id': coord.id });
-                            await main.updateCoordGeneric(false, {'planet_coord_index': removing_index, 'monster_id': false });
-                            console.log("Updated monster id to false");
-                        }
-                    }
-
-                }
-            }
-            */
-
-
-
-            /******************************** END TEMP ************************************************/
-
-
-
-        } catch(error) {
-            log(chalk.red("Error in game.moveMonster: " + error));
-            console.error(error);
-        }
-
-    }
-
-    module.moveMonster = moveMonster;
 
 
     async function checkSpawnedEvent(dirty, spawned_event_id) {
@@ -4598,7 +3865,7 @@ module.exports = function(main, io, mysql, pool, chalk, log, uuid, world, map, i
             spawned_event_id = parseInt(spawned_event_id);
             // See if there are any objects or monsters left with this spawned event id
             let objects = dirty.objects.filter(object => object.spawned_event_id === spawned_event_id);
-            let monsters = dirty.monsters.filter(monster => monster.spawned_event_id === spawned_event_id);
+            let monsters = dirty.monsters.filter(monster_filter => monster_filter.spawned_event_id === spawned_event_id);
 
             if(objects.length > 0 || monsters.length > 0) {
                 return;
@@ -4636,472 +3903,8 @@ module.exports = function(main, io, mysql, pool, chalk, log, uuid, world, map, i
 
     }
 
-    module.checkSpawnedEvent = checkSpawnedEvent;
+    exports.checkSpawnedEvent = checkSpawnedEvent;
 
-    // monster_index   |   reason   |   skip_check_spawned_event
-    async function deleteMonster(dirty, data) {
-
-        try {
-
-            //console.log("In deleteMonster");
-
-            if(typeof data.monster_index === "undefined") {
-                console.log("No data.monster_index");
-                return false;
-            }
-
-            if(!dirty.monsters[data.monster_index]) {
-                log(chalk.yellow("Could not find the monster we are deleting. Monster index: " + data.monster_index));
-                return false;
-            }
-
-            if(!data.reason) {
-                data.reason = false;
-            }
-
-            //log(chalk.yellow("MONSTER IS DEAD"));
-
-            let monster_type_index = dirty.monster_types.findIndex(function(obj) { return obj && obj.id === dirty.monsters[data.monster_index].monster_type_id; });
-            let monster_info = await world.getMonsterCoordAndRoom(dirty, data.monster_index);
-
-            if(monster_info === false) {
-                log(chalk.yellow("Looks like world.getMonsterCoordAndRoom failed"));
-                return false;
-            }
-
-
-            // If the object is associate with a coord, remove it from that coord
-            if(monster_info.scope === 'galaxy') {
-                await main.updateCoordGeneric(false, { 'coord_index': monster_info.coord_index, 'monster_id': false });
-            } else if(monster_info.scope === 'planet') {
-                await main.updateCoordGeneric(false, { 'planet_coord_index': monster_info.coord_index, 'monster_id': false });
-            } else if(monster_info.scope === 'ship') {
-                await main.updateCoordGeneric(false, { 'ship_coord_index': monster_info.coord_index, 'monster_id': false });
-                console.log("Updated ship coord to no object_id");
-            }
-
-
-            world.removeBattleLinkers(dirty, {'monster_id': dirty.monsters[data.monster_index].id });
-
-
-
-            if(monster_type_index !== -1) {
-                // grab the drop linkers for the monster type
-                //console.log("Getting all drop linkers for monster type id: " + dirty.monster_types[monster_type_index].id);
-                let drop_linkers = dirty.drop_linkers.filter(drop_linker => drop_linker.monster_type_id === dirty.monster_types[monster_type_index].id);
-                if(drop_linkers.length > 0) {
-
-                    // get a random drop linker - and it will drop that
-                    let drop_linker = drop_linkers[Math.floor(Math.random() * drop_linkers.length)];
-                    //console.log("Going to drop object_type_id: " + drop_linker.dropped_object_type_id);
-
-                    if(monster_info.scope === 'planet') {
-
-                        if(await main.canPlaceObject('planet', dirty.planet_coords[monster_info.coord_index],
-                            { 'object_type_id': drop_linker.dropped_object_type_id })) {
-
-                            //console.log("Monster is dropping amount: " + drop_linker.amount + " of object_type_id: " + drop_linker.dropped_object_type_id);
-                            await main.updateCoordGeneric(false, { 'planet_coord_index': monster_info.coord_index, 'object_type_id': drop_linker.dropped_object_type_id,
-                                'amount': drop_linker.amount });
-                        }
-
-
-                    } else if(monster_info.scope === 'ship') {
-
-
-
-                        if(await main.canPlaceObject('ship', dirty.ship_coords[monster_info.coord_index],
-                            { 'object_type_id': drop_linker.dropped_object_type_id })) {
-                            await main.updateCoordGeneric(false, { 'ship_coord_index': monster_info.coord_index, 'object_type_id': drop_linker.dropped_object_type_id,
-                                'amount': drop_linker.amount });
-                        }
-
-                    }
-
-                } else {
-                    //console.log("Monster type id: " + dirty.monster_types[monster_type_index].id + " doesn't drop anything");
-                }
-            } else {
-                log(chalk.yellow("Could not find monster type id for killed monster"));
-            }
-
-
-
-            // an idea.. probably best to do it immediately
-            //dirty.monsters[monster_index].is_dead = true;
-            //dirty.monsters[monsteR_index].has_change = true;
-
-            let monster_id = dirty.monsters[data.monster_index].id;
-
-
-            // If a planet coord spawned the monster, we cam update that to false
-            //console.log("Going to set spawned monster id to false");
-            let spawned_monster_planet_coord_index = await main.getPlanetCoordIndex({'spawned_monster_id': dirty.monsters[data.monster_index].id });
-            if(spawned_monster_planet_coord_index !== -1) {
-                dirty.planet_coords[spawned_monster_planet_coord_index].spawned_monster_id = false;
-                dirty.planet_coords[spawned_monster_planet_coord_index].has_change = true;
-            }
-
-            let check_spawned_event_id = 0;
-            if(dirty.monsters[data.monster_index].spawned_event_id) {
-                check_spawned_event_id = dirty.monsters[data.monster_index].spawned_event_id;
-            }
-
-            // Trying to not await due to time delay from MySQL
-            (pool.query("DELETE FROM monsters WHERE id = ?", [dirty.monsters[data.monster_index].id]));
-
-            delete dirty.monsters[data.monster_index];
-
-
-
-            //log(chalk.yellow("Sending to anyone on planet to remove monster"));
-            io.to(monster_info.room).emit('monster_info',
-                { 'monster': { 'id': monster_id }, 'remove': true });
-
-
-
-
-            // If this monster was spawned from an AI, we will have the AI escalate if it's able to
-            // If we are an AI Daemon, we attempt to spawn the next level of AI helper, the AI....
-            if(dirty.monster_types[monster_type_index].id === 33) {
-                log(chalk.cyan("AI is trying to advance attack/defense to the next level due to daemon death"));
-
-                let ai_id = 0;
-
-                if(monster_info.scope === "planet") {
-                    let planet_index = await main.getPlanetIndex({ 'planet_id': dirty.planet_coords[monster_info.coord_index].planet_id, 'source': 'game.deleteMonster' });
-                    ai_id = dirty.planets[planet_index].ai_id;
-
-                    // and try and attack the attacking player - WHO IS THE ATTACKER IN THIS FUNCTION
-                    let attack_data = {
-                        'ai_id': ai_id,
-                        'attacking_type': data.battle_linker.attacking_type,
-                        'attacking_id': data.battle_linker.attacking_id,
-                        'attack_level': 2
-                    };
-
-                    world.aiAttack(dirty, attack_data);
-
-                } else if(monster_info.scope === "ship") {
-                    let ship_index = await main.getObjectIndex(dirty.ship_coords[monster_info.coord_index].ship_id);
-                    ai_id = dirty.objects[ship_index].ai_id;
-
-                    // and try and attack the attacking player
-                    let attack_data = {
-                        'ai_id': ai_id,
-                        'attacking_type': data.battle_linker.attacking_type,
-                        'attacking_id': data.battle_linker.attacking_id,
-                        'attack_level': 2
-                    };
-
-                    world.aiAttack(dirty, attack_data);
-                }
-
-            }
-
-            if(check_spawned_event_id !== 0&& !data.skip_check_spawned_event) {
-                checkSpawnedEvent(dirty, check_spawned_event_id);
-            }
-
-        } catch(error) {
-            log(chalk.red("Error in game.deleteMonster: " + error));
-            console.error(error);
-        }
-
-
-
-    }
-
-    module.deleteMonster = deleteMonster;
-
-    // socket   |   object_index   |   reason   |   skip_check_spawned_event
-    /**
-     *
-     * @param {Object} dirty
-     * @param {Object} data
-     * @param {number} data.object_index
-     * @param {string=} data.reason
-     * @param data.skip_check_spawned_event
-     * @requires main, game
-     * @returns {Promise<boolean>}
-     */
-    async function deleteObject(dirty, data) {
-
-        try {
-
-            if(data.object_index === -1 || !dirty.objects[data.object_index]) {
-                console.log("Did not find an object there at dirty.objects");
-
-                return false;
-            }
-
-            if(!data.reason) {
-                data.reason = false;
-            }
-
-            console.log("In game.deleteObject for object id: " + dirty.objects[data.object_index].id);
-            console.log("Reason: " + data.reason);
-
-            //console.log("Deleting object id: " + dirty.objects[data.object_index].id);
-
-            let object_type_index = dirty.object_types.findIndex(function(obj) { return obj && obj.id === dirty.objects[data.object_index].object_type_id; });
-
-            let object_type_display_linkers = dirty.object_type_display_linkers.filter(linker =>
-                linker.object_type_id === dirty.object_types[object_type_index].id && !linker.only_visual);
-
-            let object_info = await world.getObjectCoordAndRoom(dirty, data.object_index);
-
-            if(object_info === false || !object_info.coord) {
-                log(chalk.yellow("Could not get the coord the object is on. object_type_id: " +
-                    dirty.object_types[object_type_index].id + " planet_coord_id: " + dirty.objects[data.object_index].planet_coord_id));
-            }
-
-            // Clear out any belongs to object id
-            // Not sure if I could just filter planet/galaxy/etc coords by belongs_to_object_id. Might not have all of them
-            // in memory???
-            // We can only do this if object_info returned a coordinate
-            if(object_info !== false) {
-                if(object_type_display_linkers.length > 0) {
-                    object_type_display_linkers.forEach(await async function(linker) {
-
-                        // origin - will be dealt with right after this
-                        if(linker.position_x === 0 && linker.position_y === 0) {
-
-                        } else {
-
-                            let belongs_x = object_info.coord.tile_x + linker.position_x;
-                            let belongs_y = object_info.coord.tile_y + linker.position_y;
-
-                            // get the belongs coord
-                            if(object_info.scope === 'galaxy') {
-                                let belongs_coord_index = await main.getCoordIndex({ 'tile_x': belongs_x, 'tile_y': belongs_y });
-                                if(belongs_coord_index !== -1) {
-                                    await main.updateCoordGeneric(false, { 'coord_index': belongs_coord_index,
-                                        'belongs_to_object_id': false });
-                                }
-                            } else if(object_info.scope === 'planet') {
-                                let belongs_coord_index = await main.getPlanetCoordIndex({ 'planet_id': object_info.coord.planet_id,
-                                    'planet_level': object_info.coord.level, 'tile_x': belongs_x, 'tile_y': belongs_y });
-                                if(belongs_coord_index !== -1) {
-                                    await main.updateCoordGeneric(false, { 'planet_coord_index': belongs_coord_index,
-                                        'belongs_to_object_id': false });
-                                }
-                            } else if(object_info.scope === 'ship') {
-                                let belongs_coord_index = await main.getShipCoordIndex({ 'ship_id': object_info.coord.ship_id,
-                                    'level': object_info.coord.level,
-                                    'tile_x': belongs_x, 'tile_y': belongs_y });
-                                if(belongs_coord_index !== -1) {
-                                    await main.updateCoordGeneric(false, { 'ship_coord_index': belongs_coord_index,
-                                        'belongs_to_object_id': false });
-                                }
-                            }
-
-                        }
-                    });
-                }
-
-
-                // If the object is associate with a coord, remove it from that coord
-                if(object_info.scope === 'galaxy') {
-                    await main.updateCoordGeneric(false, { 'coord_index': object_info.coord_index, 'object_id': false });
-                } else if(object_info.scope === 'planet') {
-                    await main.updateCoordGeneric(false, { 'planet_coord_index': object_info.coord_index, 'object_id': false });
-                } else if(object_info.scope === 'ship') {
-                    await main.updateCoordGeneric(false, { 'ship_coord_index': object_info.coord_index, 'object_id': false });
-                    console.log("Updated ship coord to no object_id");
-                }
-            }
-
-
-
-            // OBJECT TYPE SPECIFIC CASES
-            // AI
-            // There are some special cases on planets - like if it was an AI
-            if (dirty.objects[data.object_index].object_type_id === 72) {
-
-                if(dirty.objects[data.object_index].planet_coord_id) {
-                    let planet_index = await main.getPlanetIndex({ 'planet_id': dirty.objects[data.object_index].planet_id, 'source': 'game.deleteObject' });
-                    if (planet_index !== -1) {
-                        dirty.planets[planet_index].ai_id = false;
-                        dirty.planets[planet_index].player_id = false;
-                        dirty.planets[planet_index].has_change = true;
-
-                        io.emit('planet_info', { 'planet': dirty.planets[planet_index] });
-                    }
-                } else if(dirty.objects[data.object_index].ship_coord_id) {
-                    let ship_coord_index = await main.getShipCoordIndex({ 'ship_coord_id': dirty.objects[data.object_index].ship_coord_id });
-                    if(ship_coord_index !== -1) {
-                        let ship_index = await main.getObjectIndex(dirty.ship_coords[ship_coord_index].ship_id);
-                        if(ship_index !== -1) {
-                            dirty.objects[ship_index].ai_id = false;
-                            dirty.objects[ship_index].has_change = true;
-                            io.emit('object_info', { 'object': dirty.objects[ship_index] });
-                        }
-                    }
-
-                }
-
-
-            }
-
-            // Spaceship
-            if(dirty.object_types[object_type_index].is_ship) {
-                await deleteShip(socket, dirty, dirty.objects[data.object_index].id, data.reason);
-            }
-
-
-            // Delete battle linkers
-            world.removeBattleLinkers(dirty, { 'object_id': dirty.objects[data.object_index].id });
-
-            // delete any inventory items this had
-            await main.getObjectInventory(dirty.objects[data.object_index].id);
-
-            for(let inventory_item of dirty.inventory_items) {
-                if(inventory_item && inventory_item.owned_by_object_id === dirty.objects[data.object_index].id) {
-                    await inventory.removeFromInventory(false, dirty, { 'inventory_item_id': inventory_item.id, 'amount': inventory_item.amount });
-                }
-            }
-
-            // if it's a body - delete any items that are equipped on it
-            if(dirty.object_types[object_type_index].race_id) {
-                await main.getPlayerEquipment(dirty.objects[data.object_index].id);
-
-                for(let equipment_linker of dirty.equipment_linkers) {
-                    if(equipment_linker && equipment_linker.body_id === dirty.objects[data.object_index].id) {
-                        let equipped_object_index = await main.getObjectIndex(equipment_linker.object_id);
-
-                        await deleteObject(dirty, { 'object_index': equipped_object_index });
-                    }
-                }
-
-            }
-
-            // delete any equipment linkers associated with this object
-            await (pool.query("DELETE FROM equipment_linkers WHERE object_id = ?", [dirty.objects[data.object_index].id]));
-
-
-            // delete any rules
-            for(let i = 0; i < dirty.rules.length; i++) {
-                if(dirty.rules[i] && dirty.rules[i].object_id === dirty.objects[data.object_index].id) {
-
-                    if(dirty.rules[i].rule === "protect_3" || dirty.rules[i].rule === "protect_4") {
-
-                        for(let c = 0; c < dirty.coords.length; c++) {
-                            if(dirty.coords[c] && dirty.coords[c].watched_by_object_id === dirty.objects[data.object_index].id) {
-                                await main.updateCoordGeneric(false, { 'coord_index': c, 'watched_by_object_id': false });
-                            }
-                        }
-                    }
-
-
-                    delete dirty.rules[i];
-
-                }
-            }
-
-            await (pool.query("DELETE FROM rules WHERE object_id = ?", [dirty.objects[data.object_index].id]));
-
-
-
-            //console.log("Sending object info with remove from game.deleteObject");
-            if(object_info !== false) {
-                io.to(object_info.room).emit('object_info', { 'remove': true, 'object': dirty.objects[data.object_index] });
-            }
-
-
-            // See if it drops anything
-            // Rarity roll
-
-            // We can only do the drop linkers if object_info didn't return false ( error out )
-            if(object_info !== false) {
-                let rarity_roll = main.rarityRoll();
-
-                //console.log("Getting all drop linkers for object type id: " + dirty.object_types[object_type_index].id);
-                let drop_linkers = dirty.drop_linkers.filter(drop_linker =>
-                    drop_linker.object_type_id === dirty.object_types[object_type_index].id &&
-                    drop_linker.reason === data.reason && drop_linker.rarity <= rarity_roll);
-                if(drop_linkers.length > 0) {
-
-
-
-                    let drop_linker = drop_linkers[Math.floor(Math.random() * drop_linkers.length)];
-
-
-                    if(drop_linker.dropped_monster_type_id) {
-
-
-                        let spawn_monster_data = {};
-
-                        if(object_info.scope === "planet") {
-                            spawn_monster_data.planet_coord_index = object_info.coord_index;
-
-                        } else if(object_info.scope === "ship") {
-                            spawn_monster_data.ship_coord_index = object_info.coord_index;
-
-                        } else if(object_info.scope === "galaxy") {
-                            spawn_monster_data.coord_index = object_info.coord_index;
-                        }
-
-                        world.spawnMonster(dirty, drop_linker.dropped_monster_type_id, spawn_monster_data);
-
-
-                    } else if(drop_linker.dropped_object_type_id) {
-                        console.log("Going to drop object_type_id: " + drop_linker.dropped_object_type_id);
-
-
-                        if(object_info.scope === "galaxy") {
-                            await main.updateCoordGeneric(false, { 'coord_index': object_info.coord_index,
-                                'object_type_id': drop_linker.dropped_object_type_id, 'amount': drop_linker.amount });
-                        } else if(object_info.scope === "planet") {
-                            await main.updateCoordGeneric(false, { 'planet_coord_index': object_info.coord_index,
-                                'object_type_id': drop_linker.dropped_object_type_id, 'amount': drop_linker.amount });
-                        } else if(object_info.scope === "ship") {
-                            await main.updateCoordGeneric(false, { 'ship_coord_index': object_info.coord_index,
-                                'object_type_id': drop_linker.dropped_object_type_id, 'amount': drop_linker.amount });
-
-                        }
-                    }
-
-
-
-                } else {
-                    //console.log("Object type id: " + dirty.object_types[object_type_index].id + " doesn't drop anything");
-                }
-            }
-
-
-            let check_spawned_event_id = 0;
-
-            // If the object was attached to an event, and there's nothing else attached to the event, despawn the event
-            if(dirty.objects[data.object_index].spawned_event_id) {
-                check_spawned_event_id = dirty.objects[data.object_index].spawned_event_id;
-
-            }
-
-            // delete the object
-            await (pool.query("DELETE FROM objects WHERE id = ?", [dirty.objects[data.object_index].id]));
-
-
-
-            delete dirty.objects[data.object_index];
-
-
-            if(check_spawned_event_id !== 0 && !data.skip_check_spawned_event) {
-                console.log("Calling checkedSpawnedEvent from game.deleteObject");
-                await checkSpawnedEvent(dirty, check_spawned_event_id);
-            }
-
-            //console.log("Done in game.deleteObject");
-        } catch(error) {
-            log(chalk.red("Error in game.deleteObject: " + error));
-            console.error(error);
-        }
-
-
-
-    }
-
-    module.deleteObject = deleteObject;
 
 
     //  data:   planet_coord_index
@@ -5119,7 +3922,7 @@ module.exports = function(main, io, mysql, pool, chalk, log, uuid, world, map, i
             if(dirty.planet_coords[data.planet_coord_index].monster_id) {
                 let monster_index = await main.getMonsterIndex(dirty.planet_coords[data.planet_coord_index].monster_id);
                 if(monster_index !== -1) {
-                    await deleteMonster(dirty, { 'monster_index': monster_index });
+                    await monster.deleteMonster(io, pool, dirty, { 'monster_index': monster_index });
                 }
 
             }
@@ -5129,17 +3932,17 @@ module.exports = function(main, io, mysql, pool, chalk, log, uuid, world, map, i
 
                 let object_index = await main.getObjectIndex(dirty.planet_coords[data.planet_coord_index].object_id);
                 if(object_index !== -1) {
-                    await deleteObject(dirty, { 'object_index': object_index });
+                    await game_object.deleteObject(io, pool, dirty, { 'object_index': object_index });
                 }
 
             }
 
             // Players are moved to Spaceport
-            await movement.warpTo(socket, dirty, { 'player_id': dirty.planet_coords[data.planet_coord_index].player_id,
+            await movement.warpTo(io, socket, dirty, { 'player_id': dirty.planet_coords[data.planet_coord_index].player_id,
                 'planet_id': dirty.planet_coords[data.planet_coord_index].planet_id, 'warping_to': 'spaceport '});
 
             // Npcs are moved to Spaceport
-            await movement.warpTo(socket, dirty, { 'npc_id': dirty.planet_coords[data.planet_coord_index].npc_id,
+            await movement.warpTo(io, socket, dirty, { 'npc_id': dirty.planet_coords[data.planet_coord_index].npc_id,
                 'planet_id': dirty.planet_coords[data.planet_coord_index].planet_id, 'warping_to': 'spaceport '});
 
 
@@ -5156,7 +3959,7 @@ module.exports = function(main, io, mysql, pool, chalk, log, uuid, world, map, i
         }
     }
 
-    module.deletePlanetCoord = deletePlanetCoord;
+    exports.deletePlanetCoord = deletePlanetCoord;
 
 
 
@@ -5182,7 +3985,7 @@ module.exports = function(main, io, mysql, pool, chalk, log, uuid, world, map, i
             // delete the ship coords
             await (pool.query("DELETE FROM ship_coords WHERE ship_id = ?", [dirty.objects[ship_index].id]));
 
-            dirty.ship_coords.forEach(async function(ship_coord, i) {
+            dirty.ship_coords.forEach(await async function(ship_coord, i) {
 
                 try {
                     if(ship_coord.ship_id === dirty.objects[ship_index].id) {
@@ -5191,7 +3994,7 @@ module.exports = function(main, io, mysql, pool, chalk, log, uuid, world, map, i
                         if(ship_coord.object_id) {
                             let object_index = await main.getObjectIndex(ship_coord.object_id);
                             if(object_index !== -1) {
-                                await game.deleteObject(dirty, { 'object_index': object_index });
+                                await game_object.deleteObject(io, pool, dirty, { 'object_index': object_index });
                             }
 
                         }
@@ -5209,9 +4012,9 @@ module.exports = function(main, io, mysql, pool, chalk, log, uuid, world, map, i
 
                             // This player doesn't have this ship set as their ship, punt them back to the galaxy
                             if(other_player_index !== -1 && dirty.players[other_player_index].ship_id !== ship_coord.ship_id) {
-                                other_player_socket = await world.getPlayerSocket(dirty, other_player_index);
+                                other_player_socket = await world.getPlayerSocket(io, dirty, other_player_index);
                                 if(other_player_socket) {
-                                    movement.switchToGalaxy(other_player_socket, dirty, false);
+                                    movement.switchToGalaxy(io, other_player_socket, dirty, false);
                                 }
 
                             }
@@ -5239,7 +4042,7 @@ module.exports = function(main, io, mysql, pool, chalk, log, uuid, world, map, i
                 // I believe this is being taken care of in world.insertObjectType
                 //await world.generateShip(dirty, new_ship_index);
                 //await main.getShipCoords(new_ship_id);
-                await world.sendPlayerInfo(false, "galaxy", dirty, dirty.players[player_index].id);
+                await world.sendPlayerInfo(io,false, "galaxy", dirty, dirty.players[player_index].id);
 
             }
 
@@ -5249,7 +4052,7 @@ module.exports = function(main, io, mysql, pool, chalk, log, uuid, world, map, i
 
     }
 
-    module.deleteShip = deleteShip;
+    exports.deleteShip = deleteShip;
 
     async function metStructureRequirements(dirty, npc_index) {
         // get the requirements
@@ -5277,6 +4080,89 @@ module.exports = function(main, io, mysql, pool, chalk, log, uuid, world, map, i
     }
 
 
+    async function objectSpawn(dirty, object_index, debug_object_type_id) {
+
+        try {
+            let object_type_index = main.getObjectTypeIndex(dirty.objects[object_index].object_type_id);
+
+            // Grab a random spawn linker
+            let rarity = helper.rarityRoll();
+            let hp_percent = dirty.objects[object_index].current_hp / dirty.object_types[object_type_index].hp * 100;
+
+            // Some object types aren't going to have proper HP values
+            if(isNaN(hp_percent)) {
+                hp_percent = 100;
+            }
+
+            if(dirty.objects[object_index].object_type_id === debug_object_type_id) {
+                console.log("Rarity roll: " + rarity + " HP percent: " + hp_percent);
+            }
+
+            let object_type_spawn_linkers = dirty.spawn_linkers.filter(linker => linker.object_type_id === dirty.objects[i].object_type_id &&
+                linker.rarity <= rarity && hp_percent >= linker.minimum_hp_percent && hp_percent <= linker.maximum_hp_percent);
+
+            if(dirty.objects[object_index].object_type_id === debug_object_type_id) {
+                console.log("object_type_spawn_linkers length: " + object_type_spawn_linkers.length);
+            }
+
+
+            if(object_type_spawn_linkers.length > 0) {
+
+                let chosen_linker = object_type_spawn_linkers[Math.floor(Math.random()*object_type_spawn_linkers.length)];
+
+                if(dirty.objects[object_index].object_type_id === debug_object_type_id) {
+                    console.log("Chose spawn linker id: " + chosen_linker.id);
+                }
+
+                let met_requirements = true;
+
+                // If the chosen linker requires a floor type, do that check now
+                if(chosen_linker.requires_floor_type_class && chosen_linker.requires_floor_type_class !== 0) {
+                    met_requirements = false;
+                    let object_info = await game_object.getCoordAndRoom(dirty, i);
+                    if(object_info.coord) {
+                        let coord_floor_type_index = main.getFloorTypeIndex(object_info.coord.floor_type_id);
+
+                        if(coord_floor_type_index !== -1 && dirty.floor_types[coord_floor_type_index].class === chosen_linker.requires_floor_type_class) {
+                            met_requirements = true;
+                        }
+                    }
+
+                }
+
+                if(met_requirements) {
+                    if(chosen_linker.ticks_required > 1) {
+                        dirty.objects[object_index].current_spawn_linker_id = chosen_linker.id;
+                        dirty.objects[object_index].spawner_tick_count = 1;
+                        dirty.objects[object_index].has_change = true;
+                    }
+                    // We finish it
+                    else {
+                        // Gotta get the real spawn linker back
+                        let spawn_linker_index = dirty.spawn_linkers.findIndex(function(obj) { return obj && obj.id === chosen_linker.id; });
+                        await finishSpawnLinker(dirty, { 'object_index': object_index, 'spawn_linker_index': spawn_linker_index });
+
+                    }
+                }
+
+
+
+
+            } else {
+                if(dirty.objects[object_index].object_type_id === debug_object_type_id) {
+                    console.log("Did not find any spawn linkers that matched this object");
+                }
+            }
+        } catch(error) {
+            log(chalk.red("Error in game.objectSpawn: " + error));
+            console.error(error);
+        }
+
+    }
+
+    exports.objectSpawn = objectSpawn;
+
+
     /*
        POSSIBLE ADMIN COMMANDS
        /spawn OBJECT_TYPE_ID
@@ -5284,7 +4170,7 @@ module.exports = function(main, io, mysql, pool, chalk, log, uuid, world, map, i
 
    */
 
-    async function processAdminChatMessage(socket, dirty, data) {
+    async function processAdminChatMessage(pool, socket, dirty, data) {
         try {
 
             if(data.message.includes("/addinventory")) {
@@ -5320,13 +4206,13 @@ module.exports = function(main, io, mysql, pool, chalk, log, uuid, world, map, i
                         let new_object_id = await world.insertObjectType(socket, dirty, insert_object_type_data);
                         let new_object_index = await main.getObjectIndex(new_object_id);
 
-                        await inventory.addToInventory(socket, dirty, { 'adding_to_type': 'player', 'adding_to_id': socket.player_id,
+                        await inventory.addToInventory(pool, socket, dirty, { 'adding_to_type': 'player', 'adding_to_id': socket.player_id,
                             'object_id': dirty.objects[new_object_index].id, 'amount': 1 });
                     }
 
 
                 } else {
-                    await inventory.addToInventory(socket, dirty, { 'adding_to_type': 'player', 'adding_to_id': socket.player_id,
+                    await inventory.addToInventory(pool, socket, dirty, { 'adding_to_type': 'player', 'adding_to_id': socket.player_id,
                         'object_type_id': dirty.object_types[object_type_index].id, 'amount': amount });
                 }
 
@@ -5392,7 +4278,7 @@ module.exports = function(main, io, mysql, pool, chalk, log, uuid, world, map, i
                 }
 
 
-                deleteNpc(dirty, dirty.npcs[npc_index].id);
+                await deleteNpc(dirty, dirty.npcs[npc_index].id);
 
 
 
@@ -5407,7 +4293,7 @@ module.exports = function(main, io, mysql, pool, chalk, log, uuid, world, map, i
 
                 let object_index = await main.getObjectIndex(object_id);
                 if(object_index !== -1) {
-                    deleteObject(dirty, { 'object_index': object_index });
+                    await game_object.deleteObject(io, pool, dirty, { 'object_index': object_index });
                 }
 
 
@@ -5513,11 +4399,11 @@ module.exports = function(main, io, mysql, pool, chalk, log, uuid, world, map, i
 
                 dirty.players[player_index].planet_coord_id = dirty.planet_coords[found_coord_index].id;
                 dirty.players[player_index].has_change = true;
-                await world.sendPlayerInfo(socket, "planet_" + dirty.planet_coords[found_coord_index].planet_id, dirty, dirty.players[player_index].id);
+                await world.sendPlayerInfo(io, socket, "planet_" + dirty.planet_coords[found_coord_index].planet_id, dirty, dirty.players[player_index].id);
 
                 socket.emit('clear_map');
-                world.removeBattleLinkers(dirty, { 'player_id': dirty.players[player_index].id});
-                await map.updateMap(socket, dirty);
+                world.removeBattleLinkers(io, dirty, { 'player_id': dirty.players[player_index].id});
+                await map.updateMap(io, socket, dirty);
 
 
 
@@ -5646,7 +4532,7 @@ module.exports = function(main, io, mysql, pool, chalk, log, uuid, world, map, i
                         return false;
                     }
 
-                    await spawnEvent(dirty, { 'coord_index': coord_index, 'event_index': event_index });
+                    await event.spawn(dirty, event_index, { 'coord_index': coord_index });
                 } else if(coord_type === 'ship') {
                     let ship_coord_index = await main.getShipCoordIndex({ 'ship_coord_id': coord_id });
 
@@ -5655,7 +4541,7 @@ module.exports = function(main, io, mysql, pool, chalk, log, uuid, world, map, i
                         return false;
                     }
 
-                    await spawnEvent(dirty, { 'ship_coord_index': ship_coord_index, 'event_index': event_index });
+                    await event.spawn(dirty, event_index, { 'ship_coord_index': ship_coord_index });
                 } else if(coord_type === 'planet') {
                     let planet_coord_index = await main.getPlanetCoordIndex({ 'planet_coord_id': coord_id });
 
@@ -5664,7 +4550,7 @@ module.exports = function(main, io, mysql, pool, chalk, log, uuid, world, map, i
                         return false;
                     }
 
-                    await spawnEvent(dirty, { 'planet_coord_index': planet_coord_index, 'event_index': event_index });
+                    await eent.spawn(dirty, event_index, { 'planet_coord_index': planet_coord_index });
                 }
 
 
@@ -5932,9 +4818,16 @@ module.exports = function(main, io, mysql, pool, chalk, log, uuid, world, map, i
 
 
                 // Create and place the object
+                let new_object_index = -1;
                 if(dirty.object_types[object_type_index].assembled_as_object) {
                     let new_object_id = await world.insertObjectType(socket, dirty, { 'object_type_id': dirty.object_types[object_type_index].id });
-                    let new_object_index = await main.getObjectIndex(new_object_id);
+                    new_object_index = await main.getObjectIndex(new_object_id);
+
+                    if(dirty.object_types[object_type_index].spawns_object_type_on_create) {
+                        console.log("object type spawns something when created!");
+                        await game_object.spawn(dirty, new_object_index, 319);
+
+                    }
 
                     if(dirty.players[player_index].ship_coord_id) {
                         console.log("Placing object on ship coord");
@@ -5964,6 +4857,7 @@ module.exports = function(main, io, mysql, pool, chalk, log, uuid, world, map, i
                 }
 
 
+
             }
         } catch(error) {
             log(chalk.red("Error in game.processAdminChatMessage: " + error));
@@ -5972,10 +4866,10 @@ module.exports = function(main, io, mysql, pool, chalk, log, uuid, world, map, i
 
     }
 
-    module.processAdminChatMessage = processAdminChatMessage;
+    exports.processAdminChatMessage = processAdminChatMessage;
 
 
-    async function processChatMessage(socket, dirty, data) {
+    async function processChatMessage(pool, socket, dirty, data) {
 
         try {
 
@@ -5999,7 +4893,7 @@ module.exports = function(main, io, mysql, pool, chalk, log, uuid, world, map, i
                 // Lets try and process admin commands
                 if(socket.is_admin) {
                     console.log("Socket is admin");
-                    processAdminChatMessage(socket, dirty, data);
+                    await processAdminChatMessage(pool, socket, dirty, data);
 
                 }
 
@@ -6063,9 +4957,9 @@ module.exports = function(main, io, mysql, pool, chalk, log, uuid, world, map, i
 
     }
 
-    module.processChatMessage = processChatMessage;
+    exports.processChatMessage = processChatMessage;
 
-    async function processMiningLinker(dirty, i) {
+    async function processMiningLinker(io, pool, dirty, i) {
         try {
 
             log(chalk.green("Have mining linker: player_id: " + dirty.mining_linkers[i].player_id + " object id: " + dirty.mining_linkers[i].object_id));
@@ -6085,12 +4979,12 @@ module.exports = function(main, io, mysql, pool, chalk, log, uuid, world, map, i
                 return false;
             }
 
-            let mining_socket = world.getPlayerSocket(dirty, player_index);
+            let mining_socket = world.getPlayerSocket(io, dirty, player_index);
 
             // lets make sure we are in range
             // lets see if the player is close enough to the monster to hit it
             let player_info = await world.getPlayerCoordAndRoom(dirty, player_index);
-            let object_info = await world.getObjectCoordAndRoom(dirty, object_index);
+            let object_info = await game_object.getCoordAndRoom(dirty, object_index);
 
             if(!player_info.coord || !object_info.coord) {
                 log(chalk.yellow("Could not get coord for player or object in processMiningLinker"));
@@ -6162,6 +5056,13 @@ module.exports = function(main, io, mysql, pool, chalk, log, uuid, world, map, i
                 return obj && obj.id === dirty.objects[object_index].object_type_id;
             });
 
+            let spawn_linker_index = dirty.spawn_linkers.findIndex(function(obj) { return obj && obj.id === dirty.objects[object_index].current_spawn_linker_id; });
+
+            if(spawn_linker_index === -1) {
+                log(chalk.yellow("It seems that object id: " + dirty.objects[object_index].id + " object type id: " + dirty.object_types[object_type_index].id + " is using the old spawning system!"));
+                return false;
+            }
+
             if(dirty.objects[object_index].spawned_object_type_amount <= 0) {
                 console.log("Object has been depleted");
 
@@ -6178,19 +5079,19 @@ module.exports = function(main, io, mysql, pool, chalk, log, uuid, world, map, i
 
 
 
-                    await game.deleteObject(dirty, {'object_index': object_index });
+                    await game_object.deleteObject(io, pool, dirty, {'object_index': object_index });
                     if(object_info.coord.planet_id) {
                         await world.sendPlanetCoordInfo(false, object_info.room, dirty, { 'planet_coord_index': object_info.coord_index });
                     } else if(object_info.coord.ship_id) {
                         await world.sendShipCoordInfo(false, object_info.room, dirty, { 'ship_coord_index': object_info.coord_index });
                     } else {
-                        await world.sendCoordInfo(false, "galaxy", dirty, { 'coord_index': object_info.coord_index });
+                        await world.sendCoordInfo(io, false, "galaxy", dirty, { 'coord_index': object_info.coord_index });
                     }
 
                 } else {
                     dirty.objects[object_index].has_spawned_object = false;
                     dirty.objects[object_index].has_change = true;
-                    world.sendObjectInfo(false, object_info.room, dirty, object_index, 'game.processMiningLinker');
+                    await game_object.sendInfo(false, object_info.room, dirty, object_index, 'game.processMiningLinker');
                 }
                 return false;
             }
@@ -6209,7 +5110,7 @@ module.exports = function(main, io, mysql, pool, chalk, log, uuid, world, map, i
                 //console.log("Mining Failed");
                 dirty.players[player_index].mining_skill_points += resulting_complexity + 1;
                 dirty.players[player_index].has_change = true;
-                world.sendPlayerInfo(mining_socket, false, dirty, dirty.players[player_index].id);
+                await world.sendPlayerInfo(io, mining_socket, false, dirty, dirty.players[player_index].id);
                 mining_socket.emit('chat', {'message': 'Mining Failed'});
                 mining_socket.emit('result_info', { 'status': 'failure', 'text': "Your beam is a bit weak"});
                 return false;
@@ -6219,7 +5120,7 @@ module.exports = function(main, io, mysql, pool, chalk, log, uuid, world, map, i
 
             dirty.players[player_index].mining_skill_points += 1;
             dirty.players[player_index].has_change = true;
-            world.sendPlayerInfo(mining_socket, false, dirty, dirty.players[player_index].id);
+            await world.sendPlayerInfo(io, mining_socket, false, dirty, dirty.players[player_index].id);
 
             let adding_amount = mining_level;
             if (dirty.objects[object_index].spawned_object_type_amount < adding_amount) {
@@ -6240,14 +5141,98 @@ module.exports = function(main, io, mysql, pool, chalk, log, uuid, world, map, i
             });
 
 
-            let adding_to_data = {
-                'adding_to_type': 'player',
-                'adding_to_id': dirty.mining_linkers[i].player_id,
-                'object_type_id': dirty.object_types[object_type_index].spawns_object_type_id,
-                'amount': adding_amount
-            };
+            // The thing being mined is in space - so it's being mined by a ship
+            if(object_info.room === "galaxy" ) {
 
-            await inventory.addToInventory(mining_socket, dirty, adding_to_data);
+                let can_place_result = false;
+                let placed_mining = false;
+
+                // Find a ship coord to place it on!'
+                for(let i = 0; i < dirty.ship_coords.length && placed_mining === false; i++) {
+                    if(dirty.ship_coords[i] && dirty.ship_coords[i].ship_id === dirty.players[player_index].ship_id) {
+
+
+                        if(dirty.ship_coords[i].object_type_id === 329) {
+                            console.log("Found ship container");
+                        }
+
+                        // If it's Territe, look for a ship container
+                        if(!placed_mining && dirty.ship_coords[i].object_id && dirty.ship_coords[i].object_type_id === 329 && dirty.spawn_linkers[spawn_linker_index].spawns_object_type_id === 124 ) {
+                            let adding_to_data = {
+                                'adding_to_type': 'object',
+                                'adding_to_id': dirty.ship_coords[i].object_id,
+                                'object_type_id': dirty.spawn_linkers[spawn_linker_index].spawns_object_type_id,
+                                'amount': adding_amount
+                            };
+
+                            await inventory.addToInventory(pool, mining_socket, dirty, adding_to_data);
+                            placed_mining = true;
+
+                        }
+
+                        // Ice container for ice!
+                        if(!placed_mining && dirty.ship_coords[i].object_id && dirty.ship_coords[i].object_type_id === 330 && dirty.spawn_linkers[spawn_linker_index].spawns_object_type_id  === 331 ) {
+                            let adding_to_data = {
+                                'adding_to_type': 'object',
+                                'adding_to_id': dirty.ship_coords[i].object_id,
+                                'object_type_id': dirty.spawn_linkers[spawn_linker_index].spawns_object_type_id,
+                                'amount': adding_amount
+                            };
+
+                            await inventory.addToInventory(pool, mining_socket, dirty, adding_to_data);
+                            placed_mining = true;
+
+                        }
+
+
+
+                    }
+                }
+
+
+
+                // If there wasn't a a container, find a floor coord
+                for(let i = 0; i < dirty.ship_coords.length && can_place_result === false; i++) {
+                    if (dirty.ship_coords[i] && dirty.ship_coords[i].ship_id === dirty.players[player_index].ship_id) {
+                        if(!placed_mining && !dirty.ship_coords[i].object_id && !dirty.ship_coords[i].object_type_id) {
+                            can_place_result = await main.canPlaceObject('ship', dirty.ship_coords[i], { 'object_type_id': dirty.spawn_linkers[spawn_linker_index].spawns_object_type_id });
+
+                            if(can_place_result === true) {
+                                await main.updateCoordGeneric(mining_socket, { 'ship_coord_index': i, 'object_type_id': dirty.spawn_linkers[spawn_linker_index].spawns_object_type_id, 'amount': adding_amount });
+                            }
+                        }
+                    }
+                }
+
+
+                // Didn't find a ship coord, remove the mining linker
+                if(!placed_mining && can_place_result === false) {
+                    io.to(dirty.mining_linkers[i].player_socket_id).emit('mining_linker_info', {
+                        'remove': true, 'mining_linker': dirty.mining_linkers[i]
+                    });
+                    // nothing left. Remove the mining linker, and see what happens to the object
+
+                    delete dirty.mining_linkers[i];
+
+                    mining_socket.emit('chat', {'message': 'Ship Has No Floor Space - Build More Cargo Containers?'});
+                    mining_socket.emit('result_info', { 'status': 'failure', 'text': "Ship Has No Floor Space"});
+                    return false;
+                }
+
+            }
+            // Being mined on a ship or planet, add to the player's inventory
+            else {
+                let adding_to_data = {
+                    'adding_to_type': 'player',
+                    'adding_to_id': dirty.mining_linkers[i].player_id,
+                    'object_type_id': dirty.spawn_linkers[spawn_linker_index].spawns_object_type_id,
+                    'amount': adding_amount
+                };
+
+                await inventory.addToInventory(pool, mining_socket, dirty, adding_to_data);
+            }
+
+
 
 
             //console.log("Finished with mining linker");
@@ -6436,7 +5421,7 @@ module.exports = function(main, io, mysql, pool, chalk, log, uuid, world, map, i
                 //console.log("Repair Failed");
                 dirty.players[dirty.repairing_linkers[i].player_index].repairing_skill_points += complexity + 1;
                 dirty.players[dirty.repairing_linkers[i].player_index].has_change = true;
-                world.sendPlayerInfo(socket, false, dirty, dirty.players[dirty.repairing_linkers[i].player_index].id);
+                world.sendPlayerInfo(io, socket, false, dirty, dirty.players[dirty.repairing_linkers[i].player_index].id);
                 socket.emit('chat', {'message': 'Repairing Failed'});
                 return false;
             }
@@ -6445,7 +5430,7 @@ module.exports = function(main, io, mysql, pool, chalk, log, uuid, world, map, i
 
             dirty.players[dirty.repairing_linkers[i].player_index].repairing_skill_points += 1;
             dirty.players[dirty.repairing_linkers[i].player_index].has_change = true;
-            world.sendPlayerInfo(io.sockets.connected[dirty.repairing_linkers[i].player_socket_id], false, dirty,
+            world.sendPlayerInfo(io, io.sockets.connected[dirty.repairing_linkers[i].player_socket_id], false, dirty,
                 dirty.players[dirty.repairing_linkers[i].player_index].id);
 
             socket.emit('repair_info', { 'repairing_linker_id': dirty.repairing_linkers[i].id, 'repaired_amount': repair_level });
@@ -6468,7 +5453,7 @@ module.exports = function(main, io, mysql, pool, chalk, log, uuid, world, map, i
 
                     }
 
-                    world.sendObjectInfo(io.sockets.connected[dirty.repairing_linkers[i].player_socket_id], room, dirty, object_index);
+                    game_object.sendInfo(io.sockets.connected[dirty.repairing_linkers[i].player_socket_id], room, dirty, object_index);
 
                 }
             }
@@ -6487,8 +5472,8 @@ module.exports = function(main, io, mysql, pool, chalk, log, uuid, world, map, i
 
                 dirty.objects[ship_index].current_hp = new_ship_hp;
                 dirty.objects[ship_index].has_change = true;
-                await world.sendObjectInfo(socket, "ship_" + dirty.objects[ship_index].id, dirty, ship_index, 'game.processRepairingLinker');
-                await world.sendObjectInfo(false, "galaxy", dirty, ship_index, 'game.processRepairingLinker');
+                await game_object.sendInfo(socket, "ship_" + dirty.objects[ship_index].id, dirty, ship_index, 'game.processRepairingLinker');
+                await game_object.sendInfo(false, "galaxy", dirty, ship_index, 'game.processRepairingLinker');
 
 
 
@@ -6540,7 +5525,7 @@ module.exports = function(main, io, mysql, pool, chalk, log, uuid, world, map, i
             }
 
             // get the player's socket
-            let socket = await world.getPlayerSocket(dirty, player_index);
+            let socket = await world.getPlayerSocket(io, dirty, player_index);
 
             // player isn't connected anymore
             if(socket === false) {
@@ -6552,7 +5537,7 @@ module.exports = function(main, io, mysql, pool, chalk, log, uuid, world, map, i
             // Make sure the player and the object are still close enough
 
             let player_info = await world.getPlayerCoordAndRoom(dirty, dirty.active_salvagings[i].player_index);
-            let object_info = await world.getObjectCoordAndRoom(dirty, dirty.active_salvagings[i].object_index);
+            let object_info = await game_object.getCoordAndRoom(dirty, dirty.active_salvagings[i].object_index);
 
             if(!canInteract(socket, dirty, player_info.scope, object_info.coord)) {
                 log(chalk.yellow("Player is too far away. Removing active salvaging"));
@@ -6577,7 +5562,7 @@ module.exports = function(main, io, mysql, pool, chalk, log, uuid, world, map, i
                 dirty.active_salvagings[i].hp_left = new_hp;
 
                 dirty.players[dirty.active_salvagings[i].player_index].salvaging_skill_points += 1;
-                world.sendPlayerInfo(socket, false, dirty, dirty.players[player_index].id);
+                world.sendPlayerInfo(io, socket, false, dirty, dirty.players[player_index].id);
 
                 //console.log("Reduced active_salvaging hp_left to: " + new_hp);
                 await world.sendActiveSalvaging(socket, false, dirty, i);
@@ -6596,7 +5581,7 @@ module.exports = function(main, io, mysql, pool, chalk, log, uuid, world, map, i
             for(let j = 0; j < dirty.salvage_linkers.length; j++) {
                 if(dirty.salvage_linkers[j].object_id === dirty.objects[object_index].id) {
 
-                    let rarity_roll = main.rarityRoll();
+                    let rarity_roll = helper.rarityRoll();
                     let complexity_success = world.complexityCheck(salvaging_level, dirty.salvage_linkers[j].complexity);
 
                     if(complexity_success && dirty.salvage_linkers[j].rarity <= rarity_roll) {
@@ -6614,13 +5599,13 @@ module.exports = function(main, io, mysql, pool, chalk, log, uuid, world, map, i
                                 let new_object_id = await world.insertObjectType(socket, dirty, insert_object_type_data);
                                 let new_object_index = await main.getObjectIndex(new_object_id);
 
-                                await inventory.addToInventory(socket, dirty, { 'adding_to_type': 'player', 'adding_to_id': socket.player_id,
+                                await inventory.addToInventory(pool, socket, dirty, { 'adding_to_type': 'player', 'adding_to_id': socket.player_id,
                                     'object_id': dirty.objects[new_object_index].id, 'amount': 1 });
                             }
 
 
                         } else {
-                            await inventory.addToInventory(socket, dirty, { 'adding_to_type': 'player', 'adding_to_id': socket.player_id,
+                            await inventory.addToInventory(pool, socket, dirty, { 'adding_to_type': 'player', 'adding_to_id': socket.player_id,
                                 'object_type_id': dirty.object_types[salvaged_object_type_index].id, 'amount': dirty.salvage_linkers[j].amount });
                         }
 
@@ -6647,23 +5632,23 @@ module.exports = function(main, io, mysql, pool, chalk, log, uuid, world, map, i
 
 
             // And delete the salvaged object
-            await game.deleteObject(dirty, {'object_index': object_index });
+            await game_object.deleteObject(io, pool, dirty, {'object_index': object_index });
 
             console.log("Deleted object");
 
             if(object_info.scope === 'galaxy') {
-                await world.sendCoordInfo(false, "galaxy", dirty, { 'coord_index': object_info.coord_index });
+                await world.sendCoordInfo(io, false, "galaxy", dirty, { 'coord_index': object_info.coord_index });
             } else if(object_info.scope === 'planet') {
-                await world.sendCoordInfo(false, "planet" + object_info.coord.planet_id, dirty, { 'planet_coord_index': object_info.coord_index });
+                await world.sendCoordInfo(io, false, "planet" + object_info.coord.planet_id, dirty, { 'planet_coord_index': object_info.coord_index });
 
             } else if(object_info.scope === 'ship') {
-                await world.sendCoordInfo(false, "ship_" + object_info.coord.ship_id, dirty, { 'ship_coord_index': object_info.coord_index });
+                await world.sendCoordInfo(io, false, "ship_" + object_info.coord.ship_id, dirty, { 'ship_coord_index': object_info.coord_index });
             }
 
 
             dirty.players[player_index].salvaging_skill_points += 1;
             dirty.players[player_index].has_change = true;
-            world.sendPlayerInfo(socket, false, dirty, dirty.players[player_index].id);
+            world.sendPlayerInfo(io, socket, false, dirty, dirty.players[player_index].id);
 
 
             console.log("Done salvaging");
@@ -6840,7 +5825,7 @@ module.exports = function(main, io, mysql, pool, chalk, log, uuid, world, map, i
             }
 
             // And delete the salvaged object
-            await game.deleteObject(dirty, {'object_index': object_index });
+            await game_object.deleteObject(io, pool, dirty, {'object_index': object_index });
 
             if(object_info.scope === 'galaxy') {
                 await world.sendCoordInfo(false, "galaxy", dirty, { 'coord_index': object_info.coord_index });
@@ -6869,7 +5854,7 @@ module.exports = function(main, io, mysql, pool, chalk, log, uuid, world, map, i
         }
     }
 
-    module.salvage = salvage;
+    exports.salvage = salvage;
 
     async function salvageStop(socket, dirty, data) {
         try {
@@ -6886,7 +5871,7 @@ module.exports = function(main, io, mysql, pool, chalk, log, uuid, world, map, i
                 let object_index = await main.getObjectIndex(data.object_id);
 
                 if(object_index !== -1) {
-                    let object_info = await world.getObjectCoordAndRoom(dirty, object_index);
+                    let object_info = await game_object.getCoordAndRoom(dirty, object_index);
                     world.sendActiveSalvaging(socket, false, dirty, linker_index, true);
 
                 }
@@ -6901,7 +5886,7 @@ module.exports = function(main, io, mysql, pool, chalk, log, uuid, world, map, i
         }
     }
 
-    module.salvageStop = salvageStop;
+    exports.salvageStop = salvageStop;
 
     async function setAutopilotDestination(socket, dirty, destination_tile_x, destination_tile_y) {
 
@@ -6920,563 +5905,7 @@ module.exports = function(main, io, mysql, pool, chalk, log, uuid, world, map, i
 
     }
 
-    module.setAutopilotDestination = setAutopilotDestination;
-
-
-
-
-
-
-
-
-    //  data:   (   ship_coord_index   |   coord_index   |   (planet_id   |   planet_coord_index)   )   |   (event_id   |   event_index)
-    async function spawnEvent(dirty, data) {
-
-        try {
-
-            let debug_event_ids = [33,34,35];
-
-            let planet_index = -1;
-            let planet_event_linker_index = -1;
-            let origin_tile_x = -1;
-            let origin_tile_y = -1;
-            let origin_planet_level = 0;
-            let origin_ship_level = 0;
-            let origin_planet_coord_id = 0;
-            let event_scope = '';
-
-            let event_index = -1;
-            if(data.event_id) {
-                event_index = await main.getEventIndex(data.event_id);
-            } else if(data.event_index) {
-                event_index = data.event_index;
-            }
-
-            if(event_index === -1) {
-                log(chalk.yellow("Could not find event"));
-                return false;
-            }
-
-            let event_linkers = dirty.event_linkers.filter(event_linker => event_linker.event_id === dirty.events[event_index].id);
-            if(event_linkers.length === 0) {
-                log(chalk.yellow("No linkers associated with this event"));
-                return false;
-            }
-
-            if(debug_event_ids.indexOf(dirty.events[event_index].id) !== -1) {
-                console.log("In game.spawnEvent");
-            }
-
-
-
-            /***** STEP 1: FIND THE ORIGIN X,Y ********/
-
-            if(data.planet_id) {
-                planet_index = await main.getPlanetIndex({ 'planet_id': data.planet_id, 'source': 'game.spawnEvent' });
-
-                if(planet_index === -1) {
-                    return false;
-                }
-
-                // find the planet_event_linker
-                planet_event_linker_index = dirty.planet_event_linkers.findIndex(function(obj) {
-                    return obj && obj.event_id === dirty.events[event_index].id &&
-                        obj.planet_type_id === dirty.planets[planet_index].planet_type_id });
-
-                if(planet_event_linker_index === -1) {
-                    log(chalk.yellow("Could not find planet event linker"));
-                    return false;
-                }
-
-                // Find possible planet coords where this can spawn at
-                let possible_planet_coords = [];
-
-                if( main.notFalse(dirty.events[data.event_index].requires_floor_type_id) ) {
-                    if(debug_event_ids.indexOf(dirty.events[event_index].id) !== -1) {
-                        console.log("Event requires a specific floor type id");
-                    }
-
-                    possible_planet_coords = dirty.planet_coords.filter(
-                        planet_coord => planet_coord.planet_id === dirty.planets[planet_index].id &&
-                            planet_coord.floor_type_id === dirty.events[data.event_index].requires_floor_type_id &&
-                            planet_coord.level <= dirty.planet_event_linkers[planet_event_linker_index].highest_planet_level &&
-                            planet_coord.level >= dirty.planet_event_linkers[planet_event_linker_index].lowest_planet_level
-                    );
-
-
-                } else if( main.notFalse(dirty.events[data.event_index].requires_floor_type_class) ) {
-
-                    if(debug_event_ids.indexOf(dirty.events[event_index].id) !== -1) {
-                        console.log("Event requires a specific floor type class: " + dirty.events[data.event_index].requires_floor_type_class);
-                    }
-
-                    // get the floor types that have this class
-                    let class_floor_type_ids = [];
-                    for(let i = 0; i < dirty.floor_types.length; i++) {
-                        if(dirty.floor_types[i].class === dirty.events[data.event_index].requires_floor_type_class) {
-                            class_floor_type_ids.push(dirty.floor_types[i].id);
-                        }
-                    }
-
-                    possible_planet_coords = dirty.planet_coords.filter(
-                        planet_coord => planet_coord.planet_id === dirty.planets[planet_index].id &&
-                            class_floor_type_ids.includes(planet_coord.floor_type_id) &&
-                            planet_coord.level <= dirty.planet_event_linkers[planet_event_linker_index].highest_planet_level &&
-                            planet_coord.level >= dirty.planet_event_linkers[planet_event_linker_index].lowest_planet_level
-                    );
-
-                }
-
-                else {
-
-
-                    possible_planet_coords = dirty.planet_coords.filter(
-                        planet_coord => planet_coord.planet_id === dirty.planets[planet_index].id &&
-                            planet_coord.level <= dirty.planet_event_linkers[planet_event_linker_index].highest_planet_level &&
-                            planet_coord.level >= dirty.planet_event_linkers[planet_event_linker_index].lowest_planet_level
-                    );
-
-
-                }
-
-
-
-                if(possible_planet_coords.length === 0) {
-                    log(chalk.yellow("No possible planet coords for planet event " + dirty.events[event_index].name));
-                    return false;
-                }
-
-                let origin_planet_coord = possible_planet_coords[Math.floor(Math.random() * possible_planet_coords.length)];
-                origin_planet_coord_id = origin_planet_coord.id;
-                origin_tile_x = origin_planet_coord.tile_x;
-                origin_tile_y = origin_planet_coord.tile_y;
-                origin_planet_level = origin_planet_coord.level;
-                event_scope = 'planet';
-
-                if(debug_event_ids.indexOf(dirty.events[event_index].id) !== -1) {
-                    console.log("Set origin planet coord id to: " + origin_planet_coord_id);
-                }
-
-
-            } else if(typeof data.planet_coord_index !== "undefined") {
-
-                planet_index = await main.getPlanetIndex({ 'planet_id': dirty.planet_coords[data.planet_coord_index].planet_id, 'source': 'game.spawnEvent' });
-                origin_tile_x = dirty.planet_coords[data.planet_coord_index].tile_x;
-                origin_tile_y = dirty.planet_coords[data.planet_coord_index].tile_y;
-                origin_planet_level = dirty.planet_coords[data.planet_coord_index].level;
-                event_scope = 'planet';
-
-                // find the planet_event_linker
-                planet_event_linker_index = dirty.planet_event_linkers.findIndex(function(obj) {
-                    return obj && obj.event_id === dirty.events[event_index].id &&
-                        obj.planet_type_id === dirty.planets[planet_index].planet_type_id });
-
-                if(planet_event_linker_index === -1) {
-                    log(chalk.yellow("Could not find planet event linker"));
-                    return false;
-                }
-
-
-            } else if(typeof data.ship_coord_index !== "undefined") {
-                origin_tile_x = dirty.ship_coords[data.ship_coord_index].tile_x;
-                origin_tile_y = dirty.ship_coords[data.ship_coord_index].tile_y;
-                origin_ship_level = dirty.ship_coords[data.ship_coord_index].level;
-
-                event_scope = 'ship';
-            } else if(typeof data.coord_index !== "undefined") {
-                origin_tile_x = dirty.coords[data.coord_index].tile_x;
-                origin_tile_y = dirty.coords[data.coord_index].tile_y;
-
-                event_scope = 'galaxy';
-            }
-
-            if(origin_tile_x === -1 || origin_tile_y === -1) {
-                log(chalk.yellow("Could not find origin tile"));
-                return false;
-            }
-
-
-
-            // TODO listen to the event's min and max planet level
-            // TODO when we do this we need to figure out the lowest level on that particular planet
-            // TODO structure_types has a multi level implementation - but it's a little odd since we move the NPC up
-
-
-
-            // see if we are going to be able to do this event here
-
-            let can_spawn = true;
-
-            // make sure that we aren't exceeding the limit of the planet
-            // Not 100% sure how to do this. For now just check the object or monster at 0,0 and see how many of them
-            // we find
-            if( event_scope === 'planet' && dirty.planet_event_linkers[planet_event_linker_index].limit_per_planet) {
-                if(debug_event_ids.indexOf(dirty.events[event_index].id) !== -1) {
-                    console.log("Event " + dirty.events[event_index].name + " has a limit of: " +
-                        dirty.planet_event_linkers[planet_event_linker_index].limit_per_planet + " on planet type id: " +
-                        dirty.planets[planet_index].planet_type_id);
-                }
-
-
-                // see how many events with this id the planet has
-                let currently_spawned = dirty.spawned_events.filter(spawned_event => spawned_event.event_id === dirty.events[event_index].id &&
-                    spawned_event.planet_id === dirty.planets[planet_index].id);
-
-                if(currently_spawned.length >= dirty.planet_event_linkers[planet_event_linker_index].limit_per_planet) {
-                    can_spawn = false;
-                    if(debug_event_ids.indexOf(dirty.events[event_index].id) !== -1) {
-                        log(chalk.yellow("Can't spawn. Planet is at limit. Found " + currently_spawned.length + " existing events of this type"));
-                    }
-
-                    return false;
-                }
-
-                //console.log("Found " + currently_spawned.length + " of that event already on the planet");
-
-            }
-
-
-
-            for(let event_linker of event_linkers) {
-                let tile_x = origin_tile_x + event_linker.position_x;
-                let tile_y = origin_tile_y + event_linker.position_y;
-                let tile_level = 0;
-                if(event_scope === 'planet') {
-                    tile_level = origin_planet_level + event_linker.level;
-                } else if(event_scope === 'ship') {
-                    tile_level = origin_ship_level + event_linker.level;
-                }
-
-
-                // If the event linker has a object, make sure we can place an object there
-
-                let checking_coord_index = -1;
-                let checking_coord = false;
-                if(event_scope === 'planet') {
-                    let planet_coord_data = { 'planet_id': dirty.planets[planet_index].id,
-                        'planet_level': tile_level, 'tile_x': tile_x, 'tile_y': tile_y };
-
-                    if(debug_event_ids.indexOf(dirty.events[event_index].id) !== -1) {
-                        console.log("Data going into getPlanetCoordIndex:");
-                        console.log(planet_coord_data);
-                    }
-
-                    checking_coord_index = await main.getPlanetCoordIndex(planet_coord_data);
-
-                    if(checking_coord_index === -1) {
-                        log(chalk.yellow("Could not find the coord we are checking"));
-                        return false;
-                    }
-                } else if(event_scope === 'ship') {
-
-                    checking_coord_index = await main.getShipCoordIndex({
-                        'ship_id': dirty.ship_coords[data.ship_coord_index].ship_id,
-                        'level': tile_level, 'tile_x': tile_x, 'tile_y': tile_y
-                    });
-                } else if(event_scope === 'galaxy') {
-                    checking_coord_index = await main.getCoordIndex({ 'tile_x': tile_x, 'tile_y': tile_y });
-                }
-
-                if(checking_coord_index === -1) {
-                    can_spawn = false;
-
-                    if(debug_event_ids.indexOf(dirty.events[event_index].id) !== -1) {
-                        log(chalk.yellow("Was unable to find the coord to check. tile_x,tile_y: " + tile_x + "," + tile_y));
-                    }
-
-                    return false;
-
-                }
-
-
-                if(event_scope === 'planet') {
-                    checking_coord = dirty.planet_coords[checking_coord_index];
-                } else if(event_scope === 'ship') {
-                    checking_coord = dirty.ship_coords[checking_coord_index];
-                } else if(event_scope === 'galaxy') {
-                    checking_coord = dirty.coords[checking_coord_index];
-                }
-
-
-                let can_place_object_result = false;
-                if(event_linker.object_type_id) {
-
-                    if(debug_event_ids.indexOf(dirty.events[event_index].id) !== -1) {
-                        log(chalk.yellow("Going to check to see if we can place an object on a coord with floor_type_id: " + checking_coord.floor_type_id));
-                    }
-
-                    can_place_object_result = await main.canPlaceObject(event_scope, checking_coord,
-                        { 'object_type_id': event_linker.object_type_id });
-                }
-
-
-                if(event_linker.object_type_id && can_place_object_result === false) {
-                    can_spawn = false;
-                    if(debug_event_ids.indexOf(dirty.events[event_index].id) !== -1) {
-                        log(chalk.yellow("Couldn't put an object type on coord at " +
-                            dirty.planet_coords[checking_coord_index].tile_x + "," + dirty.planet_coords[checking_coord_index].tile_y))
-                    }
-
-                } else {
-
-
-                    if(event_linker.object_type_id && debug_event_ids.indexOf(dirty.events[event_index].id) !== -1 ) {
-                        console.log("Looks like we can place there. can_place_object_result: " + can_place_object_result);
-                    }
-
-                    if(event_linker.object_type_id && checking_coord.floor_type_id === 26) {
-                        log(chalk.red("canPlaceObject should NOT have returned true on this coord"));
-                        can_spawn = false;
-                    }
-
-                }
-
-                let can_place_floor_result = false;
-                if(event_linker.floor_type_id) {
-
-                    if(debug_event_ids.indexOf(dirty.events[event_index].id) !== -1) {
-                        console.log("Event linker has a floor_type_id");
-                    }
-
-                    can_place_floor_result = await main.canPlaceFloor({ 'scope': event_scope, 'coord': checking_coord,
-                        'floor_type_id': event_linker.floor_type_id });
-
-                }
-
-                if(event_linker.floor_type_id && can_place_floor_result === false) {
-                    can_spawn = false;
-                    if(debug_event_ids.indexOf(dirty.events[event_index].id) !== -1) {
-                        log(chalk.yellow("Couldn't put floor on coord at " +
-                            checking_coord.tile_x + "," + checking_coord.tile_y))
-                    }
-
-
-                }
-
-                let can_place_monster_result = false;
-                if(event_linker.monster_type_id) {
-                    can_place_monster_result = await main.canPlaceMonster(event_scope,checking_coord,
-                        { 'monster_type_id': event_linker.monster_type_id });
-
-                }
-
-                if(event_linker.monster_type_id && can_place_monster_result === false) {
-                    can_spawn = false;
-                    if(debug_event_ids.indexOf(dirty.events[event_index].id) !== -1) {
-                        log(chalk.yellow("Couldn't put monster type on coord at " +
-                            dirty.planet_coords[checking_coord_index].tile_x + "," + dirty.planet_coords[checking_coord_index].tile_y))
-                    }
-                }
-
-            }
-
-
-            if(!can_spawn) {
-                if(debug_event_ids.indexOf(dirty.events[event_index].id) !== -1) {
-                    log(chalk.yellow("Was unable to spawn the event"));
-                }
-
-                return false;
-            }
-
-
-            if(debug_event_ids.indexOf(dirty.events[event_index].id) !== -1) {
-                log(chalk.green("Can spawn this event here!"));
-            }
-
-
-            // Lets add an event linker
-            let sql = "";
-            let inserts = "";
-            if(event_scope === 'planet') {
-                sql = "INSERT INTO spawned_events(event_id,planet_id,origin_planet_coord_id) VALUES(?,?,?)";
-                inserts = [dirty.events[event_index].id, dirty.planets[planet_index].id, origin_planet_coord_id];
-            } else if(event_scope === 'ship') {
-                sql = "INSERT INTO spawned_events(event_id,ship_id,origin_ship_coord_id) VALUES(?,?,?)";
-                inserts = [dirty.events[event_index].id, dirty.ship_coords[data.ship_coord_index].ship_id, dirty.ship_coords[data.ship_coord_index].id];
-            } else if(event_scope === 'galaxy') {
-                sql = "INSERT INTO spawned_events(event_id,origin_coord_id) VALUES(?,?)";
-                inserts = [dirty.events[event_index].id, dirty.coords[data.coord_index].id];
-            }
-
-
-
-            let [result] = await (pool.query(sql,inserts));
-
-            let spawned_event_id = result.insertId;
-            let spawned_event_index = -1;
-
-            let [rows, fields] = await (pool.query("SELECT * FROM spawned_events WHERE id = ?", [spawned_event_id]));
-            if(rows[0]) {
-                let spawned_event = rows[0];
-                spawned_event.has_change = false;
-
-                spawned_event_index = dirty.spawned_events.push(spawned_event) - 1;
-
-            }
-
-            console.log("Inserted spawned event");
-
-            event_linkers.forEach(await async function(event_linker) {
-
-                try {
-                    let tile_x = origin_tile_x + event_linker.position_x;
-                    let tile_y = origin_tile_y + event_linker.position_y;
-                    let tile_level = 0;
-                    if(event_scope === 'planet') {
-                        tile_level = origin_planet_level + event_linker.level;
-                    } else if(event_scope === 'ship') {
-                        tile_level = origin_ship_level + event_linker.level;
-                    }
-
-                    let linker_coord_index = -1;
-                    let linker_coord = false;
-                    if(event_scope === 'planet') {
-                        let planet_coord_data = { 'planet_id': dirty.planets[planet_index].id,
-                            'planet_level': tile_level, 'tile_x': tile_x, 'tile_y': tile_y };
-                        linker_coord_index = await main.getPlanetCoordIndex(planet_coord_data);
-                        linker_coord = dirty.planet_coords[linker_coord_index];
-                    } else if(event_scope === 'ship') {
-
-                        linker_coord_index = await main.getShipCoordIndex({
-                            'ship_id': dirty.ship_coords[data.ship_coord_index].ship_id,
-                            'level': tile_level, 'tile_x': tile_x, 'tile_y': tile_y
-                        });
-                        linker_coord = dirty.ship_coords[linker_coord_index];
-                    } else if(event_scope === 'galaxy') {
-                        linker_coord_index = await main.getCoordIndex({ 'tile_x': tile_x, 'tile_y': tile_y });
-                        linker_coord = dirty.coords[linker_coord_index];
-                    }
-
-
-                    if(event_linker.object_type_id) {
-                        let insert_object_type_data = { 'object_type_id': event_linker.object_type_id, 'spawned_event_id': spawned_event_id };
-                        let new_object_id = await world.insertObjectType(false, dirty, insert_object_type_data);
-
-                        if(new_object_id === false) {
-                            log(chalk.yellow("Failed to insert object type in game.spawnEvent"));
-                            return false;
-                        }
-
-                        let new_object_index = await main.getObjectIndex(new_object_id);
-
-                        if(new_object_index === -1) {
-                            log(chalk.yellow("Was unable to get object index from object id: " + new_object_id + " in game.spawnEvent"));
-                            return false;
-                        }
-
-                        console.log("Created new object id: " + dirty.objects[new_object_index].id +
-                            " with spawned_event_id: " + dirty.objects[new_object_index].spawned_event_id);
-
-                        if(event_scope === 'planet') {
-                            await main.placeObject(false, dirty, { 'object_index': new_object_index,
-                                'planet_coord_index': linker_coord_index });
-
-                            console.log("Object's planet_coord_id: " + dirty.objects[new_object_index].planet_coord_id);
-                        } else if(event_scope === 'ship') {
-                            await main.placeObject(false, dirty, { 'object_index': new_object_index,
-                                'ship_coord_index': linker_coord_index });
-
-                            console.log("Object's ship_coord_id: " + dirty.objects[new_object_index].ship_coord_id);
-                        } else if(event_scope === 'galaxy') {
-                            await main.placeObject(false, dirty, { 'object_index': new_object_index,
-                                'coord_index': linker_coord_index });
-
-                            console.log("Object's coord_id: " + dirty.objects[new_object_index].coord_id);
-                        }
-
-
-                        /*
-                        await world.addObjectToPlanetCoord(dirty, new_object_index, checking_coord_index);
-                        await game.objectFindTarget(dirty, new_object_index);
-
-                         */
-                    }
-
-                    if(event_linker.floor_type_id) {
-                        if(event_scope === 'planet') {
-                            await world.changeFloor(dirty, { 'planet_coord_index': linker_coord_index, 'floor_type_id': event_linker.floor_type_id });
-                        } else if(event_scope === 'ship') {
-                            await world.changeFloor(dirty, { 'ship_coord_index': linker_coord_index, 'floor_type_id': event_linker.floor_type_id });
-                        } else if(event_scope === 'galaxy') {
-                            await world.changeFloor(dirty, { 'coord_index': linker_coord_index, 'floor_type_id': event_linker.floor_type_id });
-                        }
-                    }
-
-                    if(event_linker.monster_type_id) {
-
-                        let spawn_monster_data = { 'spawned_event_id': spawned_event_id };
-                        if(event_scope === 'planet') {
-                            spawn_monster_data.planet_coord_index = linker_coord_index;
-
-                        } else if(event_scope === 'ship') {
-                            spawn_monster_data.ship_coord_index = linker_coord_index;
-
-                        } else if(event_scope === 'galaxy') {
-                            spawn_monster_data._coord_index = linker_coord_index;
-                            log(chalk.red("CODE IT BOY!"));
-                        }
-
-                        await world.spawnMonster(dirty, event_linker.monster_type_id, spawn_monster_data);
-
-                    }
-
-                    // If there's an hp effect, have it hurt non-event things at this spot
-                    if(event_linker.hp_effect) {
-                        console.log("Spawning event has a hp effect at this location");
-
-                        if(linker_coord.object_id) {
-                            let object_index = await main.getObjectIndex(linker_coord.object_id);
-
-                            // We found the object here and it's not from our event
-                            if(object_index !== -1 && dirty.objects[object_index].spawned_event_id !== spawned_event_id) {
-                                let object_info = await world.getObjectCoordAndRoom(dirty, object_index);
-
-                                await game.damageObject(dirty, { 'object_index': object_index,
-                                    'damage_amount': event_linker.hp_effect, 'object_info': object_info, 'reason': 'event' });
-                            }
-                        }
-                        else if(linker_coord.object_type_id) {
-                            let object_type_index = dirty.object_types.findIndex(function(obj) {
-                                return obj && obj.id === linker_coord.object_type_id; });
-
-                            // We can't store an updated HP amount for a non object object type, so it would just be destroyed
-                            if(object_type_index !== -1 && dirty.object_types[object_type_index].can_be_attacked) {
-
-                                if(event_scope === 'planet') {
-                                    await main.updateCoordGeneric(false, { 'planet_coord_index': linker_coord_index, 'object_type_id': false });
-                                } else if(event_scope === 'ship') {
-                                    await main.updateCoordGeneric(false, { 'ship_coord_index': linker_coord_index, 'object_type_id': false });
-                                } else if(event_scope === 'galaxy') {
-                                    await main.updateCoordGeneric(false, { 'coord_index': linker_coord_index, 'object_type_id': false });
-                                }
-
-
-                            }
-                        }
-
-
-                    }
-                } catch(error) {
-                    log(chalk.red("Error in game.spawnEvent - event_linker: " + error));
-                    console.error(error);
-                }
-
-
-
-            });
-
-
-        } catch(error) {
-            log(chalk.red("Error in game.spawnEvent: " + error));
-            console.error(error);
-        }
-
-
-
-    }
-
-    module.spawnEvent = spawnEvent;
+    exports.setAutopilotDestination = setAutopilotDestination;
 
 
     async function tickAddictions(dirty) {
@@ -7502,7 +5931,7 @@ module.exports = function(main, io, mysql, pool, chalk, log, uuid, world, map, i
                     let player_index = await main.getPlayerIndex({ 'player_id': dirty.objects[body_index].player_id });
                     let race_eating_index = dirty.race_eating_linkers.findIndex(function(obj) { return obj &&
                         obj.race_id === dirty.object_types[body_type_index].race_id && obj.object_type_id === dirty.object_types[addicted_object_type_index].id; });
-                    let player_socket = await world.getPlayerSocket(dirty, player_index);
+                    let player_socket = await world.getPlayerSocket(io, dirty, player_index);
 
                     // increment the tick count
                     if(addiction_linker.tick_count < dirty.race_eating_linkers[race_eating_index].addiction_tick_count) {
@@ -7584,11 +6013,11 @@ module.exports = function(main, io, mysql, pool, chalk, log, uuid, world, map, i
         }
     }
 
-    module.tickAddictions = tickAddictions;
+    exports.tickAddictions = tickAddictions;
 
 
     // TODO this function is a mess
-    async function tickAssemblies(dirty) {
+    async function tickAssemblies(io, pool, dirty) {
 
         //console.log("In game.tickAssemblies");
         try {
@@ -7608,7 +6037,13 @@ module.exports = function(main, io, mysql, pool, chalk, log, uuid, world, map, i
                         return false;
                     }
 
-                    let player_socket = await world.getPlayerSocket(dirty, player_index);
+                    let player_socket = await world.getPlayerSocket(io, dirty, player_index);
+
+                    if(!player_socket) {
+                        console.log("Did not get an active socket for the assembly");
+                    } else {
+                        console.log("Socket id for assembly: " + player_socket.id);
+                    }
 
                     let assembler_object_index = await main.getObjectIndex(assembly.assembler_object_id);
 
@@ -7629,7 +6064,7 @@ module.exports = function(main, io, mysql, pool, chalk, log, uuid, world, map, i
                     let assembler_object_type_id = dirty.objects[assembler_object_index].object_type_id;
 
 
-                    let assembler_object_info = await world.getObjectCoordAndRoom(dirty, assembler_object_index);
+                    let assembler_object_info = await game_object.getCoordAndRoom(dirty, assembler_object_index);
                     let assembled_in_linker_index =  dirty.assembled_in_linkers.findIndex(function(obj) { return obj &&
                         obj.object_type_id === assembly.being_assembled_object_type_id &&
                         obj.assembled_in_object_type_id === dirty.objects[assembler_object_index].object_type_id; });
@@ -7689,7 +6124,7 @@ module.exports = function(main, io, mysql, pool, chalk, log, uuid, world, map, i
                             let adding_to_data = { 'adding_to_type': 'object', 'adding_to_id': assembly.assembler_object_id,
                                 'amount':1,  'object_type_id': assembly.being_assembled_object_type_id  };
 
-                            await inventory.addToInventory(socket, dirty, adding_to_data);
+                            await inventory.addToInventory(pool, socket, dirty, adding_to_data);
                         } else {
                             let object_data = {'object_type_id': assembly.being_assembled_object_type_id,
                                 'player_id': dirty.objects[assembler_object_index].player_id };
@@ -7720,6 +6155,11 @@ module.exports = function(main, io, mysql, pool, chalk, log, uuid, world, map, i
 
                         dirty.players[player_index].has_change = true;
 
+                        if(player_socket) {
+                            await world.sendPlayerInfo(io, player_socket, false, dirty, dirty.players[player_index].id);
+                            //await sendPlayerStats(player_socket, dirty);
+                        }
+
 
 
                         //console.log("Just finished assembling object type id: " + assembly.being_assembled_object_type_id);
@@ -7735,7 +6175,7 @@ module.exports = function(main, io, mysql, pool, chalk, log, uuid, world, map, i
                                 console.log("Getting planet coord index for planet coord id: " + dirty.objects[assembler_object_index].planet_coord_id);
                                 let assembler_coord_index = await main.getPlanetCoordIndex({ 'planet_coord_id': dirty.objects[assembler_object_index].planet_coord_id });
 
-                                await game.deleteObject(dirty, { 'object_index': assembler_object_index });
+                                await game_object.deleteObject(io, pool, dirty, { 'object_index': assembler_object_index });
 
                                 if(assembler_coord_index === -1) {
                                     console.log("Could not get planet coord index");
@@ -7761,7 +6201,7 @@ module.exports = function(main, io, mysql, pool, chalk, log, uuid, world, map, i
                             if(dirty.objects[assembler_object_index].ship_coord_id) {
                                 log(chalk.red("Ship assembled on a ship. Not sure about this one"));
                                 let assembler_coord_index = await main.getShipCoordIndex({ 'ship_coord_id': dirty.objects[assembler_object_index].ship_coord_id });
-                                await game.deleteObject(dirty, { 'object_index':assembler_object_index });
+                                await game_object.deleteObject(io, pool, dirty, { 'object_index':assembler_object_index });
 
                                 console.log("Adding assembled ship to ship coord. EEEEEK");
                                 // Place the new object on the coord
@@ -7777,7 +6217,7 @@ module.exports = function(main, io, mysql, pool, chalk, log, uuid, world, map, i
                             // Assembled in the galaxy
                             else if(dirty.objects[assembler_object_index].coord_id) {
                                 let assembler_coord_index = await main.getCoordIndex({ 'coord_id': dirty.objects[assembler_object_index].coord_id });
-                                await game.deleteObject(dirty, { 'object_index': assembler_object_index });
+                                await game_object.deleteObject(io, pool, dirty, { 'object_index': assembler_object_index });
 
                                 console.log("Adding assembled ship to coord. EEEEEK");
                                 // Place the new object on the coord
@@ -7809,7 +6249,7 @@ module.exports = function(main, io, mysql, pool, chalk, log, uuid, world, map, i
                                 let adding_to_data = { 'adding_to_type': 'object', 'adding_to_id': assembly.assembler_object_id,
                                     'amount':1, 'object_id': dirty.objects[new_object_index].id, 'object_type_id': assembly.being_assembled_object_type_id  };
 
-                                await inventory.addToInventory(socket, dirty, adding_to_data);
+                                await inventory.addToInventory(pool, socket, dirty, adding_to_data);
                             }
 
 
@@ -7835,9 +6275,9 @@ module.exports = function(main, io, mysql, pool, chalk, log, uuid, world, map, i
                                 let assembler_ship_coord_index = await main.getShipCoordIndex({ 'ship_coord_id': dirty.objects[assembler_object_index].ship_coord_id });
                                 if(assembler_ship_coord_index !== false) {
 //                                            console.log("Calling sendObjectInfo from game.tickAssemblies");
-                                    await world.sendObjectInfo(false, "ship_" + dirty.ship_coords[assembler_ship_coord_index].ship_id,
+                                    await game_object.sendInfo(false, "ship_" + dirty.ship_coords[assembler_ship_coord_index].ship_id,
                                         dirty, assembler_object_index, 'game.tickAssemblies');
-                                    inventory.sendInventory(false, "ship_" + dirty.ship_coords[assembler_ship_coord_index].ship_id, dirty,
+                                    await inventory.sendInventory(false, "ship_" + dirty.ship_coords[assembler_ship_coord_index].ship_id, dirty,
                                         'object', dirty.objects[assembler_object_index].id);
                                 }
 
@@ -7846,9 +6286,9 @@ module.exports = function(main, io, mysql, pool, chalk, log, uuid, world, map, i
                                     'planet_coord_id': dirty.objects[assembler_object_index].planet_coord_id });
                                 if(assembler_planet_coord_index !== false) {
                                     //console.log("Calling sendObjectInfo from game.tickAssemblies");
-                                    await world.sendObjectInfo(false, "planet_" + dirty.planet_coords[assembler_planet_coord_index].planet_id,
+                                    await game_object.sendInfo(false, "planet_" + dirty.planet_coords[assembler_planet_coord_index].planet_id,
                                         dirty, assembler_object_index, 'game.tickAssemblies');
-                                    inventory.sendInventory(false, "planet_" + dirty.planet_coords[assembler_planet_coord_index].planet_id,
+                                    await inventory.sendInventory(false, "planet_" + dirty.planet_coords[assembler_planet_coord_index].planet_id,
                                         dirty, 'object', dirty.objects[assembler_object_index].id);
                                 }
                             }
@@ -7874,7 +6314,7 @@ module.exports = function(main, io, mysql, pool, chalk, log, uuid, world, map, i
                             // Set it to not active if it isn't already deleted
                             if(dirty.objects[assembler_object_index]) {
                                 dirty.objects[assembler_object_index].is_active = false;
-                                world.sendObjectInfo(false, assembler_object_info.room, dirty, assembler_object_index, 'game.tickAssemblies');
+                                await game_object.sendInfo(false, assembler_object_info.room, dirty, assembler_object_index, 'game.tickAssemblies');
                             }
 
                         } else {
@@ -7924,7 +6364,7 @@ module.exports = function(main, io, mysql, pool, chalk, log, uuid, world, map, i
 
 
                             dirty.objects[assembler_object_index].is_active = false;
-                            await world.sendObjectInfo(false, assembler_object_info.room, dirty, assembler_object_index);
+                            await game_object.sendInfo(false, assembler_object_info.room, dirty, assembler_object_index);
                         } else {
 
                             dirty.assemblies[i].current_tick_count = 0;
@@ -7949,6 +6389,11 @@ module.exports = function(main, io, mysql, pool, chalk, log, uuid, world, map, i
                         }
 
                         dirty.players[player_index].has_change = true;
+
+                        if(player_socket) {
+                            await world.sendPlayerInfo(io, player_socket, false, dirty, dirty.players[player_index].id);
+                            //await sendPlayerStats(player_socket, dirty);
+                        }
                     }
 
 
@@ -7973,7 +6418,7 @@ module.exports = function(main, io, mysql, pool, chalk, log, uuid, world, map, i
 
 
     }
-    module.tickAssemblies = tickAssemblies;
+    exports.tickAssemblies = tickAssemblies;
 
 
     // So the goal is that we can support the AI to make it stronger by building
@@ -8020,7 +6465,7 @@ module.exports = function(main, io, mysql, pool, chalk, log, uuid, world, map, i
 
     }
 
-    module.tickAI = tickAI;
+    exports.tickAI = tickAI;
 
     async function tickAutopilots(dirty) {
 
@@ -8042,7 +6487,7 @@ module.exports = function(main, io, mysql, pool, chalk, log, uuid, world, map, i
         }
     }
 
-    module.tickAutopilots = tickAutopilots;
+    exports.tickAutopilots = tickAutopilots;
 
 
     async function tickDecay(dirty) {
@@ -8098,7 +6543,7 @@ module.exports = function(main, io, mysql, pool, chalk, log, uuid, world, map, i
         }
     }
 
-    module.tickDecay = tickDecay;
+    exports.tickDecay = tickDecay;
 
 
     async function tickEnergy(socket, dirty) {
@@ -8131,104 +6576,8 @@ module.exports = function(main, io, mysql, pool, chalk, log, uuid, world, map, i
 
     }
 
-    module.tickEnergy = tickEnergy;
+    exports.tickEnergy = tickEnergy;
 
-    async function tickEvents(dirty) {
-
-        try {
-
-            //log(chalk.green("\nIn game.tickEvents"));
-
-            let debug_planet_type_id = 0;
-
-            /***** SPAWN NEW EVENTS ******/
-            for(let planet of dirty.planets) {
-
-                if(planet.planet_type_id === debug_planet_type_id) {
-                    log(chalk.cyan("Spawning events for planet id: " + planet.id + " planet_type_id: " + planet.planet_type_id));
-                }
-
-                // rarity roll for every planet
-                let rarity = main.rarityRoll();
-
-                if(planet.planet_type_id === debug_planet_type_id) {
-                    console.log("Rarity roll: " + rarity);
-                }
-
-                let planet_event_linkers = dirty.planet_event_linkers.filter(planet_event_linker =>
-                    planet_event_linker.planet_type_id === planet.planet_type_id && planet_event_linker.rarity <= rarity);
-
-                if(planet_event_linkers.length !== 0) {
-
-                    if(planet.planet_type_id === debug_planet_type_id) {
-                        console.log("Have " + planet_event_linkers.length + " events for planet type id: " + planet.planet_type_id);
-                        console.log(planet_event_linkers);
-                    }
-
-                    let random_planet_event_linker = planet_event_linkers[Math.floor(Math.random() * planet_event_linkers.length)];
-
-
-
-                    // get the event
-                    let event_index = dirty.events.findIndex(function(obj) { return obj && obj.id === random_planet_event_linker.event_id; });
-
-                    if(event_index !== -1 && planet.planet_type_id === debug_planet_type_id) {
-                        console.log("Randomly chose event id: " + dirty.events[event_index].id + " " + dirty.events[event_index].name);
-                    } else if(planet.planet_type_id === debug_planet_type_id) {
-                        log(chalk.yellow("Could not find that event. event id: " + random_planet_event_linker.event_id));
-                    }
-
-                    if(event_index !== -1 && dirty.events[event_index].is_active) {
-                        //log(chalk.green("Going to spawn event " + dirty.events[event_index].name + " id: " + dirty.events[event_index].id + " on planet id: " + planet.id));
-                        spawnEvent(dirty, { 'planet_id': planet.id, 'event_index': event_index });
-                    }
-
-                }
-            }
-
-            /***** GO THROUGH SPAWNED EVENTS ******/
-            for(let i = 0; i < dirty.spawned_events.length; i++) {
-                if(dirty.spawned_events[i]) {
-                    //console.log("Checking on spawned event id: " + dirty.spawned_events[i].id);
-
-                    dirty.spawned_events[i].tick_count++;
-                    dirty.spawned_events[i].has_change = true;
-
-                    let event_index = dirty.events.findIndex(function(obj) { return obj && obj.id === dirty.spawned_events[i].event_id; });
-
-
-
-                    // See if we despawn the event - Either do it because it's been ticking for FOREVER!!! Or it has a tick_count
-                    // specified and we are over that
-                    if(dirty.spawned_events[i].tick_count > 10000 ||
-                        (main.notFalse(dirty.events[event_index].tick_count) && dirty.spawned_events[i].tick_count > dirty.events[event_index].tick_count )) {
-                        //console.log("Going to delete spawned event id: " + dirty.spawned_events[i].id);
-                        //console.log("Spawned event tick count: " + dirty.spawned_events[i].tick_count + " Event tick count: " + dirty.events[event_index].tick_count);
-                        await deleteSpawnedEvent(dirty, i);
-                    }
-
-
-
-                    // Now that we've deleted any object or monsters associated with the event, calling this
-                    // will despawn it
-                    //await checkSpawnedEvent(dirty, dirty.spawned_events[i].id);
-                }
-
-            }
-
-
-        } catch(error) {
-            log(chalk.red("Error in game.tickEvents: " + error));
-            console.error(error);
-        }
-
-
-
-
-
-    }
-
-    module.tickEvents = tickEvents;
 
     async function tickFood(dirty) {
 
@@ -8254,7 +6603,7 @@ module.exports = function(main, io, mysql, pool, chalk, log, uuid, world, map, i
                         player_index = await main.getPlayerIndex({ 'player_id': eating_linker.player_id });
 
                         // Find the socket for this player
-                        socket = world.getPlayerSocket(dirty, player_index);
+                        socket = world.getPlayerSocket(io, dirty, player_index);
 
                         body_index = await main.getObjectIndex(eating_linker.body_id);
 
@@ -8322,7 +6671,7 @@ module.exports = function(main, io, mysql, pool, chalk, log, uuid, world, map, i
                                 let player_info = await world.getPlayerCoordAndRoom(dirty, player_index);
 
                                 if(player_info.room) {
-                                    world.sendPlayerInfo(socket, player_info.room, dirty, dirty.players[player_index].id);
+                                    await world.sendPlayerInfo(io, socket, player_info.room, dirty, dirty.players[player_index].id);
                                 }
 
 
@@ -8421,9 +6770,9 @@ module.exports = function(main, io, mysql, pool, chalk, log, uuid, world, map, i
 
     }
 
-    module.tickFood = tickFood;
+    exports.tickFood = tickFood;
 
-    async function tickFloors(dirty) {
+    async function tickFloors(io, dirty) {
 
         try {
             //console.log("In tickFloors");
@@ -8518,7 +6867,7 @@ module.exports = function(main, io, mysql, pool, chalk, log, uuid, world, map, i
                         // Resolve the hp effect
                         dirty.objects[ship_index].current_hp = new_ship_hp;
                         dirty.objects[ship_index].has_change = true;
-                        await world.sendObjectInfo(socket, room, dirty, ship_index);
+                        await game_object.sendInfo(socket, room, dirty, ship_index);
 
 
                         if(hp_effect < 0) {
@@ -8547,7 +6896,7 @@ module.exports = function(main, io, mysql, pool, chalk, log, uuid, world, map, i
                         // Resolve the hp effect
                         dirty.players[player_index].current_hp = new_player_hp;
                         dirty.players[player_index].has_change = true;
-                        await world.sendPlayerInfo(socket, room, dirty, dirty.players[player_index].id);
+                        await world.sendPlayerInfo(io, socket, room, dirty, dirty.players[player_index].id);
 
                         if(hp_effect < 0) {
                             socket.emit('damaged_data', {
@@ -8581,13 +6930,14 @@ module.exports = function(main, io, mysql, pool, chalk, log, uuid, world, map, i
             });
         } catch(error) {
             log(chalk.red("Error in game.tickFloors: " + error));
+            console.error(error);
         }
 
 
 
     }
 
-    module.tickFloors = tickFloors;
+    exports.tickFloors = tickFloors;
 
     /*
     async function tickGrowths(dirty) {
@@ -8630,7 +6980,7 @@ module.exports = function(main, io, mysql, pool, chalk, log, uuid, world, map, i
 
     }
 
-    module.tickGrowths = tickGrowths;
+    exports.tickGrowths = tickGrowths;
 
     */
 
@@ -8669,7 +7019,7 @@ module.exports = function(main, io, mysql, pool, chalk, log, uuid, world, map, i
                         if(highest_bid_linker_index === -1) {
 
                             // Lets assign the area
-                            let area_index = await main.getAreaIndex({ 'area_id': dirty.market_linkers[i].area_id });
+                            let area_index = await main.getAreaIndex(dirty.market_linkers[i].area_id);
 
                             dirty.areas[area_index].rentin_player_id = dirty.bid_linkers[highest_bid_linker_index].player_id;
                             dirty.areas[area_index].price = dirty.bid_linkers[highest_bid_linker_index].price;
@@ -8703,10 +7053,10 @@ module.exports = function(main, io, mysql, pool, chalk, log, uuid, world, map, i
         }
     }
 
-    module.tickMarketLinkers = tickMarketLinkers;
+    exports.tickMarketLinkers = tickMarketLinkers;
 
 
-    async function tickMonsterDecay(dirty) {
+    async function tickMonsterDecay(io, dirty) {
 
 
         try {
@@ -8714,7 +7064,7 @@ module.exports = function(main, io, mysql, pool, chalk, log, uuid, world, map, i
             for(let i = 0; i < dirty.monster_types.length; i++) {
                 if(dirty.monster_types[i].decay_rate > 0) {
 
-                    await decayMonsterType(dirty, i);
+                    await decayMonsterType(io, dirty, i);
                 }
             }
 
@@ -8724,7 +7074,7 @@ module.exports = function(main, io, mysql, pool, chalk, log, uuid, world, map, i
         }
     }
 
-    module.tickMonsterDecay = tickMonsterDecay;
+    exports.tickMonsterDecay = tickMonsterDecay;
 
     async function processAutopilot(dirty, autopilot) {
         try {
@@ -8740,7 +7090,7 @@ module.exports = function(main, io, mysql, pool, chalk, log, uuid, world, map, i
                 return;
             }
 
-            let socket = await world.getPlayerSocket(dirty, player_index);
+            let socket = await world.getPlayerSocket(io, dirty, player_index);
 
             if(socket === false) {
                 console.log("Could not find player's socket");
@@ -8841,7 +7191,7 @@ module.exports = function(main, io, mysql, pool, chalk, log, uuid, world, map, i
                 //let can_place_result = await main.canPlace('galaxy', dirty.coords[possible_move.coord_index], 'player', dirty.players[player_index].id);
                 if(can_place_result) {
                     found_move = true;
-                    await movement.moveGalaxy(socket, dirty, possible_move.coord_index);
+                    await movement.moveGalaxy(io, socket, dirty, possible_move.coord_index);
                 }
             }
 
@@ -8928,7 +7278,7 @@ module.exports = function(main, io, mysql, pool, chalk, log, uuid, world, map, i
                                         'attacking_id': dirty.npcs[npc_index].id, 'attacking_type': 'npc',
                                         'being_attacked_id': dirty.planet_coords[checking_coord_index].object_id, 'being_attacked_type': 'object'
                                     };
-                                    world.addBattleLinker(false, dirty, battle_linker_data);
+                                    world.addBattleLinker(io, false, dirty, battle_linker_data);
                                     npc_did_action = true;
 
                                 } else if(dirty.planet_coords[checking_coord_index].player_id) {
@@ -8949,65 +7299,72 @@ module.exports = function(main, io, mysql, pool, chalk, log, uuid, world, map, i
 
                                 if(dirty.objects[object_index].has_spawned_object) {
 
-                                    log(chalk.green("Object has a spawned object. NPC is going to harvest"));
-
-                                    let object_type_index = dirty.object_types.findIndex(function(obj) { return obj && obj.id === dirty.objects[object_index].object_type_id; });
-
-                                    if(object_type_index !== -1) {
-
-                                        //console.log("Going to add spawned object to inventory");
-
-
-
-                                        let vending_machine_object_index = dirty.objects.findIndex(function(obj) {
-                                            return obj && obj.npc_id === dirty.npcs[npc_index].id && obj.object_type_id === 92; });
-
-                                        if(vending_machine_object_index !== -1) {
-                                            console.log("Found vending machine for NPC. Putting spawned object in it");
-
-
-                                            let adding_to_data = { 'adding_to_type': 'object', 'adding_to_id': dirty.objects[vending_machine_object_index].id,
-                                                'object_type_id': dirty.object_types[object_type_index].spawns_object_type_id,
-                                                'amount':dirty.object_types[object_type_index].spawns_object_type_amount, 'price': 10 };
-
-                                            inventory.addToInventory(false, dirty, adding_to_data);
-                                        } else {
-                                            console.log("Did not find vending machine for NPC. NPC is putting in their pocket (large pockets ;) )");
-
-                                            let adding_to_data = { 'adding_to_type': 'npc', 'adding_to_id': dirty.npcs[npc_index].id,
-                                                'object_type_id': dirty.object_types[object_type_index].spawns_object_type_id,
-                                                'amount':dirty.object_types[object_type_index].spawns_object_type_amount };
-
-                                            inventory.addToInventory(false, dirty, adding_to_data);
-                                        }
-
-
-                                        console.log("Set npc_did_action to true");
-
-                                        dirty.objects[object_index].has_spawned_object = false;
-                                        dirty.objects[object_index].has_change = true;
-                                        //console.log("Calling sendObjectInfo from npc.tickStructure");
-                                        await world.sendObjectInfo(false, "planet_" + dirty.planet_coords[npc_coord_index].planet_id, dirty, object_index);
-
-                                        return true;
-                                        // TODO - not sure if we can do this at the map level so things get updated for everyone - or
-                                        // TODO - access IO here to send the info to players in the same area
-                                        //socket.emit('object_info_data', { 'object_id': dirty.objects[object_index].id, 'object_type_id': dirty.objects[object_index].object_type_id,
-                                        //    'has_spawned_object': false });
-
-
-
-                                        // TODO see if we increase the npc skill
-                                        //if(dirty.object_types[object_type_index].spawns_object_type_id == 68) {
-                                        //    dirty.players[socket.player_index].farming_skill_points++;
-                                        //    dirty.players[socket.player_index].has_change = true;
-                                        //
-                                        //    sendPlayerStats(socket, dirty);
-                                        //
-                                        //}
+                                    let spawn_linker_index = dirty.spawn_linkers.findIndex(function(obj) { return obj && obj.id === dirty.objects[object_index].current_spawn_linker_id; });
+                                    if(spawn_linker_index === -1) {
+                                        log(chalk.yellow("object that is part of structure is on old spawner system"));
                                     } else {
-                                        console.log("Could not find object type");
+                                        log(chalk.green("Object has a spawned object. NPC is going to harvest"));
+
+                                        let object_type_index = dirty.object_types.findIndex(function(obj) { return obj && obj.id === dirty.objects[object_index].object_type_id; });
+
+                                        if(object_type_index !== -1) {
+
+                                            //console.log("Going to add spawned object to inventory");
+
+
+
+                                            let vending_machine_object_index = dirty.objects.findIndex(function(obj) {
+                                                return obj && obj.npc_id === dirty.npcs[npc_index].id && obj.object_type_id === 92; });
+
+                                            if(vending_machine_object_index !== -1) {
+                                                console.log("Found vending machine for NPC. Putting spawned object in it");
+
+
+                                                let adding_to_data = { 'adding_to_type': 'object', 'adding_to_id': dirty.objects[vending_machine_object_index].id,
+                                                    'object_type_id': dirty.spawn_linkers[spawn_linker_index].spawns_object_type_id,
+                                                    'amount':dirty.spawn_linkers[spawn_linker_index].spawns_amount, 'price': 10 };
+
+                                                await inventory.addToInventory(pool, false, dirty, adding_to_data);
+                                            } else {
+                                                console.log("Did not find vending machine for NPC. NPC is putting in their pocket (large pockets ;) )");
+
+                                                let adding_to_data = { 'adding_to_type': 'npc', 'adding_to_id': dirty.npcs[npc_index].id,
+                                                    'object_type_id': dirty.spawn_linkers[spawn_linker_index].spawns_object_type_id,
+                                                    'amount':dirty.spawn_linkers[spawn_linker_index].spawns_amount };
+
+                                                await inventory.addToInventory(pool, false, dirty, adding_to_data);
+                                            }
+
+
+                                            console.log("Set npc_did_action to true");
+
+                                            dirty.objects[object_index].has_spawned_object = false;
+                                            dirty.objects[object_index].has_change = true;
+                                            //console.log("Calling sendObjectInfo from npc.tickStructure");
+                                            await game_object.sendInfo(false, "planet_" + dirty.planet_coords[npc_coord_index].planet_id, dirty, object_index);
+
+                                            return true;
+                                            // TODO - not sure if we can do this at the map level so things get updated for everyone - or
+                                            // TODO - access IO here to send the info to players in the same area
+                                            //socket.emit('object_info_data', { 'object_id': dirty.objects[object_index].id, 'object_type_id': dirty.objects[object_index].object_type_id,
+                                            //    'has_spawned_object': false });
+
+
+
+                                            // TODO see if we increase the npc skill
+                                            //if(dirty.object_types[object_type_index].spawns_object_type_id == 68) {
+                                            //    dirty.players[socket.player_index].farming_skill_points++;
+                                            //    dirty.players[socket.player_index].has_change = true;
+                                            //
+                                            //    sendPlayerStats(socket, dirty);
+                                            //
+                                            //}
+                                        } else {
+                                            console.log("Could not find object type");
+                                        }
                                     }
+
+
                                 }
                             }
                         } else {
@@ -9036,30 +7393,31 @@ module.exports = function(main, io, mysql, pool, chalk, log, uuid, world, map, i
 
 
     }
-    module.tickStructure = tickStructure;
+    exports.tickStructure = tickStructure;
 
 
 
 
     // It's really important that mining linkers execute one after another, incase the thing being mined is
     // depleted mid way through a tick
-    async function tickMining(dirty) {
+    async function tickMining(io, pool, dirty) {
 
         try {
             for(let i = 0; i < dirty.mining_linkers.length; i++) {
 
                 if(dirty.mining_linkers[i]) {
-                    await processMiningLinker(dirty, i);
+                    await processMiningLinker(io, pool, dirty, i);
                 }
 
             }
 
         } catch(error) {
             log(chalk.red("Error in game.tickMining: " + error));
+            console.error(error);
         }
     }
 
-    module.tickMining = tickMining;
+    exports.tickMining = tickMining;
 
     /*
 
@@ -9167,7 +7525,7 @@ module.exports = function(main, io, mysql, pool, chalk, log, uuid, world, map, i
 
     }
 
-    module.tickMonsterSpawns = tickMonsterSpawns;
+    exports.tickMonsterSpawns = tickMonsterSpawns;
 
 
     */
@@ -9180,7 +7538,7 @@ module.exports = function(main, io, mysql, pool, chalk, log, uuid, world, map, i
     //      that the monster is currently on. Saves one lookup for each moved monster
     // We could only move some of the monsters on rooms that are currently active
     //      to do that, the easiest way might be to attach room info to the monster in memory
-    async function tickMoveMonsters(dirty) {
+    async function tickMoveMonsters(io, dirty) {
 
         try {
 
@@ -9214,7 +7572,7 @@ module.exports = function(main, io, mysql, pool, chalk, log, uuid, world, map, i
                     if(room_keys.includes(dirty.monsters[i].room)) {
 
 
-                        let rand = main.getRandomIntInclusive(1,3);
+                        let rand = helper.getRandomIntInclusive(1,3);
 
                         // Lets just move 1/3 each tick
                         if(rand === 2) {
@@ -9226,7 +7584,7 @@ module.exports = function(main, io, mysql, pool, chalk, log, uuid, world, map, i
                             if(monster_type_index !== -1) {
 
                                 if(dirty.monster_types[monster_type_index].idle_movement_type !== 'none') {
-                                    await moveMonster(dirty, i, { 'reason': 'idle', 'monster_type_index': monster_type_index } );
+                                    await monster.move(io, dirty, i, { 'reason': 'idle', 'monster_type_index': monster_type_index } );
                                 }
 
                             }
@@ -9249,7 +7607,7 @@ module.exports = function(main, io, mysql, pool, chalk, log, uuid, world, map, i
 
     }
 
-    module.tickMoveMonsters = tickMoveMonsters;
+    exports.tickMoveMonsters = tickMoveMonsters;
 
 
     /*
@@ -9307,7 +7665,7 @@ module.exports = function(main, io, mysql, pool, chalk, log, uuid, world, map, i
                                 dirty.objects[i].spawned_object_type_amount = dirty.object_types[spawner_object_type_index].spawns_object_type_amount;
                                 dirty.objects[i].has_change = true;
 
-                                world.sendObjectInfo(false, spawner_object_info.room, dirty, i);
+                                game_object.sendInfo(false, spawner_object_info.room, dirty, i);
 
                                 // We need to send the updated object info!
 
@@ -9337,7 +7695,7 @@ module.exports = function(main, io, mysql, pool, chalk, log, uuid, world, map, i
                                 spawned_event_id = dirty.objects[i].spawned_event_id;
                             }
 
-                            await deleteObject(dirty, { 'object_index': i });
+                            await deleteObject(io, pool, dirty, { 'object_index': i });
 
                             let spawn_monster_data = { 'monster_type_id': dirty.object_types[spawner_object_type_index].spawns_monster_type_id,
                                 'spawned_event_id': spawned_event_id };
@@ -9387,7 +7745,7 @@ module.exports = function(main, io, mysql, pool, chalk, log, uuid, world, map, i
 
     }
 
-    module.tickObjectSpawners = tickObjectSpawners;
+    exports.tickObjectSpawners = tickObjectSpawners;
 
 
     */
@@ -9409,7 +7767,7 @@ module.exports = function(main, io, mysql, pool, chalk, log, uuid, world, map, i
         }
     }
 
-    module.tickRepairs = tickRepairs;
+    exports.tickRepairs = tickRepairs;
 
 
     async function tickResearches(dirty) {
@@ -9428,7 +7786,7 @@ module.exports = function(main, io, mysql, pool, chalk, log, uuid, world, map, i
 
                     //console.log("Sending researcher_object_index: " + researcher_object_index);
 
-                    let object_info = await world.getObjectCoordAndRoom(dirty, researcher_object_index);
+                    let object_info = await game_object.getCoordAndRoom(dirty, researcher_object_index);
                     let room = object_info.room;
                     let coord_index = object_info.coord_index;
 
@@ -9444,7 +7802,7 @@ module.exports = function(main, io, mysql, pool, chalk, log, uuid, world, map, i
                     } else {
                         console.log("Research is finished");
 
-                        let player_socket = await world.getPlayerSocket(dirty, player_index);
+                        let player_socket = await world.getPlayerSocket(io, dirty, player_index);
 
                         // COMPLEXITY CHECK - see if it was successful or if it failed
 
@@ -9508,14 +7866,14 @@ module.exports = function(main, io, mysql, pool, chalk, log, uuid, world, map, i
                             delete dirty.researches[i];
 
                             dirty.objects[researcher_object_index].is_active = false;
-                            await world.sendObjectInfo(false, room, dirty, researcher_object_index);
+                            await game_object.sendInfo(false, room, dirty, researcher_object_index);
 
                             // update the player's manufacturing skill points
                             dirty.players[player_index].researching_skill_points++;
                             dirty.players[player_index].has_change = true;
 
                             if(player_socket) {
-                                world.sendPlayerInfo(player_socket, false, dirty, dirty.players[player_index].id);
+                                await world.sendPlayerInfo(io, player_socket, false, dirty, dirty.players[player_index].id);
                             }
 
                         } else {
@@ -9543,7 +7901,7 @@ module.exports = function(main, io, mysql, pool, chalk, log, uuid, world, map, i
                             delete dirty.researches[i];
 
                             dirty.objects[researcher_object_index].is_active = false;
-                            await world.sendObjectInfo(false, room, dirty, researcher_object_index);
+                            await game_object.sendInfo(false, room, dirty, researcher_object_index);
 
                             // extra skill point for a failed research
                             dirty.players[player_index].researching_skill_points += 2;
@@ -9565,7 +7923,7 @@ module.exports = function(main, io, mysql, pool, chalk, log, uuid, world, map, i
 
 
     }
-    module.tickResearches = tickResearches;
+    exports.tickResearches = tickResearches;
 
     async function tickSalvaging(dirty) {
 
@@ -9585,7 +7943,7 @@ module.exports = function(main, io, mysql, pool, chalk, log, uuid, world, map, i
         }
     }
 
-    module.tickSalvaging = tickSalvaging;
+    exports.tickSalvaging = tickSalvaging;
 
     //  data:   spawner   |   spawner_type (object|monster)   |   spawner_index
     //      spawner is the object or the monster
@@ -9628,7 +7986,7 @@ module.exports = function(main, io, mysql, pool, chalk, log, uuid, world, map, i
         }
     }
 
-    module.processSpawner = processSpawner;
+    exports.processSpawner = processSpawner;
 
     async function tickSpawners(dirty) {
 
@@ -9668,7 +8026,7 @@ module.exports = function(main, io, mysql, pool, chalk, log, uuid, world, map, i
                     spawning_object_type_ids.indexOf(dirty.objects[i].object_type_id) !== -1) {
 
                     // We are set on a spawn linker that takes multiple ticks to complete
-                    if( main.notFalse(dirty.objects[i].current_spawn_linker_id) ) {
+                    if( helper.notFalse(dirty.objects[i].current_spawn_linker_id) ) {
 
                         if(dirty.objects[i].object_type_id === debug_object_type_id) {
                             console.log("Object already has a spawn linker id!");
@@ -9684,76 +8042,7 @@ module.exports = function(main, io, mysql, pool, chalk, log, uuid, world, map, i
                             console.log("Object does not have a current_spawn_linker_id");
                         }
 
-                        let object_type_index = main.getObjectTypeIndex(dirty.objects[i].object_type_id);
-
-                        // Grab a random spawn linker
-                        let rarity = main.rarityRoll();
-                        let hp_percent = dirty.objects[i].current_hp / dirty.object_types[object_type_index].hp * 100;
-
-                        // Some object types aren't going to have proper HP values
-                        if(isNaN(hp_percent)) {
-                            hp_percent = 100;
-                        }
-
-                        if(dirty.objects[i].object_type_id === debug_object_type_id) {
-                            console.log("Rarity roll: " + rarity + " HP percent: " + hp_percent);
-                        }
-
-                        let object_type_spawn_linkers = dirty.spawn_linkers.filter(linker => linker.object_type_id === dirty.objects[i].object_type_id &&
-                            linker.rarity <= rarity && hp_percent >= linker.minimum_hp_percent && hp_percent <= linker.maximum_hp_percent);
-
-                        if(dirty.objects[i].object_type_id === debug_object_type_id) {
-                            console.log("object_type_spawn_linkers length: " + object_type_spawn_linkers.length);
-                        }
-
-
-                        if(object_type_spawn_linkers.length > 0) {
-
-                            let chosen_linker = object_type_spawn_linkers[Math.floor(Math.random()*object_type_spawn_linkers.length)];
-
-                            if(dirty.objects[i].object_type_id === debug_object_type_id) {
-                                console.log("Chose spawn linker id: " + chosen_linker.id);
-                            }
-
-                            let met_requirements = true;
-
-                            // If the chosen linker requires a floor type, do that check now
-                            if(chosen_linker.requires_floor_type_class && chosen_linker.requires_floor_type_class !== 0) {
-                                met_requirements = false;
-                                let object_info = await world.getObjectCoordAndRoom(dirty, i);
-                                if(object_info.coord) {
-                                    let coord_floor_type_index = main.getFloorTypeIndex(object_info.coord.floor_type_id);
-
-                                    if(coord_floor_type_index !== -1 && dirty.floor_types[coord_floor_type_index].class === chosen_linker.requires_floor_type_class) {
-                                        met_requirements = true;
-                                    }
-                                }
-
-                            }
-
-                            if(met_requirements) {
-                                if(chosen_linker.ticks_required > 1) {
-                                    dirty.objects[i].current_spawn_linker_id = chosen_linker.id;
-                                    dirty.objects[i].spawner_tick_count = 1;
-                                    dirty.objects[i].has_change = true;
-                                }
-                                // We finish it
-                                else {
-                                    // Gotta get the real spawn linker back
-                                    let spawn_linker_index = dirty.spawn_linkers.findIndex(function(obj) { return obj && obj.id === chosen_linker.id; });
-                                    await finishSpawnLinker(dirty, { 'object_index': i, 'spawn_linker_index': spawn_linker_index });
-
-                                }
-                            }
-
-
-
-
-                        } else {
-                            if(dirty.objects[i].object_type_id === debug_object_type_id) {
-                                console.log("Did not find any spawn linkers that matched this object");
-                            }
-                        }
+                        await objectSpawn(dirty, i, debug_object_type_id);
 
                     }
 
@@ -9791,7 +8080,7 @@ module.exports = function(main, io, mysql, pool, chalk, log, uuid, world, map, i
 
 
                     // We are set on a spawn linker that takes multiple ticks to complete
-                    if( main.notFalse(dirty.monsters[i].current_spawn_linker_id) ) {
+                    if( helper.notFalse(dirty.monsters[i].current_spawn_linker_id) ) {
 
                         if(dirty.objects[i].object_type_id === debug_object_type_id) {
                             console.log("Monster already has a spawn linker id!");
@@ -9833,7 +8122,7 @@ module.exports = function(main, io, mysql, pool, chalk, log, uuid, world, map, i
                         let monster_type_index = main.getMonsterTypeIndex(dirty.monsters[i].monster_type_id);
 
                         // Grab a random spawn linker
-                        let rarity = main.rarityRoll();
+                        let rarity = helper.rarityRoll();
                         let hp_percent = dirty.monsters[i].current_hp / dirty.monster_types[monster_type_index].hp * 100;
 
                         let monster_type_spawn_linkers = dirty.spawn_linkers.filter(linker => linker.monster_type_id === dirty.monsters[i].monster_type_id &&
@@ -9882,7 +8171,7 @@ module.exports = function(main, io, mysql, pool, chalk, log, uuid, world, map, i
 
     }
 
-    module.tickSpawners = tickSpawners;
+    exports.tickSpawners = tickSpawners;
 
 
     async function tickTraps(dirty) {
@@ -9919,7 +8208,7 @@ module.exports = function(main, io, mysql, pool, chalk, log, uuid, world, map, i
                                         let adding_to_data = { 'adding_to_type':'object', 'adding_to_id':trap_object.id,
                                             'object_type_id':dirty.object_types[trapped_object_type_id].id, 'amount':1};
 
-                                        await inventory.addToInventory(false, dirty, adding_to_data);
+                                        await inventory.addToInventory(pool, false, dirty, adding_to_data);
 
                                         // send this to anyone in the room
                                         await inventory.sendInventory(false, "planet_" + dirty.planets[planet_index].id, dirty, 'object', trap_object.id);
@@ -9948,12 +8237,12 @@ module.exports = function(main, io, mysql, pool, chalk, log, uuid, world, map, i
 
     }
 
-    module.tickTraps = tickTraps;
+    exports.tickTraps = tickTraps;
 
 
 
     // data:    object_id   |   monster_id   |   planet_coord_id   |   ship_coord_id
-    async function pickUp(socket, dirty, data) {
+    async function pickUp(io, pool, socket, dirty, data) {
 
         try {
 
@@ -10098,8 +8387,8 @@ module.exports = function(main, io, mysql, pool, chalk, log, uuid, world, map, i
                     dirty.objects[object_index].has_spawned_object = false;
                     dirty.objects[object_index].current_spawn_linker_id = false;
                     dirty.objects[object_index].has_change = true;
-                    let object_info = await world.getObjectCoordAndRoom(dirty, object_index);
-                    await world.sendObjectInfo(false, object_info.room, dirty, object_index);
+                    let object_info = await game_object.getCoordAndRoom(dirty, object_index);
+                    await game_object.sendInfo(false, object_info.room, dirty, object_index);
                     return false;
                 }
 
@@ -10118,7 +8407,7 @@ module.exports = function(main, io, mysql, pool, chalk, log, uuid, world, map, i
                 let adding_to_data = { 'adding_to_type': 'player', 'adding_to_id': dirty.players[socket.player_index].id,
                     'object_type_id': dirty.spawn_linkers[spawn_linker_index].spawns_object_type_id, 'amount':dirty.spawn_linkers[spawn_linker_index].spawns_amount };
 
-                inventory.addToInventory(socket, dirty, adding_to_data);
+                await inventory.addToInventory(pool, socket, dirty, adding_to_data);
 
                 dirty.objects[object_index].has_spawned_object = false;
                 dirty.objects[object_index].current_spawn_linker_id = false;
@@ -10132,17 +8421,17 @@ module.exports = function(main, io, mysql, pool, chalk, log, uuid, world, map, i
                 // TODO - not sure if we can do this at the map level so things get updated for everyone - or
                 // TODO - access IO here to send the info to players in the same area
                 //console.log("Calling sendObjectInfo from game.pickUp");
-                await world.sendObjectInfo(false, player_info.room, dirty, object_index);
+                await game_object.sendInfo(false, player_info.room, dirty, object_index);
                 //socket.emit('object_info_data', { 'object_id': dirty.objects[object_index].id, 'object_type_id': dirty.objects[object_index].object_type_id,
                 //    'has_spawned_object': false });
 
 
                 // see if we increase the player skill
-                if(dirty.object_types[object_type_index].spawns_object_type_id === 68) {
+                if(dirty.spawn_linkers[spawn_linker_index].spawns_object_type_id === 68) {
                     dirty.players[socket.player_index].farming_skill_points++;
                     dirty.players[socket.player_index].has_change = true;
 
-                    sendPlayerStats(socket, dirty);
+                    await sendPlayerStats(socket, dirty);
 
                 }
 
@@ -10179,7 +8468,7 @@ module.exports = function(main, io, mysql, pool, chalk, log, uuid, world, map, i
                 let adding_to_data = { 'adding_to_type': 'player', 'adding_to_id': dirty.players[socket.player_index].id,
                     'object_type_id': dirty.spawn_linkers[spawn_linker_index].spawns_object_type_id, 'amount':dirty.spawn_linkers[spawn_linker_index].spawns_amount };
 
-                inventory.addToInventory(socket, dirty, adding_to_data);
+                inventory.addToInventory(pool, socket, dirty, adding_to_data);
 
                 dirty.monsters[monster_index].has_spawned_object = false;
                 dirty.monsters[monster_index].current_spawn_linker_id = false;
@@ -10199,7 +8488,7 @@ module.exports = function(main, io, mysql, pool, chalk, log, uuid, world, map, i
                 let player_farming_level = await world.getPlayerLevel(dirty, { 'player_index': socket.player_index, 'skill_type': 'farming' });
 
                 attack_chance = attack_chance - player_farming_level;
-                let rand = main.getRandomIntInclusive(1,100);
+                let rand = helper.getRandomIntInclusive(1,100);
 
                 // Monster attacks as a result
                 if(rand < attack_chance) {
@@ -10245,7 +8534,7 @@ module.exports = function(main, io, mysql, pool, chalk, log, uuid, world, map, i
                 console.log("PLAYER IS TRYING TO PICK UP ACTUAL OBJECT!!!!!!");
                 let adding_to_data = { 'adding_to_type': 'player', 'adding_to_id': socket.player_id,
                     'object_id': dirty.objects[object_index].id, 'amount': 1 };
-                inventory.addToInventory(socket, dirty, adding_to_data);
+                inventory.addToInventory(pool, socket, dirty, adding_to_data);
 
                 if(player_info.scope === 'planet') {
                     await main.updateCoordGeneric(socket, { 'planet_coord_index': picking_up_coord_index, 'object_id': false });
@@ -10286,7 +8575,7 @@ module.exports = function(main, io, mysql, pool, chalk, log, uuid, world, map, i
             let adding_to_data = { 'adding_to_type': 'player', 'adding_to_id': socket.player_id,
                 'object_type_id': dirty.object_types[object_type_index].id, 'amount': amount };
 
-            inventory.addToInventory(socket, dirty, adding_to_data);
+            inventory.addToInventory(pool, socket, dirty, adding_to_data);
 
             if(player_info.scope === 'planet') {
                 await main.updateCoordGeneric(socket, { 'planet_coord_index': picking_up_coord_index, 'object_type_id': false });
@@ -10304,7 +8593,7 @@ module.exports = function(main, io, mysql, pool, chalk, log, uuid, world, map, i
 
 
     }
-    module.pickUp = pickUp;
+    exports.pickUp = pickUp;
 
 
 
@@ -10379,7 +8668,7 @@ module.exports = function(main, io, mysql, pool, chalk, log, uuid, world, map, i
 
                     let remove_inventory_data = { 'player_id': socket.player_id, 'removing_object_type_id': dirty.inventory_items[inventory_item_index].object_type_id,
                         'amount': 1 };
-                    await inventory.removeFromInventory(socket, dirty, remove_inventory_data);
+                    await inventory.removeFromInventory(io, pool, socket, dirty, remove_inventory_data);
 
 
                     let player_index = await main.getPlayerIndex({'player_id':socket.player_id});
@@ -10432,7 +8721,7 @@ module.exports = function(main, io, mysql, pool, chalk, log, uuid, world, map, i
 
                             let remove_inventory_data = { 'player_id': socket.player_id, 'removing_object_type_id': dirty.inventory_items[inventory_item_index].object_type_id,
                                 'amount': 1 };
-                            await inventory.removeFromInventory(socket, dirty, remove_inventory_data);
+                            await inventory.removeFromInventory(io, pool, socket, dirty, remove_inventory_data);
 
 
                             let player_index = await main.getPlayerIndex({'player_id':socket.player_id});
@@ -10458,7 +8747,7 @@ module.exports = function(main, io, mysql, pool, chalk, log, uuid, world, map, i
 
 
     }
-    module.plant = plant;
+    exports.plant = plant;
 
     //  data:   area_id   |   price   |   rent_to_player_name
     async function rentArea(socket, dirty, data) {
@@ -10468,7 +8757,7 @@ module.exports = function(main, io, mysql, pool, chalk, log, uuid, world, map, i
             data.area_id = parseInt(data.area_id);
 
             // Make sure the socket player is the guy that owns it
-            let area_index = await main.getAreaIndex({ 'area_id': data.area_id});
+            let area_index = await main.getAreaIndex(data.area_id);
 
             if(area_index === -1) {
                 console.log("Could not find area");
@@ -10498,7 +8787,7 @@ module.exports = function(main, io, mysql, pool, chalk, log, uuid, world, map, i
             socket.emit('area_info', { 'area': dirty.areas[area_index] });
 
             // And the renting player if they are online
-            let renting_player_socket = await world.getPlayerSocket(dirty, renting_player_index);
+            let renting_player_socket = await world.getPlayerSocket(io, dirty, renting_player_index);
 
             if(renting_player_socket) {
                 renting_player_socket.emit('area_info', { 'area': dirty.areas[area_index] });
@@ -10615,7 +8904,7 @@ module.exports = function(main, io, mysql, pool, chalk, log, uuid, world, map, i
 
     }
 
-    module.repair = repair;
+    exports.repair = repair;
 
 
     async function repairStop(socket, dirty, data) {
@@ -10635,7 +8924,7 @@ module.exports = function(main, io, mysql, pool, chalk, log, uuid, world, map, i
         }
     }
 
-    module.repairStop = repairStop;
+    exports.repairStop = repairStop;
 
 
     async function removeAssemblyItems(socket, dirty, type, type_id) {
@@ -10651,7 +8940,7 @@ module.exports = function(main, io, mysql, pool, chalk, log, uuid, world, map, i
 
                     let remove_inventory_data = { 'player_id': socket.player_id, 'removing_object_type_id': dirty.assembly_linkers[i].object_type_id,
                         'amount': dirty.assembly_linkers[i].amount };
-                    inventory.removeFromInventory(socket, dirty, remove_inventory_data);
+                    inventory.removeFromInventory(io, pool, socket, dirty, remove_inventory_data);
                 }
 
                 if(type === 'floor_type' && dirty.assembly_linkers[i].required_for_floor_type_id &&
@@ -10837,7 +9126,7 @@ module.exports = function(main, io, mysql, pool, chalk, log, uuid, world, map, i
 
             let remove_inventory_data = { 'inventory_item_id': dirty.inventory_items[inventory_item_index].id,
                 'amount': 1 };
-            await inventory.removeFromInventory(socket, dirty, remove_inventory_data);
+            await inventory.removeFromInventory(io, pool, socket, dirty, remove_inventory_data);
 
         } catch(error) {
             log(chalk.red("Error in game.replaceFloor: " + error));
@@ -10845,7 +9134,7 @@ module.exports = function(main, io, mysql, pool, chalk, log, uuid, world, map, i
 
 
     }
-    module.replaceFloor = replaceFloor;
+    exports.replaceFloor = replaceFloor;
 
 
     async function replaceFloorAdmin(socket, dirty, data) {
@@ -10883,7 +9172,7 @@ module.exports = function(main, io, mysql, pool, chalk, log, uuid, world, map, i
         }
     }
 
-    module.replaceFloorAdmin = replaceFloorAdmin;
+    exports.replaceFloorAdmin = replaceFloorAdmin;
 
     //  data:   inventory_item_id   |   ship_coord_id
     async function replaceShipWall(socket, dirty, data) {
@@ -10970,7 +9259,7 @@ module.exports = function(main, io, mysql, pool, chalk, log, uuid, world, map, i
 
             let remove_inventory_data = { 'inventory_item_id': dirty.inventory_items[inventory_item_index].id,
                 'amount': 1 };
-            await inventory.removeFromInventory(socket, dirty, remove_inventory_data);
+            await inventory.removeFromInventory(io, pool, socket, dirty, remove_inventory_data);
 
 
 
@@ -10983,7 +9272,7 @@ module.exports = function(main, io, mysql, pool, chalk, log, uuid, world, map, i
 
 
     }
-    module.replaceShipWall = replaceShipWall;
+    exports.replaceShipWall = replaceShipWall;
 
 
     // We do a complexity check at the end of the research - once its completed not
@@ -11019,7 +9308,7 @@ module.exports = function(main, io, mysql, pool, chalk, log, uuid, world, map, i
             }
 
             let player_info = await world.getPlayerCoordAndRoom(dirty, player_index);
-            let object_info = await world.getObjectCoordAndRoom(dirty, researching_object_index);
+            let object_info = await game_object.getCoordAndRoom(dirty, researching_object_index);
 
             if(player_info.room !== object_info.room) {
                 console.log("Player and object are not in the same room");
@@ -11055,14 +9344,14 @@ module.exports = function(main, io, mysql, pool, chalk, log, uuid, world, map, i
                     // set our assembler object is_active to true
                     dirty.objects[researching_object_index].is_active = true;
                     //console.log("Calling sendObjectInfo from game.research");
-                    await world.sendObjectInfo(false, object_info.room, dirty, researching_object_index);
+                    await game_object.sendInfo(false, object_info.room, dirty, researching_object_index);
 
 
                 }
             }
 
             let remove_inventory_data = { 'inventory_item_id': dirty.inventory_items[inventory_item_index].id, 'amount': 1 };
-            inventory.removeFromInventory(socket, dirty, remove_inventory_data);
+            inventory.removeFromInventory(io, pool, socket, dirty, remove_inventory_data);
 
 
 
@@ -11074,7 +9363,7 @@ module.exports = function(main, io, mysql, pool, chalk, log, uuid, world, map, i
 
 
     }
-    module.research = research;
+    exports.research = research;
 
     async function sendAssembledInLinkerData(socket, dirty) {
 
@@ -11090,7 +9379,7 @@ module.exports = function(main, io, mysql, pool, chalk, log, uuid, world, map, i
 
 
     }
-    module.sendAssembledInLinkerData = sendAssembledInLinkerData;
+    exports.sendAssembledInLinkerData = sendAssembledInLinkerData;
 
 
     async function sendAssemblyLinkerData(socket, dirty) {
@@ -11116,7 +9405,7 @@ module.exports = function(main, io, mysql, pool, chalk, log, uuid, world, map, i
 
 
     }
-    module.sendAssemblyLinkerData = sendAssemblyLinkerData;
+    exports.sendAssemblyLinkerData = sendAssemblyLinkerData;
 
     async function sendFactionData(socket, dirty) {
         //console.log("Client is requesting faction data");
@@ -11128,7 +9417,7 @@ module.exports = function(main, io, mysql, pool, chalk, log, uuid, world, map, i
 
     }
 
-    module.sendFactionData = sendFactionData;
+    exports.sendFactionData = sendFactionData;
 
     async function sendFloorTypeData(socket, dirty) {
         //console.log("Client is requesting floor_type data");
@@ -11139,7 +9428,7 @@ module.exports = function(main, io, mysql, pool, chalk, log, uuid, world, map, i
 
     }
 
-    module.sendFloorTypeData = sendFloorTypeData;
+    exports.sendFloorTypeData = sendFloorTypeData;
 
     function sendFloorTypeDisplayLinkerData(socket, dirty) {
         //console.log("Client is requesting planet_type data");
@@ -11150,7 +9439,7 @@ module.exports = function(main, io, mysql, pool, chalk, log, uuid, world, map, i
 
     }
 
-    module.sendFloorTypeDisplayLinkerData = sendFloorTypeDisplayLinkerData;
+    exports.sendFloorTypeDisplayLinkerData = sendFloorTypeDisplayLinkerData;
 
 
     function sendMonsterTypeData(socket, dirty) {
@@ -11164,7 +9453,7 @@ module.exports = function(main, io, mysql, pool, chalk, log, uuid, world, map, i
 
     }
 
-    module.sendMonsterTypeData = sendMonsterTypeData;
+    exports.sendMonsterTypeData = sendMonsterTypeData;
 
     function sendObjectTypeConversionLinkerData(socket, dirty) {
         //console.log("Client is requesting planet_type data");
@@ -11180,7 +9469,7 @@ module.exports = function(main, io, mysql, pool, chalk, log, uuid, world, map, i
 
     }
 
-    module.sendObjectTypeConversionLinkerData = sendObjectTypeConversionLinkerData;
+    exports.sendObjectTypeConversionLinkerData = sendObjectTypeConversionLinkerData;
 
 
     function sendObjectTypeDisplayLinkerData(socket, dirty) {
@@ -11192,7 +9481,7 @@ module.exports = function(main, io, mysql, pool, chalk, log, uuid, world, map, i
 
     }
 
-    module.sendObjectTypeDisplayLinkerData = sendObjectTypeDisplayLinkerData;
+    exports.sendObjectTypeDisplayLinkerData = sendObjectTypeDisplayLinkerData;
 
 
     function sendPlanetTypeData(socket, dirty) {
@@ -11204,7 +9493,7 @@ module.exports = function(main, io, mysql, pool, chalk, log, uuid, world, map, i
 
     }
 
-    module.sendPlanetTypeData = sendPlanetTypeData;
+    exports.sendPlanetTypeData = sendPlanetTypeData;
 
     function sendPlanetTypeDisplayLinkerData(socket, dirty) {
         //console.log("Client is requesting planet_type data");
@@ -11215,8 +9504,9 @@ module.exports = function(main, io, mysql, pool, chalk, log, uuid, world, map, i
 
     }
 
-    module.sendPlanetTypeDisplayLinkerData = sendPlanetTypeDisplayLinkerData;
+    exports.sendPlanetTypeDisplayLinkerData = sendPlanetTypeDisplayLinkerData;
 
+    // TODO - This is obviously outdated - not sure if I want to keep it around.
     async function sendPlayerStats(socket, dirty) {
 
         try {
@@ -11255,7 +9545,7 @@ module.exports = function(main, io, mysql, pool, chalk, log, uuid, world, map, i
 
     }
 
-    module.sendPlayerStats = sendPlayerStats;
+    exports.sendPlayerStats = sendPlayerStats;
 
     function sendObjectTypeData(socket, dirty) {
         //console.log("Client is requesting object_type data");
@@ -11267,7 +9557,7 @@ module.exports = function(main, io, mysql, pool, chalk, log, uuid, world, map, i
 
     }
 
-    module.sendObjectTypeData = sendObjectTypeData;
+    exports.sendObjectTypeData = sendObjectTypeData;
 
     function sendObjectTypeEquipmentLinkerData(socket, dirty) {
         //console.log("Client is requesting object_type_equipment_linker data");
@@ -11279,7 +9569,7 @@ module.exports = function(main, io, mysql, pool, chalk, log, uuid, world, map, i
 
     }
 
-    module.sendObjectTypeEquipmentLinkerData = sendObjectTypeEquipmentLinkerData;
+    exports.sendObjectTypeEquipmentLinkerData = sendObjectTypeEquipmentLinkerData;
 
 
     function sendRaceData(socket, dirty) {
@@ -11291,7 +9581,7 @@ module.exports = function(main, io, mysql, pool, chalk, log, uuid, world, map, i
 
     }
 
-    module.sendRaceData = sendRaceData;
+    exports.sendRaceData = sendRaceData;
 
     function sendRaceEatingLinkerData(socket, dirty) {
         //console.log("Client is requesting race eating linker data");
@@ -11302,7 +9592,7 @@ module.exports = function(main, io, mysql, pool, chalk, log, uuid, world, map, i
 
     }
 
-    module.sendRaceEatingLinkerData = sendRaceEatingLinkerData;
+    exports.sendRaceEatingLinkerData = sendRaceEatingLinkerData;
 
 
     function sendRuleData(socket, dirty) {
@@ -11314,7 +9604,7 @@ module.exports = function(main, io, mysql, pool, chalk, log, uuid, world, map, i
 
     }
 
-    module.sendRuleData = sendRuleData;
+    exports.sendRuleData = sendRuleData;
 
 
     // Will move the player from the current body to the other one. Old body will stay where it was as an object on the tile
@@ -11403,17 +9693,17 @@ module.exports = function(main, io, mysql, pool, chalk, log, uuid, world, map, i
                 await main.updateCoordGeneric(socket, { 'planet_coord_index': new_body_coord_index,
                     'player_id': dirty.players[player_index].id, 'object_id': false });
 
-                await world.sendPlayerInfo(socket, "planet_" + dirty.planet_coords[new_body_coord_index].planet_id, dirty, dirty.players[player_index].id);
+                await world.sendPlayerInfo(io, socket, "planet_" + dirty.planet_coords[new_body_coord_index].planet_id, dirty, dirty.players[player_index].id);
 
                 // Make sure the old body knows where it is
                 dirty.objects[old_body_index].planet_coord_id = dirty.planet_coords[old_player_coord_index].id;
                 dirty.objects[old_body_index].has_change = true;
-                await world.sendObjectInfo(socket, "planet_" + dirty.planet_coords[new_body_coord_index].planet_id, dirty, old_body_index);
+                await game_object.sendInfo(socket, "planet_" + dirty.planet_coords[new_body_coord_index].planet_id, dirty, old_body_index);
 
 
                 dirty.objects[object_index].planet_coord_id = false;
                 dirty.objects[object_index].has_change = true;
-                await world.sendObjectInfo(socket, "planet_" + dirty.planet_coords[new_body_coord_index].planet_id, dirty, object_index);
+                await game_object.sendInfo(socket, "planet_" + dirty.planet_coords[new_body_coord_index].planet_id, dirty, object_index);
 
                 console.log("Sending info to clients");
 
@@ -11436,16 +9726,16 @@ module.exports = function(main, io, mysql, pool, chalk, log, uuid, world, map, i
                 await main.updateCoordGeneric(socket, { 'ship_coord_index': new_body_coord_index,
                     'player_id': dirty.players[player_index].id, 'object_id': false });
 
-                await world.sendPlayerInfo(socket, "ship_" + dirty.ship_coords[new_body_coord_index].ship_id, dirty, dirty.players[player_index].id);
+                await world.sendPlayerInfo(io, socket, "ship_" + dirty.ship_coords[new_body_coord_index].ship_id, dirty, dirty.players[player_index].id);
 
 
                 dirty.objects[old_body_index].ship_coord_id = dirty.ship_coords[old_player_coord_index].id;
                 dirty.objects[old_body_index].has_change = true;
-                await world.sendObjectInfo(socket, "ship_" + dirty.ship_coords[new_body_coord_index].ship_id, dirty, old_body_index);
+                await game_object.sendInfo(socket, "ship_" + dirty.ship_coords[new_body_coord_index].ship_id, dirty, old_body_index);
 
                 dirty.objects[object_index].ship_coord_id = false;
                 dirty.objects[object_index].has_change = true;
-                await world.sendObjectInfo(socket, "ship_" + dirty.ship_coords[new_body_coord_index].ship_id, dirty, object_index);
+                await game_object.sendInfo(socket, "ship_" + dirty.ship_coords[new_body_coord_index].ship_id, dirty, object_index);
 
             }
 
@@ -11471,7 +9761,7 @@ module.exports = function(main, io, mysql, pool, chalk, log, uuid, world, map, i
 
     }
 
-    module.switchBody = switchBody;
+    exports.switchBody = switchBody;
 
 
     // There are two general scenarios where this is called
@@ -11525,7 +9815,7 @@ module.exports = function(main, io, mysql, pool, chalk, log, uuid, world, map, i
                 dirty.players[player_index].ship_coord_id = false;
                 dirty.players[player_index].previous_ship_coord_id = false;
                 dirty.players[player_index].has_change = true;
-                await world.sendPlayerInfo(socket, false, dirty, dirty.players[player_index].id);
+                await world.sendPlayerInfo(io, socket, false, dirty, dirty.players[player_index].id);
             }
             // Switch is happening on a ship
             // 1. Switching to the ship our other ship is docked at, since we own both
@@ -11557,7 +9847,7 @@ module.exports = function(main, io, mysql, pool, chalk, log, uuid, world, map, i
                 }
 
 
-                await world.sendPlayerInfo(socket, false, dirty, dirty.players[player_index].id);
+                await world.sendPlayerInfo(io, socket, false, dirty, dirty.players[player_index].id);
 
                 // If our new ship is docked at something, we remove our player from the galaxy coord
                 if(dirty.players[player_index].coord_id && dirty.objects[new_ship_index].docked_at_object_id) {
@@ -11567,8 +9857,8 @@ module.exports = function(main, io, mysql, pool, chalk, log, uuid, world, map, i
 
                     dirty.players[player_index].coord_id = false;
                     dirty.players[player_index].has_change = true;
-                    await world.sendPlayerInfo(socket, "galaxy", dirty, dirty.players[player_index].id);
-                    await world.sendPlayerInfo(socket, "ship_" + dirty.objects[new_ship_index].id, dirty, dirty.players[player_index].id);
+                    await world.sendPlayerInfo(io, socket, "galaxy", dirty, dirty.players[player_index].id);
+                    await world.sendPlayerInfo(io, socket, "ship_" + dirty.objects[new_ship_index].id, dirty, dirty.players[player_index].id);
                 }
 
 
@@ -11588,7 +9878,7 @@ module.exports = function(main, io, mysql, pool, chalk, log, uuid, world, map, i
                 // The old ship is now on a coord (set in updateCoordGeneric), without a player
                 dirty.objects[old_ship_index].player_id = false;
                 dirty.objects[old_ship_index].has_change = true;
-                await world.sendObjectInfo(socket, "galaxy", dirty, old_ship_index);
+                await game_object.sendInfo(socket, "galaxy", dirty, old_ship_index);
 
 
 
@@ -11607,7 +9897,7 @@ module.exports = function(main, io, mysql, pool, chalk, log, uuid, world, map, i
                 dirty.players[player_index].ship_coord_id = false;
                 dirty.players[player_index].previous_ship_coord_id = false;
                 dirty.players[player_index].has_change = true;
-                await world.sendPlayerInfo(socket, "galaxy", dirty, dirty.players[player_index].id);
+                await world.sendPlayerInfo(io, socket, "galaxy", dirty, dirty.players[player_index].id);
 
                 world.setPlayerMoveDelay(socket, dirty, player_index);
 
@@ -11637,14 +9927,14 @@ module.exports = function(main, io, mysql, pool, chalk, log, uuid, world, map, i
                 // The old ship is now on a coord (set in updateCoordGeneric), without a player
                 dirty.objects[old_ship_index].player_id = false;
                 dirty.objects[old_ship_index].has_change = true;
-                await world.sendObjectInfo(socket, "planet_" + dirty.planet_coords[new_ship_planet_coord_index].planet_id, dirty, old_ship_index);
+                await game_object.sendInfo(socket, "planet_" + dirty.planet_coords[new_ship_planet_coord_index].planet_id, dirty, old_ship_index);
 
 
                 // The new ship is now not on any coord, since it's controlled by the player
                 dirty.objects[new_ship_index].planet_coord_id = false;
                 dirty.objects[new_ship_index].player_id = dirty.players[player_index].id;
                 dirty.objects[new_ship_index].has_change = true;
-                await world.sendObjectInfo(socket, "planet_" + dirty.planet_coords[new_ship_planet_coord_index].planet_id, dirty, new_ship_index);
+                await game_object.sendInfo(socket, "planet_" + dirty.planet_coords[new_ship_planet_coord_index].planet_id, dirty, new_ship_index);
 
 
                 // The player now owns the new ship, and moves to the coord where it was
@@ -11677,7 +9967,7 @@ module.exports = function(main, io, mysql, pool, chalk, log, uuid, world, map, i
                 dirty.objects[new_ship_index].player_id = dirty.players[player_index].id;
                 dirty.objects[new_ship_index].has_change = true;
 
-                await world.sendObjectInfo(socket, "galaxy", dirty, new_ship_index);
+                await game_object.sendInfo(socket, "galaxy", dirty, new_ship_index);
 
 
                 for(let i = 0; i < dirty.ship_coords.length; i++) {
@@ -11707,7 +9997,7 @@ module.exports = function(main, io, mysql, pool, chalk, log, uuid, world, map, i
         }
     }
 
-    module.switchShip = switchShip;
+    exports.switchShip = switchShip;
 
 
     async function trash(socket, dirty, data) {
@@ -11744,7 +10034,7 @@ module.exports = function(main, io, mysql, pool, chalk, log, uuid, world, map, i
             delete dirty.inventory_items[inventory_item_index];
             console.log(dirty.inventory_items[inventory_item_index]);
 
-            //inventory.sendInventory(socket, false, dirty, 'player', socket.player_id);
+            //inventory.sendInventory(io, socket, false, dirty, 'player', socket.player_id);
 
             console.log("Trashed inventory item. Client should see this now.");
 
@@ -11757,7 +10047,7 @@ module.exports = function(main, io, mysql, pool, chalk, log, uuid, world, map, i
 
 
     }
-    module.trash = trash;
+    exports.trash = trash;
 
 
     async function unequip(socket, dirty, equipment_linker_id) {
@@ -11779,11 +10069,11 @@ module.exports = function(main, io, mysql, pool, chalk, log, uuid, world, map, i
                 let adding_to_data = { 'adding_to_type': 'player', 'adding_to_id': socket.player_id,
                     'object_id': dirty.equipment_linkers[equipment_linker_index].object_id,
                     'object_type_id': dirty.equipment_linkers[equipment_linker_index].object_type_id, 'amount':1 };
-                inventory.addToInventory(socket, dirty, adding_to_data);
+                await inventory.addToInventory(pool, socket, dirty, adding_to_data);
             } else {
                 let adding_to_data = { 'adding_to_type': 'player', 'adding_to_id': socket.player_id,
                     'object_type_id': dirty.equipment_linkers[equipment_linker_index].object_type_id, 'amount': dirty.equipment_linkers[equipment_linker_index].amount };
-                inventory.addToInventory(socket, dirty, adding_to_data);
+                await inventory.addToInventory(pool, socket, dirty, adding_to_data);
             }
 
             // emit equipment data
@@ -11800,10 +10090,184 @@ module.exports = function(main, io, mysql, pool, chalk, log, uuid, world, map, i
         }
 
     }
-    module.unequip = unequip;
+    exports.unequip = unequip;
+
+    async function useElevator(socket, dirty, elevator_id) {
+
+        try {
+            console.log("Player is using an elevator! ID: " + elevator_id);
+
+            let elevator_index = await main.getObjectIndex(elevator_id);
+
+            if(elevator_index === -1) {
+                log(chalk.yellow("Did not find elevator"));
+                return false;
+            }
+
+            // we just need to make sure the player is within a REASONABLE tile_x/tile_y of the elevator, and in the same room
+
+            let elevator_info = await game_object.getCoordAndRoom(dirty, elevator_index);
+            let player_info = await world.getPlayerCoordAndRoom(dirty, socket.player_index);
+
+            if(!elevator_info.coord || !player_info.coord) {
+                log(chalk.yellow("Either the elevator or the player didn't return a valid coord"));
+                return false;
+            }
+
+            // Make sure they are in the same room
+            if(elevator_info.room !== player_info.room) {
+                log(chalk.yellow("Player is not in same room as elevator"));
+                return false;
+            }
+
+            let x_difference = Math.abs(elevator_info.coord.tile_x - player_info.coord.destination_tile_x);
+            let y_difference = Math.abs(elevator_info.coord.tile_y - player_info.coord.destination_tile_y);
+
+            if(x_difference > 3 || y_difference > 3) {
+                log(chalk.yellow("Player is too far away"));
+                socket.emit('result_info', { 'status': 'failure', 'text': 'Too far away' });
+                return false;
+            }
+
+            // find an open coord around the elevator
+            let found_coord_index = -1;
+
+
+            for(let x = elevator_info.coord.tile_x - 2; x <= elevator_info.coord.tile_x + 2; x++) {
+                for(let y = elevator_info.coord.tile_y - 2; y <= elevator_info.coord.tile_y + 2; y++) {
+
+                    if(found_coord_index === -1) {
+
+
+
+                        if(dirty.objects[elevator_index].planet_coord_id) {
+
+                            let possible_coord_index = await main.getPlanetCoordIndex({ 'planet_id': elevator_info.coord.planet_id,
+                                'planet_level': elevator_info.coord.level, 'tile_x': x, 'tile_y': y });
+
+                            if(possible_coord_index !== -1) {
+                                let can_place_result = await main.canPlacePlayer({ 'scope': 'planet',
+                                    'coord': dirty.planet_coords[possible_coord_index], 'player_index': socket.player_index });
+                                if(can_place_result) {
+                                    // woot!
+                                    console.log("Found a planet coord to move to");
+                                    found_coord_index = possible_coord_index;
+                                }
+                            }
+
+
+
+                        } else if(dirty.objects[elevator_index].ship_coord_id) {
+
+                            let possible_coord_index = await main.getShipCoordIndex({ 'ship_id': elevator_info.coord.ship_id,
+                                'level': elevator_info.coord.level, 'tile_x': x, 'tile_y': y });
+
+                            if(possible_coord_index !== -1) {
+                                let can_place_result = await main.canPlacePlayer({ 'scope': 'ship',
+                                    'coord': dirty.ship_coords[possible_coord_index], 'player_index': socket.player_index });
+                                if(can_place_result) {
+                                    // woot!
+                                    console.log("Found a ship coord to move to");
+                                    found_coord_index = possible_coord_index;
+                                }
+                            }
+
+
+
+                        }
+
+
+                    }
+
+
+
+                }
+            }
+
+
+            // move the player there
+            if(found_coord_index !== -1) {
+                if(elevator_info.coord.planet_id) {
+                    await main.updateCoordGeneric(socket, { 'planet_coord_index': player_info.coord_index, 'player_id': false });
+                    await main.updateCoordGeneric(socket, { 'planet_coord_index': found_coord_index, 'player_id': dirty.players[socket.player_index].id });
+
+                    dirty.players[socket.player_index].planet_coord_id = dirty.planet_coords[found_coord_index].id;
+                    dirty.players[socket.player_index].has_change = true;
+                    await world.sendPlayerInfo(io, socket, "planet_" + dirty.planet_coords[found_coord_index].planet_id, dirty, dirty.players[socket.player_index].id);
+
+                    socket.emit('clear_map');
+                    await world.removeBattleLinkers(io, dirty, { 'player_id': dirty.players[socket.player_index].id});
+                    await map.updateMap(io, socket, dirty);
+                } else if(elevator_info.coord.ship_id) {
+                    await main.updateCoordGeneric(socket, { 'ship_coord_index': player_info.coord_index, 'player_id': false });
+                    await main.updateCoordGeneric(socket, { 'ship_coord_index': found_coord_index, 'player_id': dirty.players[socket.player_index].id });
+
+                    dirty.players[socket.player_index].ship_coord_id = dirty.ship_coords[found_coord_index].id;
+                    dirty.players[socket.player_index].has_change = true;
+                    await world.sendPlayerInfo(io, socket, "ship_" + dirty.ship_coords[found_coord_index].ship_id, dirty, dirty.players[socket.player_index].id);
+
+                    socket.emit('clear_map');
+                    await world.removeBattleLinkers(io, dirty, { 'player_id': dirty.players[socket.player_index].id});
+                    await map.updateMap(io, socket, dirty);
+                }
+            }
 
 
 
 
-    return module;
+
+        } catch(error) {
+            log(chalk.red("Error in world.useElevator: " + error));
+            console.error(error);
+        }
+
+    }
+
+    exports.useElevator = useElevator;
+
+
+/* This is from me attempting to not have to pass io and pool into so many functions. Initial test didn't quite work - but I think it's the right path.
+
+module.exports = {
+    assemble,
+    sendAssembledInLinkerData,
+    sendAssemblyLinkerData,
+    sendFactionData,
+    sendFloorTypeData,
+    sendFloorTypeDisplayLinkerData,
+    sendMonsterTypeData,
+    sendObjectTypeData,
+    sendObjectTypeConversionLinkerData,
+    sendObjectTypeDisplayLinkerData,
+    sendObjectTypeEquipmentLinkerData,
+    sendPlanetTypeData,
+    sendPlanetTypeDisplayLinkerData,
+    sendPlayerStats,
+    sendRaceData,
+    sendRaceEatingLinkerData,
+    tickAI,
+    tickAddictions,
+    tickAssemblies,
+    tickAutopilots,
+    tickEnergy,
+    tickFloors,
+    tickFood,
+    tickMining,
+    tickMonsterDecay,
+    tickMoveMonsters,
+    tickRepairs,
+    tickResearches,
+    tickSalvaging,
+
+
+    setIO: function(io) {
+        this.io = io;
+    },
+
+    setPool: function(pool) {
+        this.pool = pool;
+    }
+
 }
+
+*/

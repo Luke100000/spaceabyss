@@ -1,9 +1,9 @@
-<script type="text/javascript">
-
-
 
     //      data:   x   |   y   |   damage_amount   |   damage_types   |   was_damaged_type   |   damage_source_type   |
     //              damage_source_id   |   attacker_x   |   attacker_y
+    /**
+     * @param data
+     */
     function addEffect(data) {
 
 
@@ -45,6 +45,18 @@
                         addiction_sprite.setVisible(true);
                         addiction_sprite.anims.play('addiction-effect');
                     }
+                } else if(data.damage_types[i] === 'decay') {
+
+                    if(addiction_sprite === false) {
+                        addiction_sprite = scene_game.add.sprite(data.x + 32, data.y, 'addiction-effect');
+                        //fire_attack_sprite.on('animationcomplete', fireCompleteCallback, this);
+                        addiction_sprite.anims.play('addiction-effect');
+                    } else {
+                        addiction_sprite.x = data.x + 32;
+                        addiction_sprite.y = data.y;
+                        addiction_sprite.setVisible(true);
+                        addiction_sprite.anims.play('addiction-effect');
+                    }
                 } else if(data.damage_types[i] === 'explosion') {
 
                     let found_sprite = false;
@@ -71,18 +83,6 @@
                         explosion_sprites[found_sprite_index].play('explosion-effect');
                     }
 
-                } else if(data.damage_types[i] === 'decay') {
-
-                    if(addiction_sprite === false) {
-                        addiction_sprite = scene_game.add.sprite(data.x + 32, data.y, 'addiction-effect');
-                        //fire_attack_sprite.on('animationcomplete', fireCompleteCallback, this);
-                        addiction_sprite.anims.play('addiction-effect');
-                    } else {
-                        addiction_sprite.x = data.x + 32;
-                        addiction_sprite.y = data.y;
-                        addiction_sprite.setVisible(true);
-                        addiction_sprite.anims.play('addiction-effect');
-                    }
                 } else if(data.damage_types[i] === 'electric') {
                     if(electric_effect_sprite === false) {
                         electric_effect_sprite = scene_game.add.sprite(data.x + 32, data.y, 'electric-effect');
@@ -98,6 +98,108 @@
 
                 else if(data.damage_types[i] === 'healing') {
                     // TODO healing stuff
+                } else if(data.damage_types[i] === 'heat') {
+
+                    // See if there's already a heat sprite with this damage source
+                    let effect_already_active = false;
+                    for(let i = 0; i < heat_sprites.length; i++) {
+                        if(heat_sprites[i]) {
+
+                            if(heat_sprites[i].damage_source_id === data.damage_source_id) {
+                                effect_already_active = true;
+                            }
+
+                            if(data.object_id && heat_sprites[i].object_id && heat_sprites[i].object_id === data.object_id) {
+                                effect_already_active = true;
+                            }
+
+                        }
+
+
+                    }
+
+
+                    if(!effect_already_active) {
+                        if(data.object_id) {
+                            console.log("Did not already have a heat sprite associated with the object " + data.object_id);
+                        } else {
+                            console.log("No object id associated with this effect");
+                        }
+
+                        let found_sprite = false;
+                        let found_sprite_index = -1;
+                        // see if we have a range sprite that isn't visible
+                        for(let i = 0; i < heat_sprites.length; i++) {
+                            if(!found_sprite && heat_sprites[i].visible === false) {
+                                found_sprite = true;
+                                found_sprite_index = i;
+                            }
+                        }
+
+                        // Lets add another sprite to the game!
+                        if(!found_sprite) {
+
+                            let new_sprite_index = heat_sprites.push(scene_game.add.sprite(data.x + 32, data.y + 32, 'heat')) - 1;
+                            heat_sprites[new_sprite_index].anims.play('heat-effect');
+
+                            if(data.object_id) {
+                                let object_index = getObjectIndex(data.object_id);
+                                let object_info = getObjectInfo(object_index);
+                                let object_x_beam = tileToPixel(object_info.coord.tile_x) + 32;
+                                let object_y_beam = tileToPixel(object_info.coord.tile_y) + 32;
+
+                                heat_sprites[new_sprite_index].setOrigin(0,.5);
+                                heat_sprites[new_sprite_index].object_id = data.object_id;
+                                heat_sprites[new_sprite_index].x = players[client_player_index].sprite.x;
+                                heat_sprites[new_sprite_index].y = players[client_player_index].sprite.y;
+
+                                let distance = Phaser.Math.Distance.Between(players[client_player_index].sprite.x, players[client_player_index].sprite.y,
+                                    object_x_beam, object_y_beam);
+                                let angle_between = Phaser.Math.Angle.Between(players[client_player_index].sprite.x, players[client_player_index].sprite.y,
+                                    object_x_beam, object_y_beam);
+
+                                heat_sprites[new_sprite_index].displayWidth = distance;
+                                // mining_beam_sprite.rotation = angle_between - 1.4;
+                                heat_sprites[new_sprite_index].rotation = angle_between;
+
+                            }
+
+                        } else {
+
+                            heat_sprites[found_sprite_index].x = players[client_player_index].sprite.x;
+                            heat_sprites[found_sprite_index].y = players[client_player_index].sprite.y;
+                            heat_sprites[found_sprite_index].setVisible(true);
+                            heat_sprites[found_sprite_index].play('heat-effect');
+
+                            if(data.object_id) {
+                                heat_sprites[found_sprite_index].object_id = data.object_id;
+
+                                let object_index = getObjectIndex(data.object_id);
+                                let object_info = getObjectInfo(object_index);
+                                let object_x_beam = tileToPixel(object_info.coord.tile_x) + 32;
+                                let object_y_beam = tileToPixel(object_info.coord.tile_y) + 32;
+
+                                heat_sprites[found_sprite_index].setOrigin(0,.5);
+                                heat_sprites[found_sprite_index].object_id = data.object_id;
+                                heat_sprites[found_sprite_index].x = players[client_player_index].sprite.x;
+                                heat_sprites[found_sprite_index].y = players[client_player_index].sprite.y;
+
+                                let distance = Phaser.Math.Distance.Between(players[client_player_index].sprite.x, players[client_player_index].sprite.y,
+                                    object_x_beam, object_y_beam);
+                                let angle_between = Phaser.Math.Angle.Between(players[client_player_index].sprite.x, players[client_player_index].sprite.y,
+                                    object_x_beam, object_y_beam);
+
+                                heat_sprites[found_sprite_index].displayWidth = distance;
+                                // mining_beam_sprite.rotation = angle_between - 1.4;
+                                heat_sprites[found_sprite_index].rotation = angle_between;
+
+                            }
+                        }
+                    } else {
+                        console.log("Already had a heat sprite active");
+                    }
+
+
                 }
 
                 // Lets see how the range framework stuff works like this
@@ -1451,35 +1553,53 @@
 
 
         } else if(current_view === 'planet' || current_view === 'ship') {
-            //console.log("View is planet or ship");
-            let body_index = objects.findIndex(function(obj) { return obj && obj.id === players[player_index].body_id; });
 
-            if(body_index === -1) {
-                //console.log("%c at time of creating the player id: " + players[player_index].id + " sprite, we don't have the player's " +
-                //    "body object id: " + players[player_index].body_id + ". Requesting it",  log_warning);
-                socket.emit('request_object_info', { 'object_id': players[player_index].body_id });
-                return false;
+
+            let used_skin = false;
+            // If the player has a skin_object_type_id set, we use that
+            if(players[player_index].skin_object_type_id) {
+
+                if(players[player_index].skin_object_type_id === 322) {
+                    new_texture_key = 'player-galaxy';
+                    new_texture_animation_key = 'player-galaxy-idle-animation';
+                    new_sprite_y_offset = -6;
+                    used_skin = true;
+                }
             }
 
-            if(objects[body_index].object_type_id === 110) {
-                new_texture_key = 'player-human';
-                new_texture_animation_key = 'player-human-idle-animation';
-                new_sprite_y_offset = -6;
+            // Normal body!
+            if(used_skin === false) {
+                //console.log("View is planet or ship");
+                let body_index = objects.findIndex(function(obj) { return obj && obj.id === players[player_index].body_id; });
+
+                if(body_index === -1) {
+                    //console.log("%c at time of creating the player id: " + players[player_index].id + " sprite, we don't have the player's " +
+                    //    "body object id: " + players[player_index].body_id + ". Requesting it",  log_warning);
+                    socket.emit('request_object_info', { 'object_id': players[player_index].body_id });
+                    return false;
+                }
+
+                if(objects[body_index].object_type_id === 110) {
+                    new_texture_key = 'player-human';
+                    new_texture_animation_key = 'player-human-idle-animation';
+                    new_sprite_y_offset = -6;
+                }
+                if(objects[body_index].object_type_id === 142) {
+                    new_texture_key = 'player-ruel';
+                    new_texture_animation_key = 'player-ruel-idle-animation';
+                }
+                else if(objects[body_index].object_type_id === 108) {
+                    new_texture_key = 'player-mlm';
+                    new_texture_animation_key = 'player-mlm-idle-animation';
+                } else {
+                    console.log("%c Using Default Body Display to draw player " + players[player_index].id, log_warning);
+                    // DEFAULT!
+                    new_texture_key = 'player-human';
+                    new_texture_animation_key = 'player-human-idle-animation';
+                    new_sprite_y_offset = -6;
+                }
             }
-            if(objects[body_index].object_type_id === 142) {
-                new_texture_key = 'player-ruel';
-                new_texture_animation_key = 'player-ruel-idle-animation';
-            }
-            else if(objects[body_index].object_type_id === 108) {
-                new_texture_key = 'player-mlm';
-                new_texture_animation_key = 'player-mlm-idle-animation';
-            } else {
-                console.log("%c Using Default Body Display to draw player " + players[player_index].id, log_warning);
-                // DEFAULT!
-                new_texture_key = 'player-human';
-                new_texture_animation_key = 'player-human-idle-animation';
-                new_sprite_y_offset = -6;
-            }
+
 
         } else {
             console.log("%c at time of creating the player sprite, we don't have a current view",  log_warning);
@@ -1843,6 +1963,19 @@
             }
         }
 
+
+
+        // clear out previous above level
+        // THIS IS FOR TESTING THE fillBlankSpaces stuff!
+        // Generally this works - but there are a couple of issues. 1. Planets can't start at 0,0 for it work.
+        // They would need to start at like 10,10. Secondly, the layer above bit is still showing up here/there, or getting
+        // removed where it shouldn't be getting removed.
+        /*
+        let tile_below = map.getTileAt(coord.tile_x, coord.tile_y - 1, false, 'layer_object');
+        if(tile_below && tile_below.index !== 274) {
+            map.putTileAt(-1, coord.tile_x, coord.tile_y, false, 'layer_above');
+        }
+        */
 
 
 
@@ -3510,34 +3643,43 @@
 
             object_types.forEach(function(object_type) {
 
+
                 // Object type is assembled
-                if(object_type.is_assembled && !object_type.required_research_object_type_id && !object_type.assembly_object_type_id) {
+                if(object_type.is_assembled && !object_type.required_research_object_type_id) {
 
-                    // Check Assembly Linkers
-                    let object_assembly_linkers = object_type_assembly_linkers.filter(linker => linker.required_for_object_type_id === object_type.id);
+                    // See if there is an assembled in linker
+                    let assembled_in_linker_index = assembled_in_linkers.findIndex(function(obj) { return obj && obj.object_type_id === object_type.id; });
 
-                    let requirements_met = true;
+                    if(assembled_in_linker_index === -1) {
+                        // Check Assembly Linkers
+                        let object_assembly_linkers = object_type_assembly_linkers.filter(linker => linker.required_for_object_type_id === object_type.id);
 
-                    object_assembly_linkers.forEach(function(assembly_linker) {
-                        let met_this_requirement = false;
-                        player_inventory_items.forEach(function(inventory_item) {
-                            if(inventory_item.object_type_id === assembly_linker.object_type_id && inventory_item.amount >= assembly_linker.amount) {
-                                met_this_requirement = true;
+                        let requirements_met = true;
+
+                        object_assembly_linkers.forEach(function(assembly_linker) {
+                            let met_this_requirement = false;
+                            player_inventory_items.forEach(function(inventory_item) {
+                                if(inventory_item.object_type_id === assembly_linker.object_type_id && inventory_item.amount >= assembly_linker.amount) {
+                                    met_this_requirement = true;
+                                }
+                            });
+
+                            if(!met_this_requirement) {
+                                requirements_met = false;
                             }
                         });
 
-                        if(!met_this_requirement) {
-                            requirements_met = false;
-                        }
-                    });
+                        if(requirements_met) {
+                            html_string += generateAssemblyListItem(object_type, object_assembly_linkers);
 
-                    if(requirements_met) {
-                        html_string += generateAssemblyListItem(object_type, object_assembly_linkers);
-
-                        if(!could_assemble_something) {
-                            could_assemble_something = true;
+                            if(!could_assemble_something) {
+                                could_assemble_something = true;
+                            }
                         }
                     }
+
+
+
                 }
             });
 
@@ -4250,6 +4392,7 @@
         equipment_layout_string +=          "<div id='equipment_legs' class='player_equipment'><strong>Legs</strong></div>";
         equipment_layout_string +=      "</div><div style='display:flex;'>";
         equipment_layout_string +=          "<div id='equipment_body_type' class='player_equipment'><strong>Body Type</strong></div>";
+        equipment_layout_string +=          "<div id='equipment_skins' class='player_equipment'><strong>Skins Purchased</strong></div>";
         equipment_layout_string +=      "</div>";
 
 
@@ -4377,6 +4520,24 @@
             console.log("Don't have player's body object");
         }
 
+
+        // If the user has purchased any skins, show them, and let them select them here
+
+        if(skin_purchase_linkers.length > 0) {
+
+            let skin_string = "<br>";
+
+            for(let i = 0; i < skin_purchase_linkers.length; i++) {
+
+                let skin_object_type_index = getObjectTypeIndex(skin_purchase_linkers[i].object_type_id);
+                skin_string += object_types[skin_object_type_index].name;
+                skin_string += " <button class='button is-success is-small' skin_object_type_id='" + skin_purchase_linkers[i].object_type_id + "' id='skin_use_" + skin_purchase_linkers[i].object_type_id + "'>Use</button>";
+                skin_string += " <button class='button is-warning is-small' skin_object_type_id='" + skin_purchase_linkers[i].object_type_id + "' id='skin_remove_" + skin_purchase_linkers[i].object_type_id + "'>Remove</button>";
+            }
+
+
+            $('#equipment_skins').append(skin_string);
+        }
 
 
 
@@ -4961,11 +5122,11 @@
             html_string += "No bids yet<br>";
         }
 
-        // and the ending time
+        // and the ending time - using seconds instead of milliseconds
 
-        let timestamp_difference = market_linkers[market_linker_index].ending_at - Date.now();
+        let timestamp_difference = market_linkers[market_linker_index].ending_at - (Date.now() / 1000);
 
-        let divide_by_day = 24 * 60 * 60 * 1000;
+        let divide_by_day = 24 * 60 * 60;
         let days_until_end = Math.floor(timestamp_difference / divide_by_day);
 
 
@@ -6756,7 +6917,38 @@
                     }
                 }
             }
+            /********** GALAXY *************/
+            else if(players[player_index].sprite.texture.key === 'player-galaxy') {
 
+                // LEFT !
+                if(players[player_index].destination_x < players[player_index].sprite.x) {
+
+                    if(players[player_index].sprite.anims.getCurrentKey() !== 'player-galaxy-left-animation') {
+                        players[player_index].sprite.anims.play('player-galaxy-left-animation');
+                        console.log(players[player_index].sprite.anims.getCurrentKey());
+                    }
+
+                }
+                // RIGHT!
+                else if(players[player_index].destination_x > players[player_index].sprite.x) {
+                    if(players[player_index].sprite.anims.getCurrentKey() !== 'player-galaxy-right-animation') {
+                        players[player_index].sprite.anims.play('player-galaxy-right-animation');
+                    }
+
+                }
+                // UP!
+                else if(players[player_index].destination_y < players[player_index].sprite.y) {
+                    if(players[player_index].sprite.anims.getCurrentKey() !== 'player-galaxy-up-animation') {
+                        players[player_index].sprite.anims.play('player-galaxy-up-animation');
+                    }
+                }
+                // DOWN!
+                else if(players[player_index].destination_y > players[player_index].sprite.y) {
+                    if(players[player_index].sprite.anims.getCurrentKey() !== 'player-galaxy-down-animation') {
+                        players[player_index].sprite.anims.play('player-galaxy-down-animation');
+                    }
+                }
+            }
             /********** HUMAN *************/
             else if(players[player_index].sprite.texture.key === 'player-human') {
 
@@ -8259,6 +8451,17 @@
 
             }
 
+            // SHIP ENGINE
+            if(coord.is_engine_hardpoint) {
+                console.log("Player right clicked on a coord that is a engine hardpoint");
+            }
+
+            // SHIP WEAPON
+            if(coord.is_weapon_hardpoint) {
+                console.log("Player right clicked on a coord that is a weapon hardpoint");
+                showClickMenuShipWeapon(coord);
+            }
+
             if(current_view === "galaxy" && (coord.planet_id || coord.belongs_to_planet_id)) {
                 console.log("Going to show click menu for planet id: " + coord.planet_id + " / " + coord.belongs_to_planet_id);
                 showClickMenuPlanet(coord);
@@ -8425,7 +8628,7 @@
 
             // If the player is on a planet, and they control the planet, they can do things like add/remove the coord from a room
 
-            if(!coord.monster_id && !coord.object_id && players[client_player_index].planet_coord_id ) {
+            if(!coord.monster_id && players[client_player_index].planet_coord_id ) {
 
 
                 let planet_index = planets.findIndex(function(obj) { return obj && obj.id === coord.planet_id; });
@@ -8865,6 +9068,39 @@
             }
         }
         */
+
+
+
+        // Elevator! Give the player the option to move to the different floors this elevator can go to!
+        if(objects[object_index].object_type_id === 269) {
+
+            // Find our base elevator linker
+            let elevator_linker_index = elevator_linkers.findIndex(function(obj) { return obj && obj.object_id === objects[object_index].id });
+
+            if(elevator_linker_index === -1) {
+                console.log("Could not find an elevator linker for the elevator we right clicked on");
+            } else {
+
+                let showing_elevator_levels = [];
+
+                for(let i = 0; i < elevator_linkers.length; i++) {
+                    if(elevator_linkers[i] && elevator_linkers[i].group_id === elevator_linkers[elevator_linker_index].group_id) {
+                        showing_elevator_levels.push(elevator_linkers[i]);
+                    }
+                }
+
+                showing_elevator_levels.sort((a, b) => (a.level < b.level) ? 1 : -1)
+
+                if(showing_elevator_levels.length > 0) {
+                    for(let i = 0; i < showing_elevator_levels.length; i++) {
+                        $('#click_menu').append("<button id='use_elevator_" + showing_elevator_levels[i].object_id + "'>Head To Level " + showing_elevator_levels[i].level + "</button><br>");
+                    }
+                }
+            }
+
+
+
+        }
 
 
         // REPAIRING
@@ -9455,6 +9691,81 @@
 
     }
 
+    function showClickMenuShipEngine(coord) {
+        
+        // Go through the player's inventory, and let them drop (install) an engine here
+
+        let ship_engine_string = "";
+
+        for(let i = 0; i < inventory_items.length; i++) {
+            if(inventory_items[i] && inventory_items[i].player_id === players[client_player_index].id) {
+
+                let object_type_index = getObjectTypeIndex(inventory_items[i].object_type_id);
+
+                if(object_type_index !== -1 && object_types[object_type_index].is_ship_engine) {
+
+                    ship_engine_string += "<div style='display:inline-block; position:relative; width:146px; height:74px; " +
+                        " background-image: url(https://space.alphacoders.com/" +
+                        urlName(object_types[object_type_index].name) + ".png); background-repeat: no-repeat; " +
+                        " background-position: top; " +
+                        " border: 1px #c8c1c1 solid; border-radius:6px; margin:2px;'>";
+
+                    ship_engine_string += "<div style='position:absolute; right: 4px; bottom: 0;'>";
+
+                    ship_engine_string += "<button id='drop_" + inventory_items[i].id + "_1' x='" + coord.tile_x +
+                        "' y='" + coord.tile_y + "' amount='1' class='button is-default is-small'>Install</button>";
+
+
+                    ship_engine_string += "</div>";
+
+                    ship_engine_string += "</div>";
+
+                }
+
+            }
+        }
+
+        $('#click_menu').append(ship_engine_string);
+    }
+
+    function showClickMenuShipWeapon(coord) {
+
+        // Go through the player's inventory, and let them drop (install) a weapon here
+
+        let ship_weapon_string = "";
+
+        for(let i = 0; i < inventory_items.length; i++) {
+            if(inventory_items[i] && inventory_items[i].player_id === players[client_player_index].id) {
+
+                let object_type_index = getObjectTypeIndex(inventory_items[i].object_type_id);
+
+                if(object_type_index !== -1 && object_types[object_type_index].is_ship_weapon) {
+
+                    ship_weapon_string += "<div style='display:inline-block; position:relative; width:146px; height:74px; " +
+                        " background-image: url(https://space.alphacoders.com/" +
+                        urlName(object_types[object_type_index].name) + ".png); background-repeat: no-repeat; " +
+                        " background-position: top; " +
+                        " border: 1px #c8c1c1 solid; border-radius:6px; margin:2px;'>";
+
+                    ship_weapon_string += "<div style='position:absolute; right: 4px; bottom: 0;'>";
+
+                    ship_weapon_string += "<button id='drop_" + inventory_items[i].id + "_1' x='" + coord.tile_x +
+                        "' y='" + coord.tile_y + "' amount='1' class='button is-default is-small'>Install</button>";
+
+
+                    ship_weapon_string += "</div>";
+
+                    ship_weapon_string += "</div>";
+
+                }
+
+            }
+        }
+
+        $('#click_menu').append(ship_weapon_string);
+
+    }
+
     function showDockedShip(ship) {
 
         let html_string = "";
@@ -9787,11 +10098,20 @@
                         movePlayerFlow(player_index, 'planet', planet_coords[coord_index], 'updatePlayer > planet');
                     }
 
+                    if(parseInt(data.player.skin_object_type_id) !== players[player_index].skin_object_type_id) {
+
+                        console.log("Player changed skin");
+                        players[player_index].skin_object_type_id = parseInt(data.player.skin_object_type_id);
+
+                        createPlayerSprite(player_index);
+                    }
+
+
                     // Player switched bodies!
                     if(data.player.body_id !== players[player_index].body_id) {
                         let old_body_index = objects.findIndex(function(obj) { return obj && obj.id === players[player_index].body_id; });
 
-                        players[player_index].body_id = parseInt(players[player_index].body_id);
+                        players[player_index].body_id = parseInt(data.player.body_id);
                         createPlayerSprite(player_index);
                         setPlayerMoveDelay(player_index);
 
@@ -9816,6 +10136,8 @@
                             objects[old_body_index].name_text.setDepth(11);
                         }
                     }
+
+
                 }
                 // Our client doesn't have the coord where the player is, or the player moved somewhere out of drawing range
                 else if(coord_index === -1 || !shouldDraw(client_player_info.coord, planet_coords[coord_index])) {
@@ -9951,6 +10273,8 @@
 
             if(data.player.planet_coord_id) {
 
+                let client_moved = false;
+
                 // Player switched ships on a planet - so switching in a spaceport
                 if(players[client_player_index].ship_id !== data.player.ship_id) {
                     update_spaceport_display = true;
@@ -9958,6 +10282,7 @@
 
                 if(players[client_player_index].planet_coord_id !== data.player.planet_coord_id) {
                     update_spaceport_display = true;
+                    client_moved = true;
                 }
 
                 let new_planet_coord_index = planet_coords.findIndex(function(obj) { return obj && obj.id === data.player.planet_coord_id; });
@@ -10043,6 +10368,53 @@
 
                 */
 
+                if(client_moved && client_player_info.coord && client_player_info.coord.level < 0) {
+
+                    // THIS IS FOR TESTING THE fillBlankSpaces stuff!
+                    // Generally this works - but there are a couple of issues. 1. Planets can't start at 0,0 for it work.
+                    // They would need to start at like 10,10. Secondly, the layer above bit is still showing up here/there, or getting
+                    // removed where it shouldn't be getting removed.
+                    //fillBlankSpaces();
+                    /*
+                    let filling_start = performance.now();
+
+                    for(let x = client_player_info.coord.tile_x - Math.ceil(show_cols / 2) - 1; x <= client_player_info.coord.tile_x + Math.floor(show_cols / 2) + 1; x++) {
+                        for(let y = client_player_info.coord.tile_y - Math.ceil(show_rows / 2) - 1; y <= client_player_info.coord.tile_y + Math.floor(show_rows / 2) + 1; y++) {
+
+                            let have_planet_coord_index = planet_coords.findIndex(function(obj) { return obj && obj.planet_id === client_player_info.coord.planet_id &&
+                                obj.level === client_player_info.coord.level && obj.tile_x === x && obj.tile_y === y });
+                            if(have_planet_coord_index === -1) {
+
+                                // Probably faster if we just check to see if something is there first.
+                                let object_tile = map.getTileAt(x, y, false, 'layer_object');
+                                if(!object_tile) {
+                                    // DRAW A WALL
+                                    map.putTileAt(274, x, y, false, 'layer_object');
+
+                                    let above_y = y - 1;
+                                    let above_tile = map.getTileAt(x, above_y, false, 'layer_above');
+                                    if(!above_tile) {
+                                        map.putTileAt(2, x, above_y, false, 'layer_above');
+                                    }
+
+                                }
+
+
+
+                            }
+
+
+                        }
+
+                    }
+
+                    let filling_end = performance.now();
+                    console.log("Filling blank spaces took: " + (filling_end - filling_start) + " milliseconds ");
+
+
+                     */
+                }
+
 
 
             }
@@ -10093,6 +10465,15 @@
                 //movePlayerInstant(players[client_player_index], )
             }
 
+        }
+
+        if((data.player.skin_object_type_id || players[client_player_index].skin_object_type_id) && parseInt(data.player.skin_object_type_id) !== parseInt(players[client_player_index].skin_object_type_id)) {
+
+            console.log("Client Player changed skin");
+            console.log("data: " + parseInt(data.player.skin_object_type_id) + " player: " + parseInt(players[client_player_index].skin_object_type_id));
+            players[client_player_index].skin_object_type_id = parseInt(data.player.skin_object_type_id);
+
+            createPlayerSprite(client_player_index);
         }
 
         if(parseInt(data.player.body_id) !== players[client_player_index].body_id) {
@@ -10222,5 +10603,3 @@
         return Math.floor(y / tile_size);
         //return Math.floor(pixel_number / (tile_size * 2) );
     }
-
-</script>

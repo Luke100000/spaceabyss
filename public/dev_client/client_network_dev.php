@@ -157,10 +157,22 @@
 
         if(data.remove) {
 
-            //console.log("Have remove battle linker info");
+            console.log("Have remove battle linker info");
 
             if(battle_linker_index !== -1) {
                 //console.log("Removing battle linker with id" + battle_linkers[battle_linker_index].id);
+
+
+                for(let i = 0; i < heat_sprites.length; i++) {
+                    if(heat_sprites[i] && heat_sprites[i].object_id === battle_linkers[battle_linker_index].being_attacked_type === 'object' &&
+                        battle_linkers[battle_linker_index].being_attacked_id === heat_sprites[i].object_id) {
+
+                        heat_sprites[i].object_id = false;
+                        heat_sprites[i].setVisible(false);
+
+                    }
+
+                }
 
                 delete battle_linkers[battle_linker_index];
                 redrawBars();
@@ -339,6 +351,7 @@
     });
 
     //  data:   damage_types (piercing,laser,repairing,healing,etc)   |   damage_source_type (monster,npc,player,object,etc)   |   damage_source_id
+    //          monster_id | npc_id | object_id | planet_id | player_id
     socket.on('damaged_data', function(data) {
 
         //console.log(data.damage_types);
@@ -537,17 +550,17 @@
         }
 
 
-        let function_data = data;
+        let effect_data = data;
 
-        function_data.x = drawing_x;
-        function_data.y = drawing_y;
-        function_data.attacker_x = attacker_x;
-        function_data.attacker_y = attacker_y;
+        effect_data.x = drawing_x;
+        effect_data.y = drawing_y;
+        effect_data.attacker_x = attacker_x;
+        effect_data.attacker_y = attacker_y;
 
 
 
-        addEffect(function_data);
-        addInfoNumber(drawing_x, drawing_y, function_data);
+        addEffect(effect_data);
+        addInfoNumber(drawing_x, drawing_y, effect_data);
 
     });
 
@@ -1039,6 +1052,19 @@
 
     });
 
+    socket.on('elevator_linker_info', function(data) {
+        console.log("Got elevator_linker_info");
+        console.log(data);
+
+        // See if we already have this elevator linker
+        let elevator_linker_index = elevator_linkers.findIndex(function(obj) { return obj && obj.id === data.elevator_linker.id; });
+
+        if(elevator_linker_index === -1) {
+            elevator_linkers.push(data.elevator_linker);
+        }
+
+    });
+
     socket.on('equipment_linker_info', function(data) {
 
 
@@ -1379,6 +1405,9 @@
 
             redrawMap();
 
+            socket.emit('request_skin_purchase_linker_data');
+            console.log("Requesting skin purchase linker data");
+
         } else {
             $('#login_status').append("<span style='color:red;'>Login Failed</span>");
             console.log("%c Login failed", log_danger);
@@ -1506,6 +1535,7 @@
             }
             let object_info = getObjectInfo(object_index);
 
+            // The spot on the object the beam should reach to
             let object_x_beam = tileToPixel(object_info.coord.tile_x) + 32;
             let object_y_beam = tileToPixel(object_info.coord.tile_y) + 32;
 
@@ -2114,6 +2144,17 @@
                 }
             }
 
+            // If there are any effects associated with this, remove them
+            for(let i = 0; i < heat_sprites.length; i++) {
+
+                if(heat_sprites[i] && heat_sprites[i].object_id === data.object.id) {
+
+                    heat_sprites[i].object_id = false;
+                    heat_sprites[i].setVisible(false);
+
+                }
+            }
+
 
             return;
 
@@ -2283,6 +2324,12 @@
                 if(objects[object_index].current_hp !== object_types[object_type_index].hp) {
                     redrawBars();
                 }
+            }
+
+
+            // If the object is an elevator and we are adding it, we will need to see what levels this elevator can get to!
+            if(objects[object_index].object_type_id === 269) {
+                socket.emit('request_elevator_linkers', { 'object_id': objects[object_index].id });
             }
 
             /*
@@ -2943,6 +2990,8 @@
             players[player_index].coord_id = data.player.coord_id;
             players[player_index].planet_id = data.player.planet_id;
 
+
+            // TODO Pretty sure this is never used since we do this stuff in updatePlayer and updatePlayerClient
             // Player has switched bodies
             if(players[player_index].body_id !== parseInt(data.player.body_id)) {
                 // Doesn't look like this is called if it's our client player - this stuff is already done
@@ -2960,7 +3009,14 @@
 
             }
 
+            // TODO Pretty sure this is never used since we do this stuff in updatePlayer and updatePlayerClient
+            // Player has switched skins
+            if(players[player_index].skin_object_type_id !== data.player.skin_object_type_id) {
+                players[player_index].skin_object_type_id = data.player.skin_object_type_id;
 
+            }
+
+            // TODO Pretty sure this is never used since we do this stuff in updatePlayer and updatePlayerClient
             // Player has switched ships
             if(players[player_index].ship_id !== parseInt(data.player.ship_id)) {
 
@@ -3622,6 +3678,16 @@
 
     socket.on('ship_view_data', function(data) {
         generateAirlockDisplay();
+    });
+
+    socket.on('skin_purchase_linker_info', function(data) {
+        console.log("Got skin purchase linker info");
+
+        let skin_purchase_linker_index = skin_purchase_linkers.findIndex(function(obj) { return obj && obj.id === data.skin_purchase_linker.id; });
+
+        if(skin_purchase_linker_index === -1) {
+            skin_purchase_linkers.push(data.skin_purchase_linker);
+        }
     });
 
 

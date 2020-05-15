@@ -1,12 +1,19 @@
-module.exports = function(main, io, mysql, pool, chalk, log, world, inventory, game) {
+var io_handler = require('./io' + process.env.FILE_SUFFIX + '.js');
+var io = io_handler.io;
+var database = require('./database' + process.env.FILE_SUFFIX + '.js');
+var pool = database.pool;
+const chalk = require('chalk');
+const log = console.log;
 
-    var module = {};
+
+const game = require('./game' + process.env.FILE_SUFFIX + '.js');
+const game_object = require('./game_object' + process.env.FILE_SUFFIX + '.js');
+const helper = require('./helper' + process.env.FILE_SUFFIX + '.js');
+const main = require('./space_abyss' + process.env.FILE_SUFFIX + '.js');
+const monster = require('./monster' + process.env.FILE_SUFFIX + '.js');
+const world = require('./world' + process.env.FILE_SUFFIX + '.js');
 
 
-
-    io.sockets.on('connection', function (socket) {
-
-    });
 
 
     //  data:   monster_id   |   npc_id   |   object_id   |   player_id   |   planet_id
@@ -94,7 +101,7 @@ module.exports = function(main, io, mysql, pool, chalk, log, world, inventory, g
 
     }
 
-    module.attackStop = attackStop;
+    exports.attackStop = attackStop;
 
     async function getMonsterAttack(dirty, monster_index, calculating_range) {
         try {
@@ -106,7 +113,7 @@ module.exports = function(main, io, mysql, pool, chalk, log, world, inventory, g
                 return 1;
             }
 
-            let rarity = main.rarityRoll();
+            let rarity = helper.rarityRoll();
 
             let hp_percent = dirty.monsters[monster_index].current_hp / dirty.monster_types[monster_type_index].hp * 100;
 
@@ -130,7 +137,7 @@ module.exports = function(main, io, mysql, pool, chalk, log, world, inventory, g
         }
     }
 
-    module.getMonsterAttack = getMonsterAttack;
+    exports.getMonsterAttack = getMonsterAttack;
 
     async function calculateMonsterAttack(dirty, monster_index, calculating_range) {
 
@@ -152,52 +159,6 @@ module.exports = function(main, io, mysql, pool, chalk, log, world, inventory, g
             log(chalk.red("Error in battle.calculateMonsterAttack: " + error));
         }
 
-
-
-    }
-
-    async function calculateMonsterDefense(dirty, monster_index, damage_types = []) {
-
-        try {
-
-            let monster_type_index = main.getMonsterTypeIndex(dirty.monsters[monster_index].monster_type_id);
-            if(monster_type_index === -1) {
-                log(chalk.yellow("Was unable to get monster type index in battle.calculateMonsterDefense"));
-                return 1;
-
-            }
-
-            let defense = 1;
-
-            if(dirty.monster_types[monster_type_index].defense) {
-                defense = dirty.monster_types[monster_type_index].defense;
-            }
-
-            // modify for each damage type we encounter.....
-            if(damage_types.length > 0) {
-
-
-                for(let i = 0; i < damage_types.length; i++) {
-
-                    if(damage_types[i] === 'hacking' && dirty.monster_types[monster_type_index].hacking_defense_modifier) {
-                        defense += dirty.monster_types[monster_type_index].hacking_defense_modifier;
-                    }
-
-                    if(damage_types[i] === 'piercing' && dirty.monster_types[monster_type_index].piercing_defense_modifier) {
-                        defense += dirty.monster_types[monster_type_index].piercing_defense_modifier;
-                    }
-                }
-
-
-            }
-
-            return defense;
-
-
-        } catch(error) {
-            log(chalk.red("Error in battle.calculateMonsterDefense: " + error));
-            console.error(error);
-        }
 
 
     }
@@ -323,62 +284,6 @@ module.exports = function(main, io, mysql, pool, chalk, log, world, inventory, g
             console.error(error);
         }
 
-
-
-    }
-
-    async function calculateObjectDefense(dirty, object_index) {
-
-        try {
-
-
-            let object_type_index = main.getObjectTypeIndex(dirty.objects[object_index].object_type_id);
-            if(object_type_index === -1) {
-                log(chalk.red("Could not get object type index"));
-                return false;
-            }
-            let defense = 0;
-            if(dirty.object_types[object_type_index].defense) {
-                defense = dirty.object_types[object_type_index].defense;
-            }
-
-            /*
-            if(dirty.object_types[object_type_index].is_ship) {
-                // Find ship coords with shields
-                let shield_generator_coords = dirty.ship_coords.filter(ship_coord => ship_coord.ship_id === dirty.objects[object_index].id &&
-                    ship_coord.object_type_id === 48 );
-
-                if(shield_generator_coords.length > 0) {
-
-                    let found_energy_source = false;
-
-                    for(let shield_coord of shield_generator_coords) {
-
-                        if(!found_energy_source) {
-                            let coord_object_index = await main.getObjectIndex(shield_coord.object_id);
-                            if(coord_object_index !== -1 && dirty.objects[coord_object_index].energy > 1 ) {
-
-                                console.log("Found energy source for shield defense");
-                                found_energy_source = true;
-                                defense += 5;
-
-                                dirty.objects[coord_object_index].energy -= 1;
-                                dirty.objects[coord_object_index].has_change = true;
-                            }
-                        }
-
-                    }
-                }
-            }
-
-            */
-
-            //console.log("Returning defense of: " + defense);
-
-            return defense;
-        } catch(error) {
-            log(chalk.red("Error in battle.calculateObjectDefense: " + error));
-        }
 
 
     }
@@ -589,7 +494,7 @@ module.exports = function(main, io, mysql, pool, chalk, log, world, inventory, g
 
     }
 
-    module.caclulatePlayerAttack = calculatePlayerAttack;
+    exports.caclulatePlayerAttack = calculatePlayerAttack;
 
     async function calculatePlayerDefense(dirty, player_index) {
 
@@ -599,6 +504,9 @@ module.exports = function(main, io, mysql, pool, chalk, log, world, inventory, g
 
             // Base level + body/ship type
             let defense_level = await world.getPlayerLevel(dirty, { 'player_index': player_index, 'skill_type': 'defense' });
+
+            let player_body_index = await main.getObjectIndex(dirty.players[player_index].body_id);
+            let player_body_type_index = main.getObjectTypeIndex(dirty.objects[player_body_index].object_type_id);
 
 
             // Simple assignment for now. I think I want to be able to change this. Not sure.
@@ -628,6 +536,20 @@ module.exports = function(main, io, mysql, pool, chalk, log, world, inventory, g
 
             }
 
+
+            for(let i = 0; i < dirty.eating_linkers.length; i++) {
+                if(dirty.eating_linkers[i] && dirty.eating_linkers[i].body_id === dirty.players[player_index].body_id) {
+                    let race_linker_index = main.getRaceEatingLinkerIndex({
+                        'race_id': dirty.object_types[player_body_type_index].race_id, 'object_type_id': dirty.eating_linkers[i].eating_object_type_id
+                    });
+
+                    if(dirty.race_eating_linkers[race_linker_index].defense) {
+                        //console.log("Eating increased player attack by: " + dirty.race_eating_linkers[race_linker_index].attack);
+                        player_defense += dirty.race_eating_linkers[race_linker_index].defense;
+                    }
+                }
+            }
+
             return player_defense;
         } catch(error) {
             log(chalk.red("Error in battle.caclculatePlayerDefense: " + error));
@@ -636,7 +558,7 @@ module.exports = function(main, io, mysql, pool, chalk, log, world, inventory, g
 
     }
 
-    module.calculatePlayerDefense = calculatePlayerDefense;
+    exports.calculatePlayerDefense = calculatePlayerDefense;
 
     async function calculateRange(first_coord_x, first_coord_y, second_coord_x, second_coord_y) {
         try {
@@ -659,7 +581,7 @@ module.exports = function(main, io, mysql, pool, chalk, log, world, inventory, g
 
     }
 
-    module.caclulatePlayerRange = calculateRange;
+    exports.caclulatePlayerRange = calculateRange;
 
     async function calcualteShipAttack(object_id) {
 
@@ -765,7 +687,7 @@ module.exports = function(main, io, mysql, pool, chalk, log, world, inventory, g
                     damage_monster_data.damage_source_id = data.damage_source_id;
 
                 }
-                await game.damageMonster(dirty, damage_monster_data);
+                await monster.damage(io, pool, dirty, damage_monster_data);
             }
 
 
@@ -848,11 +770,11 @@ module.exports = function(main, io, mysql, pool, chalk, log, world, inventory, g
         }
     }
 
-    module.decrementEquipmentLinkers = decrementEquipmentLinkers;
+    exports.decrementEquipmentLinkers = decrementEquipmentLinkers;
 
 
 
-    async function doLinkers(io, dirty) {
+    async function doLinkers(io, pool, dirty) {
         try {
             //console.log("In doLinkers");
 
@@ -863,29 +785,29 @@ module.exports = function(main, io, mysql, pool, chalk, log, world, inventory, g
 
                 if(battle_linker.attacking_type === 'monster' && battle_linker.being_attacked_type === 'player') {
 
-                    await monsterAttackPlayer(dirty, battle_linker);
+                    await monsterAttackPlayer(io, dirty, battle_linker);
                     // we are moving this to the root file - and ticking it
                     //moveMonster(io, battle_linker);
                 } else if(battle_linker.attacking_type === 'npc' && battle_linker.being_attacked_type === 'monster') {
-                    await npcAttackMonster(dirty, battle_linker);
+                    await npcAttackMonster(io, dirty, battle_linker);
                 } else if(battle_linker.attacking_type === 'npc' && battle_linker.being_attacked_type === 'object') {
-                    await npcAttackObject(dirty, battle_linker);
+                    await npcAttackObject(io, dirty, battle_linker);
                 } else if(battle_linker.attacking_type === 'npc' && battle_linker.being_attacked_type === 'player') {
-                    await npcAttackPlayer(dirty, battle_linker);
+                    await npcAttackPlayer(io, dirty, battle_linker);
                 } else if(battle_linker.attacking_type === 'object' && battle_linker.being_attacked_type === 'object') {
-                    await objectAttackObject(dirty, battle_linker);
+                    await objectAttackObject(io, dirty, battle_linker);
                 } else if(battle_linker.attacking_type === 'object' && battle_linker.being_attacked_type === 'planet') {
-                    await objectAttackPlanet(dirty, battle_linker);
+                    await objectAttackPlanet(io, dirty, battle_linker);
                 } else if(battle_linker.attacking_type === 'object' && battle_linker.being_attacked_type === 'player') {
-                    await objectAttackPlayer(dirty, battle_linker);
+                    await objectAttackPlayer(io, dirty, battle_linker);
                 } else if(battle_linker.attacking_type === 'player' && battle_linker.being_attacked_type === 'monster') {
-                    await playerAttackMonster(dirty, battle_linker);
+                    await playerAttackMonster(io, pool, dirty, battle_linker);
                 } else if(battle_linker.attacking_type === 'player' && battle_linker.being_attacked_type === 'npc') {
-                    await playerAttackNpc(dirty, battle_linker);
+                    await playerAttackNpc(io, dirty, battle_linker);
                 } else if(battle_linker.attacking_type === 'player' && battle_linker.being_attacked_type === 'object') {
-                    await playerAttackObject(dirty, battle_linker);
+                    await playerAttackObject(io, dirty, battle_linker);
                 } else if(battle_linker.attacking_type === 'player' && battle_linker.being_attacked_type === 'player') {
-                    await playerAttackPlayer(dirty, battle_linker);
+                    await playerAttackPlayer(io, dirty, battle_linker);
                 }  else {
                     console.log("Unknown battle linker type. " + battle_linker.attacking_type + " is attacking a " + battle_linker.being_attacked_type);
                 }
@@ -897,10 +819,10 @@ module.exports = function(main, io, mysql, pool, chalk, log, world, inventory, g
 
     }
 
-    module.doLinkers = doLinkers;
+    exports.doLinkers = doLinkers;
 
 
-    async function monsterAttackPlayer(dirty, battle_linker) {
+    async function monsterAttackPlayer(io, dirty, battle_linker) {
 
         try {
             //log(chalk.green("Monster " + battle_linker.attacking_id + " is attacking player " + battle_linker.being_attacked_id));
@@ -909,7 +831,7 @@ module.exports = function(main, io, mysql, pool, chalk, log, world, inventory, g
 
             if(!io.sockets.connected[battle_linker.being_attacked_socket_id]) {
                 log(chalk.yellow("Player with being_attacked_socket_id: " + battle_linker.being_attacked_socket_id + " is no longer connected. Removing"));
-                world.removeBattleLinkers(dirty, { 'battle_linker_id': battle_linker.id });
+                world.removeBattleLinkers(io, dirty, { 'battle_linker_id': battle_linker.id });
                 return;
             }
 
@@ -918,43 +840,43 @@ module.exports = function(main, io, mysql, pool, chalk, log, world, inventory, g
 
             if(monster_index === -1) {
                 log(chalk.yellow("Could not find monster id: " + battle_linker.attacking_id + ". monster_index: " + monster_index));
-                world.removeBattleLinkers(dirty, { 'monster_id': battle_linker.attacking_id });
+                world.removeBattleLinkers(io, dirty, { 'monster_id': battle_linker.attacking_id });
                 return;
             }
 
             if(player_index === -1) {
                 log(chalk.yellow("Could not find player id: " + battle_linker.being_attacked_id + ". player_index: " + player_index));
-                world.removeBattleLinkers(dirty, { 'player_id': battle_linker.being_attacked_id });
+                world.removeBattleLinkers(io, dirty, { 'player_id': battle_linker.being_attacked_id });
                 return;
             }
 
             let monster_type_index = main.getMonsterTypeIndex(dirty.monsters[monster_index].monster_type_id);
 
-            let monster_info = await world.getMonsterCoordAndRoom(dirty, monster_index);
+            let monster_info = await monster.getCoordAndRoom(dirty, monster_index);
             let player_info = await world.getPlayerCoordAndRoom(dirty, player_index);
 
             if(monster_info.coord === false) {
                 log(chalk.yellow("Could not get the attacking monster coord"));
-                world.removeBattleLinkers(dirty, { 'battle_linker_id': battle_linker.id });
+                world.removeBattleLinkers(io, dirty, { 'battle_linker_id': battle_linker.id });
                 return false;
             }
 
             if(player_info.coord === false) {
                 log(chalk.yellow("Could not get the defending player coord"));
-                world.removeBattleLinkers(dirty, { 'battle_linker_id': battle_linker.id });
+                world.removeBattleLinkers(io, dirty, { 'battle_linker_id': battle_linker.id });
                 return false;
             }
 
             if(monster_info.room !== player_info.room) {
                 log(chalk.yellow("Monster and player don't share the same room"));
-                world.removeBattleLinkers(dirty, { 'battle_linker_id': battle_linker.id });
+                world.removeBattleLinkers(io, dirty, { 'battle_linker_id': battle_linker.id });
                 return false;
             }
 
             // we also remove the battle linker if they are on a planet but not on the same level
             if(monster_info.coord.planet_id && player_info.coord.planet_id && monster_info.coord.level !== player_info.coord.level) {
                 log(chalk.yellow("Monster and player don't share the same planet level"));
-                world.removeBattleLinkers(dirty, { 'battle_linker_id': battle_linker.id });
+                world.removeBattleLinkers(io, dirty, { 'battle_linker_id': battle_linker.id });
                 return false;
             }
 
@@ -965,7 +887,7 @@ module.exports = function(main, io, mysql, pool, chalk, log, world, inventory, g
 
             if(calculating_range > 8) {
                 //log(chalk.yellow("Monster and player are too far apart. Removing battle linker id: " + battle_linker.id));
-                world.removeBattleLinkers(dirty, { 'battle_linker_id': battle_linker.id });
+                world.removeBattleLinkers(io, dirty, { 'battle_linker_id': battle_linker.id });
                 return false;
             }
 
@@ -1083,7 +1005,7 @@ module.exports = function(main, io, mysql, pool, chalk, log, world, inventory, g
 
                 // If it's evenly divisible - we're on!
                 if(global.battle_time % dirty.monster_types[monster_type_index].attack_movement_delay === 0) {
-                    await game.moveMonster(dirty, monster_index, { 'reason': 'battle', 'battle_linker': battle_linker,
+                    await monster.move(io, dirty, monster_index, { 'reason': 'battle', 'battle_linker': battle_linker,
                         'monster_type_index': monster_type_index });
                 }
 
@@ -1095,17 +1017,18 @@ module.exports = function(main, io, mysql, pool, chalk, log, world, inventory, g
 
         } catch(error) {
             log(chalk.red("Error in battle.moveMonsters: " + error));
+            console.error(error);
         }
 
         //log(chalk.green("Finished moveMonsters"));
 
     }
 
-    module.moveMonsters = moveMonsters;
+    exports.moveMonsters = moveMonsters;
 
 
 
-    async function npcAttackMonster(dirty, battle_linker) {
+    async function npcAttackMonster(io, dirty, battle_linker) {
         try {
 
             let npc_index = await main.getNpcIndex(battle_linker.attacking_id);
@@ -1113,28 +1036,28 @@ module.exports = function(main, io, mysql, pool, chalk, log, world, inventory, g
 
             if(npc_index === -1) {
                 log(chalk.yellow("Could not find npc id: " + battle_linker.attacking_id));
-                world.removeBattleLinkers(dirty, { 'npc_id': battle_linker.attacking_id });
+                world.removeBattleLinkers(io, dirty, { 'npc_id': battle_linker.attacking_id });
                 return false;
             }
 
             if(monster_index === -1) {
                 log(chalk.yellow("Could not find monster id: " + battle_linker.being_attacked_id));
-                world.removeBattleLinkers(dirty, { 'monster_id': battle_linker.being_attacked_id });
+                world.removeBattleLinkers(io, dirty, { 'monster_id': battle_linker.being_attacked_id });
                 return;
             }
 
             let npc_info = await world.getNpcCoordAndRoom(dirty, npc_index);
-            let monster_info = await world.getMonsterCoordAndRoom(dirty, monster_index);
+            let monster_info = await monster.getCoordAndRoom(dirty, monster_index);
 
             if(npc_info.coord === false) {
                 log(chalk.yellow("Could not get the npc coord"));
-                world.removeBattleLinkers(dirty, { 'battle_linker_id': battle_linker.id });
+                world.removeBattleLinkers(io, dirty, { 'battle_linker_id': battle_linker.id });
                 return false;
             }
 
             if(monster_info.coord === false) {
                 log(chalk.yellow("Could not get the monster coord"));
-                world.removeBattleLinkers(dirty, { 'battle_linker_id': battle_linker.id });
+                world.removeBattleLinkers(io, dirty, { 'battle_linker_id': battle_linker.id });
                 return false;
             }
 
@@ -1144,12 +1067,12 @@ module.exports = function(main, io, mysql, pool, chalk, log, world, inventory, g
 
             if(calculating_range > 8) {
                 log(chalk.yellow("Npc and monster are too far apart"));
-                world.removeBattleLinkers(dirty, { 'battle_linker_id': battle_linker.id });
+                world.removeBattleLinkers(io, dirty, { 'battle_linker_id': battle_linker.id });
                 return false;
             }
 
             let attack = await calculateNpcAttack(dirty, npc_index, calculating_range);
-            let defense = await calculateMonsterDefense(dirty, monster_index);
+            let defense = await monster.calculateDefense(dirty, monster_index);
 
             dirty.npcs[npc_index].attacking_skill_points++;
             dirty.npcs[npc_index].has_change = true;
@@ -1181,7 +1104,7 @@ module.exports = function(main, io, mysql, pool, chalk, log, world, inventory, g
 
             //console.log("Damage amount: " + damage_amount);
 
-            await game.damageMonster(dirty, { 'monster_index': monster_index, 'damage_amount': damage_amount,
+            await monster.damage(io, pool, dirty, { 'monster_index': monster_index, 'damage_amount': damage_amount,
                 'battle_linker': battle_linker, 'monster_info': monster_info, 'calculating_range': calculating_range });
 
 
@@ -1194,13 +1117,13 @@ module.exports = function(main, io, mysql, pool, chalk, log, world, inventory, g
     }
 
 
-    async function npcAttackObject(dirty, battle_linker) {
+    async function npcAttackObject(io, dirty, battle_linker) {
         try {
 
             let npc_index = await main.getNpcIndex(battle_linker.attacking_id);
             if(npc_index === -1) {
                 log(chalk.yellow("Could not find npc id: " + battle_linker.attacking_id));
-                world.removeBattleLinkers(dirty, { 'npc_id': battle_linker.attacking_id });
+                world.removeBattleLinkers(io, dirty, { 'npc_id': battle_linker.attacking_id });
                 return false;
             }
 
@@ -1208,23 +1131,23 @@ module.exports = function(main, io, mysql, pool, chalk, log, world, inventory, g
 
             if(object_index === -1) {
                 log(chalk.yellow("Could not find object id: " + battle_linker.being_attacked_id));
-                world.removeBattleLinkers(dirty, { 'object_id': battle_linker.being_attacked_id });
+                world.removeBattleLinkers(io, dirty, { 'object_id': battle_linker.being_attacked_id });
                 return;
             }
 
             let object_type_index = main.getObjectTypeIndex(dirty.objects[object_index].object_type_id);
-            let object_info = await world.getObjectCoordAndRoom(dirty, object_index);
+            let object_info = await game_object.getCoordAndRoom(dirty, object_index);
             let npc_info = await world.getNpcCoordAndRoom(dirty, npc_index);
 
             if(object_info.coord === false) {
                 log(chalk.yellow("Could not get the attacking object coord"));
-                world.removeBattleLinkers(dirty, { 'battle_linker_id': battle_linker.id });
+                world.removeBattleLinkers(io, dirty, { 'battle_linker_id': battle_linker.id });
                 return false;
             }
 
             if(npc_info.coord === false) {
                 log(chalk.yellow("Could not get the npc coord"));
-                world.removeBattleLinkers(dirty, { 'battle_linker_id': battle_linker.id });
+                world.removeBattleLinkers(io, dirty, { 'battle_linker_id': battle_linker.id });
                 return false;
             }
 
@@ -1234,12 +1157,12 @@ module.exports = function(main, io, mysql, pool, chalk, log, world, inventory, g
 
             if(calculating_range > 8) {
                 log(chalk.yellow("Npc and object are too far apart"));
-                world.removeBattleLinkers(dirty, { 'battle_linker_id': battle_linker.id });
+                world.removeBattleLinkers(io, dirty, { 'battle_linker_id': battle_linker.id });
                 return false;
             }
 
             let attack = await calculateNpcAttack(dirty, npc_index);
-            let defense = await calculateObjectDefense(dirty, object_index);
+            let defense = await game_object.calculateDefense(dirty, object_index);
 
 
             dirty.npcs[npc_index].attacking_skill_points++;
@@ -1250,7 +1173,7 @@ module.exports = function(main, io, mysql, pool, chalk, log, world, inventory, g
 
 
 
-                await world.removeBattleLinkers(dirty, { 'battle_linker_id': battle_linker.id });
+                await world.removeBattleLinkers(io, dirty, { 'battle_linker_id': battle_linker.id });
 
                 return false;
             }
@@ -1291,7 +1214,7 @@ module.exports = function(main, io, mysql, pool, chalk, log, world, inventory, g
             }
 
             // No AI - Do the attack/defense normally
-            await game.damageObject(dirty, { 'object_index': object_index, 'damage_amount': damage_amount,
+            await game_object.damage(dirty, { 'object_index': object_index, 'damage_amount': damage_amount,
                 'battle_linker': battle_linker, 'object_info': object_info, 'calculating_range': calculating_range });
 
 
@@ -1302,15 +1225,15 @@ module.exports = function(main, io, mysql, pool, chalk, log, world, inventory, g
 
     }
 
-    module.npcAttackObject = npcAttackObject;
+    exports.npcAttackObject = npcAttackObject;
 
-    async function npcAttackPlayer(dirty, battle_linker) {
+    async function npcAttackPlayer(io, dirty, battle_linker) {
 
         try {
 
             if(!io.sockets.connected[battle_linker.being_attacked_socket_id]) {
                 log(chalk.yellow("Player with being_attacked_socket_id: " + battle_linker.being_attacked_socket_id + " is no longer connected. Removing"));
-                world.removeBattleLinkers(dirty, { 'battle_linker_id': battle_linker.id });
+                world.removeBattleLinkers(io, dirty, { 'battle_linker_id': battle_linker.id });
                 return;
             }
 
@@ -1319,14 +1242,14 @@ module.exports = function(main, io, mysql, pool, chalk, log, world, inventory, g
 
             if(npc_index === -1) {
                 log(chalk.yellow("Could not find npc id: " + battle_linker.attacking_id));
-                world.removeBattleLinkers(dirty, { 'npc_id': battle_linker.attacking_id });
+                world.removeBattleLinkers(io, dirty, { 'npc_id': battle_linker.attacking_id });
                 game.deleteNpc(dirty, battle_linker.attacking_id);
                 return;
             }
 
             if(player_index === -1) {
                 log(chalk.yellow("Could not find player id: " + battle_linker.being_attacked_id + ". player_index: " + player_index));
-                world.removeBattleLinkers(dirty, { 'player_id': battle_linker.being_attacked_id });
+                world.removeBattleLinkers(io, dirty, { 'player_id': battle_linker.being_attacked_id });
                 return;
             }
 
@@ -1335,19 +1258,19 @@ module.exports = function(main, io, mysql, pool, chalk, log, world, inventory, g
 
             if(npc_info.coord === false) {
                 log(chalk.yellow("Could not get the attacking npc coord"));
-                world.removeBattleLinkers(dirty, { 'battle_linker_id': battle_linker.id });
+                world.removeBattleLinkers(io, dirty, { 'battle_linker_id': battle_linker.id });
                 return false;
             }
 
             if(player_info.coord === false) {
                 log(chalk.yellow("Could not get the defending player coord"));
-                world.removeBattleLinkers(dirty, { 'battle_linker_id': battle_linker.id });
+                world.removeBattleLinkers(io, dirty, { 'battle_linker_id': battle_linker.id });
                 return false;
             }
 
             if(npc_info.room !== player_info.room) {
                 log(chalk.yellow("Npc and player don't share the same room"));
-                world.removeBattleLinkers(dirty, { 'battle_linker_id': battle_linker.id });
+                world.removeBattleLinkers(io, dirty, { 'battle_linker_id': battle_linker.id });
                 return false;
             }
 
@@ -1357,7 +1280,7 @@ module.exports = function(main, io, mysql, pool, chalk, log, world, inventory, g
 
             if(calculating_range > 8) {
                 log(chalk.yellow("Npc and player are too far apart"));
-                world.removeBattleLinkers(dirty, { 'battle_linker_id': battle_linker.id });
+                world.removeBattleLinkers(io, dirty, { 'battle_linker_id': battle_linker.id });
                 return false;
             }
 
@@ -1398,10 +1321,10 @@ module.exports = function(main, io, mysql, pool, chalk, log, world, inventory, g
         }
     }
 
-    module.npcAttackPlayer = npcAttackPlayer;
+    exports.npcAttackPlayer = npcAttackPlayer;
 
     //  data:   attacking_object_index, defending_object_index
-    async function objectAttackObject(dirty, battle_linker, data = false) {
+    async function objectAttackObject(io, dirty, battle_linker, data = false) {
         try {
 
             let attacking_object_index = -1;
@@ -1420,7 +1343,7 @@ module.exports = function(main, io, mysql, pool, chalk, log, world, inventory, g
             if(attacking_object_index === -1) {
                 log(chalk.yellow("Could not get the attacking object"));
                 if(battle_linker) {
-                    world.removeBattleLinkers(dirty, { 'battle_linker_id': battle_linker.id });
+                    world.removeBattleLinkers(io, dirty, { 'battle_linker_id': battle_linker.id });
                 }
 
                 return false;
@@ -1430,19 +1353,19 @@ module.exports = function(main, io, mysql, pool, chalk, log, world, inventory, g
                 log(chalk.yellow("Could not get the defending object"));
 
                 if(battle_linker) {
-                    world.removeBattleLinkers(dirty, { 'battle_linker_id': battle_linker.id });
+                    world.removeBattleLinkers(io, dirty, { 'battle_linker_id': battle_linker.id });
                 }
 
                 return false;
             }
 
-            let attacking_object_info = await world.getObjectCoordAndRoom(dirty, attacking_object_index);
-            let defending_object_info = await world.getObjectCoordAndRoom(dirty, defending_object_index);
+            let attacking_object_info = await game_object.getCoordAndRoom(dirty, attacking_object_index);
+            let defending_object_info = await game_object.getCoordAndRoom(dirty, defending_object_index);
 
             if(attacking_object_info.coord === false) {
                 log(chalk.yellow("Could not get the attacking object coord"));
                 if(battle_linker) {
-                    world.removeBattleLinkers(dirty, { 'battle_linker_id': battle_linker.id });
+                    world.removeBattleLinkers(io, dirty, { 'battle_linker_id': battle_linker.id });
                 }
 
                 return false;
@@ -1451,7 +1374,7 @@ module.exports = function(main, io, mysql, pool, chalk, log, world, inventory, g
             if(defending_object_info.coord === false) {
                 log(chalk.yellow("Could not get the defending object coord"));
                 if(battle_linker) {
-                    world.removeBattleLinkers(dirty, { 'battle_linker_id': battle_linker.id });
+                    world.removeBattleLinkers(io, dirty, { 'battle_linker_id': battle_linker.id });
                 }
 
                 return false;
@@ -1460,7 +1383,7 @@ module.exports = function(main, io, mysql, pool, chalk, log, world, inventory, g
             if(attacking_object_info.room !== defending_object_info.room) {
                 log(chalk.yellow("Objects don't share the same room"));
                 if(battle_linker) {
-                    world.removeBattleLinkers(dirty, { 'battle_linker_id': battle_linker.id });
+                    world.removeBattleLinkers(io, dirty, { 'battle_linker_id': battle_linker.id });
                 }
 
                 return false;
@@ -1476,7 +1399,7 @@ module.exports = function(main, io, mysql, pool, chalk, log, world, inventory, g
 
             if(calculating_range > 8) {
                 log(chalk.yellow("Objects are too far apart"));
-                world.removeBattleLinkers(dirty, { 'battle_linker_id': battle_linker.id });
+                world.removeBattleLinkers(io, dirty, { 'battle_linker_id': battle_linker.id });
                 return false;
             }
 
@@ -1486,13 +1409,13 @@ module.exports = function(main, io, mysql, pool, chalk, log, world, inventory, g
             let attack = object_attack_profile.damage_amount;
             console.log("Got attack object damage types as: ");
             console.log(object_attack_profile.damage_types);
-            let defense = await calculateObjectDefense(dirty, defending_object_index);
+            let defense = await game_object.calculateDefense(dirty, defending_object_index);
 
             // For whatever reason, the object has no more attacking power (ships, batteries, etc). Remove the battle linker
             if(attack === 0) {
                 console.log("No attack value. Removing battle linker");
 
-                await world.removeBattleLinkers(dirty, { 'battle_linker_id': battle_linker.id });
+                await world.removeBattleLinkers(io, dirty, { 'battle_linker_id': battle_linker.id });
 
                 return false;
             }
@@ -1561,7 +1484,7 @@ module.exports = function(main, io, mysql, pool, chalk, log, world, inventory, g
             }
 
             // No AI - Do the attack/defense normally
-            await game.damageObject(dirty, { 'object_index': defending_object_index, 'damage_amount': damage_amount,
+            await game_object.damage(dirty, { 'object_index': defending_object_index, 'damage_amount': damage_amount,
                 'battle_linker': battle_linker, 'object_info': defending_object_info, 'calculating_range': calculating_range,
                 'damage_types': object_attack_profile.damage_types,
                 'damage_source_type': 'object', 'damage_source_id': dirty.objects[attacking_object_index].id });
@@ -1575,7 +1498,7 @@ module.exports = function(main, io, mysql, pool, chalk, log, world, inventory, g
 
 
     //  data:   attacking_object_index   |   defending_planet_index
-    async function objectAttackPlanet(dirty, battle_linker, data = false) {
+    async function objectAttackPlanet(io, dirty, battle_linker, data = false) {
         try {
 
             let attacking_object_index = -1;
@@ -1594,7 +1517,7 @@ module.exports = function(main, io, mysql, pool, chalk, log, world, inventory, g
             if(attacking_object_index === -1) {
                 log(chalk.yellow("Could not get the attacking object"));
                 if(battle_linker) {
-                    world.removeBattleLinkers(dirty, { 'battle_linker_id': battle_linker.id });
+                    world.removeBattleLinkers(io, dirty, { 'battle_linker_id': battle_linker.id });
                 }
 
                 return false;
@@ -1604,19 +1527,19 @@ module.exports = function(main, io, mysql, pool, chalk, log, world, inventory, g
                 log(chalk.yellow("Could not get the defending planet"));
 
                 if(battle_linker) {
-                    world.removeBattleLinkers(dirty, { 'battle_linker_id': battle_linker.id });
+                    world.removeBattleLinkers(io, dirty, { 'battle_linker_id': battle_linker.id });
                 }
 
                 return false;
             }
 
-            let attacking_object_info = await world.getObjectCoordAndRoom(dirty, attacking_object_index);
-            let defending_planet_info = await world.getPlanetCoordAndRoom(dirty, defending_planet_index);
+            let attacking_object_info = await game_object.getCoordAndRoom(dirty, attacking_object_index);
+            let defending_planet_info = await game_object.getCoordAndRoom(dirty, defending_planet_index);
 
             if(attacking_object_info.coord === false) {
                 log(chalk.yellow("Could not get the attacking object coord"));
                 if(battle_linker) {
-                    world.removeBattleLinkers(dirty, { 'battle_linker_id': battle_linker.id });
+                    world.removeBattleLinkers(io, dirty, { 'battle_linker_id': battle_linker.id });
                 }
 
                 return false;
@@ -1625,7 +1548,7 @@ module.exports = function(main, io, mysql, pool, chalk, log, world, inventory, g
             if(defending_planet_info.coord === false) {
                 log(chalk.yellow("Could not get the defending planet coord"));
                 if(battle_linker) {
-                    world.removeBattleLinkers(dirty, { 'battle_linker_id': battle_linker.id });
+                    world.removeBattleLinkers(io, dirty, { 'battle_linker_id': battle_linker.id });
                 }
 
                 return false;
@@ -1634,7 +1557,7 @@ module.exports = function(main, io, mysql, pool, chalk, log, world, inventory, g
             if(attacking_object_info.room !== 'galaxy') {
                 log(chalk.yellow("Can't attack a planet if you aren't in the galaxy"));
                 if(battle_linker) {
-                    world.removeBattleLinkers(dirty, { 'battle_linker_id': battle_linker.id });
+                    world.removeBattleLinkers(io, dirty, { 'battle_linker_id': battle_linker.id });
                 }
 
                 return false;
@@ -1650,7 +1573,7 @@ module.exports = function(main, io, mysql, pool, chalk, log, world, inventory, g
 
             if(calculating_range > 10) {
                 log(chalk.yellow("Object and planet are too far apart"));
-                world.removeBattleLinkers(dirty, { 'battle_linker_id': battle_linker.id });
+                world.removeBattleLinkers(io, dirty, { 'battle_linker_id': battle_linker.id });
                 return false;
             }
 
@@ -1668,7 +1591,7 @@ module.exports = function(main, io, mysql, pool, chalk, log, world, inventory, g
             if(attack === 0) {
                 console.log("No attack value. Removing battle linker");
 
-                await world.removeBattleLinkers(dirty, { 'battle_linker_id': battle_linker.id });
+                await world.removeBattleLinkers(io, dirty, { 'battle_linker_id': battle_linker.id });
 
                 return false;
             }
@@ -1755,13 +1678,13 @@ module.exports = function(main, io, mysql, pool, chalk, log, world, inventory, g
         }
     }
 
-    async function objectAttackPlayer(dirty, battle_linker, data = false) {
+    async function objectAttackPlayer(io, dirty, battle_linker, data = false) {
 
         try {
 
             if(battle_linker && !io.sockets.connected[battle_linker.being_attacked_socket_id]) {
                 log(chalk.yellow("Player with being_attacked_socket_id: " + battle_linker.being_attacked_socket_id + " is no longer connected. Removing"));
-                world.removeBattleLinkers(dirty, { 'battle_linker_id': battle_linker.id });
+                world.removeBattleLinkers(io, dirty, { 'battle_linker_id': battle_linker.id });
                 return;
             }
 
@@ -1779,7 +1702,7 @@ module.exports = function(main, io, mysql, pool, chalk, log, world, inventory, g
 
                 if(battle_linker) {
                     log(chalk.yellow("Could not find object id: " + battle_linker.attacking_id));
-                    world.removeBattleLinkers(dirty, { 'object_id': battle_linker.attacking_id });
+                    world.removeBattleLinkers(io, dirty, { 'object_id': battle_linker.attacking_id });
                 }
 
 
@@ -1799,7 +1722,7 @@ module.exports = function(main, io, mysql, pool, chalk, log, world, inventory, g
                 log(chalk.yellow("Could not find player"));
                 if(battle_linker) {
                     log(chalk.yellow("Could not find player id: " + battle_linker.being_attacked_id + ". player_index: " + player_index));
-                    world.removeBattleLinkers(dirty, { 'player_id': battle_linker.being_attacked_id });
+                    world.removeBattleLinkers(io, dirty, { 'player_id': battle_linker.being_attacked_id });
                 }
 
                 return;
@@ -1807,24 +1730,24 @@ module.exports = function(main, io, mysql, pool, chalk, log, world, inventory, g
 
 
             let object_type_index = main.getObjectTypeIndex(dirty.objects[object_index].object_type_id);
-            let object_info = await world.getObjectCoordAndRoom(dirty, object_index);
+            let object_info = await game_object.getCoordAndRoom(dirty, object_index);
             let player_info = await world.getPlayerCoordAndRoom(dirty, player_index);
 
             if(object_info.coord === false) {
                 log(chalk.yellow("Could not get the attacking object coord"));
-                world.removeBattleLinkers(dirty, { 'battle_linker_id': battle_linker.id });
+                world.removeBattleLinkers(io, dirty, { 'battle_linker_id': battle_linker.id });
                 return false;
             }
 
             if(player_info.coord === false) {
                 log(chalk.yellow("Could not get the defending player coord"));
-                world.removeBattleLinkers(dirty, { 'battle_linker_id': battle_linker.id });
+                world.removeBattleLinkers(io, dirty, { 'battle_linker_id': battle_linker.id });
                 return false;
             }
 
             if(object_info.room !== player_info.room) {
                 log(chalk.yellow("Object and player don't share the same room"));
-                world.removeBattleLinkers(dirty, { 'battle_linker_id': battle_linker.id });
+                world.removeBattleLinkers(io, dirty, { 'battle_linker_id': battle_linker.id });
                 return false;
             }
 
@@ -1834,7 +1757,7 @@ module.exports = function(main, io, mysql, pool, chalk, log, world, inventory, g
 
             if(calculating_range > 8) {
                 log(chalk.yellow("Object and player are too far apart"));
-                world.removeBattleLinkers(dirty, { 'battle_linker_id': battle_linker.id });
+                world.removeBattleLinkers(io, dirty, { 'battle_linker_id': battle_linker.id });
                 return false;
             }
 
@@ -1885,14 +1808,14 @@ module.exports = function(main, io, mysql, pool, chalk, log, world, inventory, g
 
 
 
-    async function playerAttackMonster(dirty, battle_linker) {
+    async function playerAttackMonster(io, pool, dirty, battle_linker) {
 
         try {
             //console.time("playerAttackMonster");
 
             if(!io.sockets.connected[battle_linker.socket_id]) {
                 console.log("Player is not connected");
-                world.removeBattleLinkers(dirty, { 'battle_linker_id': battle_linker.id });
+                world.removeBattleLinkers(io, dirty, { 'battle_linker_id': battle_linker.id });
                 return;
             }
 
@@ -1902,24 +1825,24 @@ module.exports = function(main, io, mysql, pool, chalk, log, world, inventory, g
 
             if(monster_index === -1) {
                 log(chalk.yellow("Could not find monster id: " + battle_linker.being_attacked_id));
-                world.removeBattleLinkers(dirty, { 'monster_id': battle_linker.being_attacked_id });
+                world.removeBattleLinkers(io, dirty, { 'monster_id': battle_linker.being_attacked_id });
                 return;
             }
 
 
             if(player_index === -1) {
                 log(chalk.yellow("Could not find player id: " + battle_linker.attacking_id));
-                world.removeBattleLinkers(dirty, { 'player_id': battle_linker.attacking_id });
+                world.removeBattleLinkers(io, dirty, { 'player_id': battle_linker.attacking_id });
                 return;
             }
 
 
             let player_info = await world.getPlayerCoordAndRoom(dirty, player_index);
-            let monster_info = await world.getMonsterCoordAndRoom(dirty, monster_index);
+            let monster_info = await monster.getCoordAndRoom(dirty, monster_index);
 
             if(player_info.coord === false) {
                 log(chalk.yellow("Could not get the player coord"));
-                world.removeBattleLinkers(dirty, { 'battle_linker_id': battle_linker.id });
+                world.removeBattleLinkers(io, dirty, { 'battle_linker_id': battle_linker.id });
                 return false;
             }
 
@@ -1932,13 +1855,13 @@ module.exports = function(main, io, mysql, pool, chalk, log, world, inventory, g
 
             if(monster_info.coord === false) {
                 log(chalk.yellow("Could not get the monster coord"));
-                world.removeBattleLinkers(dirty, { 'battle_linker_id': battle_linker.id });
+                world.removeBattleLinkers(io, dirty, { 'battle_linker_id': battle_linker.id });
                 return false;
             }
 
             if(player_info.room !== monster_info.room) {
                 log(chalk.yellow("Player and monster don't share the same room"));
-                world.removeBattleLinkers(dirty, { 'battle_linker_id': battle_linker.id });
+                world.removeBattleLinkers(io, dirty, { 'battle_linker_id': battle_linker.id });
                 return false;
             }
 
@@ -1949,7 +1872,7 @@ module.exports = function(main, io, mysql, pool, chalk, log, world, inventory, g
 
             if(calculating_range > 8) {
                 log(chalk.yellow("Player and object are too far apart"));
-                world.removeBattleLinkers(dirty, { 'battle_linker_id': battle_linker.id });
+                world.removeBattleLinkers(io, dirty, { 'battle_linker_id': battle_linker.id });
                 return false;
             }
 
@@ -1957,7 +1880,7 @@ module.exports = function(main, io, mysql, pool, chalk, log, world, inventory, g
 
             let attack = player_attack_profile.damage_amount;
             //console.log("Player attack is: " + attack);
-            let defense = await calculateMonsterDefense(dirty, monster_index, player_attack_profile.damage_types);
+            let defense = await monster.calculateDefense(dirty, monster_index, player_attack_profile.damage_types);
 
 
             if(attack <= defense) {
@@ -1990,7 +1913,7 @@ module.exports = function(main, io, mysql, pool, chalk, log, world, inventory, g
             //console.log("Sending damage types to game.damageMonster:");
             //console.log(player_attack_profile.damage_types);
 
-            await game.damageMonster(dirty, { 'monster_index': monster_index, 'damage_amount': damage_amount,
+            await monster.damage(io, pool, dirty, { 'monster_index': monster_index, 'damage_amount': damage_amount,
                 'damage_types': player_attack_profile.damage_types,
                 'battle_linker': battle_linker, 'monster_info': monster_info, 'calculating_range': calculating_range });
 
@@ -2069,7 +1992,7 @@ module.exports = function(main, io, mysql, pool, chalk, log, world, inventory, g
 
     }
 
-    async function playerAttackNpc(dirty, battle_linker) {
+    async function playerAttackNpc(io, dirty, battle_linker) {
 
         try {
             console.log("Have that player " + battle_linker.attacking_id + " is attacking npc: " + battle_linker.being_attacked_id);
@@ -2077,7 +2000,7 @@ module.exports = function(main, io, mysql, pool, chalk, log, world, inventory, g
 
             if(!io.sockets.connected[battle_linker.socket_id]) {
                 console.log("Player is not connected");
-                world.removeBattleLinkers(dirty, {'battle_linker_id': battle_linker.id });
+                world.removeBattleLinkers(io, dirty, {'battle_linker_id': battle_linker.id });
                 return;
             }
 
@@ -2087,13 +2010,13 @@ module.exports = function(main, io, mysql, pool, chalk, log, world, inventory, g
 
             if(npc_index === -1) {
                 log(chalk.yellow("Could not find NPC id: " + battle_linker.being_attacked_id));
-                world.removeBattleLinkers(dirty, { 'npc_id': battle_linker.being_attacked_id });
+                world.removeBattleLinkers(io, dirty, { 'npc_id': battle_linker.being_attacked_id });
                 return;
             }
 
             if(player_index === -1) {
                 log(chalk.yellow("Could not find player id: " + battle_linker.attacking_id + ". player_index: " + player_index));
-                world.removeBattleLinkers(dirty, { 'player_id': battle_linker.attacking_id });
+                world.removeBattleLinkers(io, dirty, { 'player_id': battle_linker.attacking_id });
                 return;
             }
 
@@ -2102,7 +2025,7 @@ module.exports = function(main, io, mysql, pool, chalk, log, world, inventory, g
 
             if(player_info.coord === false) {
                 log(chalk.yellow("Could not get the player coord"));
-                world.removeBattleLinkers(dirty, { 'battle_linker_id': battle_linker.id });
+                world.removeBattleLinkers(io, dirty, { 'battle_linker_id': battle_linker.id });
                 return false;
             }
 
@@ -2115,13 +2038,13 @@ module.exports = function(main, io, mysql, pool, chalk, log, world, inventory, g
 
             if(npc_info.coord === false) {
                 log(chalk.yellow("Could not get the npc coord"));
-                world.removeBattleLinkers(dirty, { 'battle_linker_id': battle_linker.id });
+                world.removeBattleLinkers(io, dirty, { 'battle_linker_id': battle_linker.id });
                 return false;
             }
 
             if(player_info.room !== npc_info.room) {
                 log(chalk.yellow("Player and npc don't share the same room"));
-                world.removeBattleLinkers(dirty, { 'battle_linker_id': battle_linker.id });
+                world.removeBattleLinkers(io, dirty, { 'battle_linker_id': battle_linker.id });
                 return false;
             }
 
@@ -2131,7 +2054,7 @@ module.exports = function(main, io, mysql, pool, chalk, log, world, inventory, g
 
             if(calculating_range > 8) {
                 log(chalk.yellow("Player and npc are too far apart"));
-                world.removeBattleLinkers(dirty, { 'battle_linker_id': battle_linker.id });
+                world.removeBattleLinkers(io, dirty, { 'battle_linker_id': battle_linker.id });
                 return false;
             }
 
@@ -2202,13 +2125,13 @@ module.exports = function(main, io, mysql, pool, chalk, log, world, inventory, g
 
     }
 
-    async function playerAttackObject(dirty, battle_linker) {
+    async function playerAttackObject(io, dirty, battle_linker) {
 
         try {
 
             if(!io.sockets.connected[battle_linker.socket_id]) {
                 console.log("Player is not connected");
-                world.removeBattleLinkers(dirty, { 'battle_linker_id': battle_linker.id });
+                world.removeBattleLinkers(io, dirty, { 'battle_linker_id': battle_linker.id });
                 return;
             }
 
@@ -2217,22 +2140,22 @@ module.exports = function(main, io, mysql, pool, chalk, log, world, inventory, g
 
             if(object_index === -1) {
                 log(chalk.yellow("Could not find object id: " + battle_linker.being_attacked_id));
-                world.removeBattleLinkers(dirty, { 'object_id': battle_linker.being_attacked_id });
+                world.removeBattleLinkers(io, dirty, { 'object_id': battle_linker.being_attacked_id });
                 return;
             }
 
             if(player_index === -1) {
                 log(chalk.yellow("Could not find player id: " + battle_linker.attacking_id + ". player_index: " + player_index));
-                world.removeBattleLinkers(dirty, { 'player_id': battle_linker.attacking_id });
+                world.removeBattleLinkers(io, dirty, { 'player_id': battle_linker.attacking_id });
                 return;
             }
 
             let player_info = await world.getPlayerCoordAndRoom(dirty, player_index);
-            let object_info = await world.getObjectCoordAndRoom(dirty, object_index);
+            let object_info = await game_object.getCoordAndRoom(dirty, object_index);
 
             if(player_info.coord === false) {
                 log(chalk.yellow("Could not get the player coord"));
-                world.removeBattleLinkers(dirty, { 'battle_linker_id': battle_linker.id });
+                world.removeBattleLinkers(io, dirty, { 'battle_linker_id': battle_linker.id });
                 return false;
             }
 
@@ -2245,13 +2168,13 @@ module.exports = function(main, io, mysql, pool, chalk, log, world, inventory, g
 
             if(object_info.coord === false) {
                 log(chalk.yellow("Could not get the object coord"));
-                world.removeBattleLinkers(dirty, { 'battle_linker_id': battle_linker.id });
+                world.removeBattleLinkers(io, dirty, { 'battle_linker_id': battle_linker.id });
                 return false;
             }
 
             if(player_info.room !== object_info.room) {
                 log(chalk.yellow("Player and object don't share the same room"));
-                world.removeBattleLinkers(dirty, { 'battle_linker_id': battle_linker.id });
+                world.removeBattleLinkers(io, dirty, { 'battle_linker_id': battle_linker.id });
                 return false;
             }
 
@@ -2261,13 +2184,13 @@ module.exports = function(main, io, mysql, pool, chalk, log, world, inventory, g
 
             if(calculating_range > 8) {
                 log(chalk.yellow("Player and object are too far apart"));
-                world.removeBattleLinkers(dirty, { 'battle_linker_id': battle_linker.id });
+                world.removeBattleLinkers(io, dirty, { 'battle_linker_id': battle_linker.id });
                 return false;
             }
 
             let player_attack_profile = await calculatePlayerAttack(dirty, player_index, player_body_index, calculating_range);
             let attack = player_attack_profile.damage_amount;
-            let defense = await calculateObjectDefense(dirty, object_index);
+            let defense = await game_object.calculateDefense(dirty, object_index, player_attack_profile.damage_types);
 
 
             if(attack <= defense) {
@@ -2295,7 +2218,7 @@ module.exports = function(main, io, mysql, pool, chalk, log, world, inventory, g
             }
 
             // No AI - Do the attack/defense normally
-            await game.damageObject(dirty, { 'object_index': object_index, 'damage_amount': damage_amount,
+            await game_object.damage(dirty, { 'object_index': object_index, 'damage_amount': damage_amount,
                 'damage_types': player_attack_profile.damage_types,
                 'battle_linker': battle_linker, 'object_info': object_info, 'calculating_range': calculating_range });
 
@@ -2310,19 +2233,19 @@ module.exports = function(main, io, mysql, pool, chalk, log, world, inventory, g
 
     }
 
-    async function playerAttackPlayer(dirty, battle_linker) {
+    async function playerAttackPlayer(io, dirty, battle_linker) {
 
         try {
             console.log("In player attack player");
             if(!io.sockets.connected[battle_linker.socket_id]) {
                 log(chalk.yellow("Attacking player is no longer connected"));
-                world.removeBattleLinkers(dirty, { 'battle_linker_id': battle_linker.id });
+                world.removeBattleLinkers(io, dirty, { 'battle_linker_id': battle_linker.id });
                 return;
             }
 
             if(!io.sockets.connected[battle_linker.being_attacked_socket_id]) {
                 log(chalk.yellow("Being attacked player is no longer connected"));
-                world.removeBattleLinkers(dirty, { 'battle_linker_id': battle_linker.id });
+                world.removeBattleLinkers(io, dirty, { 'battle_linker_id': battle_linker.id });
                 return;
             }
 
@@ -2331,7 +2254,7 @@ module.exports = function(main, io, mysql, pool, chalk, log, world, inventory, g
 
             if(attacking_player_index === -1 || defending_player_index === -1) {
                 log(chalk.yellow("Couldn't find one of the players"));
-                world.removeBattleLinkers(dirty, { 'battle_linker_id': battle_linker.id });
+                world.removeBattleLinkers(io, dirty, { 'battle_linker_id': battle_linker.id });
                 return;
 
             }
@@ -2341,7 +2264,7 @@ module.exports = function(main, io, mysql, pool, chalk, log, world, inventory, g
 
             if(attacking_player_info.coord === false) {
                 log(chalk.yellow("Could not get the attacking player coord"));
-                world.removeBattleLinkers(dirty, { 'battle_linker_id': battle_linker.id });
+                world.removeBattleLinkers(io, dirty, { 'battle_linker_id': battle_linker.id });
                 return false;
             }
 
@@ -2354,13 +2277,13 @@ module.exports = function(main, io, mysql, pool, chalk, log, world, inventory, g
 
             if(defending_player_info.coord === false) {
                 log(chalk.yellow("Could not get the defending object coord"));
-                world.removeBattleLinkers(dirty, { 'battle_linker_id': battle_linker.id });
+                world.removeBattleLinkers(io, dirty, { 'battle_linker_id': battle_linker.id });
                 return false;
             }
 
             if(attacking_player_info.room !== defending_player_info.room) {
                 log(chalk.yellow("Players don't share the same room"));
-                world.removeBattleLinkers(dirty, { 'battle_linker_id': battle_linker.id });
+                world.removeBattleLinkers(io, dirty, { 'battle_linker_id': battle_linker.id });
                 return false;
             }
 
@@ -2370,7 +2293,7 @@ module.exports = function(main, io, mysql, pool, chalk, log, world, inventory, g
 
             if(calculating_range > 8) {
                 log(chalk.yellow("Players are too far apart"));
-                world.removeBattleLinkers(dirty, { 'battle_linker_id': battle_linker.id });
+                world.removeBattleLinkers(io, dirty, { 'battle_linker_id': battle_linker.id });
                 return false;
             }
 
@@ -2476,8 +2399,6 @@ module.exports = function(main, io, mysql, pool, chalk, log, world, inventory, g
         }
     }
 
-    module.removeFromEquipmentLinker = removeFromEquipmentLinker;
+    exports.removeFromEquipmentLinker = removeFromEquipmentLinker;
 
-    return module;
-}
 

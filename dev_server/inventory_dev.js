@@ -1,15 +1,21 @@
-module.exports = function(main, io, mysql, pool, chalk, log, world) {
+var io_handler = require('./io' + process.env.FILE_SUFFIX + '.js');
+var io = io_handler.io;
+var database = require('./database' + process.env.FILE_SUFFIX + '.js');
+var pool = database.pool;
+const chalk = require('chalk');
+const log = console.log;
 
-    var module = {};
+const world = require('./world' + process.env.FILE_SUFFIX + '.js');
+const game_object = require('./game_object' + process.env.FILE_SUFFIX + '.js');
+const main = require('./space_abyss' + process.env.FILE_SUFFIX + '.js');
 
-    io.sockets.on('connection', function (socket) {
+var io;
 
-    });
 
     //  Params: adding_to_type   |   adding_to_id   |   amount   |   object_type_id   |     |   type_id
     //              object_id   |   price
 
-    async function addToInventory(socket, dirty, data) {
+    async function addToInventory(pool, socket, dirty, data) {
 
         try {
 
@@ -79,7 +85,7 @@ module.exports = function(main, io, mysql, pool, chalk, log, world) {
                     world.processInventoryItem(dirty, new_inventory_item_index);
 
                     // make sure the player has the object info
-                    world.sendObjectInfo(socket, false, dirty, object_index);
+                    game_object.sendInfo(socket, false, dirty, object_index);
 
                     // and send the new inventory item to the socket that took it
                     sendInventoryItem(socket, dirty, new_inventory_item_index, 'take');
@@ -207,7 +213,7 @@ module.exports = function(main, io, mysql, pool, chalk, log, world) {
 
             if(data.adding_to_type === 'player') {
 
-                await sendInventory(socket, false, dirty, 'player', socket.player_id);
+                await sendInventory(io, socket, false, dirty, 'player', socket.player_id);
             } else if(data.adding_to_type === 'object' && owner_object_index !== -1) {
 
                 //console.log("Owner object index was " + owner_object_index);
@@ -217,7 +223,7 @@ module.exports = function(main, io, mysql, pool, chalk, log, world) {
                     dirty.objects[owner_object_index].has_change = true;
 
                     //console.log("Calling sendObjectInfo from inventory.addToInventory");
-                    await world.sendObjectInfo(false, "planet_" + dirty.objects[owner_object_index].planet_id, dirty, owner_object_index);
+                    await game_object.sendInfo(false, "planet_" + dirty.objects[owner_object_index].planet_id, dirty, owner_object_index);
                 }
 
 
@@ -232,6 +238,7 @@ module.exports = function(main, io, mysql, pool, chalk, log, world) {
 
         } catch(error) {
             log(chalk.red("Error in inventory.addToInventory: " + error));
+            console.error(error);
         }
 
 
@@ -239,7 +246,7 @@ module.exports = function(main, io, mysql, pool, chalk, log, world) {
 
 
 
-    module.addToInventory = addToInventory;
+    exports.addToInventory = addToInventory;
 
 
     async function buy(socket, dirty, data) {
@@ -272,30 +279,30 @@ module.exports = function(main, io, mysql, pool, chalk, log, world) {
                             let adding_to_data = { 'adding_to_type':'player', 'adding_to_id':socket.player_id,
                                 'object_type_id': dirty.inventory_items[inventory_item_index].object_type_id, 'amount':1};
 
-                            await addToInventory(socket, dirty, adding_to_data);
+                            await addToInventory(pool, socket, dirty, adding_to_data);
                         } else if(dirty.inventory_items[inventory_item_index].floor_type_id) {
                             let adding_to_data = { 'adding_to_type':'player', 'adding_to_id':socket.player_id,
                                 'floor_type_id': dirty.inventory_items[inventory_item_index].floor_type_id, 'amount':1};
 
-                            await addToInventory(socket, dirty, adding_to_data);
+                            await addToInventory(pool, socket, dirty, adding_to_data);
                         }
 
                         // remove the credits from the buying player
                         let remove_player_inventory_data = { 'inventory_item_id': dirty.inventory_items[player_inventory_item_index].id,
                             'amount': dirty.inventory_items[inventory_item_index].price };
-                        await removeFromInventory(socket, dirty, remove_player_inventory_data);
+                        await removeFromInventory(io, pool, socket, dirty, remove_player_inventory_data);
 
                         // add the credits to whoever owned that inventory item
                         if(dirty.inventory_items[inventory_item_index].player_id) {
                             let adding_to_data = { 'adding_to_type':'player', 'adding_to_id':socket.player_id,
                                 'object_type_id': 74, 'amount': dirty.inventory_items[inventory_item_index].price };
 
-                            await addToInventory(socket, dirty, adding_to_data);
+                            await addToInventory(pool, socket, dirty, adding_to_data);
                         } else if(dirty.inventory_items[inventory_item_index].npc_id) {
                             let adding_to_data = { 'adding_to_type':'npc', 'adding_to_id': dirty.inventory_items[inventory_item_index].npc_id,
                                 'object_type_id': 74, 'amount': dirty.inventory_items[inventory_item_index].price };
 
-                            await addToInventory(socket, dirty, adding_to_data);
+                            await addToInventory(pool, socket, dirty, adding_to_data);
                         } else if(dirty.inventory_items[inventory_item_index].owned_by_object_id) {
 
                             // crap now we need to get the owner of the object. Player or npc
@@ -306,20 +313,20 @@ module.exports = function(main, io, mysql, pool, chalk, log, world) {
                                     let adding_to_data = { 'adding_to_type':'player', 'adding_to_id': dirty.objects[object_index].player_id,
                                         'object_type_id': 74, 'amount': dirty.inventory_items[inventory_item_index].price };
 
-                                    await addToInventory(socket, dirty, adding_to_data);
+                                    await addToInventory(pool, socket, dirty, adding_to_data);
 
                                 } else if(dirty.objects[object_index].npc_id) {
                                     let adding_to_data = { 'adding_to_type':'npc', 'adding_to_id': dirty.objects[object_index].npc_id,
                                         'object_type_id': 74, 'amount': dirty.inventory_items[inventory_item_index].price };
 
-                                    await addToInventory(socket, dirty, adding_to_data);
+                                    await addToInventory(pool, socket, dirty, adding_to_data);
                                 }
                             }
                         }
 
                         // remove the item from the old place
                         let remove_inventory_data = { 'inventory_item_id': dirty.inventory_items[player_inventory_item_index].id, 'amount': 1};
-                        await removeFromInventory(socket, dirty, remove_inventory_data);
+                        await removeFromInventory(io, pool, socket, dirty, remove_inventory_data);
 
 
 
@@ -337,7 +344,7 @@ module.exports = function(main, io, mysql, pool, chalk, log, world) {
 
     }
 
-    module.buy = buy;
+    exports.buy = buy;
 
 
     // Placing something in something else
@@ -371,7 +378,7 @@ module.exports = function(main, io, mysql, pool, chalk, log, world) {
             }
 
 
-            let storage_object_info = await world.getObjectCoordAndRoom(dirty, storage_object_index);
+            let storage_object_info = await game_object.getCoordAndRoom(dirty, storage_object_index);
 
             let storage_object_type_index = main.getObjectTypeIndex(dirty.objects[storage_object_index].object_type_id);
 
@@ -411,7 +418,7 @@ module.exports = function(main, io, mysql, pool, chalk, log, world) {
                     return false;
                 }
 
-                let object_info = await world.getObjectCoordAndRoom(dirty, storage_object_index);
+                let object_info = await game_object.getCoordAndRoom(dirty, storage_object_index);
                 let using_conversion_linker = false;
 
                 // TODO - gotta PICK ONE!
@@ -443,13 +450,13 @@ module.exports = function(main, io, mysql, pool, chalk, log, world) {
                         }
 
                         // reduce the amount in the inventory item
-                        await removeFromInventory(socket, dirty, { 'inventory_item_id': dirty.inventory_items[inventory_item_index].id, 'amount': 1 });
+                        await removeFromInventory(io, pool, socket, dirty, { 'inventory_item_id': dirty.inventory_items[inventory_item_index].id, 'amount': 1 });
 
                         dirty.objects[storage_object_index].energy = new_storage_amount;
                         dirty.objects[storage_object_index].has_change = true;
 
                         // send the updated object info
-                        world.sendObjectInfo(socket, object_info.room, dirty, storage_object_index);
+                        game_object.sendInfo(socket, object_info.room, dirty, storage_object_index);
 
                     }
 
@@ -480,15 +487,15 @@ module.exports = function(main, io, mysql, pool, chalk, log, world) {
 
                         let damage_amount = dirty.object_types[storage_object_type_index].complexity - farming_level;
 
-                        await game.damageObject(dirty, { 'object_index': storage_object_index, 'damage_amount': damage_amount,
+                        await game_object.damage(dirty, { 'object_index': storage_object_index, 'damage_amount': damage_amount,
                              'object_info': object_info });
-                        world.sendObjectInfo(socket, object_info.room, dirty, storage_object_index);
+                        await game_object.sendInfo(socket, object_info.room, dirty, storage_object_index);
 
 
                         socket.emit('chat', { 'message': 'Your attempt to help has failed, and you have damaged it instead', 'scope': 'system' });
 
                         // and still reduce our inventory
-                        await removeFromInventory(socket, dirty, { 'inventory_item_id': dirty.inventory_items[inventory_item_index].id, 'amount': 1 });
+                        await removeFromInventory(io, pool, socket, dirty, { 'inventory_item_id': dirty.inventory_items[inventory_item_index].id, 'amount': 1 });
 
                         await world.increasePlayerSkill(socket, dirty, player_index, ['farming']);
 
@@ -501,7 +508,7 @@ module.exports = function(main, io, mysql, pool, chalk, log, world) {
                     console.log("Success");
 
                     // and still reduce our inventory
-                    await removeFromInventory(socket, dirty, { 'inventory_item_id': dirty.inventory_items[inventory_item_index].id, 'amount': 1 });
+                    await removeFromInventory(io, pool, socket, dirty, { 'inventory_item_id': dirty.inventory_items[inventory_item_index].id, 'amount': 1 });
 
                     let new_storage_object_hp = dirty.objects[storage_object_index].current_hp + using_conversion_linker.output_amount;
 
@@ -517,7 +524,7 @@ module.exports = function(main, io, mysql, pool, chalk, log, world) {
                     dirty.objects[storage_object_index].current_hp = new_storage_object_hp;
                     dirty.objects[storage_object_index].has_change = true;
 
-                    await world.sendObjectInfo(socket, object_info.room, dirty, storage_object_index);
+                    await game_object.sendInfo(socket, object_info.room, dirty, storage_object_index);
 
 
                     socket.emit('chat', { 'message': 'You helped it stay in good condition', 'scope': 'system' });
@@ -535,7 +542,7 @@ module.exports = function(main, io, mysql, pool, chalk, log, world) {
                     // For now just test adding to the player
                     let adding_to_data = { 'adding_to_type': 'player', 'adding_to_id': dirty.players[socket.player_index].id,
                         'object_type_id': using_conversion_linker.output_object_type_id, 'amount':using_conversion_linker.output_amount };
-                    await addToInventory(socket, dirty, adding_to_data);
+                    await addToInventory(pool, socket, dirty, adding_to_data);
 
 
 
@@ -573,16 +580,16 @@ module.exports = function(main, io, mysql, pool, chalk, log, world) {
                         'floor_type_id': dirty.inventory_items[inventory_item_index].floor_type_id, 'amount':put_amount };
                 }
 
-                await addToInventory(socket, dirty, adding_to_data);
+                await addToInventory(pool, socket, dirty, adding_to_data);
 
                 let remove_inventory_data = { 'inventory_item_id': dirty.inventory_items[inventory_item_index].id,
                     'amount': put_amount };
-                await removeFromInventory(socket, dirty, remove_inventory_data);
+                await removeFromInventory(io, pool, socket, dirty, remove_inventory_data);
                 //removeInventoryItem(socket, dirty, inventory_item.id);
 
-                await sendInventory(socket, false, dirty, 'player', socket.player_id);
-                await world.sendObjectInfo(socket, storage_object_info.room, dirty, storage_object_index);
-                await sendInventory(socket, storage_object_info.room, dirty, 'object', dirty.objects[storage_object_index].id);
+                await sendInventory(io, socket, false, dirty, 'player', socket.player_id);
+                await game_object.sendInfo(socket, storage_object_info.room, dirty, storage_object_index);
+                await sendInventory(io, socket, storage_object_info.room, dirty, 'object', dirty.objects[storage_object_index].id);
             }
 
 
@@ -591,7 +598,7 @@ module.exports = function(main, io, mysql, pool, chalk, log, world) {
         }
     }
 
-    module.place = place;
+    exports.place = place;
 
     function priceUpdate(socket, data) {
         console.log("Player is updating price for " + data.inventory_item_id + " to " + data.new_price);
@@ -618,14 +625,14 @@ module.exports = function(main, io, mysql, pool, chalk, log, world) {
         });
     }
 
-    module.priceUpdate = priceUpdate;
+    exports.priceUpdate = priceUpdate;
 
     /*
             socket   |   dirty
               (player_id  |   object_id    |   removing_object_type_id )   OR   (inventory_item_id)   |   amount
      */
 
-    async function removeFromInventory(socket, dirty, data) {
+    async function removeFromInventory(io, pool, socket, dirty, data) {
 
         try {
             //log(chalk.green("\nIn removeFromInventory"));
@@ -736,11 +743,11 @@ module.exports = function(main, io, mysql, pool, chalk, log, world) {
 
     }
 
-    module.removeFromInventory = removeFromInventory;
+    exports.removeFromInventory = removeFromInventory;
 
 
     function removeSpawnedObject(object_id) {
-        log(chalk.red("calling old funciont removeSpawnedObject"));
+        log(chalk.red("calling old function removeSpawnedObject"));
         return;
         sql = "UPDATE objects SET has_spawned_object = false WHERE id = ?";
         inserts = [object_id];
@@ -750,12 +757,12 @@ module.exports = function(main, io, mysql, pool, chalk, log, world) {
         });
     }
 
-    module.removeSpawnedObject = removeSpawnedObject;
+    exports.removeSpawnedObject = removeSpawnedObject;
 
 
 
     // For sending the entire inventory of a player, object, ect
-    async function sendInventory(socket, room, dirty, type, type_id) {
+    async function sendInventory(io, socket, room, dirty, type, type_id) {
 
         try {
             let inventory_items = false;
@@ -784,11 +791,12 @@ module.exports = function(main, io, mysql, pool, chalk, log, world) {
             }
         } catch(error) {
             log(chalk.red("Error in inventory.sendInventory:" + error));
+            console.error(error);
         }
 
     }
 
-    module.sendInventory = sendInventory;
+    exports.sendInventory = sendInventory;
 
     // For sending one inventory_item
     function sendInventoryItem(socket, dirty, inventory_item_index, action) {
@@ -811,10 +819,10 @@ module.exports = function(main, io, mysql, pool, chalk, log, world) {
 
     }
 
-    module.sendInventoryItem = sendInventoryItem;
+    exports.sendInventoryItem = sendInventoryItem;
 
     // inventory_item_id   |
-    async function take(socket, dirty, data) {
+    async function take(io, pool, socket, dirty, data) {
 
         try {
             let inventory_item_id = parseInt(data.inventory_item_id);
@@ -844,8 +852,8 @@ module.exports = function(main, io, mysql, pool, chalk, log, world) {
                     'object_type_id': dirty.inventory_items[inventory_item_index].object_type_id, 'amount':take_amount };
 
                 // Trying to not await for these two. Since they do mysql inserts and deletes
-                addToInventory(socket, dirty, adding_to_data);
-                removeFromInventory(socket, dirty, { 'inventory_item_id': dirty.inventory_items[inventory_item_index].id,
+                await addToInventory(pool, socket, dirty, adding_to_data);
+                await removeFromInventory(io, pool, socket, dirty, { 'inventory_item_id': dirty.inventory_items[inventory_item_index].id,
                     'amount': dirty.inventory_items[inventory_item_index].amount });
 
             } else {
@@ -853,8 +861,8 @@ module.exports = function(main, io, mysql, pool, chalk, log, world) {
                     'object_type_id': dirty.inventory_items[inventory_item_index].object_type_id, 'amount':take_amount };
 
                 // Trying to not await for these two. Since they do mysql inserts and deletes
-                addToInventory(socket, dirty, adding_to_data);
-                removeFromInventory(socket, dirty, { 'inventory_item_id': dirty.inventory_items[inventory_item_index].id,
+                await addToInventory(pool, socket, dirty, adding_to_data);
+                await removeFromInventory(io, pool, socket, dirty, { 'inventory_item_id': dirty.inventory_items[inventory_item_index].id,
                     'amount': take_amount });
             }
 
@@ -866,7 +874,7 @@ module.exports = function(main, io, mysql, pool, chalk, log, world) {
 
     }
 
-    module.take = take;
+    exports.take = take;
 
 
     //      data:
@@ -933,13 +941,13 @@ module.exports = function(main, io, mysql, pool, chalk, log, world) {
             adding_to_data.amount = data.amount;
 
 
-            await removeFromInventory(socket, dirty, remove_inventory_data);
-            await sendInventory(socket, false, dirty, 'player', socket.player_id);
+            await removeFromInventory(io, pool, socket, dirty, remove_inventory_data);
+            await sendInventory(io, socket, false, dirty, 'player', socket.player_id);
 
 
 
 
-            await addToInventory(socket, dirty, adding_to_data);
+            await addToInventory(pool, socket, dirty, adding_to_data);
 
 
             // If this is something the npc wanted, we increase the relationship
@@ -965,7 +973,20 @@ module.exports = function(main, io, mysql, pool, chalk, log, world) {
         }
     }
 
-    module.transferInventory = transferInventory;
+    exports.transferInventory = transferInventory;
 
-    return module;
+
+
+/*
+module.exports = {
+
+    removeFromInventory,
+    sendInventory,
+
+    setIO: function(io) {
+        io = io;
+    }
+
 }
+
+*/

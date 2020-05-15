@@ -99,7 +99,7 @@ async function eat(socket, dirty, database_queue, data) {
         }
 
         let remove_inventory_data = { 'inventory_item_id': dirty.inventory_items[inventory_item_index].id, 'amount': 1};
-        inventory.removeFromInventory(socket, dirty, remove_inventory_data);
+        inventory.removeFromInventory(io, pool, socket, dirty, remove_inventory_data);
 
 
 
@@ -145,7 +145,7 @@ async function eat(socket, dirty, database_queue, data) {
         // see if the player or npc gets addicted
         // TODO support for npcs and addiction
         if(socket && dirty.race_eating_linkers[race_eating_linker_index].addiction_chance) {
-            let rand_result = getRandomIntInclusive(1,100);
+            let rand_result = helper.getRandomIntInclusive(1,100);
 
             if(rand_result <= dirty.race_eating_linkers[race_eating_linker_index].addiction_chance) {
                 // PLAYER IS ADDICTED
@@ -203,6 +203,15 @@ module.exports.eat = eat;
 
 
 //   (object_id   OR   object_index)   |   coord_index   |   planet_coord_index   |   ship_coord_index   |   reason (optional)
+/**
+ *
+ * @param socket
+ * @param dirty
+ * @param {Object} data
+ * @param {number=} data.object_id
+ * @param {number=} data.object_index
+ * @returns {Promise<boolean>}
+ */
 async function placeObject(socket, dirty, data) {
 
     try {
@@ -236,16 +245,19 @@ async function placeObject(socket, dirty, data) {
 
         // PORTAL
         if(dirty.objects[object_index].object_type_id === 47) {
-            let add_portal_data = {};
+            let place_portal_data = { };
 
             if(data.planet_coord_index) {
+                place_portal_data.planet_coord_index = data.planet_coord_index;
 
-                add_portal_data = { 'planet_coord_index': data.planet_coord_index};
             } else if(data.ship_coord_index) {
-                add_portal_data = { 'ship_coord_index': data.ship_coord_index};
+                place_portal_data.ship_coord_index = data.ship_coord_index;
             }
 
-            await game.addPortal(socket, dirty, add_portal_data);
+            await game.placePortal(io, socket, dirty, object_index, place_portal_data );
+
+            // Pretty sure this is inserting and
+            //await game.addPortal(socket, dirty, dirty.objects[object_index].id, add_portal_data);
 
         }
         // AI
@@ -429,6 +441,24 @@ async function placeObject(socket, dirty, data) {
 
 
 
+        }
+        // ELEVATOR
+        // It's actually all pretty standard with an elevator - we just need to make sure we mess with the elevator linkers afterwards
+        else if(dirty.object_types[object_type_index].id === 269) {
+
+
+            if(data.planet_coord_index) {
+                await updateCoordGeneric(socket, { 'planet_coord_index': data.planet_coord_index, 'object_index': object_index });
+                dirty.objects[object_index].planet_id = dirty.planet_coords[data.planet_coord_index].planet_id;
+                dirty.objects[object_index].has_change = true;
+            } else if(data.ship_coord_index) {
+
+                await updateCoordGeneric(socket, { 'ship_coord_index': data.ship_coord_index, 'object_index': object_index });
+                dirty.objects[object_index].ship_id = dirty.ship_coords[data.ship_coord_index].ship_id;
+                dirty.objects[object_index].has_change = true;
+            }
+
+            await world.manageElevatorLinkers(socket, dirty, dirty.objects[object_index].id);
         }
         // Default case - we can just update the coord
         else {

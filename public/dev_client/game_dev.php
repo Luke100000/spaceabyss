@@ -35,6 +35,9 @@ include('config.php');
 <head>
     <meta charset="UTF-8" />
     <title>Space Abyss</title>
+
+    <script src="client_functions.js"></script>
+    <script src="player.js"></script>
     <script src="//space.alphacoders.com/phaser-3.15.1.js"></script>
     <script src="//space.alphacoders.com/jquery-3.3.1.min.js"></script>
     <link href="//space.alphacoders.com/bulma-0.7.2/css/bulma.min.css" rel="stylesheet" media="screen">
@@ -607,6 +610,7 @@ include('config.php');
 
     var coords = [];
     var eating_linkers = [];
+    var elevator_linkers = [];
     var equipment_linkers = [];
     var corporations = [];
     var eating_linkers = [];
@@ -643,6 +647,7 @@ include('config.php');
     var rules = [];
     var salvaging_linkers = [];
     var ship_coords = [];
+    var skin_purchase_linkers = [];
     var user_player_attacking = [];
 
     var animations;
@@ -659,6 +664,7 @@ include('config.php');
     var energy_effect_sprite = false;
     var explosion_sprites = [];
     var fire_attack_sprite = false;
+    var heat_sprites = [];
     var melee_effect_sprite = false;
     var mining_sprite = false;
     var mining_beam_sprite = false;
@@ -786,11 +792,14 @@ include('config.php');
             this.load.spritesheet('player-cutter', 'https://space.alphacoders.com/cutter-animated.png',
                 { frameWidth: 64, frameHeight: 64, endFrame: 12 });
 
-            this.load.spritesheet('player-mlm', 'https://space.alphacoders.com/player-mlm-animated.png',
-                { frameWidth: 64, frameHeight: 64, endFrame: 36 });
+            this.load.spritesheet('player-galaxy', 'https://space.alphacoders.com/player-galaxy-animated.png',
+                { frameWidth: 64, frameHeight: 60, endFrame: 30 });
 
             this.load.spritesheet('player-human', 'https://space.alphacoders.com/player-human-animated.png',
                 { frameWidth: 64, frameHeight: 70, endFrame: 26 });
+
+            this.load.spritesheet('player-mlm', 'https://space.alphacoders.com/player-mlm-animated.png',
+                { frameWidth: 64, frameHeight: 64, endFrame: 36 });
 
             this.load.spritesheet('player-ruel', 'https://space.alphacoders.com/ruel-body-animated.png',
                 { frameWidth: 64, frameHeight: 64, endFrame: 36 });
@@ -849,7 +858,7 @@ include('config.php');
             this.load.spritesheet('cyberskell', 'https://space.alphacoders.com/cyberskell.png',
                 { frameWidth: 64, frameHeight: 64, endFrame: 2 });
             this.load.spritesheet('ddrone', 'https://space.alphacoders.com/ddrone.png',
-                { frameWidth: 64, frameHeight: 64, endFrame: 2 });
+                { frameWidth: 64, frameHeight: 64, endFrame: 19 });
             this.load.spritesheet('geno-rat', 'https://space.alphacoders.com/geno-rat.png',
                 { frameWidth: 64, frameHeight: 64, endFrame: 3 });
             this.load.spritesheet('glitched-god', 'https://space.alphacoders.com/glitched-god.png',
@@ -867,16 +876,16 @@ include('config.php');
             this.load.spritesheet('milk-slerm', 'https://space.alphacoders.com/milk-slerm.png',
                 { frameWidth: 64, frameHeight: 64, endFrame: 6 });
             this.load.spritesheet('mini-drone', 'https://space.alphacoders.com/mini-drone.png',
-                { frameWidth: 64, frameHeight: 64, endFrame: 2 });
+                { frameWidth: 64, frameHeight: 64, endFrame: 7 });
             this.load.spritesheet('monitor', 'https://space.alphacoders.com/monitor.png',
                 { frameWidth: 64, frameHeight: 64, endFrame: 2 });
 
             this.load.spritesheet('process', 'https://space.alphacoders.com/process.png',
-                { frameWidth: 32, frameHeight: 32, endFrame: 3 });
+                { frameWidth: 64, frameHeight: 64, endFrame: 6 });
             this.load.spritesheet('robot-janitor', 'https://space.alphacoders.com/robot-janitor.png',
                 { frameWidth: 64, frameHeight: 64, endFrame: 4 });
             this.load.spritesheet('scrapslog', 'https://space.alphacoders.com/scrapslog.png',
-                { frameWidth: 64, frameHeight: 64, endFrame: 2 });
+                { frameWidth: 68, frameHeight: 68, endFrame: 16 });
             this.load.spritesheet('slave', 'https://space.alphacoders.com/slave.png',
                 { frameWidth: 64, frameHeight: 64, endFrame: 1 });
             this.load.spritesheet('slaver', 'https://space.alphacoders.com/slaver.png',
@@ -941,6 +950,10 @@ include('config.php');
 
             this.load.spritesheet('fire_attack', 'https://space.alphacoders.com/Fire0.png', {
                 frameWidth: 64, frameHeight: 128, endFrame: 8
+            });
+
+            this.load.spritesheet('heat-effect', 'https://space.alphacoders.com/heat-effect.png', {
+                frameWidth: 64, frameHeight: 64, endFrame: 3
             });
 
             this.load.image('laser', 'https://space.alphacoders.com/laser.png');
@@ -1113,6 +1126,7 @@ include('config.php');
 
 
 
+            // PLAYER DESTROYER
             let player_destroyer_up_config = {
                 key: 'player-destroyer-up-animation',
                 frames: this.anims.generateFrameNumbers('player-destroyer', { start: 0, end: 0, first: 0 }),
@@ -1202,6 +1216,52 @@ include('config.php');
             this.anims.create(player_human_down_config);
 
 
+            // PLAYER GALAXY
+
+            let player_galaxy_idle_config = {
+                key: 'player-galaxy-idle-animation',
+                frames: this.anims.generateFrameNumbers('player-galaxy', { start: 0, end: 5, first: 5 }),
+                frameRate: 4,
+                repeat: -1
+            };
+            this.anims.create(player_galaxy_idle_config);
+
+
+            let player_galaxy_left_config = {
+                key: 'player-galaxy-left-animation',
+                frames: this.anims.generateFrameNumbers('player-galaxy', { start: 6, end: 11, first: 11 }),
+                frameRate: 4,
+                repeat: -1
+            };
+
+            this.anims.create(player_galaxy_left_config);
+
+            let player_galaxy_right_config = {
+                key: 'player-galaxy-right-animation',
+                frames: this.anims.generateFrameNumbers('player-galaxy', { start: 12, end: 17, first: 17 }),
+                frameRate: 4,
+                repeat: -1
+            };
+            this.anims.create(player_galaxy_right_config);
+
+            let player_galaxy_up_config = {
+                key: 'player-galaxy-up-animation',
+                frames: this.anims.generateFrameNumbers('player-galaxy', { start: 18, end: 23, first: 23 }),
+                frameRate: 4,
+                repeat: -1
+            };
+
+            this.anims.create(player_galaxy_up_config);
+
+            let player_galaxy_down_config = {
+                key: 'player-galaxy-down-animation',
+                frames: this.anims.generateFrameNumbers('player-galaxy', { start: 24, end: 29, first: 29 }),
+                frameRate: 4,
+                repeat: -1
+            };
+            this.anims.create(player_galaxy_down_config);
+
+
             // PLAYER MINING SHIP
 
             let player_mining_ship_left_config = {
@@ -1242,7 +1302,6 @@ include('config.php');
 
 
             // PLAYER MLM
-
 
             let player_mlm_idle_config = {
                 key: 'player-mlm-idle-animation',
@@ -1535,8 +1594,8 @@ include('config.php');
 
             let ddrone_config = {
                 key: 'ddrone-animation',
-                frames: this.anims.generateFrameNumbers('ddrone', { start: 0, end: 1, first: 1 }),
-                frameRate: 2,
+                frames: this.anims.generateFrameNumbers('ddrone', { start: 0, end: 18, first: 18 }),
+                frameRate: 6,
                 repeat: -1
             };
             this.anims.create(ddrone_config);
@@ -1599,8 +1658,8 @@ include('config.php');
 
             let mini_drone_config = {
                 key: 'mini-drone-animation',
-                frames: this.anims.generateFrameNumbers('mini-drone', { start: 0, end: 1, first: 1 }),
-                frameRate: 2,
+                frames: this.anims.generateFrameNumbers('mini-drone', { start: 0, end: 6, first: 6 }),
+                frameRate: 6,
                 repeat: -1
             };
             this.anims.create(mini_drone_config);
@@ -1617,8 +1676,8 @@ include('config.php');
 
             let process_config = {
                 key: 'process-animation',
-                frames: this.anims.generateFrameNumbers('process', { start: 0, end: 3, first: 3 }),
-                frameRate: 2,
+                frames: this.anims.generateFrameNumbers('process', { start: 0, end: 5, first: 5 }),
+                frameRate: 6,
                 repeat: -1
             };
             this.anims.create(process_config);
@@ -1633,8 +1692,8 @@ include('config.php');
 
             let scrapslog_config = {
                 key: 'scrapslog-animation',
-                frames: this.anims.generateFrameNumbers('scrapslog', { start: 0, end: 2, first: 2 }),
-                frameRate: 2,
+                frames: this.anims.generateFrameNumbers('scrapslog', { start: 0, end: 15, first: 15 }),
+                frameRate: 6,
                 repeat: -1
             };
             this.anims.create(scrapslog_config);
@@ -1830,6 +1889,15 @@ include('config.php');
             };
 
             this.anims.create(fire_attack_config);
+
+            var heat_effect_config = {
+                key: 'heat-effect',
+                frames: this.anims.generateFrameNumbers('heat-effect', { start: 0, end: 2, first: 0 } ),
+                frameRate: 10,
+                repeat: -1
+            };
+
+            this.anims.create(heat_effect_config);
 
             var melee_effect_config = {
                 key: 'melee-effect',
@@ -2033,7 +2101,9 @@ include('config.php');
                     players[i].frames_to_idle--;
 
                     if(players[i].frames_to_idle <= 0) {
-                        if(players[i].sprite.texture.key === 'player-human') {
+                        if(players[i].sprite.texture.key === 'player-galaxy') {
+                            players[i].sprite.anims.play('player-galaxy-idle-animation');
+                        } else if(players[i].sprite.texture.key === 'player-human') {
                             //console.log("Switching back to idle");
                             players[i].sprite.anims.play('player-human-idle-animation');
                         } else if(players[i].sprite.texture.key === 'player-mlm') {
@@ -2611,7 +2681,7 @@ include('config.php');
 
 
 <?php
-include_once("" . $client_functions_name);
+
 include_once("" . $client_click_name);
 include_once("" . $client_network_name);
 ?>

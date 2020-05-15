@@ -22,6 +22,8 @@ So we have a doctor NPC
 
 HACKING. THE VIEW I HAVEN'T MADE YET! Need a way to enter into virtual realm
 
+Things like energy storage could have a frame for not full, and a frame for full.
+
 A player body type that is resistant to acid - or armor that is especially useful for it. (I LIKE BOTH :p )
 
 
@@ -38,6 +40,15 @@ Repairman NPC that sits at a spaceport and will buy broken junk off you, repair 
 There's a high fail chance for complex things. Manufacturing skill helps. Certain monsters drop blueprints that will
  99% the success rate of manufacturing the item. Not really sure how I would want to implement blueprints. One time use?
  X times use?
+
+
+ Different types of engines change ship speeds.
+     How do we deal with ship speed?
+         Could dynamically calculate it based on the engines
+
+
+ Could give asteroids varrying complexity, to make some easier and some harder to mine.
+
 
 Biogrove planets can be our gaia type planets. Have a tree of life (think of a cooler name) npc spawn and have an AI at the bottom
     level of the planet. Tree of life NPC would follow NPCs on other planets controlling them/things
@@ -125,7 +136,9 @@ Implementing the market linkers, the bidding linkers, etc.
     Gotta get merchant npcs bidding on these things too
 
 
-Kind of a crazy one - could have living wood spaceships
+Living wood spaceships
+
+Ringworld style planet type - rectangular, not super deep.
 
 
 

@@ -386,6 +386,10 @@ Pyrorifle
 ******************** CONSUMABLES / STATUS CHANGERS ***************************
 *****************************************
 
+PLACES TO BROWSE WHEN FOOD IDEAS ARE HARD
+    https://starbounder.org/Food
+
+
 Addiction levels: none, slight, moderate, heavy
 
 Algae puffs
@@ -499,10 +503,6 @@ Yeast Steak
 
 
 
-
-
-
-
 Possible Consumables
     Nano-Virus (Currently that's a monster name). High defense.
     Nano-Bacteria. High attack
@@ -584,11 +584,14 @@ Pod ( drawn )
 
         Light freighter
 
-                    Freighter ( have image idea )
+                    Freighter ( Have Image Idea )
 
-        Tanker
 
-            Blockade Runner (being drawn)
+                        Heavy Freighter
+
+        Tanker (Have Image Idea)
+
+            Blockade Runner (drawn)
 
 
 
@@ -633,13 +636,13 @@ Pod ( drawn )
                             Colony Ship
                                 Worldship
                                 Stardome
-                                Cityship
+                                Cityship (More of a high tech version of a city station )
                                     Star Fortress - Tier 9
 
 
             Station
                 Asteroid Station
-                    City Station
+                    City Station (have 1 image idea)
 
 NPC SHIPS
     Prisonship
@@ -682,6 +685,8 @@ Pod
 
                 Power Cells (Fuel Cells?)
                 Fusion - Life Water (This is gonna be really limited...)
+
+                Living Wood drive - can add life water, or just wait for regen
 
 
 

@@ -1134,6 +1134,20 @@
 
         }
 
+
+        if(split_name[0] === 'skin' && split_name[1] === 'use') {
+            console.log("Played clicked to use a skin");
+            let skin_object_type_id = $('#' + clicked_id).attr('skin_object_type_id');
+            socket.emit('skin_use_data', { 'skin_object_type_id': skin_object_type_id });
+        }
+
+        if(split_name[0] === 'skin' && split_name[1] === 'remove') {
+            console.log("Played clicked to remove a skin");
+            let skin_object_type_id = $('#' + clicked_id).attr('skin_object_type_id');
+            socket.emit('skin_remove_data', { 'skin_object_type_id': skin_object_type_id });
+        }
+
+
         if(split_name[0] == "spawnmonster") {
             console.log("Admin spawning monster");
             var clicked_x = $('#' + clicked_id).attr('x');
@@ -1189,6 +1203,14 @@
             console.log("Player is unequipping equipment_linker_id: " + equipment_linker_id);
 
             socket.emit('unequip_data', { 'equipment_linker_id': equipment_linker_id });
+        }
+
+        if(split_name[0] === 'use' && split_name[1] === 'elevator') {
+            console.log("Player is using an elevator!");
+            let elevator_being_used_id = split_name[2];
+
+            socket.emit('use_elevator', { 'elevator_id': elevator_being_used_id });
+
         }
 
         if(split_name[0] === 'viewchange') {

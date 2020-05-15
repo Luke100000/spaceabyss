@@ -1,10 +1,17 @@
+var io_handler = require('./io' + process.env.FILE_SUFFIX + '.js');
+var io = io_handler.io;
+var database = require('./database' + process.env.FILE_SUFFIX + '.js');
+var pool = database.pool;
 const { Worker, isMainThread, parentPort } = require('worker_threads');
+const chalk = require('chalk');
+const log = console.log;
 
-
-
-module.exports = function(main, io, mysql, pool, chalk, log, world, inventory, movement) {
-
-    var module = {};
+const game_object = require('./game_object' + process.env.FILE_SUFFIX + '.js');
+const helper = require('./helper' + process.env.FILE_SUFFIX + '.js');
+const inventory = require('./inventory' + process.env.FILE_SUFFIX + '.js');
+const main = require('./space_abyss' + process.env.FILE_SUFFIX + '.js');
+const movement = require('./movement' + process.env.FILE_SUFFIX + '.js');
+const world = require('./world' + process.env.FILE_SUFFIX + '.js');
 
 
     // Actions specific to the bugAttack NPC job
@@ -177,7 +184,7 @@ module.exports = function(main, io, mysql, pool, chalk, log, world, inventory, m
         }
 
     }
-    module.canBuildStrcuture = canBuildStructure;
+    exports.canBuildStrcuture = canBuildStructure;
 
 
     // Actions specific to the bugAttack NPC job
@@ -359,7 +366,7 @@ module.exports = function(main, io, mysql, pool, chalk, log, world, inventory, m
         }
     }
 
-    module.npcActions = npcActions;
+    exports.npcActions = npcActions;
 
 
     async function npcPickUp(dirty, npc_index, coord_index) {
@@ -381,19 +388,25 @@ module.exports = function(main, io, mysql, pool, chalk, log, world, inventory, m
 
 
             // We have an object, it spawns something, and that something is there
-            if(object_index !== -1 && dirty.object_types[object_type_index].spawns_object_type_id && dirty.objects[object_index].has_spawned_object) {
+            if(object_index !== -1 && dirty.objects[object_index].has_spawned_object) {
 
-                let object_info = await main.getObjectCoordAndRoom(dirty, object_index);
+                let object_info = await game_object.getCoordAndRoom(dirty, object_index);
+                let spawn_linker_index = dirty.spawn_linkers.findIndex(function(obj) { return obj && obj.id === dirty.objects[object_index].current_spawn_linker_id; });
+                if(spawn_linker_index === -1) {
+                    log(chalk.yellow("Object id: " + dirty.objects[object_index].id + " is on the old spawner system - npcPickUp"));
+                    return false;
+                }
+
                 let adding_to_data = { 'adding_to_type': 'npc', 'adding_to_id': dirty.npcs[npc_index].id,
-                    'object_type_id': dirty.object_types[object_type_index].spawns_object_type_id, 'amount':dirty.object_types[object_type_index].spawns_object_type_amount };
+                    'object_type_id': dirty.spawn_linkers[spawn_linker_index].spawns_object_type_id, 'amount':dirty.spawn_linkers[spawn_linker_index].spawns_amount };
 
-                inventory.addToInventory(socket, dirty, adding_to_data);
+                await inventory.addToInventory(pool, socket, dirty, adding_to_data);
 
                 dirty.objects[object_index].has_spawned_object = false;
                 dirty.objects[object_index].has_change = true;
 
                 // send the updated object info to the room
-                world.sendObjectInfo(false, object_info.room, dirty, object_index, 'npc.npcPickUp');
+                await game_object.sendInfo(false, object_info.room, dirty, object_index, 'npc.npcPickUp');
 
                 // and the npc increases in farming skill points
                 dirty.npcs[npc_index].farming_skill_points++;
@@ -406,16 +419,16 @@ module.exports = function(main, io, mysql, pool, chalk, log, world, inventory, m
                     let adding_to_data = { 'adding_to_type': 'npc', 'adding_to_id': dirty.npcs[npc_index].id,
                         'object_id': dirty.planet_coords[coord_index].object_id };
 
-                    inventory.addToInventory(socket, dirty, adding_to_data);
+                    await inventory.addToInventory(pool, socket, dirty, adding_to_data);
 
-                    main.updateCoordGeneric(false, { 'planet_coord_index': coord_index, 'object_id': false, 'object_type_id': false });
+                    await main.updateCoordGeneric(false, { 'planet_coord_index': coord_index, 'object_id': false, 'object_type_id': false });
                 } else {
                     let adding_to_data = { 'adding_to_type': 'npc', 'adding_to_id': dirty.npcs[npc_index].id,
                         'object_type_id': dirty.planet_coords[coord_index].object_type_id, 'amount':dirty.planet_coords[coord_index].object_amount };
 
-                    inventory.addToInventory(socket, dirty, adding_to_data);
+                    await inventory.addToInventory(pool, socket, dirty, adding_to_data);
 
-                    main.updateCoordGeneric(false, { 'planet_coord_index': coord_index, 'object_id': false, 'object_type_id': false });
+                    await main.updateCoordGeneric(false, { 'planet_coord_index': coord_index, 'object_id': false, 'object_type_id': false });
                 }
 
 
@@ -425,10 +438,11 @@ module.exports = function(main, io, mysql, pool, chalk, log, world, inventory, m
 
         } catch(error) {
             log(chalk.red("Error in npc.npcPickUp: " + error));
+            console.error(error);
         }
     }
 
-    module.npcPickUp = npcPickUp;
+    exports.npcPickUp = npcPickUp;
 
 
     async function performNpcTask(dirty, database_queue, npc_index, task_index) {
@@ -628,7 +642,7 @@ module.exports = function(main, io, mysql, pool, chalk, log, world, inventory, m
                     // For now with npcs, we're just going to skip the whole spaceport thing for launching
                     if(dirty.npc_tasks[task_index].destination_planet_id) {
                         console.log("NPC needs to launch from the planet!");
-                        movement.switchToGalaxyNpc(dirty, npc_index, task_index);
+                        await movement.switchToGalaxyNpc(dirty, npc_index, task_index);
                     } else {
                         console.log("Npc is moving on planet");
 
@@ -727,7 +741,7 @@ module.exports = function(main, io, mysql, pool, chalk, log, world, inventory, m
         }
     }
 
-    module.performNpcTask = performNpcTask;
+    exports.performNpcTask = performNpcTask;
 
 
     async function setNpcStructure(dirty, npc_index) {
@@ -758,7 +772,7 @@ module.exports = function(main, io, mysql, pool, chalk, log, world, inventory, m
 
     }
 
-    module.setNpcStructure = setNpcStructure;
+    exports.setNpcStructure = setNpcStructure;
 
 
     async function setNpcTask(dirty, npc_index) {
@@ -802,7 +816,7 @@ module.exports = function(main, io, mysql, pool, chalk, log, world, inventory, m
                         dirty.npcs[npc_index].current_structure_type_is_built = false;
 
                         // see if the npc has more dreams!
-                        let rand_dream = main.getRandomIntInclusive(1,10);
+                        let rand_dream = helper.getRandomIntInclusive(1,10);
                         // dream!
                         if(rand_dream <= 5) {
                             console.log("Npc is going to dream for yet another job!");
@@ -845,7 +859,7 @@ module.exports = function(main, io, mysql, pool, chalk, log, world, inventory, m
                         dirty.objects.forEach(function(obj, i) {
                             if(obj.npc_id === dirty.npcs[npc_index].id) {
                                 console.log("NPC owns object id: " + obj.id);
-                                deleteObject(dirty, { 'object_index': i });
+                                deleteObject(io, pool, dirty, { 'object_index': i });
                             }
                         });
 
@@ -892,7 +906,7 @@ module.exports = function(main, io, mysql, pool, chalk, log, world, inventory, m
         }
     }
 
-    module.setNpcTask = setNpcTask;
+    exports.setNpcTask = setNpcTask;
 
     async function slaverCode(dirty, npc_index) {
         try {
@@ -1037,7 +1051,7 @@ module.exports = function(main, io, mysql, pool, chalk, log, world, inventory, m
         }
     }
 
-    module.slaverCode = slaverCode;
+    exports.slaverCode = slaverCode;
 
 
     // In data: npc_job_id
@@ -1123,7 +1137,7 @@ module.exports = function(main, io, mysql, pool, chalk, log, world, inventory, m
 
 
             // 2. SEE IF THE NPC IS GOING TO HAVE A DREAM JOB
-            let rand_dream = main.getRandomIntInclusive(1,10);
+            let rand_dream = helper.getRandomIntInclusive(1,10);
             // dream!
             if(rand_dream <= 5) {
                 console.log("Spawning npc is going to dream for another job!");
@@ -1183,7 +1197,7 @@ module.exports = function(main, io, mysql, pool, chalk, log, world, inventory, m
         }
     }
 
-    module.spawnNpc = spawnNpc;
+    exports.spawnNpc = spawnNpc;
 
     async function tickNpcSkills(dirty) {
 
@@ -1208,7 +1222,7 @@ module.exports = function(main, io, mysql, pool, chalk, log, world, inventory, m
 
     }
 
-    module.tickNpcSkills = tickNpcSkills;
+    exports.tickNpcSkills = tickNpcSkills;
 
     async function tryToBuildStructure(dirty, npc_index) {
         try {
@@ -1219,61 +1233,66 @@ module.exports = function(main, io, mysql, pool, chalk, log, world, inventory, m
                 linker.structure_type_id === dirty.npcs[npc_index].current_structure_type_id);
 
             let met_all_requirements = true;
-            if(requirement_linkers.length > 0) {
+            if (requirement_linkers.length > 0) {
                 //console.log("Structure has requirement linkers");
-                for(let requirement_linker of requirement_linkers) {
+                for (let requirement_linker of requirement_linkers) {
 
                     //console.log("Requires " + requirement_linker.amount + " of " + requirement_linker.object_type_id);
 
                     // see if the npc has this in their inventory
-                    let inventory_item_index = dirty.inventory_items.findIndex(function(obj) { return obj &&
-                        obj.npc_id === dirty.npcs[npc_index].id && obj.object_type_id === requirement_linker.object_type_id; });
+                    let inventory_item_index = dirty.inventory_items.findIndex(function (obj) {
+                        return obj &&
+                            obj.npc_id === dirty.npcs[npc_index].id && obj.object_type_id === requirement_linker.object_type_id;
+                    });
 
-                    if(inventory_item_index === -1 || dirty.inventory_items[inventory_item_index].amount < requirement_linker.amount) {
+                    if (inventory_item_index === -1 || dirty.inventory_items[inventory_item_index].amount < requirement_linker.amount) {
 
                         met_all_requirements = false;
 
                         // WE NEED TO FIND SOME ALGAE!!!!!
-                        if(requirement_linker.object_type_id === 68) {
+                        if (requirement_linker.object_type_id === 68) {
 
                             console.log("Npc needs more algae!");
 
                             dirty.npcs[npc_index].wants_object_type_id = 68;
                             dirty.npcs[npc_index].has_change = true;
 
-                            if(inventory_item_index === -1) {
+                            if (inventory_item_index === -1) {
                                 console.log("Have no algae yet");
                             } else {
                                 console.log("Have: " + dirty.inventory_items[inventory_item_index].amount + " and need: " + requirement_linker.amount);
                             }
 
-                            if(!dirty.npcs[npc_index].planet_coord_id) {
+                            if (!dirty.npcs[npc_index].planet_coord_id) {
                                 console.log("Npc doesn't have a planet coord yet. Finding azure planets.");
 
 
                                 // Algae farmer. Lets find the galaxy coord of an azure planet
                                 let azure_planets = dirty.planets.filter(planet => planet.planet_type_id === 16);
 
-                                if(azure_planets.length === 0) {
+                                if (azure_planets.length === 0) {
                                     console.log("No azure planets... MEMORY????");
                                     return;
                                 }
 
                                 let random_azure_planet = false;
-                                if(azure_planets.length === 1) {
+                                if (azure_planets.length === 1) {
                                     random_azure_planet = azure_planets[0];
                                 } else {
-                                    random_azure_planet = azure_planets[Math.floor(Math.random()*azure_planets.length)];
+                                    random_azure_planet = azure_planets[Math.floor(Math.random() * azure_planets.length)];
                                 }
-
 
 
                                 console.log("Npc is going to try and get to azure planet id: " + random_azure_planet.id);
 
-                                let coord_index = await main.getCoordIndex({ 'coord_id': random_azure_planet.coord_id });
+                                let coord_index = await main.getCoordIndex({'coord_id': random_azure_planet.coord_id});
 
-                                dirty.npc_tasks.push({ 'npc_id': dirty.npcs[npc_index].id, 'destination_tile_x': dirty.coords[coord_index].tile_x,
-                                    'destination_tile_y': dirty.coords[coord_index].tile_y, 'destination_planet_id': random_azure_planet.id });
+                                dirty.npc_tasks.push({
+                                    'npc_id': dirty.npcs[npc_index].id,
+                                    'destination_tile_x': dirty.coords[coord_index].tile_x,
+                                    'destination_tile_y': dirty.coords[coord_index].tile_y,
+                                    'destination_planet_id': random_azure_planet.id
+                                });
 
                                 console.log("\nPushed npc task:");
                                 console.log("destination_tile_x: " + dirty.coords[coord_index].tile_x + ", destination_tile_y: " + dirty.coords[coord_index].tile_y);
@@ -1283,23 +1302,28 @@ module.exports = function(main, io, mysql, pool, chalk, log, world, inventory, m
                                 console.log("Algae farmer has a planet coord id!");
 
                                 let npc_coord_index = await main.getPlanetCoordIndex({
-                                    'planet_coord_id': dirty.npcs[npc_index].planet_coord_id });
+                                    'planet_coord_id': dirty.npcs[npc_index].planet_coord_id
+                                });
 
                                 // see if there's an algae pad around us - harvest it if so
                                 //console.log("Seeing if we can harvest a tile immediately around us");
                                 //console.time("npc-search");
                                 let surrounding_tiles = [];
                                 let harvesting_coord_index = -1;
-                                for(let x = dirty.planet_coords[npc_coord_index].tile_x - 1; x <= dirty.planet_coords[npc_coord_index].tile_x + 1; x++) {
-                                    for(let y = dirty.planet_coords[npc_coord_index].tile_y - 1; y <= dirty.planet_coords[npc_coord_index].tile_y + 1; y++) {
-                                        if(harvesting_coord_index === -1) {
-                                            let other_coord_index = await main.getPlanetCoordIndex({ 'planet_id': dirty.planet_coords[npc_coord_index].planet_id,
-                                                'planet_level': dirty.planet_coords[npc_coord_index].level, 'tile_x': x, 'tile_y': y});
+                                for (let x = dirty.planet_coords[npc_coord_index].tile_x - 1; x <= dirty.planet_coords[npc_coord_index].tile_x + 1; x++) {
+                                    for (let y = dirty.planet_coords[npc_coord_index].tile_y - 1; y <= dirty.planet_coords[npc_coord_index].tile_y + 1; y++) {
+                                        if (harvesting_coord_index === -1) {
+                                            let other_coord_index = await main.getPlanetCoordIndex({
+                                                'planet_id': dirty.planet_coords[npc_coord_index].planet_id,
+                                                'planet_level': dirty.planet_coords[npc_coord_index].level,
+                                                'tile_x': x,
+                                                'tile_y': y
+                                            });
 
-                                            if(other_coord_index) {
-                                                if(dirty.planet_coords[other_coord_index].object_type_id === 69) {
+                                            if (other_coord_index) {
+                                                if (dirty.planet_coords[other_coord_index].object_type_id === 69) {
                                                     let object_index = await main.getObjectIndex(dirty.planet_coords[other_coord_index].object_id);
-                                                    if(object_index !== -1 && dirty.objects[object_index].has_spawned_object) {
+                                                    if (object_index !== -1 && dirty.objects[object_index].has_spawned_object) {
                                                         harvesting_coord_index = other_coord_index;
                                                     }
                                                 }
@@ -1310,7 +1334,7 @@ module.exports = function(main, io, mysql, pool, chalk, log, world, inventory, m
 
                                 //console.timeEnd("npc-search");
 
-                                if(harvesting_coord_index !== -1) {
+                                if (harvesting_coord_index !== -1) {
                                     console.log("Found something to harvest around us");
                                     await npcPickUp(dirty, npc_index, harvesting_coord_index);
                                     return;
@@ -1324,25 +1348,25 @@ module.exports = function(main, io, mysql, pool, chalk, log, world, inventory, m
                                     planet_coord.planet_id === dirty.planet_coords[npc_coord_index].planet_id &&
                                     planet_coord.level === 0 && planet_coord.object_type_id === 69);
 
-                                if(algae_pad_coords.length > 0) {
+                                if (algae_pad_coords.length > 0) {
                                     console.log("NPC sees algae pads");
 
                                     let closest_coord_index = -1;
                                     let closest_distance = 100;
 
-                                    for(let coord of algae_pad_coords) {
+                                    for (let coord of algae_pad_coords) {
                                         let coord_object = await main.getObjectIndex(coord.object_id);
 
                                         // It's a candidate
-                                        if(dirty.objects[coord_object].has_spawned_object) {
+                                        if (dirty.objects[coord_object].has_spawned_object) {
                                             let total_distance = Math.abs(dirty.planet_coords[npc_coord_index].tile_x - coord.tile_x) +
                                                 Math.abs(dirty.planet_coords[npc_coord_index].tile_y - coord.tile_y);
 
-                                            if(total_distance < closest_distance) {
+                                            if (total_distance < closest_distance) {
 
-                                                let coord_index = await main.getPlanetCoordIndex({ 'planet_coord_id': coord.id });
+                                                let coord_index = await main.getPlanetCoordIndex({'planet_coord_id': coord.id});
                                                 let can_place_npc = await main.canPlaceNpc('planet', dirty.planet_coords[coord_index], dirty.npcs[npc_index].id);
-                                                if(can_place_npc) {
+                                                if (can_place_npc) {
                                                     closest_coord_index = coord_index;
                                                     closest_distance = total_distance;
                                                 }
@@ -1354,13 +1378,15 @@ module.exports = function(main, io, mysql, pool, chalk, log, world, inventory, m
                                     }
 
 
-                                    if(closest_coord_index !== -1) {
+                                    if (closest_coord_index !== -1) {
                                         console.log("Closest full algae pad is " + closest_distance + " tiles away");
 
 
-
-                                        dirty.npc_tasks.push({ 'npc_id': dirty.npcs[npc_index].id, 'destination_tile_x': dirty.planet_coords[closest_coord_index].tile_x,
-                                            'destination_tile_y': dirty.planet_coords[closest_coord_index].tile_y,  });
+                                        dirty.npc_tasks.push({
+                                            'npc_id': dirty.npcs[npc_index].id,
+                                            'destination_tile_x': dirty.planet_coords[closest_coord_index].tile_x,
+                                            'destination_tile_y': dirty.planet_coords[closest_coord_index].tile_y,
+                                        });
 
                                     } else {
                                         console.log("Did not find any algae pads with algae");
@@ -1371,41 +1397,43 @@ module.exports = function(main, io, mysql, pool, chalk, log, world, inventory, m
                                 }
 
 
-
                             }
-                        } else if(requirement_linker.object_type_id === 144) {
+                        } else if (requirement_linker.object_type_id === 144) {
                             //console.log("Npc needs more maggots!");
 
                             dirty.npcs[npc_index].wants_object_type_id = 144;
                             dirty.npcs[npc_index].has_change = true;
 
-                            if(!dirty.npcs[npc_index].planet_coord_id) {
+                            if (!dirty.npcs[npc_index].planet_coord_id) {
                                 //console.log("Npc doesn't have a planet coord yet. Finding corporation planets.");
 
 
                                 // Maggot farmer. Lets find the galaxy coord of a corporation planet
                                 let corporation_planets = dirty.planets.filter(planet => planet.planet_type_id === 30);
 
-                                if(corporation_planets.length === 0) {
+                                if (corporation_planets.length === 0) {
                                     log(chalk.yellow("No corporation planets... MEMORY????"));
                                     return;
                                 }
 
                                 let random_planet = false;
-                                if(corporation_planets.length === 1) {
+                                if (corporation_planets.length === 1) {
                                     random_planet = corporation_planets[0];
                                 } else {
-                                    random_planet = corporation_planets[Math.floor(Math.random()*corporation_planets.length)];
+                                    random_planet = corporation_planets[Math.floor(Math.random() * corporation_planets.length)];
                                 }
-
 
 
                                 //console.log("Npc is going to try and get to corporation planet id: " + random_planet.id);
 
-                                let coord_index = await main.getCoordIndex({ 'coord_id': random_planet.coord_id });
+                                let coord_index = await main.getCoordIndex({'coord_id': random_planet.coord_id});
 
-                                dirty.npc_tasks.push({ 'npc_id': dirty.npcs[npc_index].id, 'destination_tile_x': dirty.coords[coord_index].tile_x,
-                                    'destination_tile_y': dirty.coords[coord_index].tile_y, 'destination_planet_id': random_planet.id });
+                                dirty.npc_tasks.push({
+                                    'npc_id': dirty.npcs[npc_index].id,
+                                    'destination_tile_x': dirty.coords[coord_index].tile_x,
+                                    'destination_tile_y': dirty.coords[coord_index].tile_y,
+                                    'destination_planet_id': random_planet.id
+                                });
 
                                 console.log("\nPushed npc task:");
                                 console.log("destination_tile_x: " + dirty.coords[coord_index].tile_x + ", destination_tile_y: " + dirty.coords[coord_index].tile_y);
@@ -1415,9 +1443,10 @@ module.exports = function(main, io, mysql, pool, chalk, log, world, inventory, m
                                 //console.log("Maggot farmer has a planet coord id!");
 
                                 let npc_coord_index = await main.getPlanetCoordIndex({
-                                    'planet_coord_id': dirty.npcs[npc_index].planet_coord_id });
+                                    'planet_coord_id': dirty.npcs[npc_index].planet_coord_id
+                                });
 
-                                if(npc_coord_index === -1) {
+                                if (npc_coord_index === -1) {
                                     log(chalk.yellow("Something is wrong with the planet coord the npc is on. planet_coord_id: " + dirty.npcs[npc_index].planet_coord_id));
                                     return false;
                                 }
@@ -1429,38 +1458,44 @@ module.exports = function(main, io, mysql, pool, chalk, log, world, inventory, m
                                 let attacking_monster = false;
                                 let npc_search_tiles = 2;
 
-                                for(let x = dirty.planet_coords[npc_coord_index].tile_x - npc_search_tiles; x <= dirty.planet_coords[npc_coord_index].tile_x + npc_search_tiles; x++) {
-                                    for(let y = dirty.planet_coords[npc_coord_index].tile_y - npc_search_tiles; y <= dirty.planet_coords[npc_coord_index].tile_y + npc_search_tiles; y++) {
-                                        if(!attacking_monster) {
+                                for (let x = dirty.planet_coords[npc_coord_index].tile_x - npc_search_tiles; x <= dirty.planet_coords[npc_coord_index].tile_x + npc_search_tiles; x++) {
+                                    for (let y = dirty.planet_coords[npc_coord_index].tile_y - npc_search_tiles; y <= dirty.planet_coords[npc_coord_index].tile_y + npc_search_tiles; y++) {
+                                        if (!attacking_monster) {
                                             //console.log("X,Y:" + x + "," + y);
 
-                                            let planet_coord_data = { 'planet_id': dirty.planet_coords[npc_coord_index].planet_id,
-                                                'planet_level': dirty.planet_coords[npc_coord_index].level, 'tile_x': x, 'tile_y': y};
+                                            let planet_coord_data = {
+                                                'planet_id': dirty.planet_coords[npc_coord_index].planet_id,
+                                                'planet_level': dirty.planet_coords[npc_coord_index].level,
+                                                'tile_x': x,
+                                                'tile_y': y
+                                            };
                                             //console.log("Planet coord data before sending it:");
                                             //console.log(planet_coord_data);
                                             let other_coord_index = await main.getPlanetCoordIndex(planet_coord_data);
 
-                                            if(other_coord_index === -1) {
+                                            if (other_coord_index === -1) {
                                                 //console.log("Could not find planet coord");
-                                            }
-                                            else {
+                                            } else {
 
                                                 // Npc should pick it up
-                                                if(dirty.planet_coords[other_coord_index].object_type_id === 144) {
+                                                if (dirty.planet_coords[other_coord_index].object_type_id === 144) {
                                                     npcPickUp(dirty, npc_index, other_coord_index);
                                                 }
 
-                                                if(dirty.planet_coords[other_coord_index].monster_id) {
+                                                if (dirty.planet_coords[other_coord_index].monster_id) {
 
                                                     let monster_index = await main.getMonsterIndex(dirty.planet_coords[other_coord_index].monster_id);
 
-                                                    if(monster_index !== -1 && dirty.monsters[monster_index].monster_type_id === 31) {
+                                                    if (monster_index !== -1 && dirty.monsters[monster_index].monster_type_id === 31) {
 
                                                         let npc_battle_linker_data = {
-                                                            'attacking_id': dirty.npcs[npc_index].id, 'attacking_type': 'npc',
-                                                            'being_attacked_id': dirty.monsters[monster_index].id, 'being_attacked_type': 'monster' };
+                                                            'attacking_id': dirty.npcs[npc_index].id,
+                                                            'attacking_type': 'npc',
+                                                            'being_attacked_id': dirty.monsters[monster_index].id,
+                                                            'being_attacked_type': 'monster'
+                                                        };
 
-                                                        world.addBattleLinker(socket, dirty, npc_battle_linker_data);
+                                                        world.addBattleLinker(io, socket, dirty, npc_battle_linker_data);
 
                                                         attacking_monster = true;
                                                     }
@@ -1470,7 +1505,6 @@ module.exports = function(main, io, mysql, pool, chalk, log, world, inventory, m
                                         }
                                     }
                                 }
-
 
 
                                 // otherwise, lets just move around
@@ -1487,7 +1521,7 @@ module.exports = function(main, io, mysql, pool, chalk, log, world, inventory, m
 
 
             // we can try to build the structure
-            if(met_all_requirements) {
+            if (met_all_requirements) {
                 console.log("Npc id: " + dirty.npcs[npc_index].id + " met all the requirements to build structure id: " +
                     dirty.npcs[npc_index].current_structure_type_id + " !");
 
@@ -1496,7 +1530,7 @@ module.exports = function(main, io, mysql, pool, chalk, log, world, inventory, m
 
                 let can_build_result = await canBuildStructure(dirty, npc_index, structure_linkers);
 
-                if(can_build_result === true) {
+                if (can_build_result === true) {
 
 
                     // We can't put buildStructure in npc.js because it's going to be placing objects, which requires
@@ -1521,16 +1555,13 @@ module.exports = function(main, io, mysql, pool, chalk, log, world, inventory, m
                 }
 
 
-
-
             }
-        } catch(error) {
+        } catch (error) {
             log(chalk.red("Error in npc.tryToBuildStructure: " + error));
             console.error(error);
         }
     }
 
-
-
-    return module;
-};
+    module.exports = {
+        npcActions
+    }
