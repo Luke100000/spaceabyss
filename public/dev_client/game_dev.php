@@ -2309,7 +2309,9 @@ include('config.php');
                         mining_beam_sprite.displayWidth = distance;
                         // mining_beam_sprite.rotation = angle_between - 1.4;
                         mining_beam_sprite.rotation = angle_between;
-                    } else if(i === client_player_index && salvaging_beam_sprite.visible) {
+                    } 
+                    
+                    if(i === client_player_index && salvaging_beam_sprite.visible) {
                         salvaging_beam_sprite.x = players[client_player_index].sprite.x;
                         salvaging_beam_sprite.y = players[client_player_index].sprite.y;
 
@@ -2322,6 +2324,8 @@ include('config.php');
                         // mining_beam_sprite.rotation = angle_between - 1.4;
                         salvaging_beam_sprite.rotation = angle_between;
                     }
+
+                    // If there's a heat sprite visible attached to us, move that as well
 
                     if(players[i].sprite.y === players[i].destination_y && players[i].sprite.x === players[i].destination_x) {
                         players[i].destination_x = false;
