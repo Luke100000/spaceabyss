@@ -329,7 +329,7 @@ async function placeObject(socket, dirty, data) {
             }
 
             // see if we can place an object on that below coord
-            if(!already_have_stairs && !await canPlaceObject('planet', dirty.planet_coords[below_coord_index],
+            if(!already_have_stairs && !await game_object.canPlace(dirty, 'planet', dirty.planet_coords[below_coord_index],
                 { 'object_type_id': dirty.objects[object_index].object_type_id })) {
                 console.log("Something is blocking us from placing the stairs below");
                 return false;
@@ -406,6 +406,7 @@ async function placeObject(socket, dirty, data) {
 
             // See if there's already a hole there, or we are able to make one
             let already_have_hole = false;
+            let can_place_hole_result = true;
 
             if(dirty.planet_coords[above_coord_index].object_type_id) {
                 let above_object_type_index = getObjectTypeIndex(dirty.planet_coords[above_coord_index].object_type_id);
@@ -414,13 +415,19 @@ async function placeObject(socket, dirty, data) {
                 }
             }
 
-            // see if we can place an object on that above coord
-            if(!already_have_hole && !await canPlaceObject('planet', dirty.planet_coords[above_coord_index],
-                { 'object_type_id': dirty.objects[object_index].object_type_id })) {
-                console.log("Something is blocking us from placing the hole above");
-                socket.emit('chat', { 'message': 'Something is blocking the hole above from being created', 'scope': 'system' });
+
+            if(!already_have_hole) {
+                can_place_hole_result = await game_object.canPlace(dirty, 'planet', dirty.planet_coords[above_coord_index],
+                { 'object_type_id': dirty.object_types[object_type_index].linked_object_type_id, 'show_output': true });
+            }
+
+            if(can_place_hole_result === false) {
+                log(chalk.yellow("Could not place the hole above. Cancelling"));
                 return false;
             }
+
+
+
 
             // Looks like we are all good. Add the stairs
             await updateCoordGeneric(socket, { 'planet_coord_index': data.planet_coord_index, 'object_index': object_index });

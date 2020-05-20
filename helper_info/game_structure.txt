@@ -565,7 +565,7 @@ PLAYER SHIPS
 
 FREE
     TIER 1 - Territe, Batteries, Chitin
-        TIER 2 - Syntite, Batteries, Keratin, AI Fragments
+        TIER 2 - Refine Territe, Batteries, Keratin, AI Fragments
             TIER 3 - Exodium, Power cells, Living Wood, Silk, Thiol
                 TIER 4 - Refined Exodium, Power Cells,
                     TIER 5 - Diamond
@@ -579,6 +579,16 @@ FREE
 Pod ( drawn )
 
     Mining ( drawn )
+
+        Mining Frigate
+
+                exhumer https://www.artstation.com/artwork/eyJ26 (or maybe tis on the mining frigate)
+
+                    Mining Barge
+
+                            Mining Command Platorm
+
+
 
     Cargo Ship ( drawn )
 

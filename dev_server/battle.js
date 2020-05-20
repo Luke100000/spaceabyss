@@ -1,17 +1,19 @@
-var io_handler = require('./io' + process.env.FILE_SUFFIX + '.js');
+var io_handler = require('./io.js');
 var io = io_handler.io;
-var database = require('./database' + process.env.FILE_SUFFIX + '.js');
+var database = require('./database.js');
 var pool = database.pool;
 const chalk = require('chalk');
 const log = console.log;
 
 
-const game = require('./game' + process.env.FILE_SUFFIX + '.js');
-const game_object = require('./game_object' + process.env.FILE_SUFFIX + '.js');
-const helper = require('./helper' + process.env.FILE_SUFFIX + '.js');
+const game = require('./game.js');
+const game_object = require('./game_object.js');
+const helper = require('./helper.js');
 const main = require('./space_abyss' + process.env.FILE_SUFFIX + '.js');
-const monster = require('./monster' + process.env.FILE_SUFFIX + '.js');
-const world = require('./world' + process.env.FILE_SUFFIX + '.js');
+const monster = require('./monster.js');
+const planet = require('./planet.js');
+const player = require('./player.js');
+const world = require('./world.js');
 
 
 
@@ -496,69 +498,6 @@ const world = require('./world' + process.env.FILE_SUFFIX + '.js');
 
     exports.caclulatePlayerAttack = calculatePlayerAttack;
 
-    async function calculatePlayerDefense(dirty, player_index) {
-
-        try {
-            // By default all players have one defense
-            let player_defense = 1;
-
-            // Base level + body/ship type
-            let defense_level = await world.getPlayerLevel(dirty, { 'player_index': player_index, 'skill_type': 'defense' });
-
-            let player_body_index = await main.getObjectIndex(dirty.players[player_index].body_id);
-            let player_body_type_index = main.getObjectTypeIndex(dirty.objects[player_body_index].object_type_id);
-
-
-            // Simple assignment for now. I think I want to be able to change this. Not sure.
-            player_defense = defense_level;
-
-
-
-            let player_equipment_linkers = dirty.equipment_linkers.filter(linker => linker.body_id === dirty.players[player_index].body_id);
-
-            for(let equipment_linker of player_equipment_linkers) {
-                let object_type_index = dirty.object_types.findIndex(function(obj) { return obj && obj && obj.id === equipment_linker.object_type_id; });
-                if(object_type_index !== -1) {
-                    // see if the object attack is in this range
-                    if(dirty.object_types[object_type_index].defense > 0) {
-                        //log(chalk.cyan("Have equipped item in range. Adding: " + dirty.object_types[object_type_index].attack_strength));
-                        player_defense += dirty.object_types[object_type_index].defense;
-                    }
-                }
-            }
-
-
-            //console.log("In calculatePlayerDefense. attacks_defended: " + dirty.players[player_index].attacks_defended);
-            // and we modify the final defense based on how many things the player is defending from this turn
-            if(dirty.players[player_index].attacks_defended > 1) {
-                //console.log("Doing math: " + player_defense + " / " + dirty.players[player_index].attacks_defended);
-                player_defense = Math.ceil(player_defense / dirty.players[player_index].attacks_defended);
-
-            }
-
-
-            for(let i = 0; i < dirty.eating_linkers.length; i++) {
-                if(dirty.eating_linkers[i] && dirty.eating_linkers[i].body_id === dirty.players[player_index].body_id) {
-                    let race_linker_index = main.getRaceEatingLinkerIndex({
-                        'race_id': dirty.object_types[player_body_type_index].race_id, 'object_type_id': dirty.eating_linkers[i].eating_object_type_id
-                    });
-
-                    if(dirty.race_eating_linkers[race_linker_index].defense) {
-                        //console.log("Eating increased player attack by: " + dirty.race_eating_linkers[race_linker_index].attack);
-                        player_defense += dirty.race_eating_linkers[race_linker_index].defense;
-                    }
-                }
-            }
-
-            return player_defense;
-        } catch(error) {
-            log(chalk.red("Error in battle.caclculatePlayerDefense: " + error));
-        }
-
-
-    }
-
-    exports.calculatePlayerDefense = calculatePlayerDefense;
 
     async function calculateRange(first_coord_x, first_coord_y, second_coord_x, second_coord_y) {
         try {
@@ -785,7 +724,7 @@ const world = require('./world' + process.env.FILE_SUFFIX + '.js');
 
                 if(battle_linker.attacking_type === 'monster' && battle_linker.being_attacked_type === 'player') {
 
-                    await monsterAttackPlayer(io, dirty, battle_linker);
+                    await monsterAttackPlayer(dirty, battle_linker);
                     // we are moving this to the root file - and ticking it
                     //moveMonster(io, battle_linker);
                 } else if(battle_linker.attacking_type === 'npc' && battle_linker.being_attacked_type === 'monster') {
@@ -797,7 +736,7 @@ const world = require('./world' + process.env.FILE_SUFFIX + '.js');
                 } else if(battle_linker.attacking_type === 'object' && battle_linker.being_attacked_type === 'object') {
                     await objectAttackObject(io, dirty, battle_linker);
                 } else if(battle_linker.attacking_type === 'object' && battle_linker.being_attacked_type === 'planet') {
-                    await objectAttackPlanet(io, dirty, battle_linker);
+                    await objectAttackPlanet(dirty, battle_linker);
                 } else if(battle_linker.attacking_type === 'object' && battle_linker.being_attacked_type === 'player') {
                     await objectAttackPlayer(io, dirty, battle_linker);
                 } else if(battle_linker.attacking_type === 'player' && battle_linker.being_attacked_type === 'monster') {
@@ -822,7 +761,7 @@ const world = require('./world' + process.env.FILE_SUFFIX + '.js');
     exports.doLinkers = doLinkers;
 
 
-    async function monsterAttackPlayer(io, dirty, battle_linker) {
+    async function monsterAttackPlayer(dirty, battle_linker) {
 
         try {
             //log(chalk.green("Monster " + battle_linker.attacking_id + " is attacking player " + battle_linker.being_attacked_id));
@@ -905,7 +844,7 @@ const world = require('./world' + process.env.FILE_SUFFIX + '.js');
             }
 
             //let attack = await calculateMonsterAttack(dirty, monster_index, calculating_range);
-            let defense = await calculatePlayerDefense(dirty, player_index);
+            let defense = await player.calculateDefense(dirty, player_index, monster_attack.damage_type);
 
 
             dirty.players[player_index].attacks_defended++;
@@ -1498,7 +1437,7 @@ const world = require('./world' + process.env.FILE_SUFFIX + '.js');
 
 
     //  data:   attacking_object_index   |   defending_planet_index
-    async function objectAttackPlanet(io, dirty, battle_linker, data = false) {
+    async function objectAttackPlanet(dirty, battle_linker, data = false) {
         try {
 
             let attacking_object_index = -1;
@@ -1506,8 +1445,9 @@ const world = require('./world' + process.env.FILE_SUFFIX + '.js');
 
             if(battle_linker) {
                 attacking_object_index = await main.getObjectIndex(battle_linker.attacking_id);
-                defending_planet_index = await main.getPlanetIndex({ 'planet_id': battle_linker.being_attacked_id });
+                defending_planet_index = await planet.getIndex(dirty, { 'planet_id': battle_linker.being_attacked_id });
             } else if(typeof data.attacking_object_index !== 'undefined' && typeof data.defending_object_index !== 'undefined') {
+                console.log("In objectAttackPlanet without a battle linker");
                 attacking_object_index = data.attacking_object_index;
                 defending_planet_index = data.defending_planet_index;
             }
@@ -1524,7 +1464,7 @@ const world = require('./world' + process.env.FILE_SUFFIX + '.js');
             }
 
             if(defending_planet_index === -1) {
-                log(chalk.yellow("Could not get the defending planet"));
+                log(chalk.yellow("Could not get the defending planet."));
 
                 if(battle_linker) {
                     world.removeBattleLinkers(io, dirty, { 'battle_linker_id': battle_linker.id });
@@ -1534,7 +1474,7 @@ const world = require('./world' + process.env.FILE_SUFFIX + '.js');
             }
 
             let attacking_object_info = await game_object.getCoordAndRoom(dirty, attacking_object_index);
-            let defending_planet_info = await game_object.getCoordAndRoom(dirty, defending_planet_index);
+            let defending_planet_info = await planet.getCoordAndRoom(dirty, defending_planet_index);
 
             if(attacking_object_info.coord === false) {
                 log(chalk.yellow("Could not get the attacking object coord"));
@@ -1762,7 +1702,7 @@ const world = require('./world' + process.env.FILE_SUFFIX + '.js');
             }
 
             let attack = await calculateObjectAttack(dirty, object_index);
-            let defense = await calculatePlayerDefense(dirty, player_index);
+            let defense = await player.calculateDefense(dirty, player_index);
 
             if(attack <= defense) {
 
@@ -2199,6 +2139,8 @@ const world = require('./world' + process.env.FILE_SUFFIX + '.js');
 
             let damage_amount = attack - defense;
 
+            await planet.sayHello();
+
             let ai_index = await world.getAIProtector(dirty, { 'damage_amount': damage_amount,
                 'object_index': object_index, 'coord': object_info.coord, 'show_output': true });
 
@@ -2229,6 +2171,7 @@ const world = require('./world' + process.env.FILE_SUFFIX + '.js');
 
         } catch(error) {
             log(chalk.red("Error in battle.playerAttackObject: " + error));
+            console.error(error);
         }
 
     }
@@ -2299,7 +2242,7 @@ const world = require('./world' + process.env.FILE_SUFFIX + '.js');
 
             let player_attack_profile = await calculatePlayerAttack(dirty, attacking_player_index, attacking_player_body_index, calculating_range);
             let attack = player_attack_profile.damage_amount;
-            let defense = await calculatePlayerDefense(dirty, defending_player_index);
+            let defense = await player.calculateDefense(dirty, defending_player_index);
 
             if(attack <= defense) {
                 return false;

@@ -1,12 +1,12 @@
-var io_handler = require('./io' + process.env.FILE_SUFFIX + '.js');
+var io_handler = require('./io.js');
 var io = io_handler.io;
-var database = require('./database' + process.env.FILE_SUFFIX + '.js');
+var database = require('./database.js');
 var pool = database.pool;
 const chalk = require('chalk');
 const log = console.log;
 
-const world = require('./world' + process.env.FILE_SUFFIX + '.js');
-const game_object = require('./game_object' + process.env.FILE_SUFFIX + '.js');
+const world = require('./world.js');
+const game_object = require('./game_object.js');
 const main = require('./space_abyss' + process.env.FILE_SUFFIX + '.js');
 
 var io;

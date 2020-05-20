@@ -36,7 +36,7 @@ var app = require('https').createServer(options, handler).listen(process.env.POR
 var io = require('socket.io').listen(app);
 */
 
-var io_handler = require('./io' + process.env.FILE_SUFFIX + '.js');
+var io_handler = require('./io.js');
 var io = io_handler.io;
 
 var bcrypt = require('bcrypt-nodejs');
@@ -74,7 +74,7 @@ var connection = mysql.createConnection({
 });
 */
 
-var database = require('./database' + process.env.FILE_SUFFIX + '.js');
+var database = require('./database.js');
 var pool = database.pool;
 
 /**
@@ -1176,27 +1176,23 @@ inits.init(function(callback) {
 });
 
 
-// World is basic set, get, and send functions. Also for functions that don't require any other dependencies
-const battle = require('./battle' + process.env.FILE_SUFFIX + '.js');
-const event = require('./event' + process.env.FILE_SUFFIX + '.js');
-const game = require('./game' + process.env.FILE_SUFFIX + '.js');
-//game.setIO(io);
-//game.setPool(pool);
-const game_object = require('./game_object' + process.env.FILE_SUFFIX + '.js');
-const helper = require('./helper' + process.env.FILE_SUFFIX + '.js');
-const inventory = require('./inventory' + process.env.FILE_SUFFIX + '.js');
-//inventory.io = io;
-const map = require('./map' + process.env.FILE_SUFFIX + '.js');
-const monster = require('./monster' + process.env.FILE_SUFFIX + '.js');
-const movement = require('./movement' + process.env.FILE_SUFFIX + '.js');
-const npc = require('./npc' + process.env.FILE_SUFFIX + '.js');
-const planet = require('./planet' + process.env.FILE_SUFFIX + '.js');
-const player = require('./player' + process.env.FILE_SUFFIX + '.js');
-const world = require('./world' + process.env.FILE_SUFFIX + '.js');
+const battle = require('./battle.js');
+const event = require('./event.js');
+const game = require('./game.js');
+const game_object = require('./game_object.js');
+const helper = require('./helper.js');
+const inventory = require('./inventory.js');
+const map = require('./map.js');
+const monster = require('./monster.js');
+const movement = require('./movement.js');
+const npc = require('./npc.js');
+const planet = require('./planet.js');
+const player = require('./player.js');
+const world = require('./world.js');
 
 
 
-eval(fs.readFileSync('global_functions' + process.env.FILE_SUFFIX + '.js')+'');
+eval(fs.readFileSync('global_functions.js')+'');
 
 
 
@@ -1211,11 +1207,17 @@ io.sockets.on('connection', function (socket) {
     game.sendMonsterTypeData(socket, dirty);
     game.sendObjectTypeData(socket, dirty);
 
+
+    
     socket.emit('news', { status: 'Connected'});
     console.log("emitted news thing to socket id:" + socket.id);
 
     socket.logged_in = false;
     socket.map_needs_cleared = false;
+
+    socket.on('ready', function(data) {
+        socket.emit('news', { status: 'Connected'});
+    });
 
     socket.on('add_to_area_data', function(data) {
         world.addToArea(socket, dirty, data);
@@ -1742,7 +1744,7 @@ io.sockets.on('connection', function (socket) {
     socket.on("request_player_info", async function(data) {
         //console.log("in request_player_info function");
 
-        await world.sendPlayerInfo(io, socket, false, dirty, data.player_id);
+        await player.sendInfo(socket, false, dirty, data.player_id);
 
     });
 
@@ -1788,8 +1790,8 @@ io.sockets.on('connection', function (socket) {
         game.switchBody(socket, dirty, data);
     });
 
-    socket.on('switch_ship_data', function(data) {
-        game.switchShip(socket, dirty, data);
+    socket.on('switch_ship_data', async function(data) {
+        await player.switchShip(socket, dirty, data);
     });
 
     socket.on("trade_initiate", function(data) {
@@ -2338,43 +2340,6 @@ module.exports.getNpcIndex = getNpcIndex;
 
 
 
-// data:    planet_id
-async function getPlanetIndex(data) {
-    try {
-        let planet_index = dirty.planets.findIndex(function(obj) { return obj && obj.id === parseInt(data.planet_id) });
-
-        if(planet_index === -1) {
-
-            let [rows, fields] = await (pool.query("SELECT * FROM planets WHERE planets.id = ?",
-                [data.planet_id]));
-
-            if(rows[0]) {
-
-                // make sure we didn't add it in the time it took us to do the mysql query
-                planet_index = dirty.planets.findIndex(function(obj) { return obj && obj.id === data.planet_id });
-                if(planet_index === -1) {
-                    planet_index = dirty.planets.push(rows[0]) - 1;
-                }
-
-            }
-
-        }
-
-        return planet_index;
-
-    } catch(error) {
-
-        if(!data.source) {
-            data.source = false;
-        }
-        log(chalk.red("Error in getPlanetIndex: " + error + " source: " + data.source));
-    }
-}
-
-module.exports.getPlanetIndex = getPlanetIndex;
-
-
-
 function getPlanetTypeIndex(planet_type_id) {
 
     planet_type_id = parseInt(planet_type_id);
@@ -2635,13 +2600,13 @@ async function loginPlayer(socket, dirty, data) {
                     dirty.players[player_index].planet_coord_id = dirty.planet_coords[planet_coord_index].id;
                     dirty.players[player_index].ship_coord_id = false;
                     dirty.players[player_index].has_change = true;
-                    await world.sendPlayerInfo(io, socket, "planet_" + dirty.planet_coords[planet_coord_index].planet_id,
+                    await player.sendInfo(socket, "planet_" + dirty.planet_coords[planet_coord_index].planet_id,
                         dirty, dirty.players[player_index].id);
                     placed_player = true;
 
                     // To dynamically load in just the monsters we initially need, the client is going to need to know
                     // what planet type we are on
-                    let planet_index = await getPlanetIndex({ 'planet_id': dirty.planet_coords[planet_coord_index].planet_id });
+                    let planet_index = await planet.getIndex(dirty, { 'planet_id': dirty.planet_coords[planet_coord_index].planet_id });
                     if(planet_index !== -1) {
                         await planet.sendInfo(socket, false, dirty, { 'planet_index': planet_index });
                     }
@@ -2685,9 +2650,9 @@ async function loginPlayer(socket, dirty, data) {
                     dirty.players[player_index].planet_coord_id = false;
                     dirty.players[player_index].has_change = true;
 
-                    await world.sendPlayerInfo(io, socket, "ship_" + dirty.ship_coords[ship_coord_index].ship_id, dirty, dirty.players[player_index].id);
+                    await player.sendInfo(socket, "ship_" + dirty.ship_coords[ship_coord_index].ship_id, dirty, dirty.players[player_index].id);
                     await map.updateMap(io, socket, dirty);
-                    await world.sendPlayerInfo(io, socket, "ship_" + dirty.ship_coords[ship_coord_index].ship_id, dirty, dirty.players[player_index].id);
+                    await player.sendInfo(socket, "ship_" + dirty.ship_coords[ship_coord_index].ship_id, dirty, dirty.players[player_index].id);
 
                     console.log("Should have player at ship x,y: " + dirty.ship_coords[ship_coord_index].tile_x + "," +
                         dirty.ship_coords[ship_coord_index].tile_y);
@@ -2762,7 +2727,7 @@ async function loginPlayer(socket, dirty, data) {
                         await game_object.sendInfo(socket, "galaxy", dirty, player_ship_index);
                     }
 
-                    await world.sendPlayerInfo(io, socket, "galaxy", dirty, dirty.players[player_index].id);
+                    await player.sendInfo(socket, "galaxy", dirty, dirty.players[player_index].id);
 
                     await map.updateMap(io, socket, dirty);
 
@@ -2825,7 +2790,7 @@ async function loginPlayer(socket, dirty, data) {
                 'player_current_hp': socket.player_current_hp, 'player_max_hp': socket.player_max_hp, 'starting_view': starting_view });
 
         await game.sendPlayerStats(socket, dirty);
-        await world.sendPlayerInfo(io, socket, false, dirty, socket.player_id);
+        await player.sendInfo(socket, false, dirty, socket.player_id);
 
 
         //populate client inventory data
@@ -2858,7 +2823,7 @@ async function loginPlayer(socket, dirty, data) {
             console.log("Gave player a body or a ship on login. Resending player stats and info");
             let player_info = await world.getPlayerCoordAndRoom(dirty, player_index);
             await game.sendPlayerStats(socket, dirty);
-            await world.sendPlayerInfo(io, socket, player_info.room, dirty, socket.player_id);
+            await player.sendInfo(socket, player_info.room, dirty, socket.player_id);
 
         }
 
@@ -2891,22 +2856,23 @@ async function loginPlayer(socket, dirty, data) {
 module.exports.loginPlayer = loginPlayer;
 
 
-//      data:   scope   |   coord   |   floor_type_id
+/**
+ * 
+ * @param {Object} data 
+ * @param {String} data.scope
+ * @param {Object} data.coord
+ * @param {number=} data.floor_type_id
+ * @param {String=} data.floor_type_class
+ */
 async function canPlaceFloor(data) {
     try {
 
         let debug_floor_type_id = 0;
 
-        // we need to have an floor type id
-        let floor_type_id = 0;
-
-        // We can pass it in directly
-        if(data.floor_type_id) {
-            floor_type_id = parseInt(data.floor_type_id);
-        }
 
 
         // No matter the coord, if the floor type doesn't allow it, it doesn't allow it
+
         let coord_floor_type_index = getFloorTypeIndex(data.coord.floor_type_id);
 
         if(coord_floor_type_index === -1) {
@@ -2919,7 +2885,7 @@ async function canPlaceFloor(data) {
 
         if(!dirty.floor_types[coord_floor_type_index].can_build_on || dirty.floor_types[coord_floor_type_index].is_protected) {
 
-            if(data.show_output || floor_type_id === debug_floor_type_id) {
+            if(data.show_output || (data.floor_type_id && data.floor_type_id === debug_floor_type_id )) {
                 log(chalk.yellow("Can't build on that floor type or its protected"));
             }
             return false;
@@ -3127,185 +3093,6 @@ async function canPlaceMonster(scope, coord, data) {
 }
 
 module.exports.canPlaceMonster = canPlaceMonster;
-
-
-//      data:   scope   |   coord   |   object_index   |   show_output   |   object_type_id
-/**
- *
- * @param scope
- * @param coord
- * @param data
- * @param {number=} data.object_index
- * @param {number=} data.object_type_id
- * @param {boolean=} data.show_output
- * @returns {Promise<boolean>}
- */
-async function canPlaceObject(scope, coord, data) {
-    try {
-
-        let debug_object_type_id = 315;
-
-        let checking_coords = [];
-
-        // we need to have an object type id
-        let object_type_id = 0;
-
-        // We can pass it in directly
-        if(data.object_type_id) {
-            object_type_id = parseInt(data.object_type_id);
-        }
-
-        // Or grab it from an object being passed in
-        if(data.object_index) {
-            object_type_id = dirty.objects[data.object_index].object_type_id;
-        }
-
-        if(object_type_id === 0) {
-            log(chalk.yellow("With object type display linkers, we need an object type id. Pass it in explicitely (object_type_id), or pass in an object (object_index)"));
-            return false;
-        }
-
-        let object_type_index = dirty.object_types.findIndex(function(obj) { return obj && obj.id === object_type_id; });
-
-
-
-        // ********** COLLECT ALL THE COORDS WE HAVE TO CHECK **********//
-        let display_linkers = dirty.object_type_display_linkers.filter(linker =>
-            linker.object_type_id === dirty.object_types[object_type_index].id && !linker.only_visual);
-
-        if(display_linkers.length > 0) {
-
-            if(dirty.object_types[object_type_index].id === debug_object_type_id) {
-                console.log("Object type has display linkers");
-            }
-
-            for(let linker of display_linkers) {
-
-                let checking_x = coord.tile_x + linker.position_x;
-                let checking_y = coord.tile_y + linker.position_y;
-
-
-                let checking_coord_index = -1;
-                if(scope === 'galaxy') {
-                    checking_coord_index = await getCoordIndex({ 'tile_x': checking_x, 'tile_y': checking_y });
-
-                    if(checking_coord_index !== -1) {
-                        checking_coords.push(dirty.coords[checking_coord_index]);
-                    }
-                } else if(scope === 'planet') {
-                    checking_coord_index = await getPlanetCoordIndex({ 'planet_id': coord.planet_id,
-                        'planet_level': coord.level, 'tile_x': checking_x, 'tile_y': checking_y });
-
-                    if(checking_coord_index !== -1) {
-                        checking_coords.push(dirty.planet_coords[checking_coord_index]);
-                    }
-                } else if(scope === 'ship') {
-                    checking_coord_index = await getShipCoordIndex({ 'ship_id': coord.ship_id,
-                        'level': coord.level,
-                        'tile_x': checking_x, 'tile_y': checking_y });
-
-                    if(checking_coord_index !== -1) {
-                        checking_coords.push(dirty.ship_coords[checking_coord_index]);
-                    }
-                }
-
-                // We weren't able to find all the coords we needed to match up to all the display linkers
-                if(checking_coord_index === -1) {
-                    if(data.show_output) {
-                        log(chalk.yellow("Could not find one of the coords we would be placing things on"));
-                    }
-                    return false;
-
-                }
-
-            }
-
-        } else {
-            checking_coords.push(coord);
-        }
-
-
-        //************ GO THROUGH EACH OF THE COORDS THAT WE HAVE **********************//
-        for(let checking_coord of checking_coords) {
-
-            if(dirty.object_types[object_type_index].id === debug_object_type_id) {
-                console.log("Checking coord id: " + checking_coord.id + " with floor type id: " + checking_coord.floor_type_id);
-            }
-
-
-            // No matter the coord, if the floor type doesn't allow it, it doesn't allow it
-            let floor_type_index = getFloorTypeIndex(checking_coord.floor_type_id);
-
-            // Couldn't get the floor type of the coord - that's a false!
-            if(floor_type_index === -1) {
-                return false;
-            }
-
-            if(!dirty.floor_types[floor_type_index].can_build_on) {
-
-                if(dirty.object_types[object_type_index].id === debug_object_type_id || data.show_output) {
-                    log(chalk.yellow("Can't build on that floor type"));
-                }
-                return false;
-            }
-
-            if(dirty.floor_types[floor_type_index].is_protected) {
-
-                if(dirty.object_types[object_type_index].id === debug_object_type_id || data.show_output) {
-                    log(chalk.yellow("That floor type is protected"));
-                }
-                return false;
-            }
-
-
-            if(checking_coord.npc_id || checking_coord.player_id || checking_coord.monster_id) {
-                if(data.show_output) {
-                    log(chalk.yellow("npc, player, or monster already on that coord"));
-                }
-
-                return false;
-            }
-
-            if(!data.object_index) {
-
-                if(checking_coord.object_id || checking_coord.object_type_id || checking_coord.belong_to_object_id) {
-
-                    if(data.show_output) {
-                        log(chalk.yellow("No object index passed in, and coord already has an object_id, object_type_id, or belongs_to_object_id"))
-                    }
-                    return false;
-                }
-            }
-            // comparisons when we have a specific object being placed
-            else {
-
-                if( (checking_coord.object_id && checking_coord.object_id !== dirty.objects[data.object_index].id) &&
-                    (checking_coord.belongs_to_object_id !== dirty.objects[data.object_index].id) ) {
-
-                    if(data.show_output) {
-                        log(chalk.yellow("Coord has object id or belongs to object id and it doesn't match the object we passed in"));
-                    }
-                    return false;
-                }
-            }
-
-            if(scope === 'galaxy' && checking_coord.planet_id || checking_coord.belongs_to_planet_id) {
-                if(data.show_output) {
-                    log(chalk.yellow("Can't place on a planet|belongs_to_planet galaxy coord"));
-                }
-                return false;
-            }
-
-        }
-
-        return true;
-    } catch(error) {
-        log(chalk.red("Error in main.canPlaceObject: " + error));
-        console.error(error);
-    }
-}
-
-module.exports.canPlaceObject = canPlaceObject;
 
 
 // The logic in this function is very close to the logic in the client function
@@ -3564,7 +3351,7 @@ async function canPlacePlayer(data) {
 
                 // step 1. Find the base planet coord it
 
-                let planet_index = await getPlanetIndex({ 'planet_id': checking_coord.belongs_to_planet_id });
+                let planet_index = await planet.getIndex(dirty, { 'planet_id': checking_coord.belongs_to_planet_id });
 
                 if(planet_index !== -1) {
                     let origin_planet_coord_index = await getCoordIndex({ 'coord_id': dirty.planets[planet_index].coord_id });
@@ -3768,7 +3555,7 @@ async function canPlace(scope, coord, placing_type, placing_id, data = false) {
 
         // OBJECT!!!!!!!!!!!!!!!
         if(placing_type === 'object') {
-            log(chalk.red("Use canPlaceObject instead!"));
+            log(chalk.red("Use game_object.canPlace instead!"));
             return false;
         }
 
@@ -4064,12 +3851,13 @@ async function disconnectPlayer(socket) {
 
         console.log("Sending updated player info to the room");
 
-        await world.sendPlayerInfo(io, socket, player_info.room, dirty, dirty.players[player_index].id);
+        await player.sendInfo(socket, player_info.room, dirty, dirty.players[player_index].id);
 
 
         socket.disconnect();
     } catch(error) {
         log(chalk.red("Error in disconnectPlayer: " + error));
+        console.error(error);
     }
 
 }
@@ -4173,7 +3961,7 @@ async function getCoordIndex(data) {
                 // We'll want the planet in memory, as well as anything that owns the planet
                 if(adding_coord.planet_id) {
                     //console.log("Adding coord has a planet id: " + adding_coord.planet_id);
-                    let planet_index = await getPlanetIndex({ 'planet_id': adding_coord.planet_id, 'source': 'main.getCoordIndex' });
+                    let planet_index = await planet.getIndex(dirty, { 'planet_id': adding_coord.planet_id, 'source': 'main.getCoordIndex' });
                     if(planet_index !== -1) {
                         if(dirty.planets[planet_index].player_id) {
                             await getPlayerIndex({'player_id':dirty.planets[planet_index].player_id, 'source': 'main.getCoordIndex' });
@@ -5614,12 +5402,12 @@ async function writeDirty(show_output = false) {
     });
 
 
-    dirty.planets.forEach(function(planet, i) {
-        if(planet.has_change) {
+    dirty.planets.forEach(function(writing_planet, i) {
+        if(writing_planet.has_change) {
             let sql = "UPDATE planets SET ai_id = ?, coord_id = ?, current_hp = ?, lowest_depth = ?, max_hp = ?, name = ?, " +
                 "planet_type_id = ?, player_id = ?, type = ?, x_size = ?, y_size = ? WHERE id = ?";
-            let inserts = [planet.ai_id, planet.coord_id, planet.current_hp, planet.lowest_depth, planet.max_hp, planet.name,
-                planet.planet_type_id, planet.player_id, planet.type, planet.x_size, planet.y_size, planet.id];
+            let inserts = [writing_planet.ai_id, writing_planet.coord_id, writing_planet.current_hp, writing_planet.lowest_depth, writing_planet.max_hp, writing_planet.name,
+                writing_planet.planet_type_id, writing_planet.player_id, writing_planet.type, writing_planet.x_size, writing_planet.y_size, writing_planet.id];
 
             pool.query(sql, inserts, function(err, result) {
                 if(err) throw err;
@@ -5647,9 +5435,9 @@ async function writeDirty(show_output = false) {
         }
     });
 
-    dirty.players.forEach(function(player, i) {
+    dirty.players.forEach(function(writing_player, i) {
         if(player.has_change) {
-            writePlayerDirty(player, i);
+            writePlayerDirty(writing_player, i);
         }
     });
 

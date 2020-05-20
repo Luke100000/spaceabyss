@@ -1,17 +1,17 @@
-var io_handler = require('./io' + process.env.FILE_SUFFIX + '.js');
+var io_handler = require('./io.js');
 var io = io_handler.io;
-var database = require('./database' + process.env.FILE_SUFFIX + '.js');
+var database = require('./database.js');
 var pool = database.pool;
 const { Worker, isMainThread, parentPort } = require('worker_threads');
 const chalk = require('chalk');
 const log = console.log;
 
-const game_object = require('./game_object' + process.env.FILE_SUFFIX + '.js');
-const helper = require('./helper' + process.env.FILE_SUFFIX + '.js');
-const inventory = require('./inventory' + process.env.FILE_SUFFIX + '.js');
+const game_object = require('./game_object.js');
+const helper = require('./helper.js');
+const inventory = require('./inventory.js');
 const main = require('./space_abyss' + process.env.FILE_SUFFIX + '.js');
-const movement = require('./movement' + process.env.FILE_SUFFIX + '.js');
-const world = require('./world' + process.env.FILE_SUFFIX + '.js');
+const movement = require('./movement.js');
+const world = require('./world.js');
 
 
     // Actions specific to the bugAttack NPC job
@@ -21,7 +21,7 @@ const world = require('./world' + process.env.FILE_SUFFIX + '.js');
             if(!dirty.npcs[npc_index].planet_coord_id) {
 
                 // Non forming array of planets
-                let possible_planets = dirty.planets.filter(planet => planet.planet_type_id !== 26);
+                let possible_planets = dirty.planets.filter(planet_filter => planet_filter.planet_type_id !== 26);
                 let chosen_planet = possible_planets[Math.floor(Math.random()*possible_planets.length)];
 
                 if(!chosen_planet) {
@@ -194,7 +194,7 @@ const world = require('./world' + process.env.FILE_SUFFIX + '.js');
             if(!dirty.npcs[npc_index].planet_coord_id) {
 
                 // Non forming/azure array of planets
-                let possible_planets = dirty.planets.filter(planet => planet.planet_type_id !== 26 && planet.planet_type_id !== 16);
+                let possible_planets = dirty.planets.filter(planet_filter => planet_filter.planet_type_id !== 26 && planet_filter.planet_type_id !== 16);
                 let chosen_planet = possible_planets[Math.floor(Math.random()*possible_planets.length)];
 
                 if(!chosen_planet) {
@@ -746,7 +746,7 @@ const world = require('./world' + process.env.FILE_SUFFIX + '.js');
 
     async function setNpcStructure(dirty, npc_index) {
 
-        let planet_index = await main.getPlanetIndex({ 'planet_id': dirty.npcs[npc_index].planet_id, 'source': 'game.setNpcStructure' });
+        let planet_index = await planet.getIndex(dirty, { 'planet_id': dirty.npcs[npc_index].planet_id, 'source': 'game.setNpcStructure' });
 
         if(planet_index !== -1) {
             // Algae farm on azure planets
@@ -931,7 +931,7 @@ const world = require('./world' + process.env.FILE_SUFFIX + '.js');
                         let need_to_send_to_slaver_planet = true;
                         if(dirty.npcs[i].planet_coord_id) {
                             let current_planet_coord_index = await main.getPlanetCoordIndex({ 'planet_coord_id': dirty.npcs[i].planet_coord_id });
-                            let planet_index = await main.getPlanetIndex({ 'planet_id': dirty.planet_coords[current_planet_coord_index].planet_id });
+                            let planet_index = await planet.getIndex(dirty, { 'planet_id': dirty.planet_coords[current_planet_coord_index].planet_id });
                             if(dirty.planets[planet_index].planet_type_id === 31) {
                                 need_to_send_to_slaver_planet = false;
                             }
@@ -971,7 +971,7 @@ const world = require('./world' + process.env.FILE_SUFFIX + '.js');
                 if(dirty.npcs[npc_index].planet_coord_id) {
                     let planet_coord_index = await main.getPlanetCoordIndex({ 'planet_coord_id': dirty.npcs[npc_index].planet_coord_id });
                     if(planet_coord_index !== -1) {
-                        let planet_index = await main.getPlanetIndex({ 'planet_id': dirty.planet_coords[planet_coord_index].planet_id });
+                        let planet_index = await planet.getIndex(dirty, { 'planet_id': dirty.planet_coords[planet_coord_index].planet_id });
                         if(planet_index !== -1 && dirty.planets[planet_index].planet_type_id === 30) {
                             on_corporation_planet = true;
                         }
@@ -980,7 +980,7 @@ const world = require('./world' + process.env.FILE_SUFFIX + '.js');
 
                 // Lets head to one
                 if(on_corporation_planet === false) {
-                    let possible_planets = dirty.planets.filter(planet => planet.planet_type_id === 30);
+                    let possible_planets = dirty.planets.filter(planet_filter => planet_filter.planet_type_id === 30);
                     let chosen_planet = possible_planets[Math.floor(Math.random()*possible_planets.length)];
 
                     if(!chosen_planet) {
@@ -1268,7 +1268,7 @@ const world = require('./world' + process.env.FILE_SUFFIX + '.js');
 
 
                                 // Algae farmer. Lets find the galaxy coord of an azure planet
-                                let azure_planets = dirty.planets.filter(planet => planet.planet_type_id === 16);
+                                let azure_planets = dirty.planets.filter(planet_filter => planet_filter.planet_type_id === 16);
 
                                 if (azure_planets.length === 0) {
                                     console.log("No azure planets... MEMORY????");
@@ -1409,7 +1409,7 @@ const world = require('./world' + process.env.FILE_SUFFIX + '.js');
 
 
                                 // Maggot farmer. Lets find the galaxy coord of a corporation planet
-                                let corporation_planets = dirty.planets.filter(planet => planet.planet_type_id === 30);
+                                let corporation_planets = dirty.planets.filter(planet_filter => planet_filter.planet_type_id === 30);
 
                                 if (corporation_planets.length === 0) {
                                     log(chalk.yellow("No corporation planets... MEMORY????"));
@@ -1563,5 +1563,6 @@ const world = require('./world' + process.env.FILE_SUFFIX + '.js');
     }
 
     module.exports = {
-        npcActions
+        npcActions,
+        tickNpcSkills
     }

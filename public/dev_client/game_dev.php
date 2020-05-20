@@ -29,6 +29,27 @@ include('config.php');
     }
 ?>
 
+<script src="https://space.alphacoders.com:<?php echo $port; ?>/socket.io/socket.io.js"></script>
+
+<script type="text/javascript">
+    var socket = false;
+    if(io) {
+        console.log("Connecting to space.alphacoders.com:<?php echo $port; ?>");
+        socket = io.connect('space.alphacoders.com:<?php echo $port; ?>', { secure: true });
+
+        socket.on('connect', () => {
+            socket.emit('ready');
+            console.log("Socket: ");
+        console.log(socket);
+        console.log(socket.id);
+
+        });
+
+    } else {
+        console.log("%c Could not find io", log_danger);
+    }
+
+</script>
 
 <!doctype html>
 <html lang="en">
@@ -36,10 +57,21 @@ include('config.php');
     <meta charset="UTF-8" />
     <title>Space Abyss</title>
 
-    <script src="client_functions.js"></script>
-    <script src="player.js"></script>
-    <script src="//space.alphacoders.com/phaser-3.15.1.js"></script>
+    
+
+
+
     <script src="//space.alphacoders.com/jquery-3.3.1.min.js"></script>
+    <script src="//space.alphacoders.com/phaser-3.15.1.js"></script>
+
+    <script src="client_functions.js"></script>
+    <script src="client_network.js?<?php echo rand(1,1000); ?>"></script>
+    <script src="client_click.js"></script>
+    <script src="effects.js?<?php echo rand(1,1000); ?>"></script>
+    <script src="planet.js"></script>
+    <script src="player.js"></script>
+
+
     <link href="//space.alphacoders.com/bulma-0.7.2/css/bulma.min.css" rel="stylesheet" media="screen">
     <script src='//space.alphacoders.com/spectrum.js'></script>
     <link rel='stylesheet' href='//space.alphacoders.com/spectrum.css' />
@@ -579,7 +611,7 @@ include('config.php');
 </body>
 </html>
 
-<script src="https://space.alphacoders.com:<?php echo $port; ?>/socket.io/socket.io.js"></script>
+
 <script>
 
     var camera;
@@ -658,6 +690,7 @@ include('config.php');
     var level_modifier = 0.10;
     var difficult_level_modifier = 0.20;
 
+    var effect_sprites = [];
     var addiction_sprite = false;
     var blocked_effect_sprite = false;
     var electric_effect_sprite = false;
@@ -665,6 +698,7 @@ include('config.php');
     var explosion_sprites = [];
     var fire_attack_sprite = false;
     var heat_sprites = [];
+    var laser_sprites = [];
     var melee_effect_sprite = false;
     var mining_sprite = false;
     var mining_beam_sprite = false;
@@ -753,14 +787,8 @@ include('config.php');
 
 
 
-    var socket = false;
-    if(io) {
-        console.log("Connecting to space.alphacoders.com:<?php echo $port; ?>");
-        socket = io.connect('space.alphacoders.com:<?php echo $port; ?>', { secure: true });
-        //console.log("Socket id: " + socket.id);
-    } else {
-        console.log("%c Could not find io", log_danger);
-    }
+
+
 
     //console.log(socket);
 
@@ -948,7 +976,7 @@ include('config.php');
                 frameWidth: 64, frameHeight: 64, endFrame: 4
             });
 
-            this.load.spritesheet('fire_attack', 'https://space.alphacoders.com/Fire0.png', {
+            this.load.spritesheet('fire-effect', 'https://space.alphacoders.com/Fire0.png', {
                 frameWidth: 64, frameHeight: 128, endFrame: 8
             });
 
@@ -956,31 +984,42 @@ include('config.php');
                 frameWidth: 64, frameHeight: 64, endFrame: 3
             });
 
-            this.load.image('laser', 'https://space.alphacoders.com/laser.png');
+            this.load.spritesheet('gravity-effect', 'https://space.alphacoders.com/gravity-effect.png', {
+                frameWidth: 64, frameHeight: 64, endFrame: 3
+            });
+
+            this.load.spritesheet('laser-effect', 'https://space.alphacoders.com/laser-effect.png', {
+                frameWidth: 64, frameHeight: 64, endFrame: 3
+            });
 
             this.load.spritesheet('melee-effect', 'https://space.alphacoders.com/melee-effect.png', {
                 frameWidth: 64, frameHeight: 64, endFrame: 9
             });
 
+            this.load.spritesheet('poison-effect', 'https://space.alphacoders.com/poison-effect.png', {
+               frameWidth: 64, frameHeight: 128, endFrame: 8
+            });
+
+            /* Old mining
             this.load.spritesheet('mining', 'https://space.alphacoders.com/mining.png', {
                frameWidth: 64, frameHeight: 64, endFrame: 11
             });
-
-            this.load.spritesheet('mining-beam', 'https://space.alphacoders.com/mining-beam.png?563367', {
-                frameWidth: 192, frameHeight: 64, endFrame: 6
+            */
+            this.load.spritesheet('radiation-effect', 'https://space.alphacoders.com/radiation-effect.png', {
+               frameWidth: 64, frameHeight: 128, endFrame: 8
             });
 
-            this.load.spritesheet('range-spritesheet', 'https://space.alphacoders.com/range.png', {
-                frameWidth: 64, frameHeight: 64, endFrame: 4
-            });
-
-            this.load.spritesheet('repairing', 'https://space.alphacoders.com/repairing.png', {
+            this.load.spritesheet('repairing-effect', 'https://space.alphacoders.com/repairing.png', {
                 frameWidth: 16, frameHeight: 80, endFrame: 11
             });
 
-            this.load.spritesheet('repairing2', 'https://space.alphacoders.com/repairing2.png', {
-                frameWidth: 16, frameHeight: 16, endFrame: 14
+
+            // For the time being, we are keeping mining and salvaging separate. Probably
+            // should combine them at some point
+            this.load.spritesheet('mining-beam', 'https://space.alphacoders.com/mining-beam.png', {
+                frameWidth: 192, frameHeight: 64, endFrame: 6
             });
+
 
             this.load.spritesheet('salvaging-beam', 'https://space.alphacoders.com/salvaging-beam.png', {
                 frameWidth: 256, frameHeight: 64, endFrame: 6
@@ -1836,7 +1875,7 @@ include('config.php');
             // EFFECTS - END IS TOTAL # of FRAMES - 1 SINCE WE START AT 0
 
             var addiction_effect_config = {
-                key: 'addiction-effect',
+                key: 'addiction-effect-animation',
                 frames: this.anims.generateFrameNumbers('addiction-effect', { start: 0, end: 7, first: 0 } ),
                 frameRate: 10,
                 hideOnComplete: true
@@ -1845,7 +1884,7 @@ include('config.php');
             this.anims.create(addiction_effect_config);
 
             var blocked_config = {
-                key: 'blocked-effect',
+                key: 'blocked-effect-animation',
                 frames: this.anims.generateFrameNumbers('blocked-effect', { start: 0, end: 6, first: 0 } ),
                 frameRate: 10,
                 hideOnComplete: true
@@ -1854,7 +1893,7 @@ include('config.php');
             this.anims.create(blocked_config);
 
             var electric_effect_config = {
-                key: 'electric-effect',
+                key: 'electric-effect-animation',
                 frames: this.anims.generateFrameNumbers('electric-effect', { start: 0, end: 5, first: 0 } ),
                 frameRate: 10,
                 hideOnComplete: true
@@ -1863,7 +1902,7 @@ include('config.php');
             this.anims.create(electric_effect_config);
 
             var energy_effect_config = {
-                key: 'energy-effect',
+                key: 'energy-effect-animation',
                 frames: this.anims.generateFrameNumbers('energy-effect', { start: 0, end: 2, first: 0 } ),
                 frameRate: 10,
                 hideOnComplete: true
@@ -1873,7 +1912,7 @@ include('config.php');
 
 
             var explosion_effect_config = {
-                key: 'explosion-effect',
+                key: 'explosion-effect-animation',
                 frames: this.anims.generateFrameNumbers('explosion-effect', { start: 0, end: 11, first: 0 } ),
                 frameRate: 10,
                 hideOnComplete: true
@@ -1881,17 +1920,17 @@ include('config.php');
 
             this.anims.create(explosion_effect_config);
 
-            var fire_attack_config = {
-                key: 'fire_attack',
-                frames: this.anims.generateFrameNumbers('fire_attack', { start: 0, end: 7, first: 0 } ),
+            var fire_effect_config = {
+                key: 'fire-effect-animation',
+                frames: this.anims.generateFrameNumbers('fire-effect', { start: 0, end: 7, first: 0 } ),
                 frameRate: 10,
                 hideOnComplete: true
             };
 
-            this.anims.create(fire_attack_config);
+            this.anims.create(fire_effect_config);
 
             var heat_effect_config = {
-                key: 'heat-effect',
+                key: 'heat-effect-animation',
                 frames: this.anims.generateFrameNumbers('heat-effect', { start: 0, end: 2, first: 0 } ),
                 frameRate: 10,
                 repeat: -1
@@ -1899,8 +1938,17 @@ include('config.php');
 
             this.anims.create(heat_effect_config);
 
+            var laser_effect_config = {
+                key: 'laser-effect-animation',
+                frames: this.anims.generateFrameNumbers('laser-effect', { start: 0, end: 2, first: 2 } ),
+                frameRate: 10,
+                repeat: -1
+            };
+
+            this.anims.create(laser_effect_config);
+
             var melee_effect_config = {
-                key: 'melee-effect',
+                key: 'melee-effect-animation',
                 frames: this.anims.generateFrameNumbers('melee-effect', { start: 0, end: 8, first: 0 } ),
                 frameRate: 10,
                 hideOnComplete: true
@@ -1908,15 +1956,38 @@ include('config.php');
 
             this.anims.create(melee_effect_config);
 
-            var mining_config = {
-                key: 'mining',
-                frames: this.anims.generateFrameNumbers('mining', { start: 0, end: 10, first: 0 } ),
+            var poison_effect_config = {
+                key: 'poison-effect-animation',
+                frames: this.anims.generateFrameNumbers('poison-effect', { start: 0, end: 7, first: 0 } ),
                 frameRate: 10,
                 hideOnComplete: true
             };
 
-            this.anims.create(mining_config);
+            this.anims.create(poison_effect_config);
 
+
+            var radiation_effect_config = {
+                key: 'radiation-effect-animation',
+                frames: this.anims.generateFrameNumbers('radiation-effect', { start: 0, end: 7, first: 0 } ),
+                frameRate: 10,
+                hideOnComplete: true
+            };
+
+            this.anims.create(radiation_effect_config);
+
+
+            var repairing_config = {
+                key: 'repairing-effect-animation',
+                frames: this.anims.generateFrameNumbers('repairing-effect', { start: 0, end: 10, first: 0 } ),
+                frameRate: 10,
+                hideOnComplete: true
+            };
+
+            this.anims.create(repairing_config);
+
+
+            // Mining and salvaging are kept separate for now
+            // TODO INTEGRATE THEM!!
             var mining_beam_config = {
                 key: 'mining-beam',
                 frames: this.anims.generateFrameNumbers('mining-beam', { start: 0, end: 5, first: 0 } ),
@@ -1925,34 +1996,6 @@ include('config.php');
             };
 
             this.anims.create(mining_beam_config);
-
-            var range_config = {
-                key: 'range-effect',
-                frames: this.anims.generateFrameNumbers('range-spritesheet', { start: 0, end: 3, first: 0 } ),
-                frameRate: 10,
-                repeat: -1
-            };
-
-            this.anims.create(range_config);
-
-            var repairing_config = {
-                key: 'repairing',
-                frames: this.anims.generateFrameNumbers('repairing', { start: 0, end: 10, first: 0 } ),
-                frameRate: 10,
-                hideOnComplete: true
-            };
-
-            this.anims.create(repairing_config);
-
-            var repairing2_config = {
-                key: 'repairing2',
-                frames: this.anims.generateFrameNumbers('repairing2', { start: 0, end: 13, first: 0 } ),
-                frameRate: 10,
-                hideOnComplete: true
-            };
-
-            this.anims.create(repairing2_config);
-
 
             var salvaging_beam_config = {
                 key: 'salvaging-beam',
@@ -2296,36 +2339,18 @@ include('config.php');
 
                     }
 
-                    // If the mining beam sprite is visible, we gotta move it!
-                    if(i === client_player_index && mining_beam_sprite.visible) {
-                        mining_beam_sprite.x = players[client_player_index].sprite.x;
-                        mining_beam_sprite.y = players[client_player_index].sprite.y;
 
-                        let distance = Phaser.Math.Distance.Between(players[client_player_index].sprite.x, players[client_player_index].sprite.y,
-                            mining_beam_sprite.object_x, mining_beam_sprite.object_y);
-                        let angle_between = Phaser.Math.Angle.Between(players[client_player_index].sprite.x, players[client_player_index].sprite.y,
-                            mining_beam_sprite.object_x, mining_beam_sprite.object_y);
+                    updateEffectSprites('player', i);
 
-                        mining_beam_sprite.displayWidth = distance;
-                        // mining_beam_sprite.rotation = angle_between - 1.4;
-                        mining_beam_sprite.rotation = angle_between;
-                    } 
-                    
-                    if(i === client_player_index && salvaging_beam_sprite.visible) {
-                        salvaging_beam_sprite.x = players[client_player_index].sprite.x;
-                        salvaging_beam_sprite.y = players[client_player_index].sprite.y;
-
-                        let distance = Phaser.Math.Distance.Between(players[client_player_index].sprite.x, players[client_player_index].sprite.y,
-                            salvaging_beam_sprite.object_x, salvaging_beam_sprite.object_y);
-                        let angle_between = Phaser.Math.Angle.Between(players[client_player_index].sprite.x, players[client_player_index].sprite.y,
-                            salvaging_beam_sprite.object_x, salvaging_beam_sprite.object_y);
-
-                        salvaging_beam_sprite.displayWidth = distance;
-                        // mining_beam_sprite.rotation = angle_between - 1.4;
-                        salvaging_beam_sprite.rotation = angle_between;
+                    if(current_view === 'galaxy') {
+                        
+                        let player_ship_index = getObjectIndex(players[i].ship_id);
+                        updateEffectSprites('object', player_ship_index);
                     }
-
-                    // If there's a heat sprite visible attached to us, move that as well
+                    
+                
+                    
+                    
 
                     if(players[i].sprite.y === players[i].destination_y && players[i].sprite.x === players[i].destination_x) {
                         players[i].destination_x = false;
@@ -2685,9 +2710,7 @@ include('config.php');
 
 
 <?php
-
-include_once("" . $client_click_name);
-include_once("" . $client_network_name);
+//include_once("" . $client_click_name);
 ?>
 
 <script type="text/javascript">

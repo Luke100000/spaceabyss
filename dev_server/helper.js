@@ -1,6 +1,6 @@
-var io_handler = require('./io' + process.env.FILE_SUFFIX + '.js');
+var io_handler = require('./io.js');
 var io = io_handler.io;
-var database = require('./database' + process.env.FILE_SUFFIX + '.js');
+var database = require('./database.js');
 var pool = database.pool;
 const { Worker, isMainThread, parentPort } = require('worker_threads');
 const chalk = require('chalk');

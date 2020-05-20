@@ -1,15 +1,16 @@
-var io_handler = require('./io' + process.env.FILE_SUFFIX + '.js');
+var io_handler = require('./io.js');
 var io = io_handler.io;
-var database = require('./database' + process.env.FILE_SUFFIX + '.js');
+var database = require('./database.js');
 var pool = database.pool;
 const { Worker, isMainThread, parentPort } = require('worker_threads');
 const chalk = require('chalk');
 const log = console.log;
 
-const game = require('./game' + process.env.FILE_SUFFIX + '.js');
-const helper = require('./helper' + process.env.FILE_SUFFIX + '.js');
+const game = require('./game.js');
+const game_object = require('./game_object.js');
+const helper = require('./helper.js');
 const main = require('./space_abyss' + process.env.FILE_SUFFIX + '.js');
-const world = require('./world' + process.env.FILE_SUFFIX + '.js');
+const world = require('./world.js');
 
 
 async function calculateDefense(dirty, monster_index, damage_types = []) {
@@ -269,7 +270,7 @@ async function deleteMonster(io, pool, dirty, data) {
 
                 let placing_coord_index = -1;
 
-                let can_place_result = await main.canPlaceObject(monster_info.scope, monster_info.coord,
+                let can_place_result = await game_object.canPlace(dirty, monster_info.scope, monster_info.coord,
                     { 'object_type_id': drop_linker.dropped_object_type_id });
 
                 if(can_place_result === false) {
@@ -296,10 +297,10 @@ async function deleteMonster(io, pool, dirty, data) {
                                 if(adjacent_coord_index !== -1) {
 
                                     if(monster_info.scope === "planet") {
-                                        can_place_result = await main.canPlaceObject(monster_info.scope, dirty.planet_coords[adjacent_coord_index],
+                                        can_place_result = await game_object.canPlace(dirty, monster_info.scope, dirty.planet_coords[adjacent_coord_index],
                                             { 'object_type_id': drop_linker.dropped_object_type_id });
                                     } else if(monster_info.scope === "ship") {
-                                        can_place_result = await main.canPlaceObject(monster_info.scope, dirty.ship_coords[adjacent_coord_index],
+                                        can_place_result = await game_object.canPlace(dirty, monster_info.scope, dirty.ship_coords[adjacent_coord_index],
                                             { 'object_type_id': drop_linker.dropped_object_type_id });
                                     }
 
@@ -400,7 +401,7 @@ async function deleteMonster(io, pool, dirty, data) {
             let ai_id = 0;
 
             if(monster_info.scope === "planet") {
-                let planet_index = await main.getPlanetIndex({ 'planet_id': dirty.planet_coords[monster_info.coord_index].planet_id, 'source': 'game.deleteMonster' });
+                let planet_index = await planet.getIndex(dirty, { 'planet_id': dirty.planet_coords[monster_info.coord_index].planet_id, 'source': 'game.deleteMonster' });
                 ai_id = dirty.planets[planet_index].ai_id;
 
                 // and try and attack the attacking player - WHO IS THE ATTACKER IN THIS FUNCTION

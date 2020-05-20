@@ -1,14 +1,15 @@
-var io_handler = require('./io' + process.env.FILE_SUFFIX + '.js');
+var io_handler = require('./io.js');
 var io = io_handler.io;
-var database = require('./database' + process.env.FILE_SUFFIX + '.js');
+var database = require('./database.js');
 var pool = database.pool;
 const chalk = require('chalk');
 const log = console.log;
 
-const world = require('./world' + process.env.FILE_SUFFIX + '.js');
-const main = require('./space_abyss' + process.env.FILE_SUFFIX + '.js');
-const planet = require('./planet' + process.env.FILE_SUFFIX + '.js');
 
+const main = require('./space_abyss' + process.env.FILE_SUFFIX + '.js');
+const planet = require('./planet.js');
+const player = require('./player.js');
+const world = require('./world.js');
 
 
     async function updateMap(io, socket, dirty) {
@@ -120,7 +121,7 @@ const planet = require('./planet' + process.env.FILE_SUFFIX + '.js');
             }
 
 
-            let planet_index = await main.getPlanetIndex({ 'planet_id': dirty.planet_coords[coord_index].planet_id });
+            let planet_index = await planet.getIndex(dirty, { 'planet_id': dirty.planet_coords[coord_index].planet_id });
 
             let starting_x = dirty.planet_coords[coord_index].tile_x - Math.floor(global.show_cols / 2);
             let starting_y = dirty.planet_coords[coord_index].tile_y - Math.floor(global.show_rows / 2);
@@ -192,7 +193,7 @@ const planet = require('./planet' + process.env.FILE_SUFFIX + '.js');
                         }
 
                         if(dirty.planet_coords[sending_coord_index].player_id) {
-                            await world.sendPlayerInfo(io, socket, false, dirty, dirty.planet_coords[sending_coord_index].player_id);
+                            await player.sendInfo(socket, false, dirty, dirty.planet_coords[sending_coord_index].player_id);
                         }
                     }
 

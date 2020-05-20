@@ -1,7 +1,7 @@
 const { Worker, isMainThread, parentPort } = require('worker_threads');
 var PF = require('pathfinding');
 
-const helper = require('./helper' + process.env.FILE_SUFFIX + '.js');
+const helper = require('./helper.js');
 
 
 if(isMainThread) {

@@ -1,24 +1,30 @@
-## [0.1.2] - 2020-05-15
+## [0.1.2] - 2020-05-19
 
 ### Added
 - Mini Drones now drop batteries
 - CNS Stimulant can now be made from Kick Beans in the Food Replicator.
+- Heat effect sprite
+- Object types (including bodies) can now be weak to electric attacks. The machine body is weak to electric attacks.
 
 
 ### Fixed
-- Thiol Extractors could not be assembled.
+- Thiol Extractors can now be assembled.
+- Some object spawners were bugged.
+- Stairs can now be placed at level 0 and above again.
 
 
 ### Changed
 
 - Ore mined in a ship now defaults to dropping somewhere on the ship floor. Players can build storage containers to 
 auto stack ore.
-- 
 - Wow I'm stupid. This whole time I've been adding in game files, and then passing them as parameters to subsequent 
 game files. This has meant that if a function needed to talk to many part of the game, that function would have to be 
 in one of the last files loaded. Turns out.... I could have just done things a more normal way from the start, and 
-just require the other files IN the files. More server files will be created as I decouple the massive game.js. This 
+just require the other files outside of the module exports. More server files will be created as I decouple the massive game.js. This 
 ended up being a MASSIVE refactoring of code - but I can split up the codebase so much better now.
+- Tons of other game code refactoring.
+- Re-did effect sprites. Effect sprites now have a specific image, and a more generic type associated with them. Instead of laser sprites, melee sprites,
+it's all now effect sprites using the different textures. 
 
 
 ## [0.1.1] - 2020-05-08

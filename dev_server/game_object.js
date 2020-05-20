@@ -1,15 +1,15 @@
-var io_handler = require('./io' + process.env.FILE_SUFFIX + '.js');
+var io_handler = require('./io.js');
 var io = io_handler.io;
-var database = require('./database' + process.env.FILE_SUFFIX + '.js');
+var database = require('./database.js');
 var pool = database.pool;
 const chalk = require('chalk');
 const log = console.log;
 
-const game = require('./game' + process.env.FILE_SUFFIX + '.js');
-const helper = require('./helper' + process.env.FILE_SUFFIX + '.js');
+const game = require('./game.js');
+const helper = require('./helper.js');
 const main = require('./space_abyss' + process.env.FILE_SUFFIX + '.js');
-const planet = require('./planet' + process.env.FILE_SUFFIX + '.js');
-const world = require('./world' + process.env.FILE_SUFFIX + '.js');
+const planet = require('./planet.js');
+const world = require('./world.js');
 
 
 
@@ -85,6 +85,184 @@ async function calculateDefense(dirty, object_index, damage_types = []) {
 
 
 }
+
+
+/**
+ *
+ * @param scope
+ * @param coord
+ * @param {Object} data
+ * @param {number=} data.object_index
+ * @param {number=} data.object_type_id
+ * @param {boolean=} data.show_output
+ * @returns {Promise<boolean>}
+ */
+async function canPlace(dirty, scope, coord, data) {
+    try {
+
+        let debug_object_type_id = 223;
+
+        let checking_coords = [];
+
+        // we need to have an object type id
+        let object_type_id = 0;
+
+        // We can pass it in directly
+        if(data.object_type_id) {
+            object_type_id = parseInt(data.object_type_id);
+        }
+
+        // Or grab it from an object being passed in
+        if(data.object_index) {
+            object_type_id = dirty.objects[data.object_index].object_type_id;
+        }
+
+        if(object_type_id === 0) {
+            log(chalk.yellow("With object type display linkers, we need an object type id. Pass it in explicitely (object_type_id), or pass in an object (object_index)"));
+            return false;
+        }
+
+        let object_type_index = dirty.object_types.findIndex(function(obj) { return obj && obj.id === object_type_id; });
+
+        if(dirty.object_types[object_type_index].id === debug_object_type_id || data.show_output) {
+            console.log("in game_object.canPlace for object type: " + dirty.object_types[object_type_index].name);
+        }
+
+
+
+        // ********** COLLECT ALL THE COORDS WE HAVE TO CHECK **********//
+        let display_linkers = dirty.object_type_display_linkers.filter(linker =>
+            linker.object_type_id === dirty.object_types[object_type_index].id && !linker.only_visual);
+
+        if(display_linkers.length > 0) {
+
+            if(dirty.object_types[object_type_index].id === debug_object_type_id) {
+                console.log("Object type has display linkers");
+            }
+
+            for(let linker of display_linkers) {
+
+                let checking_x = coord.tile_x + linker.position_x;
+                let checking_y = coord.tile_y + linker.position_y;
+
+
+                let checking_coord_index = -1;
+                if(scope === 'galaxy') {
+                    checking_coord_index = await main.getCoordIndex({ 'tile_x': checking_x, 'tile_y': checking_y });
+
+                    if(checking_coord_index !== -1) {
+                        checking_coords.push(dirty.coords[checking_coord_index]);
+                    }
+                } else if(scope === 'planet') {
+                    checking_coord_index = await main.getPlanetCoordIndex({ 'planet_id': coord.planet_id,
+                        'planet_level': coord.level, 'tile_x': checking_x, 'tile_y': checking_y });
+
+                    if(checking_coord_index !== -1) {
+                        checking_coords.push(dirty.planet_coords[checking_coord_index]);
+                    }
+                } else if(scope === 'ship') {
+                    checking_coord_index = await main.getShipCoordIndex({ 'ship_id': coord.ship_id,
+                        'level': coord.level,
+                        'tile_x': checking_x, 'tile_y': checking_y });
+
+                    if(checking_coord_index !== -1) {
+                        checking_coords.push(dirty.ship_coords[checking_coord_index]);
+                    }
+                }
+
+                // We weren't able to find all the coords we needed to match up to all the display linkers
+                if(checking_coord_index === -1) {
+                    if(data.show_output) {
+                        log(chalk.yellow("Could not find one of the coords we would be placing things on"));
+                    }
+                    return false;
+
+                }
+
+            }
+
+        } else {
+            checking_coords.push(coord);
+        }
+
+
+        //************ GO THROUGH EACH OF THE COORDS THAT WE HAVE **********************//
+        for(let checking_coord of checking_coords) {
+
+            if(dirty.object_types[object_type_index].id === debug_object_type_id || data.show_output) {
+                console.log("Checking coord id: " + checking_coord.id + " with floor type id: " + checking_coord.floor_type_id);
+            }
+
+
+            // No matter the coord, if the floor type doesn't allow it, it doesn't allow it
+            let floor_type_index = main.getFloorTypeIndex(checking_coord.floor_type_id);
+
+
+            if(floor_type_index !== -1 && !dirty.floor_types[floor_type_index].can_build_on) {
+
+                if(dirty.object_types[object_type_index].id === debug_object_type_id || data.show_output) {
+                    log(chalk.yellow("Can't build on that floor type"));
+                }
+                return false;
+            }
+
+            if(floor_type_index !== -1 && dirty.floor_types[floor_type_index].is_protected) {
+
+                if(dirty.object_types[object_type_index].id === debug_object_type_id || data.show_output) {
+                    log(chalk.yellow("That floor type is protected"));
+                }
+                return false;
+            }
+
+
+            if(checking_coord.npc_id || checking_coord.player_id || checking_coord.monster_id) {
+                if(dirty.object_types[object_type_index].id === debug_object_type_id || data.show_output) {
+                    log(chalk.yellow("npc, player, or monster already on that coord"));
+                }
+
+                return false;
+            }
+
+            if(!data.object_index) {
+
+                if(checking_coord.object_id || checking_coord.object_type_id || checking_coord.belong_to_object_id) {
+
+                    if(dirty.object_types[object_type_index].id === debug_object_type_id || data.show_output) {
+                        log(chalk.yellow("No object index passed in, and coord already has an object_id, object_type_id, or belongs_to_object_id"))
+                    }
+                    return false;
+                }
+            }
+            // comparisons when we have a specific object being placed
+            else {
+
+                if( (checking_coord.object_id && checking_coord.object_id !== dirty.objects[data.object_index].id) &&
+                    (checking_coord.belongs_to_object_id !== dirty.objects[data.object_index].id) ) {
+
+                    if(dirty.object_types[object_type_index].id === debug_object_type_id || data.show_output) {
+                        log(chalk.yellow("Coord has object id or belongs to object id and it doesn't match the object we passed in"));
+                    }
+                    return false;
+                }
+            }
+
+            if(scope === 'galaxy' && checking_coord.planet_id || checking_coord.belongs_to_planet_id) {
+                if(dirty.object_types[object_type_index].id === debug_object_type_id || data.show_output) {
+                    log(chalk.yellow("Can't place on a planet|belongs_to_planet galaxy coord"));
+                }
+                return false;
+            }
+
+        }
+
+        return true;
+    } catch(error) {
+        log(chalk.red("Error in game_object.canPlace: " + error));
+        console.error(error);
+    }
+}
+
+exports.canPlace = canPlace;
 
 
 //      object_index   |   damage_amount   |   battle_linker (OPTIONAL)   |   object_info   |   calculating_range (OPTIONAL)
@@ -266,7 +444,7 @@ async function deleteObject(io, pool, dirty, data) {
         if (dirty.objects[data.object_index].object_type_id === 72) {
 
             if(dirty.objects[data.object_index].planet_coord_id) {
-                let planet_index = await main.getPlanetIndex({ 'planet_id': dirty.objects[data.object_index].planet_id, 'source': 'game.deleteObject' });
+                let planet_index = await planet.getIndex(dirty, { 'planet_id': dirty.objects[data.object_index].planet_id, 'source': 'game.deleteObject' });
                 if (planet_index !== -1) {
                     dirty.planets[planet_index].ai_id = false;
                     dirty.planets[planet_index].player_id = false;
@@ -678,6 +856,7 @@ exports.spawn = spawn;
 
 module.exports = {
     calculateDefense,
+    canPlace,
     damage,
     deleteObject,
     getCoordAndRoom,

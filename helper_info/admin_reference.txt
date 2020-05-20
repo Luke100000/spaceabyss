@@ -17,6 +17,7 @@ game.processAdminChatMessage
 /spawnmonster MONSTER_TYPE_ID
 /spawnnpc NPC_JOB_ID
 /spawnobject AMOUNT OBJECT_TYPE_NAME
+/tickspawners
 
 
 
