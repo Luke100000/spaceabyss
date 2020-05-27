@@ -63,7 +63,7 @@ async function calculateDefense(dirty, monster_index, damage_types = []) {
 
 //   data: monster_index   |   damage_amount   |   battle_linker   |   monster_info   |   calculating_range   |   damage_types
 //   damage_source_type   |   damage_source_id
-async function damage(io, pool, dirty, data) {
+async function damage(dirty, data) {
     try {
 
         let monster_type_index = main.getMonsterTypeIndex(dirty.monsters[data.monster_index].monster_type_id);
@@ -143,7 +143,7 @@ async function damage(io, pool, dirty, data) {
                     //console.log("Battle linker data: ");
                     //console.log(battle_linker_data);
 
-                    await world.addBattleLinker(io, socket, dirty, battle_linker_data);
+                    await world.addBattleLinker(socket, dirty, battle_linker_data);
                 }
             }
 
@@ -166,7 +166,7 @@ async function damage(io, pool, dirty, data) {
                 dirty.players[player_index].exp = dirty.players[player_index].exp + dirty.monster_types[monster_type_index].exp;
                 dirty.players[player_index].has_change = true;
 
-                await game.addKilledLinker(pool, dirty.players[player_index].player_id, dirty.monsters[data.monster_index].monster_type_id);
+                await game.addKilledLinker(dirty.players[player_index].player_id, dirty.monsters[data.monster_index].monster_type_id);
 
                 //console.log("Should be calling game.checkExp");
                 game.checkExp(socket, dirty, player_index);
@@ -183,7 +183,7 @@ async function damage(io, pool, dirty, data) {
             }
 
             //console.log("Calling deleteMonster with monster index: " + data.monster_index);
-            await deleteMonster(io, pool, dirty, { 'monster_index': data.monster_index, 'reason': 'battle', 'battle_linker': data.battle_linker });
+            await deleteMonster(dirty, { 'monster_index': data.monster_index, 'reason': 'battle', 'battle_linker': data.battle_linker });
             //console.log("Done with deleteMonster");
 
         } else {
@@ -212,7 +212,7 @@ async function damage(io, pool, dirty, data) {
 exports.damage = damage;
 
 // monster_index   |   reason   |   skip_check_spawned_event
-async function deleteMonster(io, pool, dirty, data) {
+async function deleteMonster(dirty, data) {
 
     try {
 
@@ -254,7 +254,7 @@ async function deleteMonster(io, pool, dirty, data) {
         }
 
 
-        world.removeBattleLinkers(io, dirty, {'monster_id': dirty.monsters[data.monster_index].id });
+        world.removeBattleLinkers(dirty, {'monster_id': dirty.monsters[data.monster_index].id });
 
 
 
@@ -510,7 +510,7 @@ exports.getCoordAndRoom = getCoordAndRoom;
  * @param {string=} data.reason
  * @returns {Promise<boolean>}
  */
-async function move(io, dirty, i, data) {
+async function move(dirty, i, data) {
 
     try {
 
@@ -569,7 +569,7 @@ async function move(io, dirty, i, data) {
 
             new_x = dirty.monsters[i].path[0][0];
             new_y = dirty.monsters[i].path[0][1];
-            console.log("Reading from path to send monster to x,y: " + new_x + "," + new_y);
+            //console.log("Reading from path to send monster to x,y: " + new_x + "," + new_y);
 
 
             // Remove the part of the path we just used
@@ -668,6 +668,28 @@ async function move(io, dirty, i, data) {
 
                         new_x = old_coord.tile_x;
                         change_x = 0;
+                    } else if(x_difference !== 0) {
+                        if(attacking_coord.tile_x > old_coord.tile_x) {
+                            new_x = old_coord.tile_x + 1;
+                            change_x = 1;
+                        } else {
+                            new_x = old_coord.tile_x - 1;
+                            change_x = -1;
+                        }
+
+                        new_y = old_coord.tile_y;
+                        change_y = 0;
+                    } else if(y_difference !== 0) {
+                        if(attacking_coord.tile_y > old_coord.tile_y) {
+                            new_y = old_coord.tile_y + 1;
+                            change_y = 1;
+                        } else {
+                            new_y = old_coord.tile_y - 1;
+                            change_y = -1;
+                        }
+
+                        new_x = old_coord.tile_x;
+                        change_x = 0; 
                     }
 
                 } else if(dirty.monster_types[data.monster_type_index].attack_movement_type === 'warp_to') {
@@ -747,6 +769,7 @@ async function move(io, dirty, i, data) {
 
 
         if(new_x === -1 || new_y === -1) {
+            log(chalk.yellow("-1 for new_x or new_y"));
             return false;
         }
 
@@ -755,23 +778,9 @@ async function move(io, dirty, i, data) {
 
 
         /************* STEP 2. SEE IF WE CAN PLACE ****************/
-            //if(dirty.monsters[i].id === 5128) {
-            //    log(chalk.cyan("\n Trying new multi tile monster movement"));
-            //
-            //    console.log("Monster id: " + dirty.monsters[i].id + " was at: " + old_coord.tile_x + "," + old_coord.tile_y +
-            //        " and is changing x,y: " + change_x + "," + change_y);
-            //}
-
 
         let last_x = new_x + dirty.monster_types[data.monster_type_index].movement_tile_width - 1;
         let last_y = new_y + dirty.monster_types[data.monster_type_index].movement_tile_height - 1;
-
-        //if(dirty.monsters[i].id === 5128) {
-        //    console.log("Monster type with width/height : " + dirty.monster_types[monster_type_index].movement_tile_width + "," +
-        //        dirty.monster_types[monster_type_index].movement_tile_height);
-        //
-        //    console.log("Checking from x,y: " + new_x + "," + new_y + " to: " + last_x + "," + last_y);
-        //}
 
 
 
@@ -828,7 +837,7 @@ async function move(io, dirty, i, data) {
             if(dirty.monsters[i].path) {
                 console.log("Monster path failed");
                 dirty.monsters[i].path = false;
-                dirty.monsters[i].ticks_until_next_path = 4;
+                dirty.monsters[i].ticks_until_next_path = 8;
             }
 
             //if(dirty.monsters[i].id === 5128) {
@@ -853,7 +862,7 @@ async function move(io, dirty, i, data) {
 
 
                 worker.on('message', (path) => {
-                    //console.log("Got a path from the worker: ");
+                    console.log("Monster id: " + dirty.monsters[i].id + " path from worker is:");
                     console.log(path);
                     dirty.monsters[i].path = path;
                 });

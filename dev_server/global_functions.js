@@ -99,7 +99,7 @@ async function eat(socket, dirty, database_queue, data) {
         }
 
         let remove_inventory_data = { 'inventory_item_id': dirty.inventory_items[inventory_item_index].id, 'amount': 1};
-        inventory.removeFromInventory(io, pool, socket, dirty, remove_inventory_data);
+        inventory.removeFromInventory(socket, dirty, remove_inventory_data);
 
 
 
@@ -254,7 +254,7 @@ async function placeObject(socket, dirty, data) {
                 place_portal_data.ship_coord_index = data.ship_coord_index;
             }
 
-            await game.placePortal(io, socket, dirty, object_index, place_portal_data );
+            await game.placePortal(socket, dirty, object_index, place_portal_data );
 
             // Pretty sure this is inserting and
             //await game.addPortal(socket, dirty, dirty.objects[object_index].id, add_portal_data);
@@ -406,7 +406,6 @@ async function placeObject(socket, dirty, data) {
 
             // See if there's already a hole there, or we are able to make one
             let already_have_hole = false;
-            let can_place_hole_result = true;
 
             if(dirty.planet_coords[above_coord_index].object_type_id) {
                 let above_object_type_index = getObjectTypeIndex(dirty.planet_coords[above_coord_index].object_type_id);
@@ -415,17 +414,8 @@ async function placeObject(socket, dirty, data) {
                 }
             }
 
-
-            if(!already_have_hole) {
-                can_place_hole_result = await game_object.canPlace(dirty, 'planet', dirty.planet_coords[above_coord_index],
-                { 'object_type_id': dirty.object_types[object_type_index].linked_object_type_id, 'show_output': true });
-            }
-
-            if(can_place_hole_result === false) {
-                log(chalk.yellow("Could not place the hole above. Cancelling"));
-                return false;
-            }
-
+            let can_place_stairs_result = await game_object.canPlace(dirty, 'planet', dirty.planet_coords[above_coord_index],
+            { 'object_type_id': dirty.object_types[object_type_index].linked_object_type_id, 'show_output': true });
 
 
 

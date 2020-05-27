@@ -6,6 +6,7 @@ const chalk = require('chalk');
 const log = console.log;
 
 const game_object = require('./game_object.js');
+const helper = require('./helper.js');
 const main = require('./space_abyss' + process.env.FILE_SUFFIX + '.js');
 const world = require('./world.js');
 
@@ -75,7 +76,8 @@ async function calculateDefense(dirty, player_index, damage_type = false) {
 
         return player_defense;
     } catch(error) {
-        log(chalk.red("Error in battle.caclculatePlayerDefense: " + error));
+        log(chalk.red("Error in player.caclculateDefense: " + error));
+        console.error(error);
     }
 
 
@@ -129,7 +131,7 @@ async function sendInfo(socket, room, dirty, player_id) {
 exports.sendInfo = sendInfo;
 
 
-async function sendShips(io, socket, dirty, player_index) {
+async function sendShips(socket, dirty, player_index) {
 
     try {
 

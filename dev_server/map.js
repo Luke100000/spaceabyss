@@ -12,7 +12,7 @@ const player = require('./player.js');
 const world = require('./world.js');
 
 
-    async function updateMap(io, socket, dirty) {
+    async function updateMap(socket, dirty) {
         try {
 
             if(!socket.logged_in) {
@@ -24,11 +24,11 @@ const world = require('./world.js');
 
             if(dirty.players[player_index].planet_coord_id) {
                 //console.log("socket player planet_id: " + socket.player_player_id);
-                await updateMapPlanet(io, socket, dirty);
+                await updateMapPlanet(socket, dirty);
             } else if(dirty.players[player_index].ship_coord_id) {
                 await updateMapShip(socket, dirty);
             } else if(dirty.players[player_index].coord_id) {
-                await updateMapGalaxy(io, socket, dirty);
+                await updateMapGalaxy(socket, dirty);
             } else {
                 console.log("Not sure where the player is. Not sure what map to send");
             }
@@ -43,7 +43,7 @@ const world = require('./world.js');
 
     // TODO switch to a similar style to updateMapShip. I think we can store the galaxy size globally, so we never have to lookup
     // TODO coords that aren't in the galaxy space.
-    async function updateMapGalaxy(io, socket, dirty) {
+    async function updateMapGalaxy(socket, dirty) {
         try {
             //console.log("In updateMapGalaxy");
 
@@ -103,7 +103,7 @@ const world = require('./world.js');
 
     // TODO we need a solution for planet levels > 0. I THINK the only real way to go about it is to just load
     // TODO planet coords with level > 0 into memory on server load, so we know we don't have to query the DB
-    async function updateMapPlanet(io, socket, dirty) {
+    async function updateMapPlanet(socket, dirty) {
         try {
             //console.log("In updateMapPlanet");
             let player_index = await main.getPlayerIndex({ 'player_id': socket.player_id });

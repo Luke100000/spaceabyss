@@ -25,6 +25,13 @@
 ************************ UNSORTED IDEAS *****************************:
 
 
+
+So I have all these error messages - and they come then go really fast. Maybe I could have a generic help button that popped up 
+    the click menu, or another popup-ish window, and gave further explanation about the latest failure messages.
+    No ship floor space, gives a link to the tutorial, and briefly says that 'Bulk containers (picture) and ice containers (picture) 
+    can be used so the results of mining aren't just thrown all over the floor.
+
+
 Maybe turn Slime Berry Tree into Slerm Berry Tree - and make the berries into Slerm Berries, which maybe grow into
     a different type of slerm if they are dropped on like a ship or corporation world.
 
@@ -45,6 +52,8 @@ So we have a doctor NPC
 HACKING. THE VIEW I HAVEN'T MADE YET! Need a way to enter into virtual realm
 
 
+Need a moveObjectFlow or something for asteroids and such I suppose?
+    The idea of asteroids flowing in space is cool - but I would have to greatly speed up their movement tick time.
 
 Expand on engine hardpoint stuff
     Make sure ships are slower if they don't have enough engines
@@ -56,6 +65,9 @@ A player body type that is resistant to acid - or armor that is especially usefu
     I think it would be neat if there was the option to just take some of what something spawned
     With the Milk Slerm, you could take one or two, and it could generate more, but if you took all,
         it would de-spawn.
+
+
+Gundam style spaceship for players
 
 
 

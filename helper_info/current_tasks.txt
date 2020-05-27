@@ -4,6 +4,50 @@ DOING NOW:
 
 
 
+    So an algae vat on your ship taking 2 hours to produce an algae is.... butt. It's way too long.
+        See if there's other things that I would want to take that long - or otherwise drop it down SIGNIFICANTLY to like 10 minutes.
+
+        Decay ticking on the algae vat every 10 minutes is too much too. How long should it take for an algae vat in a spaceship to decay in IRL time?
+            Honestly like 5 days to a week or something.
+
+            So lets balance that out - re-add in the ship dirt tile, and give it something like a 'growing medium' floor type class, or something like that.
+
+            I also need the kick plant to be smaller
+
+
+
+
+    I think the left movement showing the right animation has something to do with switching ships.
+
+
+    object type have max_storage, and a newer, more clear, max_energy_storage
+        Look up all object types that use either of these, and make sure they are using the correct one
+
+        I like the idea of giving these things a not full/full frame.
+            is_full boolean?
+
+
+        While doing this, rename object_types.frame_count to object_types.is_active_frame_count
+        and add a is_full_game_file_index 
+    energy storage should show the amount of energy by default when clicked on
+
+    integrate new algae vat with the increased number of frames
+
+    integrate algae king monster
+
+    draw stimshot/stimpack/whatever
+
+
+    Water planet stuff for Alexander   
+        Starfish. Robot shark. Some type of underwater moss? The octopus-like body that is good at cooking is also fast underwater.
+
+
+        Need to make the octopus body slow on land, fast in water
+
+    Investigate why monsters show up on the wrong tile sometimes
+        It looks like this is usually occuring when we switch levels
+
+
         Need to limit the # of things that can be stacked on a floor. Limit at 100 Territe/tile or so.
 
 
@@ -35,10 +79,9 @@ DOING NOW:
 
     If a ship is dockable, we want to run the sprite all the time
 
-        The ability to add in a spawn without re-generating the entire level
+
         The ability to re-generate a single level
 
-    I like the idea of having all of the coords around the stairs cleared. Otherwise it's really awkward to try to move around the stairs
 
 NEED TO DRAW
 
@@ -85,6 +128,10 @@ algae power cell
 
 science vessel
 
+
+exodium asteroid
+
+water zealots. Must be blue
 
 
 random advertisement drones that show up here and there on corporation planets!!!! A little drone with a burger image on it, etc.

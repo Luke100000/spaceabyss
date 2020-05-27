@@ -165,21 +165,34 @@ socket.on('battle_linker_info', function(data) {
 
                 if(effect_sprites[i]) {
 
+                    if(battle_linkers[battle_linker_index].being_attacked_type === 'monster' && 
+                        battle_linkers[battle_linker_index].being_attacked_id === effect_sprites[i].monster_id) {
+
+                            effect_sprites[i].monster_id = false;
+                            effect_sprites[i].setVisible(false);
+
+                    }
+
+
+                    if(battle_linkers[battle_linker_index].being_attacked_type === 'object' &&
+                        battle_linkers[battle_linker_index].being_attacked_id === effect_sprites[i].object_id) {
+
+
+                        effect_sprites[i].object_id = false;
+                        effect_sprites[i].setVisible(false);
+
+                }
+
                     if(battle_linkers[battle_linker_index].being_attacked_type === 'planet' && 
-                    battle_linkers[battle_linker_index].being_attacked_id === effect_sprites[i].planet_id) {
+                        battle_linkers[battle_linker_index].being_attacked_id === effect_sprites[i].planet_id) {
+
                         effect_sprites[i].planet_id = false;
                         effect_sprites[i].setVisible(false);
                     }
 
                 }
 
-                if(battle_linkers[battle_linker_index].being_attacked_type === 'object' &&
-                    battle_linkers[battle_linker_index].being_attacked_id === effect_sprites[i].object_id) {
-
-                    effect_sprites[i].object_id = false;
-                    effect_sprites[i].setVisible(false);
-
-                }
+                
 
 
 
@@ -1217,7 +1230,6 @@ socket.on('coord_info', function (data) {
 
 socket.on('faction_info', function(data) {
 
-    console.log("Got faction info for faction with name: " + data.faction.name);
 
     let faction_index = factions.findIndex(function(obj) { return obj && obj.id === parseInt(data.faction.id); });
 
@@ -1457,6 +1469,7 @@ socket.on('market_linker_info', function(data) {
 
 });
 
+// This should only be updates about mining 
 socket.on('mining_info', function(data) {
 
 
@@ -1506,9 +1519,9 @@ socket.on('mining_info', function(data) {
 
 
     let function_data = { 'damage_amount': data.amount, 'damage_types': ['mining'] };
-    console.log(function_data);
+    //console.log(function_data);
     addInfoNumber(info_number_x, info_number_y, function_data);
-    addEffect(function_data);
+    //addEffect(function_data);
     //addInfoNumber(info_number_data);
 
 
@@ -1518,17 +1531,19 @@ socket.on('mining_info', function(data) {
 
 socket.on('mining_linker_info', function(data) {
 
-    console.log("Got mining_linker_info with id : " + data.mining_linker.id);
+    //console.log("Got mining_linker_info with id : " + data.mining_linker.id);
 
     let index = mining_linkers.findIndex(function(obj) { return obj && obj.id === data.mining_linker.id; });
 
 
     if(data.remove && index !== -1) {
+
+        removeEffects('object', mining_linkers[index].object_id);
+
+
         delete mining_linkers[index];
-        console.log("Removed mining linker");
-        if(mining_beam_sprite) {
-            mining_beam_sprite.setVisible(false);
-        }
+
+
         redrawBars();
         return;
     } else if(index === -1) {
@@ -1536,77 +1551,20 @@ socket.on('mining_linker_info', function(data) {
 
     }
 
-    // TODO support for other player's mining beams to show up
 
-    // Lets try to have our beam for our mining linker
-    if(mining_linkers[index].player_id === client_player_id) {
-
-        let scene_game = game.scene.getScene('sceneGame');
-
-        let object_index = objects.findIndex(function(obj) { return obj && obj.id === mining_linkers[index].object_id; });
-
-        // Probably not in our view anymore
-        if(object_index === -1) {
-            return;
-        }
-        let object_info = getObjectInfo(object_index);
-
-        // The spot on the object the beam should reach to
-        let object_x_beam = tileToPixel(object_info.coord.tile_x) + 32;
-        let object_y_beam = tileToPixel(object_info.coord.tile_y) + 32;
+    let object_index = getObjectIndex(mining_linkers[index].object_id);
+    let object_info = getObjectInfo(object_index);
 
 
-        if(mining_beam_sprite === false) {
-            console.log("Creating mining sprite");
-            mining_beam_sprite = scene_game.add.sprite(players[client_player_index].sprite.x, players[client_player_index].sprite.y, 'mining-beam');
-            mining_beam_sprite.object_x = object_x_beam;
-            mining_beam_sprite.object_y = object_y_beam;
-
-            // I think it will be easier if we origin on a side
-            mining_beam_sprite.setOrigin(0,.5);
-            // Makes it too dull
-            //mining_beam_sprite.alpha = 0.7;
-        } else {
-            mining_beam_sprite.object_index = object_index;
-            mining_beam_sprite.object_x = object_x_beam;
-            mining_beam_sprite.object_y = object_y_beam;
-            mining_beam_sprite.x = players[client_player_index].sprite.x;
-            mining_beam_sprite.y = players[client_player_index].sprite.y;
-            mining_beam_sprite.setVisible(true);
-            console.log("Making mining sprite visible");
-        }
-
-        mining_beam_sprite.anims.play('mining-beam');
-        let distance = Phaser.Math.Distance.Between(players[client_player_index].sprite.x, players[client_player_index].sprite.y,
-            object_x_beam, object_y_beam);
-        let angle_between = Phaser.Math.Angle.Between(players[client_player_index].sprite.x, players[client_player_index].sprite.y,
-            object_x_beam, object_y_beam);
-
-        mining_beam_sprite.displayWidth = distance;
-        // mining_beam_sprite.rotation = angle_between - 1.4;
-        mining_beam_sprite.rotation = angle_between;
-
+    // It's possible that we won't have the coord for the mining if we are back to viewing the ship
+    if(object_info.coord !== false) {
+        let effect_x = tileToPixel(object_info.coord.tile_x);
+        let effect_y = tileToPixel(object_info.coord.tile_y);
+        addEffect({ 'damage_types': ['mining'], 'x': effect_x, 'y': effect_y, 'damage_source_type': 'player', 
+            'damage_source_id': mining_linkers[index].player_id, 'object_id': mining_linkers[index].object_id });
     }
 
-
-    /* Trying to have the mining_linker different from the actual mining info being sent each time something is mined
-    let object_index = objects.findIndex(function(obj) { return obj && obj.id === mining_linkers[index].object_id; });
-
-    if(object_index !== -1) {
-        let coord_index = coords.findIndex(function(obj) { return obj && obj.id === objects[object_index].coord_id; });
-        if(coord_index !== -1) {
-
-            // add an info number
-            let info_number_data = { 'x': tileToPixel(coords[coord_index].tile_x), 'y': tileToPixel(coords[coord_index].tile_y),
-                'damage_amount': 10, 'damage_type': 'mining',
-                'defender_type': 'object', 'defender_id': mining_linkers[index].object_id, 'attacker_type': 'player',
-                'attacker_id': mining_linkers[index].player_id };
-
-            addInfoNumber(info_number_data);
-
-        }
-    }
-    */
+    
 
 });
 
@@ -1640,7 +1598,7 @@ socket.on('monster_info', function(data) {
     //console.log("Got monster info for monster id: " + data.monster.id);
 
     if(monster_index === -1) {
-        //console.log("Did not have monster in monsters. Adding monster id: " + data.monster.id);
+        console.log("Did not have monster in monsters. Adding monster id: " + data.monster.id);
 
 
         monster_index = monsters.push(data.monster) - 1;
@@ -1650,12 +1608,14 @@ socket.on('monster_info', function(data) {
 
         let monster_info = getMonsterInfo(monster_index);
 
-        if(shouldDraw(client_player_info.coord, monster_info.coord, "monster_info")) {
+        let should_draw_result = shouldDraw(client_player_info.coord, monster_info.coord, "monster_info");
+
+        if(should_draw_result === true) {
             createMonsterSprite(monster_index);
         } else {
-            //console.log("%c Not drawing monster", log_warning);
+            console.log("%c Not drawing monster id: " + monsters[monster_index].id, log_warning);
             if(!client_player_info.coord) {
-                //console.log("Client player doesn't have a coord yet");
+                console.log("Client player doesn't have a coord yet");
             }
 
             if(!monster_info.coord) {
@@ -1673,8 +1633,19 @@ socket.on('monster_info', function(data) {
 
         let monster_info = getMonsterInfo(monster_index);
 
-        if(shouldDraw(client_player_info.coord, monster_info.coord, "monster_info")) {
+        let should_draw_result = shouldDraw(client_player_info.coord, monster_info.coord, "monster_info");
+
+        if(should_draw_result === true) {
             createMonsterSprite(monster_index);
+        } else {
+            console.log("%c Not drawing monster id: " + monsters[monster_index].id, log_warning);
+            if(!client_player_info.coord) {
+                console.log("Client player doesn't have a coord yet");
+            }
+
+            if(!monster_info.coord) {
+                console.log("Don't have a coord for the monster yet");
+            }
         }
 
         // Monster moved on a planet
@@ -1929,6 +1900,7 @@ socket.on('move_player', function(data) {
 
 socket.on('news', function (data) {
     console.log("Got news");
+    connected = true;
     $('#status').text(data.status);
     socket.emit('my other event', { my: 'data' });
     console.log("Connected");
@@ -2144,21 +2116,6 @@ socket.on('object_info', function(data) {
 
         }
 
-        // If there was a salvaging linker associated with this, remove it and the beam
-        for(let i = 0; i < salvaging_linkers.length; i++) {
-            if(salvaging_linkers[i] && salvaging_linkers[i].object_id === data.object.id) {
-
-
-                delete salvaging_linkers[i];
-                console.log("Removed salvaging linker");
-                if(salvaging_beam_sprite) {
-                    salvaging_beam_sprite.setVisible(false);
-                }
-                redrawBars();
-
-
-            }
-        }
 
         // If there are any effects associated with this, remove them
         for(let i = 0; i < effect_sprites.length; i++) {
@@ -3372,10 +3329,16 @@ socket.on('result_info', function(data) {
     console.log("Got result info");
     let scene_game = game.scene.getScene('sceneGame');
 
+
+    if(data.status === 'failure') {
+        recent_failure_messages.push(data);
+    }
+
     let base_x = 0;
     let base_y = 0;
 
     let object_index = -1;
+    let object_info = false;
 
 
     if(data.object_id) {
@@ -3385,28 +3348,49 @@ socket.on('result_info', function(data) {
     // If the result info is associated with an object and we have the object, - we can display it there
     if(object_index !== -1) {
 
-        if(objects[object_index].ship_coord_id) {
-            let coord_index = ship_coords.findIndex(function(obj) { return obj && obj.id === objects[object_index].ship_coord_id; });
+        let object_info = getObjectInfo(object_index);
 
-            if(coord_index === -1) {
-                return false;
+        // We could be salvaging or mining an object in the galaxy, but in the ship view. In a case like this, we would put the success info
+        // onto the player instead
+        if(object_info.room && object_info.room === client_player_info.room) {
+            if(objects[object_index].ship_coord_id) {
+                let coord_index = ship_coords.findIndex(function(obj) { return obj && obj.id === objects[object_index].ship_coord_id; });
+    
+                if(coord_index === -1) {
+                    return false;
+                }
+    
+                base_x = tileToPixel(ship_coords[coord_index].tile_x);
+                base_y = tileToPixel(ship_coords[coord_index].tile_y);
+    
+            } else if(objects[object_index].planet_coord_id) {
+                let coord_index = planet_coords.findIndex(function(obj) { return obj && obj.id === objects[object_index].planet_coord_id; });
+    
+                if(coord_index === -1) {
+                    return false;
+                }
+    
+                base_x = tileToPixel(planet_coords[coord_index].tile_x);
+                base_y = tileToPixel(planet_coords[coord_index].tile_y);
+    
+            } else if(objects[object_index].coord_id) {
+                let coord_index = coords.findIndex(function(obj) { return obj && obj.id === objects[object_index].coord_id; });
+    
+                if(coord_index === -1) {
+                    return false;
+                }
+    
+                base_x = tileToPixel(coords[coord_index].tile_x);
+                base_y = tileToPixel(coords[coord_index].tile_y);
             }
-
-            base_x = tileToPixel(ship_coords[coord_index].tile_x);
-            base_y = tileToPixel(ship_coords[coord_index].tile_y);
-
-        } else if(objects[object_index].planet_coord_id) {
-            let coord_index = planet_coords.findIndex(function(obj) { return obj && obj.id === objects[object_index].planet_coord_id; });
-
-            if(coord_index === -1) {
-                return false;
-            }
-
-            base_x = tileToPixel(planet_coords[coord_index].tile_x);
-            base_y = tileToPixel(planet_coords[coord_index].tile_y);
-
         }
-    } else {
+
+      
+    }
+    
+    
+    
+    if(base_x === 0 && base_y == 0) {
         base_x = players[client_player_index].sprite.x;
         base_y = players[client_player_index].sprite.y;
     }
@@ -3443,7 +3427,9 @@ socket.on('result_info', function(data) {
         result_text, { fontSize: 16,
             padding: { x: 10, y: 5},
             fill: fill,
-            wordWrap: { width: text_width }
+            wordWrap: { width: text_width },
+            stroke: "#000000",
+            strokeThickness: 1
 
         });
 
@@ -3530,11 +3516,12 @@ socket.on('salvaging_linker_info', function(data) {
         return obj && obj.id === data.salvaging_linker.id; });
 
     if(data.remove && index !== -1) {
+
+        removeEffects('object', salvaging_linkers[index].object_id);
+
         delete salvaging_linkers[index];
         console.log("Removed salvaging linker");
-        if(salvaging_beam_sprite) {
-            salvaging_beam_sprite.setVisible(false);
-        }
+
         redrawBars();
 
         return;
@@ -3545,63 +3532,33 @@ socket.on('salvaging_linker_info', function(data) {
 
     } else {
 
-        let hp_change = salvaging_linkers[index].hp_left - data.salvaging_linker.hp_left;
-        salvaging_linkers[index].hp_left = parseInt(data.salvaging_linker.hp_left);
+
+        // The only new value we need to save for an updated linker is the total_salvaged
+        let total_salvaged_change = data.salvaging_linker.total_salvaged - salvaging_linkers[index].total_salvaged;
+        salvaging_linkers[index].total_salvaged = parseInt(data.salvaging_linker.total_salvaged);
 
         let object_index = objects.findIndex(function(obj) { return obj && obj.id === salvaging_linkers[index].object_id; });
         let object_info = getObjectInfo(object_index);
-        let drawing_x = tileToPixel(object_info.coord.tile_x);
-        let drawing_y = tileToPixel(object_info.coord.tile_y);
 
-        //let info_number_data = { 'x': tileToPixel(object_info.coord.tile_x), 'y': tileToPixel(object_info.coord.tile_y),
-        //    'damage_amount': hp_change, 'damage_type': 'salvaging',
-        //    'defender_type': 'object', 'defender_id': salvaging_linkers[index].object_id, 'attacker_type': 'player',
-        //    'attacker_id': salvaging_linkers[index].player_id };
-
-        addEffect({ 'x': drawing_x, 'y': drawing_y, 'damage_types': ['repairing']});
-        addInfoNumber(drawing_x, drawing_y, {'damage_amount': data.repaired_amount, 'damage_types': ['repairing']});
-
-        //addInfoNumber(info_number_data);
-        redrawBars();
-
-        if(salvaging_linkers[index].player_id === client_player_id) {
-            let scene_game = game.scene.getScene('sceneGame');
-
-
-            let object_x_beam = tileToPixel(object_info.coord.tile_x) + 32;
-            let object_y_beam = tileToPixel(object_info.coord.tile_y) + 32;
-
-
-            if(salvaging_beam_sprite === false) {
-                console.log("Creating salvaging beam sprite");
-                salvaging_beam_sprite = scene_game.add.sprite(players[client_player_index].sprite.x, players[client_player_index].sprite.y, 'salvaging-beam');
-                salvaging_beam_sprite.object_x = object_x_beam;
-                salvaging_beam_sprite.object_y = object_y_beam;
-
-                // I think it will be easier if we origin on a side
-                salvaging_beam_sprite.setOrigin(0,.5);
-                // Makes it too dull
-                //mining_beam_sprite.alpha = 0.7;
-            } else {
-                salvaging_beam_sprite.object_index = object_index;
-                salvaging_beam_sprite.object_x = object_x_beam;
-                salvaging_beam_sprite.object_y = object_y_beam;
-                salvaging_beam_sprite.x = players[client_player_index].sprite.x;
-                salvaging_beam_sprite.y = players[client_player_index].sprite.y;
-                salvaging_beam_sprite.setVisible(true);
-                console.log("Making salvaging sprite visible");
-            }
-
-            salvaging_beam_sprite.anims.play('salvaging-beam');
-            let distance = Phaser.Math.Distance.Between(players[client_player_index].sprite.x, players[client_player_index].sprite.y,
-                object_x_beam, object_y_beam);
-            let angle_between = Phaser.Math.Angle.Between(players[client_player_index].sprite.x, players[client_player_index].sprite.y,
-                object_x_beam, object_y_beam);
-
-            salvaging_beam_sprite.displayWidth = distance;
-            // mining_beam_sprite.rotation = angle_between - 1.4;
-            salvaging_beam_sprite.rotation = angle_between;
+        // It's possible our ship is salvaging something and we are walking around in our ship
+        if(object_info.coord !== false) {
+            let drawing_x = tileToPixel(object_info.coord.tile_x);
+            let drawing_y = tileToPixel(object_info.coord.tile_y);
+    
+            //let info_number_data = { 'x': tileToPixel(object_info.coord.tile_x), 'y': tileToPixel(object_info.coord.tile_y),
+            //    'damage_amount': hp_change, 'damage_type': 'salvaging',
+            //    'defender_type': 'object', 'defender_id': salvaging_linkers[index].object_id, 'attacker_type': 'player',
+            //    'attacker_id': salvaging_linkers[index].player_id };
+    
+            addEffect({ 'x': drawing_x, 'y': drawing_y, 'damage_types': ['salvaging'], 
+                'damage_source_type': 'player', 'damage_source_id': salvaging_linkers[index].player_id, 'object_id': salvaging_linkers[index].object_id });
+            addInfoNumber(drawing_x, drawing_y, {'damage_amount': total_salvaged_change, 'damage_types': ['salvaging']});
+    
+            //addInfoNumber(info_number_data);
+            redrawBars();
         }
+
+
     }
 
 });
@@ -3845,23 +3802,42 @@ socket.on('view_change_data', function(data) {
         coords.splice(0, coords.length);
         //coords = [];
         planet_coords = [];
-
-        // clear any mining and salvaging sprites
-        if(mining_beam_sprite) {
-            mining_beam_sprite.setVisible(false);
-        }
-
-        if(salvaging_beam_sprite) {
-            salvaging_beam_sprite.setVisible(false);
-        }
-
-
-
     }
 
     // clear out our researches and assemblies, since they applied on the previous screen
     active_assemblies = [];
     researches = [];
+
+
+    // clear our effects
+    // If there are any effects associated with this, remove them
+    for(let i = 0; i < effect_sprites.length; i++) {
+
+        if(effect_sprites[i] && effect_sprites[i].visible) {
+
+            if(effect_sprites[i].monster_id) {
+                effect_sprites[i].monster_id = false;
+            }
+
+            if(effect_sprites[i].npc_id) {
+                effect_sprites[i].npc_id = false;
+            }
+
+            if(effect_sprites[i].object_id) {
+                effect_sprites[i].object_id = false;
+            }
+
+            if(effect_sprites[i].planet_id) {
+                effect_sprites[i].planet_id = false;
+            }
+
+            if(effect_sprites[i].player_id) {
+                effect_sprites[i].player_id = false;
+            }
+            effect_sprites[i].setVisible(false);
+
+        }
+    }
 
     //console.log("Calling resetMap");
     resetMap();

@@ -68,6 +68,7 @@ include('config.php');
     <script src="client_network.js?<?php echo rand(1,1000); ?>"></script>
     <script src="client_click.js"></script>
     <script src="effects.js?<?php echo rand(1,1000); ?>"></script>
+    <script src="monster.js"></script>
     <script src="planet.js"></script>
     <script src="player.js"></script>
 
@@ -134,6 +135,14 @@ include('config.php');
 
         i.main-cion {
             padding:4px; border:2px solid black; border-radius:6px;
+        }
+
+        span.error-message {
+            color: red;
+            background-color: black;
+            padding: 5px;
+            margin: 5px 5px 5px 5px;
+            line-height: 2;
         }
 
         table.assemble {
@@ -242,6 +251,7 @@ include('config.php');
                 <button id="chatswitch_global" class="button is-default">Global</button>
                 <button id="chatswitch_faction" class="button is-default">Faction</button>
                 <button id="chatswitch_system" class="button is-default">System</button>
+                <button id="help" class="button is-success">Help</button>
                 </ul>
             </div>
             <div class="chat" id="chat_local">
@@ -616,6 +626,7 @@ include('config.php');
 
     var camera;
     var logged_in = false;
+    var connected = false;
 
     var mouse_x;
     var mouse_y;
@@ -674,6 +685,7 @@ include('config.php');
     var player_research_linkers = [];
     var races = [];
     var race_eating_linkers = [];
+    var recent_failure_messages = [];
     var repairing_linkers = [];
     var researches = [];
     var rules = [];
@@ -691,21 +703,6 @@ include('config.php');
     var difficult_level_modifier = 0.20;
 
     var effect_sprites = [];
-    var addiction_sprite = false;
-    var blocked_effect_sprite = false;
-    var electric_effect_sprite = false;
-    var energy_effect_sprite = false;
-    var explosion_sprites = [];
-    var fire_attack_sprite = false;
-    var heat_sprites = [];
-    var laser_sprites = [];
-    var melee_effect_sprite = false;
-    var mining_sprite = false;
-    var mining_beam_sprite = false;
-    var range_sprite = false;
-    var range_sprites = [];
-    var repairing_sprite = false;
-    var salvaging_beam_sprite = false;
 
     var level_up_music;
 
@@ -842,6 +839,9 @@ include('config.php');
 
             this.load.spritesheet('player-destroyer', 'https://space.alphacoders.com/destroyer-animated.png',
                 { 'frameWidth': 128, 'frameHeight': 128, endFrame: 2 });
+
+            this.load.spritesheet('player-fighter', 'https://space.alphacoders.com/fighter-animated.png',
+            { 'frameWidth': 64, 'frameHeight': 64, endFrame: 16 });
 
             this.load.spritesheet('player-mining-ship', 'https://space.alphacoders.com/mining-ship-animated.png',
                 { 'frameWidth': 64, 'frameHeight': 64, endFrame: 16 });
@@ -980,6 +980,14 @@ include('config.php');
                 frameWidth: 64, frameHeight: 128, endFrame: 8
             });
 
+            this.load.spritesheet('hacking-effect', 'https://space.alphacoders.com/hacking-effect.png', {
+                frameWidth: 64, frameHeight: 64, endFrame: 12
+            });
+
+            this.load.spritesheet('healing-effect', 'https://space.alphacoders.com/healing-effect.png', {
+                frameWidth: 64, frameHeight: 64, endFrame: 5
+            });
+
             this.load.spritesheet('heat-effect', 'https://space.alphacoders.com/heat-effect.png', {
                 frameWidth: 64, frameHeight: 64, endFrame: 3
             });
@@ -994,6 +1002,10 @@ include('config.php');
 
             this.load.spritesheet('melee-effect', 'https://space.alphacoders.com/melee-effect.png', {
                 frameWidth: 64, frameHeight: 64, endFrame: 9
+            });
+
+            this.load.spritesheet('piercing-effect', 'https://space.alphacoders.com/piercing-effect.png', {
+                frameWidth: 64, frameHeight: 64, endFrame: 5
             });
 
             this.load.spritesheet('poison-effect', 'https://space.alphacoders.com/poison-effect.png', {
@@ -1016,12 +1028,12 @@ include('config.php');
 
             // For the time being, we are keeping mining and salvaging separate. Probably
             // should combine them at some point
-            this.load.spritesheet('mining-beam', 'https://space.alphacoders.com/mining-beam.png', {
+            this.load.spritesheet('mining-effect', 'https://space.alphacoders.com/mining-beam.png', {
                 frameWidth: 192, frameHeight: 64, endFrame: 6
             });
 
 
-            this.load.spritesheet('salvaging-beam', 'https://space.alphacoders.com/salvaging-beam.png', {
+            this.load.spritesheet('salvaging-effect', 'https://space.alphacoders.com/salvaging-beam.png', {
                 frameWidth: 256, frameHeight: 64, endFrame: 6
             });
 
@@ -1126,7 +1138,7 @@ include('config.php');
             this.anims.create(player_cargo_ship_down_config);
 
 
-
+            // PLAYER CUTTER
             let player_cutter_left_config = {
                 key: 'player-cutter-left-animation',
                 frames: this.anims.generateFrameNumbers('player-cutter', { start: 0, end: 2, first: 2 }),
@@ -1197,6 +1209,44 @@ include('config.php');
                 repeat: -1
             };
             this.anims.create(player_destroyer_right_config);
+
+
+            // PLAYER FIGHTER (A SHIP!)
+            let player_fighter_left_config = {
+                key: 'player-fighter-left-animation',
+                frames: this.anims.generateFrameNumbers('player-fighter', { start: 0, end: 3, first: 3 }),
+                frameRate: 4,
+                repeat: -1
+            };
+
+            this.anims.create(player_fighter_left_config);
+
+            let player_fighter_right_config = {
+                key: 'player-fighter-right-animation',
+                frames: this.anims.generateFrameNumbers('player-fighter', { start: 4, end: 7, first: 7 }),
+                frameRate: 4,
+                repeat: -1
+            };
+
+            this.anims.create(player_fighter_right_config);
+
+            let player_fighter_up_config = {
+                key: 'player-fighter-up-animation',
+                frames: this.anims.generateFrameNumbers('player-fighter', { start: 8, end: 11, first: 11 }),
+                frameRate: 4,
+                repeat: -1
+            };
+
+            this.anims.create(player_fighter_up_config);
+
+            let player_fighter_down_config = {
+                key: 'player-fighter-down-animation',
+                frames: this.anims.generateFrameNumbers('player-fighter', { start: 12, end: 15, first: 15 }),
+                frameRate: 4,
+                repeat: -1
+            };
+
+            this.anims.create(player_fighter_down_config);
 
 
             // PLAYER HUMAN
@@ -1929,6 +1979,25 @@ include('config.php');
 
             this.anims.create(fire_effect_config);
 
+            var hacking_effect_config = {
+                key: 'hacking-effect-animation',
+                frames: this.anims.generateFrameNumbers('hacking-effect', { start: 0, end: 11, first: 0 } ),
+                frameRate: 10,
+                hideOnComplete: true
+            };
+
+            this.anims.create(hacking_effect_config);
+
+
+            var healing_effect_config = {
+                key: 'healing-effect-animation',
+                frames: this.anims.generateFrameNumbers('healing-effect', { start: 0, end: 4, first: 0 } ),
+                frameRate: 10,
+                hideOnComplete: true
+            };
+
+            this.anims.create(healing_effect_config);
+
             var heat_effect_config = {
                 key: 'heat-effect-animation',
                 frames: this.anims.generateFrameNumbers('heat-effect', { start: 0, end: 2, first: 0 } ),
@@ -1937,6 +2006,8 @@ include('config.php');
             };
 
             this.anims.create(heat_effect_config);
+
+    
 
             var laser_effect_config = {
                 key: 'laser-effect-animation',
@@ -1955,6 +2026,15 @@ include('config.php');
             };
 
             this.anims.create(melee_effect_config);
+
+            var piercing_effect_config = {
+                key: 'piercing-effect-animation',
+                frames: this.anims.generateFrameNumbers('piercing-effect', { start: 0, end: 4, first: 0 } ),
+                frameRate: 10,
+                hideOnComplete: true
+            };
+
+            this.anims.create(piercing_effect_config);
 
             var poison_effect_config = {
                 key: 'poison-effect-animation',
@@ -1976,35 +2056,33 @@ include('config.php');
             this.anims.create(radiation_effect_config);
 
 
-            var repairing_config = {
+            var repairing_effect_config = {
                 key: 'repairing-effect-animation',
                 frames: this.anims.generateFrameNumbers('repairing-effect', { start: 0, end: 10, first: 0 } ),
                 frameRate: 10,
                 hideOnComplete: true
             };
 
-            this.anims.create(repairing_config);
+            this.anims.create(repairing_effect_config);
 
 
-            // Mining and salvaging are kept separate for now
-            // TODO INTEGRATE THEM!!
-            var mining_beam_config = {
-                key: 'mining-beam',
-                frames: this.anims.generateFrameNumbers('mining-beam', { start: 0, end: 5, first: 0 } ),
+            var mining_effect_config = {
+                key: 'mining-effect-animation',
+                frames: this.anims.generateFrameNumbers('mining-effect', { start: 0, end: 5, first: 0 } ),
                 frameRate: 4,
                 repeat: -1
             };
 
-            this.anims.create(mining_beam_config);
+            this.anims.create(mining_effect_config);
 
-            var salvaging_beam_config = {
-                key: 'salvaging-beam',
-                frames: this.anims.generateFrameNumbers('salvaging-beam', { start: 0, end: 5, first: 0 } ),
+            var salvaging_effect_config = {
+                key: 'salvaging-effect-animation',
+                frames: this.anims.generateFrameNumbers('salvaging-effect', { start: 0, end: 5, first: 0 } ),
                 frameRate: 10,
                 repeat: -1
             };
 
-            this.anims.create(salvaging_beam_config);
+            this.anims.create(salvaging_effect_config);
 
 
 
@@ -2480,6 +2558,10 @@ include('config.php');
 
                     }
 
+                    let monster_index = monsters.findIndex(function(obj) { return obj && obj.id === monster.id; });
+
+                    updateEffectSprites('monster', monster_index);
+
                 });
                 redrawBars();
             }
@@ -2623,40 +2705,7 @@ include('config.php');
 
             }
 
-            for(let i = 0; i < range_sprites.length; i++) {
-                if(range_sprites[i].visible) {
-                    //console.log("Range sprite is visible");
-                    // get the distance to the destination
-                    let distance = Phaser.Math.Distance.Between(range_sprites[i].x, range_sprites[i].y, range_sprites[i].destination_x, range_sprites[i].destination_y);
-
-                    //console.log("distance is: " + distance);
-                    if(distance < 20) {
-                        //console.log("At destination");
-                        let scene_game = game.scene.getScene('sceneGame');
-
-                        // spawn the hit animation
-                        if(electric_effect_sprite === false) {
-                            electric_effect_sprite = scene_game.add.sprite(range_sprites[i].destination_x + 32, range_sprites[i].destination_y + 32, 'electric-effect');
-                            //fire_attack_sprite.on('animationcomplete', fireCompleteCallback, this);
-                            electric_effect_sprite.anims.play('electric-effect');
-                        } else {
-                            electric_effect_sprite.x = range_sprites[i].destination_x;
-                            electric_effect_sprite.y = range_sprites[i].destination_y;
-                            electric_effect_sprite.setVisible(true);
-                            electric_effect_sprite.anims.play('electric-effect');
-                        }
-
-                        range_sprites[i].setVisible(false);
-
-                    }
-                    else if(distance > 2000) {
-                        console.log("Found a stray range sprite. Setting visible to false");
-                        range_sprites[i].setVisible(false);
-                    }
-                }
-            }
-
-           
+        
 
             if(text_important_time && text_important_time + 5000 < time) {
                 text_important_time = false;

@@ -7,6 +7,7 @@ const log = console.log;
 
 const game = require('./game.js');
 const helper = require('./helper.js');
+const inventory = require('./inventory.js');
 const main = require('./space_abyss' + process.env.FILE_SUFFIX + '.js');
 const planet = require('./planet.js');
 const world = require('./world.js');
@@ -309,9 +310,9 @@ async function damage(dirty, data) {
 
             console.log("Object is destroyed");
             if(data.battle_linker) {
-                await deleteObject(io, pool, dirty, { 'object_index': data.object_index, 'reason': 'battle' });
+                await deleteObject(dirty, { 'object_index': data.object_index, 'reason': 'battle' });
             } else {
-                await deleteObject(io, pool, dirty, { 'object_index': data.object_index, 'reason': 'decay' });
+                await deleteObject(dirty, { 'object_index': data.object_index, 'reason': 'decay' });
             }
 
 
@@ -349,7 +350,7 @@ exports.damage = damage;
  * @requires main, game
  * @returns {Promise<boolean>}
  */
-async function deleteObject(io, pool, dirty, data) {
+async function deleteObject(dirty, data) {
 
     try {
 
@@ -475,7 +476,7 @@ async function deleteObject(io, pool, dirty, data) {
 
 
         // Delete battle linkers
-        world.removeBattleLinkers(io, dirty, { 'object_id': dirty.objects[data.object_index].id });
+        world.removeBattleLinkers(dirty, { 'object_id': dirty.objects[data.object_index].id });
 
         // delete any inventory items this had
         await main.getObjectInventory(dirty.objects[data.object_index].id);
@@ -494,7 +495,7 @@ async function deleteObject(io, pool, dirty, data) {
                 if(equipment_linker && equipment_linker.body_id === dirty.objects[data.object_index].id) {
                     let equipped_object_index = await main.getObjectIndex(equipment_linker.object_id);
 
-                    await deleteObject(io, pool, dirty, { 'object_index': equipped_object_index });
+                    await deleteObject(dirty, { 'object_index': equipped_object_index });
                 }
             }
 

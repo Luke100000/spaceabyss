@@ -400,7 +400,7 @@ const world = require('./world.js');
                 let adding_to_data = { 'adding_to_type': 'npc', 'adding_to_id': dirty.npcs[npc_index].id,
                     'object_type_id': dirty.spawn_linkers[spawn_linker_index].spawns_object_type_id, 'amount':dirty.spawn_linkers[spawn_linker_index].spawns_amount };
 
-                await inventory.addToInventory(pool, socket, dirty, adding_to_data);
+                await inventory.addToInventory(socket, dirty, adding_to_data);
 
                 dirty.objects[object_index].has_spawned_object = false;
                 dirty.objects[object_index].has_change = true;
@@ -419,14 +419,14 @@ const world = require('./world.js');
                     let adding_to_data = { 'adding_to_type': 'npc', 'adding_to_id': dirty.npcs[npc_index].id,
                         'object_id': dirty.planet_coords[coord_index].object_id };
 
-                    await inventory.addToInventory(pool, socket, dirty, adding_to_data);
+                    await inventory.addToInventory(socket, dirty, adding_to_data);
 
                     await main.updateCoordGeneric(false, { 'planet_coord_index': coord_index, 'object_id': false, 'object_type_id': false });
                 } else {
                     let adding_to_data = { 'adding_to_type': 'npc', 'adding_to_id': dirty.npcs[npc_index].id,
                         'object_type_id': dirty.planet_coords[coord_index].object_type_id, 'amount':dirty.planet_coords[coord_index].object_amount };
 
-                    await inventory.addToInventory(pool, socket, dirty, adding_to_data);
+                    await inventory.addToInventory(socket, dirty, adding_to_data);
 
                     await main.updateCoordGeneric(false, { 'planet_coord_index': coord_index, 'object_id': false, 'object_type_id': false });
                 }
@@ -859,7 +859,7 @@ const world = require('./world.js');
                         dirty.objects.forEach(function(obj, i) {
                             if(obj.npc_id === dirty.npcs[npc_index].id) {
                                 console.log("NPC owns object id: " + obj.id);
-                                deleteObject(io, pool, dirty, { 'object_index': i });
+                                deleteObject(dirty, { 'object_index': i });
                             }
                         });
 
@@ -1495,7 +1495,7 @@ const world = require('./world.js');
                                                             'being_attacked_type': 'monster'
                                                         };
 
-                                                        world.addBattleLinker(io, socket, dirty, npc_battle_linker_data);
+                                                        world.addBattleLinker(socket, dirty, npc_battle_linker_data);
 
                                                         attacking_monster = true;
                                                     }

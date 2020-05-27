@@ -31,7 +31,7 @@ async function deleteSpawnedEvent(dirty, spawned_event_index) {
         // Remove spawned objects - We skip the check spawned event check because... WE ARE ALREADY DELETING THE SPAWNED EVENT!
         for(let i = 0; i < dirty.objects.length; i++) {
             if(dirty.objects[i] && dirty.objects[i].spawned_event_id === dirty.spawned_events[spawned_event_index].id) {
-                await game_object.deleteObject(io, pool, dirty, { 'object_index': i, 'reason': 'Deleting Spawned Event', 'skip_check_spawned_event': true });
+                await game_object.deleteObject(dirty, { 'object_index': i, 'reason': 'Deleting Spawned Event', 'skip_check_spawned_event': true });
 
             }
         }
@@ -39,7 +39,7 @@ async function deleteSpawnedEvent(dirty, spawned_event_index) {
         // Remove spawned monsters - We skip the check spawned event check because... WE ARE ALREADY DELETING THE SPAWNED EVENT!
         for(let i = 0; i < dirty.monsters.length; i++) {
             if(dirty.monsters[i] && dirty.monsters[i].spawned_event_id === dirty.spawned_events[spawned_event_index].id) {
-                await monster.deleteMonster(io, pool, dirty, { 'monster_index': i, 'reason': 'Deleting Spawned Event', 'skip_check_spawned_event': true });
+                await monster.deleteMonster(dirty, { 'monster_index': i, 'reason': 'Deleting Spawned Event', 'skip_check_spawned_event': true });
             }
         }
 
@@ -172,7 +172,9 @@ async function spawn(dirty, event_index, data) {
 
     try {
 
-        let debug_event_ids = [33,34,35];
+        
+
+        let debug_event_ids = [64,66];
 
         let planet_index = -1;
         let planet_event_linker_index = -1;
@@ -181,6 +183,7 @@ async function spawn(dirty, event_index, data) {
         let origin_planet_level = 0;
         let origin_ship_level = 0;
         let origin_planet_coord_id = 0;
+        let origin_coord_index = -1;
         let event_scope = '';
 
 
@@ -196,7 +199,7 @@ async function spawn(dirty, event_index, data) {
         }
 
         if(debug_event_ids.indexOf(dirty.events[event_index].id) !== -1) {
-            console.log("In event.spawn");
+            console.log("In event.spawn for event id: " + dirty.events[event_index].id + " name: " + dirty.events[event_index].name);
         }
 
 
@@ -328,6 +331,8 @@ async function spawn(dirty, event_index, data) {
 
             event_scope = 'galaxy';
 
+            origin_coord_index = await main.getCoordIndex({ 'tile_x': origin_tile_x, 'tile_y': origin_tile_y });
+
 
         }
 
@@ -373,6 +378,25 @@ async function spawn(dirty, event_index, data) {
             }
 
             //console.log("Found " + currently_spawned.length + " of that event already on the planet");
+
+        } else if(event_scope === 'galaxy' && helper.notFalse(dirty.events[event_index].galaxy_limit)) {
+
+            let spawned_in_galaxy_count = 0;
+            for(let s = 0; s < dirty.spawned_events.length; s++) {
+
+                if(dirty.spawned_events[s] && dirty.spawned_events[s].event_id === dirty.events[event_index].id) {
+                    spawned_in_galaxy_count++;
+                }
+
+            }
+
+            if(spawned_in_galaxy_count >= dirty.events[event_index].galaxy_limit) {
+                if(debug_event_ids.indexOf(dirty.events[event_index].id) !== -1) {
+                    log(chalk.yellow("Can't spawn. Galaxy is at limit. Found " + spawned_in_galaxy_count + " existing events of this type"));
+                }
+
+                return false;
+            }
 
         }
 
@@ -453,7 +477,7 @@ async function spawn(dirty, event_index, data) {
 
             if(event_linker.object_type_id && can_place_object_result === false) {
                 can_spawn = false;
-                if(debug_event_ids.indexOf(dirty.events[event_index].id) !== -1) {
+                if(debug_event_ids.indexOf(dirty.events[event_index].id) !== -1 && event_scope === 'planet') {
                     log(chalk.yellow("Couldn't put an object type on coord at " +
                         dirty.planet_coords[checking_coord_index].tile_x + "," + dirty.planet_coords[checking_coord_index].tile_y))
                 }
@@ -548,7 +572,7 @@ async function spawn(dirty, event_index, data) {
             inserts = [dirty.events[event_index].id, dirty.ship_coords[data.ship_coord_index].ship_id, dirty.ship_coords[data.ship_coord_index].id];
         } else if(event_scope === 'galaxy') {
             sql = "INSERT INTO spawned_events(event_id,origin_coord_id) VALUES(?,?)";
-            inserts = [dirty.events[event_index].id, dirty.coords[data.coord_index].id];
+            inserts = [dirty.events[event_index].id, dirty.coords[origin_coord_index].id];
         }
 
 
@@ -869,6 +893,7 @@ async function tickSpawning(dirty) {
         }
 
 
+        log(chalk.green("In galaxy spawn part!"));
         // Spawn Events In The Galaxy!
         let galaxy_event_index = -1;
         let galaxy_rarity = helper.rarityRoll();
@@ -881,12 +906,24 @@ async function tickSpawning(dirty) {
 
             // get the event
             galaxy_event_index = dirty.events.findIndex(function(obj) { return obj && obj.id === random_galaxy_event.id; });
+        } else {
+            console.log("No relevant galaxy linkers");
         }
 
-        if(galaxy_event_index !== -1 && dirty.events[galaxy_event_index].is_active) {
-            //log(chalk.green("Going to spawn event " + dirty.events[event_index].name + " id: " + dirty.events[event_index].id + " on planet id: " + dirty.planets[i].id));
-            await spawn(dirty, galaxy_event_index, { 'scope': 'galaxy'});
+        if(galaxy_event_index === -1) {
+            log(chalk.yellow("Could not find the galaxy event"));
+            return false;
         }
+
+        if(!dirty.events[galaxy_event_index].is_active) {
+            log(chalk.yellow("Picked a galaxy event that isn't active yet"));
+            return false;
+        }
+
+
+        log(chalk.green("Going to spawn event IN GALAXY " + dirty.events[galaxy_event_index].name + " id: " + dirty.events[galaxy_event_index].id));
+        await spawn(dirty, galaxy_event_index, { 'scope': 'galaxy'});
+
 
 
 

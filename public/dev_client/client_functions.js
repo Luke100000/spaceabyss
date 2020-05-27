@@ -1,451 +1,4 @@
 
-//      data:   x   |   y   |   damage_amount   |   damage_types   |   was_damaged_type   |   damage_source_type   |
-//              damage_source_id   |   attacker_x   |   attacker_y
-/**
- * @param data
- */
-/*
-function addEffect(data) {
-
-
-    let scene_game = game.scene.getScene('sceneGame');
-
-    if(data.damage_types && data.damage_types.length > 0) {
-        for(let i = 0; i < data.damage_types.length; i++ ) {
-
-            console.log("Going to try to add effect for damage type: " + data.damage_types[i] + " from attacker at x,y: " + data.attacker_x + ", " + data.attacker_y);
-
-
-
-            // Blocked Effect - trying drawing it first so any attack effects show over it
-            // Need this separate or things like lasers shooting won't happen - and that doesn't provide enough feedback to the user
-            // that something is actually happening
-            if(typeof data.damage_amount !== 'undefined' && data.damage_amount === 0 && data.was_damaged_type === 'hp') {
-
-                if(blocked_effect_sprite === false) {
-                    blocked_effect_sprite = scene_game.add.sprite(data.x + 32, data.y + 32, 'blocked-effect');
-                    blocked_effect_sprite.setDepth(10);
-                    blocked_effect_sprite.anims.play('blocked-effect');
-                } else {
-                    blocked_effect_sprite.x = data.x + 32;
-                    blocked_effect_sprite.y = data.y + 32;
-                    blocked_effect_sprite.setVisible(true);
-                    blocked_effect_sprite.setDepth(10);
-                    blocked_effect_sprite.anims.play('blocked-effect');
-                }
-            }
-
-            if(data.damage_types[i] === 'addiction') {
-                if(addiction_sprite === false) {
-                    addiction_sprite = scene_game.add.sprite(data.x + 32, data.y, 'addiction-effect');
-                    //fire_attack_sprite.on('animationcomplete', fireCompleteCallback, this);
-                    addiction_sprite.anims.play('addiction-effect');
-                } else {
-                    addiction_sprite.x = data.x + 32;
-                    addiction_sprite.y = data.y;
-                    addiction_sprite.setVisible(true);
-                    addiction_sprite.anims.play('addiction-effect');
-                }
-            } else if(data.damage_types[i] === 'decay') {
-
-                if(addiction_sprite === false) {
-                    addiction_sprite = scene_game.add.sprite(data.x + 32, data.y, 'addiction-effect');
-                    //fire_attack_sprite.on('animationcomplete', fireCompleteCallback, this);
-                    addiction_sprite.anims.play('addiction-effect');
-                } else {
-                    addiction_sprite.x = data.x + 32;
-                    addiction_sprite.y = data.y;
-                    addiction_sprite.setVisible(true);
-                    addiction_sprite.anims.play('addiction-effect');
-                }
-            } else if(data.damage_types[i] === 'explosion') {
-
-                let found_sprite = false;
-                let found_sprite_index = -1;
-                // see if we have a range sprite that isn't visible
-                for(let i = 0; i < explosion_sprites.length; i++) {
-                    if(!found_sprite && explosion_sprites[i].visible === false) {
-                        found_sprite = true;
-                        found_sprite_index = i;
-                    }
-                }
-
-                // Lets add another sprite to the game!
-                if(!found_sprite) {
-
-                    let new_sprite_index = explosion_sprites.push(scene_game.add.sprite(data.x + 32, data.y + 64, 'explosion')) - 1;
-                    explosion_sprites[new_sprite_index].anims.play('explosion-effect');
-
-                } else {
-
-                    explosion_sprites[found_sprite_index].x = data.x + 32;
-                    explosion_sprites[found_sprite_index].y = data.y + 32;
-                    explosion_sprites[found_sprite_index].setVisible(true);
-                    explosion_sprites[found_sprite_index].play('explosion-effect');
-                }
-
-            } else if(data.damage_types[i] === 'electric') {
-                if(electric_effect_sprite === false) {
-                    electric_effect_sprite = scene_game.add.sprite(data.x + 32, data.y, 'electric-effect');
-                    //fire_attack_sprite.on('animationcomplete', fireCompleteCallback, this);
-                    electric_effect_sprite.anims.play('electric-effect');
-                } else {
-                    electric_effect_sprite.x = data.x + 32;
-                    electric_effect_sprite.y = data.y + 32;
-                    electric_effect_sprite.setVisible(true);
-                    electric_effect_sprite.anims.play('electric-effect');
-                }
-            }
-
-            else if(data.damage_types[i] === 'healing') {
-                // TODO healing stuff
-            } else if(data.damage_types[i] === 'heat') {
-
-                // See if there's already a heat sprite with this damage source
-                let effect_already_active = false;
-                for(let i = 0; i < heat_sprites.length; i++) {
-                    if(heat_sprites[i]) {
-
-                        if(heat_sprites[i].damage_source_id === data.damage_source_id) {
-                            effect_already_active = true;
-                        }
-
-                        if(data.object_id && heat_sprites[i].object_id && heat_sprites[i].object_id === data.object_id) {
-                            effect_already_active = true;
-                        }
-
-                    }
-
-
-                }
-
-
-                if(!effect_already_active) {
-                    if(data.object_id) {
-                        console.log("Did not already have a heat sprite associated with the object " + data.object_id);
-                    } else {
-                        console.log("No object id associated with this effect");
-                    }
-
-                    let found_sprite = false;
-                    let found_sprite_index = -1;
-                    // see if we have a range sprite that isn't visible
-                    for(let i = 0; i < heat_sprites.length; i++) {
-                        if(!found_sprite && heat_sprites[i].visible === false) {
-                            found_sprite = true;
-                            found_sprite_index = i;
-                        }
-                    }
-
-                    // Lets add another sprite to the game!
-                    if(!found_sprite) {
-
-                        let new_sprite_index = heat_sprites.push(scene_game.add.sprite(data.x + 32, data.y + 32, 'heat')) - 1;
-                        heat_sprites[new_sprite_index].anims.play('heat-effect');
-
-                        if(data.object_id) {
-                            let object_index = getObjectIndex(data.object_id);
-                            let object_info = getObjectInfo(object_index);
-                            let object_x_beam = tileToPixel(object_info.coord.tile_x) + 32;
-                            let object_y_beam = tileToPixel(object_info.coord.tile_y) + 32;
-
-                            heat_sprites[new_sprite_index].setOrigin(0,.5);
-                            heat_sprites[new_sprite_index].object_id = data.object_id;
-                            heat_sprites[new_sprite_index].x = players[client_player_index].sprite.x;
-                            heat_sprites[new_sprite_index].y = players[client_player_index].sprite.y;
-
-                            let distance = Phaser.Math.Distance.Between(players[client_player_index].sprite.x, players[client_player_index].sprite.y,
-                                object_x_beam, object_y_beam);
-                            let angle_between = Phaser.Math.Angle.Between(players[client_player_index].sprite.x, players[client_player_index].sprite.y,
-                                object_x_beam, object_y_beam);
-
-                            heat_sprites[new_sprite_index].displayWidth = distance;
-                            // mining_beam_sprite.rotation = angle_between - 1.4;
-                            heat_sprites[new_sprite_index].rotation = angle_between;
-
-                        }
-
-                    } else {
-
-                        heat_sprites[found_sprite_index].x = players[client_player_index].sprite.x;
-                        heat_sprites[found_sprite_index].y = players[client_player_index].sprite.y;
-                        heat_sprites[found_sprite_index].setVisible(true);
-                        heat_sprites[found_sprite_index].play('heat-effect');
-
-                        if(data.object_id) {
-                            heat_sprites[found_sprite_index].object_id = data.object_id;
-
-                            let object_index = getObjectIndex(data.object_id);
-                            let object_info = getObjectInfo(object_index);
-                            let object_x_beam = tileToPixel(object_info.coord.tile_x) + 32;
-                            let object_y_beam = tileToPixel(object_info.coord.tile_y) + 32;
-
-                            heat_sprites[found_sprite_index].setOrigin(0,.5);
-                            heat_sprites[found_sprite_index].object_id = data.object_id;
-                            heat_sprites[found_sprite_index].x = players[client_player_index].sprite.x;
-                            heat_sprites[found_sprite_index].y = players[client_player_index].sprite.y;
-
-                            let distance = Phaser.Math.Distance.Between(players[client_player_index].sprite.x, players[client_player_index].sprite.y,
-                                object_x_beam, object_y_beam);
-                            let angle_between = Phaser.Math.Angle.Between(players[client_player_index].sprite.x, players[client_player_index].sprite.y,
-                                object_x_beam, object_y_beam);
-
-                            heat_sprites[found_sprite_index].displayWidth = distance;
-                            // mining_beam_sprite.rotation = angle_between - 1.4;
-                            heat_sprites[found_sprite_index].rotation = angle_between;
-
-                        }
-                    }
-                } else {
-                    console.log("Already had a heat sprite active");
-                }
-
-
-            }
-
-            // LASER!
-            else if(data.damage_types[i] === 'laser' && data.attacker_x !== -100) {
-
-                console.log("In laser section");
-
-                // See if there's already a laser sprite with this damage source
-                let effect_already_active = false;
-                for(let i = 0; i < laser_sprites.length; i++) {
-                    if(laser_sprites[i]) {
-
-                        if(laser_sprites[i].damage_source_id === data.damage_source_id) {
-                            effect_already_active = true;
-                        }
-
-                        if(data.object_id && laser_sprites[i].object_id && laser_sprites[i].object_id === data.object_id) {
-                            effect_already_active = true;
-                        }
-
-                    }
-
-
-                }
-
-
-                if(!effect_already_active) {
-                    if(data.object_id) {
-                        console.log("Did not already have a laser sprite associated with the object " + data.object_id);
-                    } else {
-                        console.log("No object id associated with this effect");
-                    }
-
-                    let found_sprite = false;
-                    let found_sprite_index = -1;
-                    // see if we have a range sprite that isn't visible
-                    for(let i = 0; i < laser_sprites.length; i++) {
-                        if(!found_sprite && laser_sprites[i].visible === false) {
-                            found_sprite = true;
-                            found_sprite_index = i;
-                        }
-                    }
-
-                    // Lets add another sprite to the game!
-                    if(!found_sprite) {
-
-                        let new_sprite_index = laser_sprites.push(scene_game.add.sprite(data.x + 32, data.y + 32, 'laser-effect')) - 1;
-                        laser_sprites[new_sprite_index].anims.play('laser-effect');
-
-                        if(data.object_id) {
-                            let object_index = getObjectIndex(data.object_id);
-                            let object_info = getObjectInfo(object_index);
-                            let object_x_beam = tileToPixel(object_info.coord.tile_x) + 32;
-                            let object_y_beam = tileToPixel(object_info.coord.tile_y) + 32;
-
-                            laser_sprites[new_sprite_index].setOrigin(0,.5);
-                            laser_sprites[new_sprite_index].object_id = data.object_id;
-                            laser_sprites[new_sprite_index].x = players[client_player_index].sprite.x;
-                            laser_sprites[new_sprite_index].y = players[client_player_index].sprite.y;
-
-                            let distance = Phaser.Math.Distance.Between(players[client_player_index].sprite.x, players[client_player_index].sprite.y,
-                                object_x_beam, object_y_beam);
-                            let angle_between = Phaser.Math.Angle.Between(players[client_player_index].sprite.x, players[client_player_index].sprite.y,
-                                object_x_beam, object_y_beam);
-
-                            laser_sprites[new_sprite_index].displayWidth = distance;
-                            // mining_beam_sprite.rotation = angle_between - 1.4;
-                            laser_sprites[new_sprite_index].rotation = angle_between;
-
-                        }
-
-                    } else {
-
-                        laser_sprites[found_sprite_index].x = players[client_player_index].sprite.x;
-                        laser_sprites[found_sprite_index].y = players[client_player_index].sprite.y;
-                        laser_sprites[found_sprite_index].setVisible(true);
-                        laser_sprites[found_sprite_index].play('laser-effect');
-
-                        if(data.object_id) {
-                            laser_sprites[found_sprite_index].object_id = data.object_id;
-
-                            let object_index = getObjectIndex(data.object_id);
-                            let object_info = getObjectInfo(object_index);
-                            let object_x_beam = tileToPixel(object_info.coord.tile_x) + 32;
-                            let object_y_beam = tileToPixel(object_info.coord.tile_y) + 32;
-
-                            laser_sprites[found_sprite_index].setOrigin(0,.5);
-                            laser_sprites[found_sprite_index].object_id = data.object_id;
-                            laser_sprites[found_sprite_index].x = players[client_player_index].sprite.x;
-                            laser_sprites[found_sprite_index].y = players[client_player_index].sprite.y;
-
-                            let distance = Phaser.Math.Distance.Between(players[client_player_index].sprite.x, players[client_player_index].sprite.y,
-                                object_x_beam, object_y_beam);
-                            let angle_between = Phaser.Math.Angle.Between(players[client_player_index].sprite.x, players[client_player_index].sprite.y,
-                                object_x_beam, object_y_beam);
-
-                            laser_sprites[found_sprite_index].displayWidth = distance;
-                            // mining_beam_sprite.rotation = angle_between - 1.4;
-                            laser_sprites[found_sprite_index].rotation = angle_between;
-
-                        }
-                    }
-                } else {
-                    console.log("Already had a laser sprite active");
-                }
-
-                // I don't want to delete the old laser stuff - it's useful for getting something from A->B
-
-                /*
-
-                let found_range_sprite = false;
-                let found_range_sprite_index = -1;
-                // see if we have a range sprite that isn't visible
-                for(let i = 0; i < range_sprites.length; i++) {
-                    if(!found_range_sprite && range_sprites[i].visible === false) {
-                        found_range_sprite = true;
-                        found_range_sprite_index = i;
-                        console.log("Using range sprite index: " + i);
-                    }
-                }
-
-                let destination_x = data.x + 32;
-                let destination_y = data.y + 32;
-
-                // Lets add another range sprite to the game!
-                if(!found_range_sprite) {
-
-                    console.log("Creating new ... range sprite");
-
-                    let new_range_sprite_index = range_sprites.push(scene_game.add.sprite(data.attacker_x + 32, data.attacker_y + 64, 'laser')) - 1;
-                    range_sprites[new_range_sprite_index].x = data.attacker_x + getRandomIntInclusive(1,64);
-                    range_sprites[new_range_sprite_index].y = data.attacker_y + getRandomIntInclusive(12, 64);
-                    scene_game.physics.add.existing(range_sprites[new_range_sprite_index], false);
-
-                    scene_game.physics.moveTo(range_sprites[new_range_sprite_index], data.x, data.y, 800);
-                    range_sprites[new_range_sprite_index].destination_x = data.x;
-                    range_sprites[new_range_sprite_index].destination_y = data.y;
-                    range_sprites[new_range_sprite_index].rotation = Phaser.Math.Angle.Between(data.attacker_x, data.attacker_y, data.x, data.y) - 45;
-
-                } else {
-
-                    console.log("Using old ... range sprite");
-
-                    // RECYCLING TO SAVE THE EARTH!
-
-                    range_sprites[found_range_sprite_index].x = data.attacker_x + getRandomIntInclusive(1,64);
-                    range_sprites[found_range_sprite_index].y = data.attacker_y + getRandomIntInclusive(12, 64);
-                    range_sprites[found_range_sprite_index].setVisible(true);
-                    scene_game.physics.moveTo(range_sprites[found_range_sprite_index], data.x, data.y, 800);
-                    range_sprites[found_range_sprite_index].destination_x = data.x;
-                    range_sprites[found_range_sprite_index].destination_y = data.y;
-                    range_sprites[found_range_sprite_index].rotation = Phaser.Math.Angle.Between(data.attacker_x, data.attacker_y, data.x, data.y) - 45;
-
-                }
-
-                */
-/*
-
-}  else if(data.damage_types[i] === 'mining' || data.damage_types[i] === 'salvaging') {
-
- console.log("%c Pretty sure this is outdated mining info", log_warning);
-
- if(mining_sprite === false) {
-     mining_sprite = scene_game.add.sprite(data.x + 32, data.y + 32, 'mining');
-     //fire_attack_sprite.on('animationcomplete', fireCompleteCallback, this);
-     mining_sprite.anims.play('mining');
- } else {
-     mining_sprite.x = data.x + 32;
-     mining_sprite.y = data.y + 32;
-     mining_sprite.setVisible(true);
-     mining_sprite.anims.play('mining');
- }
-
-} else if(data.damage_types[i] === 'repairing') {
-
- console.log("damage source type was repairing. data.x,y: " + data.x + "," + data.y);
-
- if(repairing_sprite === false) {
-     repairing_sprite = scene_game.add.sprite(data.x + 32, data.y + 32, 'repairing');
-     //fire_attack_sprite.on('animationcomplete', fireCompleteCallback, this);
-     repairing_sprite.anims.play('repairing');
- } else {
-     repairing_sprite.x = data.x + 32;
-     repairing_sprite.y = data.y;
-     repairing_sprite.setVisible(true);
-     repairing_sprite.anims.play('repairing');
- }
-
-}
-// Lets just have the melee as the default
-else {
-
- if(melee_effect_sprite === false) {
-     melee_effect_sprite = scene_game.add.sprite(data.x + 32, data.y, 'melee-effect');
-     //fire_attack_sprite.on('animationcomplete', fireCompleteCallback, this);
-     melee_effect_sprite.anims.play('melee-effect');
- } else {
-     melee_effect_sprite.x = data.x + 32;
-     melee_effect_sprite.y = data.y;
-     melee_effect_sprite.setVisible(true);
-     melee_effect_sprite.anims.play('melee-effect');
- }
-
-}
-
-
-/*
-else {
- if(fire_attack_sprite === false) {
-     fire_attack_sprite = scene_game.add.sprite(data.x + 32, data.y, 'fire_attack');
-     //fire_attack_sprite.on('animationcomplete', fireCompleteCallback, this);
-     fire_attack_sprite.anims.play('fire_attack');
- } else {
-     fire_attack_sprite.x = data.x + 32;
-     fire_attack_sprite.y = data.y;
-     fire_attack_sprite.setVisible(true);
-     fire_attack_sprite.anims.play('fire_attack');
- }
-}
-
-*/
-/*
-
-
-}
-}
-
-
-if(data.was_damaged_type === 'energy') {
-if(energy_effect_sprite === false) {
- energy_effect_sprite = scene_game.add.sprite(data.x + 32, data.y + 32, 'energy-effect');
- energy_effect_sprite.anims.play('energy-effect');
-} else {
- energy_effect_sprite.x = data.x + 32;
- energy_effect_sprite.y = data.y + 32;
- energy_effect_sprite.setVisible(true);
- energy_effect_sprite.anims.play('energy-effect');
-}
-}
-
-
-}
-
-*/
-
 // data:    x   |   y   |   damage_amount   |   was_damaged_type   |   damage_source_type  |   damage_types
 /**
  * @param {number} x
@@ -518,352 +71,15 @@ function addInfoNumber(x, y, data) {
         fontSize: 20,
         padding: { x: 10, y: 5 },
         fill: fill,
-        wordWrap: { width: text_width }
+        wordWrap: { width: text_width },
+        stroke: "#000000",
+        strokeThickness: 1
+
     });
 
     info_numbers[info_number_index].text.setFontStyle('bold');
+    info_numbers[info_number_index].text.setDepth(11);
 }
-
-/*
-//  damage_amount   |   damage_type   |   defender_type   |   defender_id   |   attacker_type   |   attacker_id   |
-//  calculating_range   |   x   |   y
-function addInfoNumber(data) {
-    // lets do a info number (damage!) too!
-    let scene_game = game.scene.getScene('sceneGame');
-
-    //console.log("AddInfoNumber data: ");
-    //console.log(data);
-    //console.log("data.damage_source_type: " + data.damage_source_type);
-
-
-    // Addictions are a bit different since the source is the player
-    if(data.damage_source_type === 'addiction' || data.attacker_type === 'addiction') {
-
-        if(addiction_sprite === false) {
-            addiction_sprite = scene_game.add.sprite(data.x + 32, data.y, 'mining');
-            //fire_attack_sprite.on('animationcomplete', fireCompleteCallback, this);
-            addiction_sprite.anims.play('addiction-effect');
-        } else {
-            addiction_sprite.x = data.x + 32;
-            addiction_sprite.y = data.y;
-            addiction_sprite.setVisible(true);
-            addiction_sprite.anims.play('addiction-effect');
-        }
-
-    } else if(data.damage_type === 'energy' || data.was_damaged_type === "energy") {
-        console.log("Energy! Should show shield");
-        if(energy_effect_sprite === false) {
-            energy_effect_sprite = scene_game.add.sprite(data.x + 32, data.y + 32, 'energy-effect');
-            energy_effect_sprite.anims.play('energy-effect');
-        } else {
-            energy_effect_sprite.x = data.x + 32;
-            energy_effect_sprite.y = data.y + 32;
-            energy_effect_sprite.setVisible(true);
-            energy_effect_sprite.anims.play('energy-effect');
-        }
-    } else if(data.damage_source_type === 'healing' || data.attacker_type === 'healing') {
-
-
-
-    }
-    else if(data.damage_source_type === 'repairing') {
-        console.log("damage source type was repairing. data.x,y: " + data.x + "," + data.y);
-
-        if(repairing_sprite === false) {
-            repairing_sprite = scene_game.add.sprite(data.x + 32, data.y + 32, 'repairing');
-            //fire_attack_sprite.on('animationcomplete', fireCompleteCallback, this);
-            repairing_sprite.anims.play('repairing');
-        } else {
-            repairing_sprite.x = data.x + 32;
-            repairing_sprite.y = data.y;
-            repairing_sprite.setVisible(true);
-            repairing_sprite.anims.play('repairing');
-        }
-
-    }
-    else if(data.damage_type === 'hp' || data.was_damaged_type === 'hp') {
-
-        if(data.damage_amount === 0) {
-
-            if(blocked_effect_sprite === false) {
-                blocked_effect_sprite = scene_game.add.sprite(data.x + 32, data.y + 32, 'blocked-effect');
-                blocked_effect_sprite.anims.play('blocked-effect');
-            } else {
-                blocked_effect_sprite.x = data.x + 32;
-                blocked_effect_sprite.y = data.y + 32;
-                blocked_effect_sprite.setVisible(true);
-                blocked_effect_sprite.anims.play('blocked-effect');
-            }
-
-        } else {
-            if(melee_effect_sprite === false) {
-                melee_effect_sprite = scene_game.add.sprite(data.x + 32, data.y + 32, 'melee-effect');
-                melee_effect_sprite.anims.play('melee-effect');
-            } else {
-                melee_effect_sprite.x = data.x + 32;
-                melee_effect_sprite.y = data.y + 32;
-                melee_effect_sprite.setVisible(true);
-                melee_effect_sprite.anims.play('melee-effect');
-            }
-        }
-
-
-    } else if(data.damage_type === 'mining' || data.damage_type === 'salvaging') {
-
-        if(mining_sprite === false) {
-            mining_sprite = scene_game.add.sprite(data.x + 32, data.y + 32, 'mining');
-            //fire_attack_sprite.on('animationcomplete', fireCompleteCallback, this);
-            mining_sprite.anims.play('mining');
-        } else {
-            mining_sprite.x = data.x + 32;
-            mining_sprite.y = data.y + 32;
-            mining_sprite.setVisible(true);
-            mining_sprite.anims.play('mining');
-        }
-
-    }
-    else {
-        console.log("Displaying default fire sprite!");
-        if(fire_attack_sprite === false) {
-            fire_attack_sprite = scene_game.add.sprite(data.x + 32, data.y, 'fire_attack');
-            //fire_attack_sprite.on('animationcomplete', fireCompleteCallback, this);
-            fire_attack_sprite.anims.play('fire_attack');
-        } else {
-            fire_attack_sprite.x = data.x + 32;
-            fire_attack_sprite.y = data.y;
-            fire_attack_sprite.setVisible(true);
-            fire_attack_sprite.anims.play('fire_attack');
-        }
-    }
-
-    //console.log("Calculating range: " + data.calculating_range);
-
-    // Lets start to limit how often the range thing shows to only when its applicable
-    if(data.damage_source_type !== "healing" && data.attacker_type !== "healing" && data.damage_type !== 'mining' &&
-        data.damage_type !== 'salvaging' && data.damage_source_type !== 'repairing' &&
-        data.damage_source_type !== 'addiction' && data.attacker_type !== 'addiction' &&
-        data.damage_source_type !== 'floor' && data.attacker_type !== 'floor' && data.calculating_range !== 1) {
-
-        //console.log("Emitting a range sprite. data.attacker_type: " + data.attacker_type);
-
-        let attacker_x = 0;
-        let attacker_y = 0;
-
-
-        // we need to add the range sprite at the attacker location
-        if(data.attacker_type === 'monster') {
-            let coord_index = planet_coords.findIndex(function(obj) { return obj && obj.monster_id === parseInt(data.attacker_id); });
-            if(coord_index !== -1) {
-                attacker_x = tileToPixel(planet_coords[coord_index].tile_x);
-                attacker_y = tileToPixel(planet_coords[coord_index].tile_y);
-            }
-        } else if(data.attacker_type === 'object') {
-            let object_index = objects.findIndex(function(obj) { return obj && obj.id === parseInt(data.attacker_id); });
-            if(object_index !== -1) {
-
-                if(objects[object_index].coord_id) {
-
-                    let coord_index = coords.findIndex(function(obj) { return obj && obj.id === objects[object_index].coord_id; });
-                    if(coord_index !== -1) {
-                        attacker_x = tileToPixel(coords[coord_index].tile_x);
-                        attacker_y = tileToPixel(coords[coord_index].tile_y);
-                        //console.log("set attacker x,y: " + attacker_x + "," + attacker_y);
-                    }
-
-                } else if(objects[object_index].planet_coord_id) {
-                    let coord_index = planet_coords.findIndex(function(obj) { return obj && obj.object_id === parseInt(data.attacker_id); });
-                    if(coord_index !== -1) {
-                        attacker_x = tileToPixel(planet_coords[coord_index].tile_x);
-                        attacker_y = tileToPixel(planet_coords[coord_index].tile_y);
-                    }
-                } else if(objects[object_index].ship_coord_id) {
-                    let coord_index = ship_coords.findIndex(function(obj) { return obj && obj.object_id === parseInt(data.attacker_id); });
-                    if(coord_index !== -1) {
-                        attacker_x = tileToPixel(ship_coords[coord_index].tile_x);
-                        attacker_y = tileToPixel(ship_coords[coord_index].tile_y);
-                    }
-                }
-            }
-        } else if(data.attacker_type === 'player') {
-            let player_index = players.findIndex(function(obj) { return obj && obj.id === parseInt(data.attacker_id); });
-            if(player_index !== -1) {
-                if(players[player_index].planet_coord_id) {
-                    let coord_index = planet_coords.findIndex(function(obj) { return obj && obj.player_id === parseInt(data.attacker_id); });
-                    if(coord_index !== -1) {
-                        attacker_x = tileToPixel(planet_coords[coord_index].tile_x);
-                        attacker_y = tileToPixel(planet_coords[coord_index].tile_y);
-                    }
-                } else if(players[player_index].ship_coord_id) {
-                    let coord_index = ship_coords.findIndex(function(obj) { return obj && obj.player_id === parseInt(data.attacker_id); });
-                    if(coord_index !== -1) {
-                        attacker_x = tileToPixel(ship_coords[coord_index].tile_x);
-                        attacker_y = tileToPixel(ship_coords[coord_index].tile_y);
-                    }
-                }
-            }
-        }
-
-        //console.log("Starting range sprite x,y at: " + attacker_x + "," + attacker_y);
-
-
-        // and have it move towards the defender
-        let defender_x = 0;
-        let defender_y = 0;
-        if(data.defender_type === 'monster') {
-            let coord_index = planet_coords.findIndex(function(obj) { return obj && obj.monster_id === parseInt(data.defender_id); });
-            if(coord_index !== -1) {
-                defender_x = tileToPixel(planet_coords[coord_index].tile_x);
-                defender_y = tileToPixel(planet_coords[coord_index].tile_y);
-            }
-        } else if(data.defender_type === 'object') {
-            let object_index = objects.findIndex(function(obj) { return obj && obj.id === parseInt(data.defender_id); });
-            if(object_index !== -1) {
-
-                if(objects[object_index].coord_id) {
-                    let coord_index = coords.findIndex(function(obj) { return obj && obj.object_id === parseInt(data.defender_id); });
-                    if(coord_index !== -1) {
-                        defender_x = tileToPixel(coords[coord_index].tile_x);
-                        defender_y = tileToPixel(coords[coord_index].tile_y);
-                    }
-                } else if(objects[object_index].planet_coord_id) {
-                    let coord_index = planet_coords.findIndex(function(obj) { return obj && obj.object_id === parseInt(data.defender_id); });
-                    if(coord_index !== -1) {
-                        defender_x = tileToPixel(planet_coords[coord_index].tile_x);
-                        defender_y = tileToPixel(planet_coords[coord_index].tile_y);
-                    }
-                } else if(objects[object_index].ship_coord_id) {
-                    let coord_index = ship_coords.findIndex(function(obj) { return obj && obj.object_id === parseInt(data.defender_id); });
-                    if(coord_index !== -1) {
-                        defender_x = tileToPixel(ship_coords[coord_index].tile_x);
-                        defender_y = tileToPixel(ship_coords[coord_index].tile_y);
-                    }
-                }
-            }
-        } else if(data.defender_type === 'player') {
-            let player_index = players.findIndex(function(obj) { return obj && obj.id === parseInt(data.defender_id); });
-            if(player_index !== -1) {
-                if(players[player_index].planet_coord_id) {
-                    let coord_index = planet_coords.findIndex(function(obj) { return obj && obj.player_id === parseInt(data.defender_id); });
-                    if(coord_index !== -1) {
-                        defender_x = tileToPixel(planet_coords[coord_index].tile_x);
-                        defender_y = tileToPixel(planet_coords[coord_index].tile_y);
-                        //console.log("Set defender x,y to: " + defender_x + ", " + defender_y);
-                    }
-                } else if(players[player_index].ship_coord_id) {
-                    let coord_index = ship_coords.findIndex(function(obj) { return obj && obj.player_id === parseInt(data.defender_id); });
-                    if(coord_index !== -1) {
-                        defender_x = tileToPixel(ship_coords[coord_index].tile_x);
-                        defender_y = tileToPixel(ship_coords[coord_index].tile_y);
-                    }
-                }
-            }
-        }
-
-
-
-
-        let found_range_sprite = false;
-        let found_range_sprite_index = -1;
-        // see if we have a range sprite that isn't visible
-        for(let i = 0; i < range_sprites.length; i++) {
-            if(!found_range_sprite && range_sprites[i].visible === false) {
-                found_range_sprite = true;
-                found_range_sprite_index = i;
-            }
-        }
-
-        let destination_x = defender_x + 32;
-        let destination_y = defender_y + 32;
-
-        // Lets add another range sprite to the game!
-        if(!found_range_sprite) {
-
-
-            //console.log("Creating new ranged sprite. So far we have needed at most : " + range_sprites.length + " range sprites at one time");
-
-            //let new_range_sprite_index = range_sprites.push(scene_game.add.sprite(attacker_x + 32, attacker_y + 64, 'range-spritesheet')) - 1;
-            let new_range_sprite_index = range_sprites.push(scene_game.add.sprite(attacker_x + 32, attacker_y + 64, 'laser')) - 1;
-            //range_sprites[new_range_sprite_index].anims.play('range-effect');
-            range_sprites[new_range_sprite_index].x = attacker_x + 32;
-            range_sprites[new_range_sprite_index].y = attacker_y + 64;
-            scene_game.physics.add.existing(range_sprites[new_range_sprite_index], false);
-            //game.physics.enable(range_sprite, Phaser.Physics.ARCADE);
-
-
-            scene_game.physics.moveTo(range_sprites[new_range_sprite_index], destination_x, destination_y, 800);
-            //scene_game.physics.moveTo(range_sprites[new_range_sprite_index], destination_x, destination_y, 400);
-            range_sprites[new_range_sprite_index].destination_x = destination_x;
-            range_sprites[new_range_sprite_index].destination_y = destination_y;
-            //console.log("Created new range sprite. Going from x,y: " + range_sprites[new_range_sprite_index].x + "," + range_sprites[new_range_sprite_index].y +
-            //    " to: " + range_sprites[new_range_sprite_index].destination_x + "," + range_sprites[new_range_sprite_index].destination_y);
-            //game.physics.arcade.moveToObject(laser_current, monster.monster_image, 200, 200);
-
-            let attacker_point = new Phaser.Geom.Point(attacker_x, attacker_y);
-            let defender_point = new Phaser.Geom.Point(defender_x, defender_y);
-            range_sprites[new_range_sprite_index].rotation = Phaser.Math.Angle.Between(attacker_x, attacker_y, defender_x, defender_y) - 45;
-            //range_sprites[new_range_sprite_index].rotation = Phaser.Math.Angle.BetweenPoints(attacker_point, defender_point);
-        } else {
-
-            //console.log("Using old range sprite");
-            // RECYCLING TO SAVE THE EARTH!
-
-            range_sprites[found_range_sprite_index].x = attacker_x + 32;
-            range_sprites[found_range_sprite_index].y = attacker_y + 64;
-            range_sprites[found_range_sprite_index].setVisible(true);
-            //range_sprites[found_range_sprite_index].anims.play('range-effect');
-            scene_game.physics.moveTo(range_sprites[found_range_sprite_index], destination_x, destination_y, 800);
-            //scene_game.physics.moveTo(range_sprites[found_range_sprite_index], destination_x, destination_y, 400);
-            range_sprites[found_range_sprite_index].destination_x = destination_x;
-            range_sprites[found_range_sprite_index].destination_y = destination_y;
-            //console.log("Created recycled range sprite. Going from x,y: " + range_sprites[found_range_sprite_index].x + "," + range_sprites[found_range_sprite_index].y +
-            //    " to: " + range_sprites[found_range_sprite_index].destination_x + "," + range_sprites[found_range_sprite_index].destination_y);
-
-            let attacker_point = new Phaser.Geom.Point(attacker_x, attacker_y);
-            let defender_point = new Phaser.Geom.Point(defender_x, defender_y);
-            range_sprites[found_range_sprite_index].rotation = Phaser.Math.Angle.Between(attacker_x, attacker_y, defender_x, defender_y) - 45;
-            //range_sprites[found_range_sprite_index].rotation = Phaser.Math.Angle.BetweenPoints(attacker_point, defender_point);
-        }
-
-
-    } else {
-        //console.log("Not drawing range sprite");
-        //console.log(data);
-    }
-
-
-
-
-
-    let info_number_index = info_numbers.push({ 'amount': data.damage_amount, 'was_damaged_type': data.damage_type, 'pixels_moved': 0}) - 1;
-
-    let fill = '#6982f4';
-
-    if(data.damage_source_type === "repairing") {
-        fill = '#6982f4';
-    }
-    else if(data.damage_type === "hp" && (data.damage_source_type === 'healing' || data.attacker_type === "healing") ) {
-        fill = '#34f425';
-    } else if(data.damage_type === "hp") {
-        fill = '#f44242';
-    } else if(data.damage_amount <= 0) {
-        fill = '#969696';
-    }
-
-
-    // lets randomize the starting x/y a bit
-    let starting_x = getRandomIntInclusive(-32, 32);
-    let starting_y = getRandomIntInclusive(0, 32);
-
-
-    info_numbers[info_number_index].text = scene_game.add.text(data.x + starting_x, data.y - starting_y,
-        data.damage_amount, { fontSize: 24,
-            padding: { x: 10, y: 5},
-            fill: fill});
-
-    info_numbers[info_number_index].text.setFontStyle('bold');
-
-}
-*/
 
 
 // Basically just calls addInfoNumber. I could deprecate this entirely if I wanted to
@@ -1454,6 +670,36 @@ function clearPreviousLevel() {
 
         }
     }
+
+    // clear our effects
+    // If there are any effects associated with this, remove them
+    for(let i = 0; i < effect_sprites.length; i++) {
+
+        if(effect_sprites[i] && effect_sprites[i].visible) {
+
+            if(effect_sprites[i].monster_id) {
+                effect_sprites[i].monster_id = false;
+            }
+
+            if(effect_sprites[i].npc_id) {
+                effect_sprites[i].npc_id = false;
+            }
+
+            if(effect_sprites[i].object_id) {
+                effect_sprites[i].object_id = false;
+            }
+
+            if(effect_sprites[i].planet_id) {
+                effect_sprites[i].planet_id = false;
+            }
+
+            if(effect_sprites[i].player_id) {
+                effect_sprites[i].player_id = false;
+            }
+            effect_sprites[i].setVisible(false);
+
+        }
+    }
 }
 
 function createMonsterSprite(monster_index) {
@@ -1666,6 +912,9 @@ function createPlayerSprite(player_index) {
             new_texture_animation_key = 'player-royal-cruiser-animation';
             new_movement_display = 'flip';
             new_sprite_y_offset = 32;
+        } else if(objects[ship_index].object_type_id === 339) {
+            new_texture_key = 'player-fighter';
+            new_texture_animation_key = 'player-fighter-down-animation';
         }
 
         else {
@@ -1876,9 +1125,10 @@ function displayClickObject(object_id) {
     $('#coord_data').append(object_types[object_type_index].name + "<br>");
 
 
-    if (objects[object_index].energy) {
-        $('#coord_data').append("Energy: " + objects[object_index].energy + "<br>");
+    if(object_types[object_type_index].max_energy_storage) {
+        $('#coord_data').append("Energy: " + objects[object_index].energy + "/" + object_types[object_type_index].max_energy_storage + "<br>");
     }
+
 
     if (objects[object_index].player_id) {
         let player_index = players.findIndex(function (obj) { return obj && obj.id === objects[object_index].player_id; });
@@ -2210,7 +1460,7 @@ function drawSalvageBar(salvaging_linker_index) {
         return false;
     }
 
-    console.log("Have salvaging linker in redrawBars");
+    //console.log("Have salvaging linker in redrawBars");
     // get the object
     let object_index = objects.findIndex(function (obj) { return obj && obj.id === salvaging_linkers[salvaging_linker_index].object_id; });
 
@@ -2229,7 +1479,7 @@ function drawSalvageBar(salvaging_linker_index) {
     let object_info = getObjectInfo(object_index);
 
     if (object_info.coord === false) {
-        console.log("Could not find coord for object");
+        //console.log("Could not find coord for object");
         return false;
     }
 
@@ -2239,23 +1489,26 @@ function drawSalvageBar(salvaging_linker_index) {
     let drawing_y = (object_info.coord.tile_y * tile_size) + tile_size - 16;
 
 
+    // Completely arbitrary
+    let percent_of_chunk = 5;
 
-    let salvaged_percent = Math.floor(Math.abs(salvaging_linkers[salvaging_linker_index].hp_left / object_types[object_type_index].hp * 100 - 100));
+    if(salvaging_linkers[salvaging_linker_index].total_salvaged === 0) {
 
-    if (salvaged_percent === 0) {
-        salvaged_percent = 1;
+    } else if(salvaging_linkers[salvaging_linker_index].total_salvaged < 10) {
+
+        percent_of_chunk = Math.floor(salvaging_linkers[salvaging_linker_index].total_salvaged / 10 * 100);
+
+
+    } else {
+        percent_of_chunk = Math.floor(salvaging_linkers[salvaging_linker_index].total_salvaged % 10) * 10;
     }
 
-
-    //console.log("Got map coord HP percent as: " + map_coords[i].hp_percent);
-
-    // some simple colour changing to make it look like a health bar
 
     // Blue bar for salvaging
     graphics.fillStyle(0x4287f5);
 
 
-    let hp_bar_length = 64 * salvaged_percent / 100;
+    let hp_bar_length = 64 * percent_of_chunk / 100;
 
 
     let rect = new Phaser.Geom.Rectangle(drawing_x, drawing_y, hp_bar_length, 8);
@@ -3096,13 +2349,15 @@ function getNpcInfo(npc_index) {
  */
 function getObjectInfo(object_index) {
 
-    if (object_index === -1) {
-        return false;
-    }
-
     let coord_index = -1;
     let scope = false;
     let coord = false;
+
+    if (object_index === -1) {
+        return { 'coord_index': coord_index, 'coord': coord, 'scope': scope };
+    }
+
+
 
     if (objects[object_index].coord_id) {
         coord_index = coords.findIndex(function (obj) { return obj && obj.id === objects[object_index].coord_id; });
@@ -6724,54 +5979,6 @@ function processFile(key, type, texture) {
 
 }
 
-function moveMonsterInstant(monster_index, to_coord) {
-
-    if (!monsters[monster_index].sprite) {
-        createMonsterSprite(monster_index);
-    }
-
-    let destination_x = to_coord.tile_x * tile_size + tile_size / 2 + monsters[monster_index].sprite_x_offset;
-    let destination_y = to_coord.tile_y * tile_size + tile_size / 2 + monsters[monster_index].sprite_y_offset;
-
-    monsters[monster_index].sprite.x = destination_x;
-    monsters[monster_index].sprite.y = destination_y;
-
-    monsters[monster_index].destination_x = false;
-    monsters[monster_index].destination_y = false;
-
-    console.log("moveMonsterInstant monster id: " + monsters[monster_index].id + " to tile_x,tile_y: " + to_coord.tile_x + "," + to_coord.tile_y);
-
-}
-
-function moveMonsterFlow(monster_index, to_coord) {
-    if (!monsters[monster_index].sprite) {
-        createMonsterSprite(monster_index);
-
-        if (!monsters[monster_index].sprite) {
-            console.log("%c Failing to load monster sprite for monster type id: " + monsters[monster_index].monster_type_id, log_warning);
-            return false;
-        }
-    }
-
-    let destination_x = to_coord.tile_x * tile_size + tile_size / 2 + monsters[monster_index].sprite_x_offset;
-    let destination_y = to_coord.tile_y * tile_size + tile_size / 2 + monsters[monster_index].sprite_y_offset;
-
-    // If the monster's sprite is far away from the destination coord, we should just warp the monster there instead
-    if (Math.abs(monsters[monster_index].sprite.x - destination_x) > 100 ||
-        Math.abs(monsters[monster_index].sprite.y - destination_y) > 100) {
-
-        monsters[monster_index].destination_x = false;
-        monsters[monster_index].destination_y = false;
-        monsters[monster_index].sprite.x = destination_x;
-        monsters[monster_index].sprite.y = destination_y;
-        return;
-    }
-
-    monsters[monster_index].destination_x = destination_x;
-    monsters[monster_index].destination_y = destination_y;
-
-}
-
 function moveNpcFlow(npc_index, to_coord) {
     console.log("In moveNpcFlow");
     if (!npcs[npc_index].sprite) {
@@ -7037,6 +6244,39 @@ function movePlayerFlow(player_index, destination_coord_type, destination_coord,
                 }
             }
         }
+        /***************** FIGHTER (SHIP!) ******************/
+        if (players[player_index].sprite.texture.key === 'player-fighter') {
+
+            // LEFT !
+            if (players[player_index].destination_x < players[player_index].sprite.x) {
+
+                if (players[player_index].sprite.anims.getCurrentKey() !== 'player-fighter-left-animation') {
+                    players[player_index].sprite.anims.play('player-fighter-left-animation');
+                }
+
+            }
+            // RIGHT!
+            else if (players[player_index].destination_x > players[player_index].sprite.x) {
+                if (players[player_index].sprite.anims.getCurrentKey() !== 'player-fighter-right-animation') {
+                    players[player_index].sprite.anims.play('player-fighter-right-animation');
+                }
+
+
+            }
+            // UP!
+            else if (players[player_index].destination_y < players[player_index].sprite.y) {
+                if (players[player_index].sprite.anims.getCurrentKey() !== 'player-fighter-up-animation') {
+                    players[player_index].sprite.anims.play('player-fighter-up-animation');
+                }
+            }
+            // DOWN!
+            else if (players[player_index].destination_y > players[player_index].sprite.y) {
+                if (players[player_index].sprite.anims.getCurrentKey() !== 'player-fighter-down-animation') {
+                    players[player_index].sprite.anims.play('player-fighter-down-animation');
+                }
+            }
+        }
+
         /********** GALAXY *************/
         else if (players[player_index].sprite.texture.key === 'player-galaxy') {
 
@@ -7045,7 +6285,6 @@ function movePlayerFlow(player_index, destination_coord_type, destination_coord,
 
                 if (players[player_index].sprite.anims.getCurrentKey() !== 'player-galaxy-left-animation') {
                     players[player_index].sprite.anims.play('player-galaxy-left-animation');
-                    console.log(players[player_index].sprite.anims.getCurrentKey());
                 }
 
             }
@@ -7077,7 +6316,6 @@ function movePlayerFlow(player_index, destination_coord_type, destination_coord,
 
                 if (players[player_index].sprite.anims.getCurrentKey() !== 'player-human-left-animation') {
                     players[player_index].sprite.anims.play('player-human-left-animation');
-                    console.log(players[player_index].sprite.anims.getCurrentKey());
                 }
 
             }
@@ -7958,92 +7196,6 @@ function redrawBars() {
 
 }
 
-function removeMonster(monster_id) {
-
-
-    let removing_monster_id = parseInt(monster_id);
-    //console.log("Have monster info to remove: " + monster_id);
-
-    let monster_index = monsters.findIndex(function (obj) { return obj && obj.id === parseInt(monster_id); });
-
-
-    if (monster_index !== -1) {
-
-        if (monsters[monster_index].sprite) {
-            monsters[monster_index].sprite.destroy();
-            monsters[monster_index].sprite = false;
-        }
-
-        /*
-        if(monsters[monster_index].planet_coord_id) {
-            console.log("Monster had a planet coord id: " + monsters[monster_index].planet_coord_id);
-            let old_planet_coord_index = planet_coords.findIndex(function(obj) { return obj && obj.id === monsters[monster_index].planet_coord_id; });
-            if(old_planet_coord_index !== -1) {
-                map.putTileAt(-1, planet_coords[old_planet_coord_index].tile_x, planet_coords[old_planet_coord_index].tile_y, false, 'layer_being');
-                console.log("Removed monster from planet coord");
-            } else {
-                console.log("Could not find that planet coord");
-            }
-        }
-
-        if(monsters[monster_index].ship_coord_id) {
-            let old_ship_coord_index = ship_coords.findIndex(function(obj) { return obj && obj.id === monsters[monster_index].ship_coord_id; });
-            if(old_ship_coord_index !== -1) {
-                map.putTileAt(-1, ship_coords[old_ship_coord_index].tile_x, ship_coords[old_ship_coord_index].tile_y, false, 'layer_being');
-                console.log("Removed monster from ship coord");
-            }
-        }
-        */
-
-        delete monsters[monster_index];
-        //console.log("Removed monster");
-
-        redrawBars();
-
-
-    } else {
-        //console.log("Don't have this monster");
-
-
-    }
-
-    // still remove it from any coords
-    /*
-    let planet_coord_index = planet_coords.findIndex(function(obj) { return obj && obj.monster_id === monster_id; });
-    if(planet_coord_index !== -1) {
-        console.log("Found a planet coord with this monster");
-        map.putTileAt(-1, planet_coords[planet_coord_index].tile_x, planet_coords[planet_coord_index].tile_y, false, 'layer_being');
-    }
-
-    let ship_coord_index = ship_coords.findIndex(function(obj) { return obj && obj.monster_id === monster_id; });
-    if(ship_coord_index !== -1) {
-        console.log("Found a ship coord with this monster");
-        map.putTileAt(-1, ship_coords[ship_coord_index].tile_x, ship_coords[ship_coord_index].tile_y, false, 'layer_being');
-    }
-    */
-
-    // lets remove any battle linkers with this monster id in them
-    battle_linkers.forEach(function (battle_linker, i) {
-        if (battle_linker.attacking_type === 'monster' && battle_linker.attacking_id === removing_monster_id) {
-
-            delete battle_linkers[i];
-            //console.log("Removed battle linker");
-        }
-
-        if (battle_linker.being_attacked_type === 'monster' && battle_linker.being_attacked_id === removing_monster_id) {
-
-            delete battle_linkers[i];
-            //console.log("Removed battle linker");
-        }
-    });
-
-    //console.log("Done removing monster");
-
-    redrawBars();
-    return;
-
-}
-
 
 function removeNpc(npc_id) {
 
@@ -8284,13 +7436,7 @@ function resetMap() {
 
     // Any active animations, mining, or salvaging shouldn't move with us to the next level
     animations.splice(0, animations.length);
-    if (mining_beam_sprite) {
-        mining_beam_sprite.setVisible(false);
-    }
 
-    if (salvaging_beam_sprite) {
-        salvaging_beam_sprite.setVisible(false);
-    }
 
 
     // This helped with the game trying to render bits and pieces of multiple layers of planets
@@ -8988,12 +8134,12 @@ function showClickMenuObject(coord) {
 
 
     // SPAWNING OTHER THINGS
-    if (object_types[object_type_index].spawns_object_type_id) {
+    if (objects[object_index].has_spawned_object) {
         //console.log("User right clicked on something that spawns other things!");
 
         // TODO probably should find a better way of distinguishing between things that are mined over time, or insta-picked up
         if (objects[object_index].has_spawned_object && !object_types[object_type_index].can_be_mined) {
-            $('#click_menu').append("<button class='button is-default' id='pickup_" + coord.object_id + "' object_id='" + coord.object_id + "'>Harvest " + object_types[object_type_index].name + "</button><br>");
+            $('#click_menu').append("<button class='button is-default' id='pickup_" + coord.object_id + "' object_id='" + coord.object_id + "'>Harvest</button><br>");
 
         }
 
@@ -9041,7 +8187,7 @@ function showClickMenuObject(coord) {
             if (object_type_index !== -1) {
 
                 // It's ours - we can take from it
-                if (objects[object_index].player_id === client_player_id) {
+                if (objects[object_index].player_id === client_player_id || (!inventory_item.player_id && !inventory_item.npc_id && !inventory_item.price)) {
 
 
                     take_string += "<div style='display:inline-block; position:relative; width:146px; height:74px; " +
@@ -9097,12 +8243,7 @@ function showClickMenuObject(coord) {
                     take_string += "<img style='width:28px;' src='https://space.alphacoders.com/" + urlName(object_types[object_type_index].name) + ".png'>" +
                         "<button id='buy_" + inventory_item.id + "' storage_object_id='" + objects[object_index].id + "' " +
                         " inventory_item_id='" + inventory_item.id + "'>Buy $" + inventory_item.price + "</button><br>";
-                } else if (!inventory_item.player_id) {
-                    // Other inventory items not owned by the player.
-                    take_string += "<img style='width:28px;' src='https://space.alphacoders.com/" + urlName(object_types[object_type_index].name) + ".png'>" +
-                        "<button id='take_" + inventory_item.id + "' class='button is-default' storage_object_id='" + objects[object_index].id + "' " +
-                        " inventory_item_id='" + inventory_item.id + "'>Take</button><br>";
-                }
+                } 
 
 
 
@@ -10753,3 +9894,16 @@ function worldPointToTileY(y) {
     return Math.floor(y / tile_size);
     //return Math.floor(pixel_number / (tile_size * 2) );
 }
+
+
+
+setInterval(function(){ 
+    if(connected === false) {
+        console.log("Not seeing us as connected");
+        if(socket) {
+            socket.emit('request_news');
+        }
+        
+    }
+
+}, 3000);

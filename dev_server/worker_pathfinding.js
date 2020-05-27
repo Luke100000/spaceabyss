@@ -1,7 +1,12 @@
 const { Worker, isMainThread, parentPort } = require('worker_threads');
 var PF = require('pathfinding');
 
-const helper = require('./helper.js');
+
+function getRandomIntInclusive(min, max) {
+    min = Math.ceil(min);
+    max = Math.floor(max);
+    return Math.floor(Math.random() * (max - min + 1)) + min; //The maximum is inclusive and the minimum is inclusive
+}
 
 
 if(isMainThread) {
@@ -10,7 +15,7 @@ if(isMainThread) {
 }
 
 
-console.log("Pathfinding Worker Started");
+//console.log("Pathfinding Worker Started");
 
 parentPort.once('message', (data) => {
 
@@ -62,7 +67,7 @@ parentPort.once('message', (data) => {
         }
     }
 
-    console.log("The grid we are working with is from " + smallest_x + "," + smallest_y + " to " + largest_x + "," + largest_y);
+    //console.log("The grid we are working with is from " + smallest_x + "," + smallest_y + " to " + largest_x + "," + largest_y);
 
     // I think we need this +1 to make the grid size inclusive
     // grid from 3,3 to 9,9 isn't 9-3=6, but 3,4,5,6,7,8,9 which is size 7
@@ -71,7 +76,7 @@ parentPort.once('message', (data) => {
 
     let grid = new PF.Grid(x_size, y_size);
 
-    console.log("Created a grid size x,y: " + x_size + "," + y_size);
+    //console.log("Created a grid size x,y: " + x_size + "," + y_size);
 
 
 
@@ -121,7 +126,7 @@ parentPort.once('message', (data) => {
         else if(data.monster) {
             if(data.coords[i].player_id || data.coords[i].monster_id || data.coords[i].object_id || data.coords[i].object_type_id ||
                 data.coords[i].npc_id || data.coords[i].belongs_to_player_id || data.coords[i].floor_type_id === 11 ||
-                data.coords[i].floor_type_id === 44 ) {
+                data.coords[i].floor_type_id === 26 || data.coords[i].floor_type_id === 44 ) {
                 //console.log("Going to set that coord at " + data.coords[i].tile_x + ", " + data.coords[i].tile_y + " is not walkable");
                 //console.log("In our grid, the x,y is: " + grid_x + "," + grid_y);
                 try {
@@ -159,33 +164,70 @@ parentPort.once('message', (data) => {
 
     while(!found_path && path_attempts < 10) {
 
+
+        let changed_destination = true;
+
         if(!grid.isWalkableAt(grid_destination_x, grid_destination_y)) {
 
             // randomly decrement or increment x or y
-            let rand_num = helper.getRandomIntInclusive(1,4);
+            let rand_num = getRandomIntInclusive(1,4);
+
+
+
+            // We need to always make sure our destination isn't out of bounds
             if(rand_num === 1) {
-                grid_destination_y--;
+                if(grid_destination_y - 1 >= 0) {
+                    grid_destination_y--;
+                } else if(grid_destination_y + 1 <= 6) {
+                    grid_destination_y++;
+                } else {
+                    changed_destination = false;
+                }
+                
             } else if(rand_num === 2) {
-                grid_destination_x--;
+                if(grid_destination_x - 1 >= 0) {
+                    grid_destination_x--;
+                } else if(grid_destination_x + 1 <= 6) {
+                    grid_destination_x++;
+                } else {
+                    changed_destination = false;
+                }
             } else if(rand_num === 3) {
-                grid_destination_y++;
+                if(grid_destination_y + 1 <= 6) {
+                    grid_destination_y++;
+                } else if(grid_destination_y - 1 >= 0) {
+                    grid_destination_y--;
+                } else {
+                    changed_destination = false;
+                }
             } else if(rand_num === 4) {
-                grid_destination_x++;
+                if(grid_destination_x + 1 <= 6) {
+                    grid_destination_x++;
+                } else if(grid_destination_x - 1 >= 0) {
+                    grid_destination_x--;
+                } else {
+                    changed_destination = false;
+                }
             }
 
         }
 
-        path = finder.findPath(grid_origin_x, grid_origin_y,
-            grid_destination_x, grid_destination_y, grid);
-
-        //console.log(path);
-
-        if(path.length > 0) {
-            found_path = true;
-        }
-
         path_attempts++;
-        grid = grid_backup.clone();
+
+        if(changed_destination) {
+            path = finder.findPath(grid_origin_x, grid_origin_y,
+                grid_destination_x, grid_destination_y, grid);
+    
+            //console.log(path);
+    
+            if(path.length > 0) {
+                found_path = true;
+            }
+    
+    
+            grid = grid_backup.clone();
+        }
+     
     }
 
 

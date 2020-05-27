@@ -248,7 +248,7 @@ PLAYER WEAPONS
 
 FREE
     TIER 1 - Territe, Batteries, Chitin
-        TIER 2 - Syntite, Batteries, Keratin, AI Fragments, Parasites
+        TIER 2 - Refined Territe, Batteries, Keratin, AI Fragments, Parasites
             TIER 3 - Exodium, Power cells, Living Wood, Silk, Thiol
                 TIER 4 - Refined Exodium, Power Cells,
                     TIER 5 - Diamond
@@ -270,7 +270,10 @@ CONTROL
 CORROSIVE
 
 ELECTRIC
+        Energy Blade
             Volt Rifle
+                    Shock Rifle
+                                Lightning Gun
 
 EXPLOSION
     Corrupted Battery Pack
@@ -320,10 +323,15 @@ No Equip (Fists - Melee)
 PIERCING
     Stabbing gloves. Requires parts from spiked enemy + exodium. Could be from an urchin type monster
 
+
+
         Mimetic Arm
 
 
         Bolt Thrower *RANGE*
+
+            Gatlin Gun
+
             Railgun *RANGE*
 
                     Atom Piercer
@@ -392,7 +400,7 @@ PLACES TO BROWSE WHEN FOOD IDEAS ARE HARD
 
 Addiction levels: none, slight, moderate, heavy
 
-Algae puffs
+
 
 
 AIDust:
@@ -405,6 +413,23 @@ Algae:
     Obtained Via: Algae Pad
     Positive Effects: +1 HP
     Addiction Chance: 0%
+
+
+    Aspic
+
+    Algae puffs
+
+        Green Juice
+
+            some green juice ai dust mix? (Stim shot?)
+
+        Blue Algae
+
+            Blue Juice
+
+                Blue Stim Shot
+
+
 
 
 Battery
@@ -580,19 +605,19 @@ Pod ( drawn )
 
     Mining ( drawn )
 
-        Mining Frigate
+        Mining Frigate 
 
-                exhumer https://www.artstation.com/artwork/eyJ26 (or maybe tis on the mining frigate)
+                exhumer https://www.artstation.com/artwork/eyJ26 
 
                     Mining Barge
 
-                            Mining Command Platorm
+                            Mining Command Platorm (https://gemquery.com/content/view/2543463)
 
 
 
     Cargo Ship ( drawn )
 
-        Light freighter
+        Light freighter ( https://images.gemquery.com/254/content_2542324.jpg )
 
                     Freighter ( Have Image Idea )
 

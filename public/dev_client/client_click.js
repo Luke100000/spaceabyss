@@ -613,6 +613,59 @@ $(document).on('click', 'button', function () {
         $('#click_menu').hide();
     }
 
+
+    if(split_name[0] === 'help') {
+
+        $('#click_menu').css({
+            'top': 250, 'left': 250, 'position': 'absolute', 'max-height': '400px', 'max-width': '640px',
+            'overflow-y': 'scroll', 'overflow-x': 'scroll', 'padding': '10px'
+        }).fadeIn('fast');
+    
+        $('#click_menu').empty();
+
+
+
+        $('#click_menu').append("<a target='_blank' class='button is-success is-small' href='https://space.alphacoders.com/site/tutorial'>View Our Tutorial!</a><br>");
+
+
+        // Go through recent failure messages
+        for(let i = recent_failure_messages.length - 1; i > recent_failure_messages.length - 10; i--) {
+
+            if(recent_failure_messages[i]) {
+
+                $('#click_menu').append("<span class='error-message'>Error: " + recent_failure_messages[i].text + "</span><br>");
+
+                if(recent_failure_messages[i].text === 'Your beam mangled up something advanced') {
+                    $('#click_menu').append("<a class='button is-small' href='https://space.alphacoders.com/site/tutorial/salvaging'>Salvaging Tutorial</a> This object has some complex/advanced salvage opportunities. " + 
+                        "As your salvaging levels up, you'll succeed more often here. <a class='button is-small' href='https://space.alphacoders.com/site/tutorial/complexity'>Complexity</a>");
+                }
+
+                if(recent_failure_messages[i].text === 'Ship Has No Floor Space') {
+                    $('#click_menu').append("<a class='button is-small' href='https://space.alphacoders.com/site/tutorial/mining'>Mining Tutorial</a> By default, the things your ship " + 
+                    "mines and salvages are put on random floor tiles on your ship. Build a Bulk Container for most things, or an Ice Container for ice specifically, and your " + 
+                    "ship will automatically store mined/salvaged materials in it.<br><br>You can always just switch to your ship view and pick things up as they are mined/salvaged too.");
+                }
+
+                if(recent_failure_messages[i].text === 'Your beam is a bit weak') {
+                    $('#click_menu').append("<a class='button is-small' href='https://space.alphacoders.com/site/tutorial/mining'>Mining Tutorial</a> This object has some complex/advanced mining opportunities. " + 
+                        "As your mining levels up, you'll succeed more often here. <a class='button is-small' href='https://space.alphacoders.com/site/tutorial/complexity'>Complexity</a>");
+                }
+
+                if(recent_failure_messages[i].text.includes('Assembling') && recent_failure_messages[i].text.includes('Failed')) {
+                    $('#click_menu').append("<a class='button is-small' href='https://space.alphacoders.com/site/tutorial/manufacturing'>Manufacturing Tutorial</a> The object that you " + 
+                    " tried to make has a higher <a class='button is-small' href='https://space.alphacoders.com/site/tutorial/complexity'>complexity</a> than your manufacturing skill." + 
+                    " keep manufacturing things, and your level will increase, making difficult things easier.");
+                }
+
+
+                $('#click_menu').append("<br><br>");
+            }
+
+        }
+
+
+    }
+
     if(split_name[0] === 'hidearea') {
 
         let area_id = $('#' + clicked_id).attr('area_id');
@@ -763,18 +816,9 @@ $(document).on('click', 'button', function () {
     }
 
     if(split_name[0] === 'mine') {
-        console.log("player clicked to mine something");
 
         socket.emit('mine_data', { 'object_id': $('#' + clicked_id).attr('object_id')});
 
-
-        //let clicked_tile_x = $('#' + clicked_id).attr('tile_x');
-        //let clicked_tile_y = $('#' + clicked_id).attr('tile_y');
-
-        //socket.emit("mine_data", { 'tile_x': clicked_tile_x, 'tile_y': clicked_tile_y});
-        //console.log("Sent mine data with tile_x and tile_y");
-
-        console.log("Should have cleared click menu");
         $('#click_menu').empty();
         $('#click_menu').hide();
 
@@ -784,8 +828,8 @@ $(document).on('click', 'button', function () {
 
         let stop_mining_object_id = $("#" + clicked_id).attr('object_id');
 
-        console.log("player clicked to stop mining object id: " + stop_mining_object_id);
-        console.log("Finding a mining linker with player id: " + client_player_id + " object_id: " + stop_mining_object_id);
+        //console.log("player clicked to stop mining object id: " + stop_mining_object_id);
+        //console.log("Finding a mining linker with player id: " + client_player_id + " object_id: " + stop_mining_object_id);
 
         // lets find the mining linker
         let mining_linker_index = mining_linkers.findIndex(function(obj) { return obj && parseInt(obj.player_id) === parseInt(client_player_id) &&
@@ -804,9 +848,17 @@ $(document).on('click', 'button', function () {
                     console.log(mining_linkers[i]);
                 }
             }
-            if(mining_beam_sprite) {
-                mining_beam_sprite.setVisible(false);
+
+            for(let e = 0; e < effect_sprites.length; e++) {
+
+                if(effect_sprites[i] && effect_sprites[i].visible && effect_sprites[i].object_id === stop_mining_object_id && 
+                    effect_sprites[i].damage_source_type === 'player' && effect_sprites[i].damage_source_id === players[client_player_index].id) {
+                        effect_sprites[i].object_id = false;
+                        effect_sprites[i].setVisible(false);
+                    }
+
             }
+           
             redrawBars();
         }
 
@@ -821,7 +873,6 @@ $(document).on('click', 'button', function () {
 
     if(split_name[0] === "pickup") {
 
-        //console.log("player clicked to pick up something");
 
         if($('#' + clicked_id).attr('object_id')) {
             socket.emit("pick_up_data", { 'object_id': $('#' + clicked_id).attr('object_id') });
@@ -834,9 +885,6 @@ $(document).on('click', 'button', function () {
         }
 
 
-        //console.log("Sent pick up data with tile_x and tile_y");
-
-        //console.log("Should have cleared click menu");
         $('#click_menu').empty();
         $('#click_menu').hide();
 
@@ -934,18 +982,9 @@ $(document).on('click', 'button', function () {
     }
 
     if(split_name[0] === 'salvage') {
-        console.log("player clicked to salvage something");
 
         socket.emit('salvage_data', { 'object_id': $('#' + clicked_id).attr('object_id')});
 
-
-        //let clicked_tile_x = $('#' + clicked_id).attr('tile_x');
-        //let clicked_tile_y = $('#' + clicked_id).attr('tile_y');
-
-        //socket.emit("mine_data", { 'tile_x': clicked_tile_x, 'tile_y': clicked_tile_y});
-        //console.log("Sent mine data with tile_x and tile_y");
-
-        console.log("Should have cleared click menu");
         $('#click_menu').empty();
         $('#click_menu').hide();
 
@@ -1173,7 +1212,12 @@ $(document).on('click', 'button', function () {
         console.log("player is taking item from a chest or something!!");
 
         let inventory_item_id = $('#' + clicked_id).attr('inventory_item_id');
-        let amount = $('#' + clicked_id).attr('amount');
+
+        let amount = 1;
+        if($('#' + clicked_id).attr('amount')) {
+            amount = $('#' + clicked_id).attr('amount');
+        }
+        
         socket.emit('take_data', { inventory_item_id: inventory_item_id, 'amount': amount });
 
         console.log("Sending that player is taking inventory item id: " + inventory_item_id);

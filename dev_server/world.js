@@ -17,7 +17,7 @@ const player = require('./player.js');
 /*
  data:       attacking_id   |   attacking_type   |   ?attacking_socket_id?   |   being_attacked_id   |   being_attacked_type   |   ?being_attacked_socket_id?
  */
-async function addBattleLinker(io, socket, dirty, data) {
+async function addBattleLinker(socket, dirty, data) {
 
     try {
 
@@ -1488,7 +1488,6 @@ async function getAIProtector(dirty, data) {
     
                 // Check the room we are in, and if there's one, see if the rules apply to us
                 if (data.coord.planet_id) {
-                    await planet.sayHello();
                     let planet_index = await planet.getIndex(dirty, { 'planet_id': data.coord.planet_id, 'source': 'world.getAIProtector' });
                     if (planet_index !== -1 && dirty.planets[planet_index].ai_id) {
                         ai_index = await main.getObjectIndex(dirty.planets[planet_index].ai_id);
@@ -2432,7 +2431,7 @@ async function getPlayerLevel(dirty, data) {
 
 exports.getPlayerLevel = getPlayerLevel;
 
-function getPlayerSocket(io, dirty, player_index) {
+function getPlayerSocket(dirty, player_index) {
 
     try {
 
@@ -3087,7 +3086,7 @@ async function objectFindTarget(dirty, object_index) {
                                     'being_attacked_id': dirty.objects[checking_object_index].id, 'being_attacked_type': 'object'
                                 };
 
-                                await addBattleLinker(io, false, dirty, battle_linker_data);
+                                await addBattleLinker(false, dirty, battle_linker_data);
 
                                 sent_battle_target = true;
 
@@ -3099,7 +3098,7 @@ async function objectFindTarget(dirty, object_index) {
                                     'being_attacked_id': dirty.objects[checking_object_index].id, 'being_attacked_type': 'object'
                                 };
 
-                                await addBattleLinker(io, false, dirty, battle_linker_data);
+                                await addBattleLinker(false, dirty, battle_linker_data);
 
                                 sent_battle_target = true;
                             }
@@ -3119,7 +3118,7 @@ async function objectFindTarget(dirty, object_index) {
                                     'being_attacked_id': dirty.players[checking_player_index].id, 'being_attacked_type': 'player'
                                 };
 
-                                await addBattleLinker(io, false, dirty, battle_linker_data);
+                                await addBattleLinker(false, dirty, battle_linker_data);
 
                                 sent_battle_target = true;
 
@@ -3131,7 +3130,7 @@ async function objectFindTarget(dirty, object_index) {
                                     'being_attacked_id': dirty.players[checking_player_index].id, 'being_attacked_type': 'player'
                                 };
 
-                                await addBattleLinker(io, false, dirty, battle_linker_data);
+                                await addBattleLinker(false, dirty, battle_linker_data);
 
                                 sent_battle_target = true;
                             }
@@ -3224,7 +3223,7 @@ exports.reloadEvent = reloadEvent;
 
 
 //  battle_linker_id   |   monster_id   |   npc_id   |   object_id   |   player_id
-function removeBattleLinkers(io, dirty, data) {
+function removeBattleLinkers(dirty, data) {
 
     try {
         // Just removing one battle linker
@@ -3387,7 +3386,7 @@ function sendActiveSalvaging(socket, room, dirty, active_salvaging_index, remove
             'id': dirty.active_salvagings[active_salvaging_index].id,
             'player_id': dirty.active_salvagings[active_salvaging_index].player_id,
             'object_id': dirty.active_salvagings[active_salvaging_index].object_id,
-            'hp_left': dirty.active_salvagings[active_salvaging_index].hp_left
+            'total_salvaged': dirty.active_salvagings[active_salvaging_index].total_salvaged
         };
 
 
@@ -3421,7 +3420,7 @@ exports.sendActiveSalvaging = sendActiveSalvaging;
 
 
 // ship_coord_index   OR   ship_coord_id
-async function sendCoordInfo(io, socket, room, dirty, data) {
+async function sendCoordInfo(socket, room, dirty, data) {
 
     try {
         let coord_index = -1;
@@ -3713,7 +3712,7 @@ async function sendPlanetCoordInfo(socket, room, dirty, data) {
 
 exports.sendPlanetCoordInfo = sendPlanetCoordInfo;
 
-async function sendPlayerAIs(io, socket, room, dirty, player_id) {
+async function sendPlayerAIs(socket, room, dirty, player_id) {
     try {
 
         player_id = parseInt(player_id);
@@ -3781,7 +3780,7 @@ async function sendPlayerAreas(socket, dirty, player_index) {
 
 exports.sendPlayerAreas = sendPlayerAreas;
 
-function sendPlayerCount(io, socket) {
+function sendPlayerCount(socket) {
     try {
 
         //console.log("In sendPlayerCount");
@@ -3847,7 +3846,7 @@ async function sendShipCoordInfo(socket, room, dirty, data) {
 
 exports.sendShipCoordInfo = sendShipCoordInfo;
 
-async function sendSkinPurchaseLinkers(pool, socket, dirty) {
+async function sendSkinPurchaseLinkers(socket, dirty) {
 
     try {
 
@@ -4530,7 +4529,7 @@ async function spawnMonster(dirty, monster_type_id, data) {
                 'attacking_id': new_monster_id, 'attacking_type': 'monster',
                 'being_attacked_id': data.attack_on_spawn_id, 'being_attacked_type': data.attack_on_spawn_type
             };
-            await addBattleLinker(io, false, dirty, battle_linker_data);
+            await addBattleLinker(false, dirty, battle_linker_data);
 
             // I THINK this is where the ai daemon stuff will always show up
             if (data.attack_on_spawn_type === 'player' &&
@@ -4540,7 +4539,7 @@ async function spawnMonster(dirty, monster_type_id, data) {
                 // get the player socket
                 let being_attacked_player_index = await main.getPlayerIndex({ 'player_id': data.attack_on_spawn_id });
                 if (being_attacked_player_index !== -1) {
-                    let being_attacked_player_socket = getPlayerSocket(io, dirty, being_attacked_player_index);
+                    let being_attacked_player_socket = getPlayerSocket(dirty, being_attacked_player_index);
                     if (being_attacked_player_socket) {
                         being_attacked_player_socket.emit('chat', { 'message': "You have violated the rules of the ruling AI.", 'scope': 'local', 'is_important': true });
                     }

@@ -356,8 +356,21 @@ const world = require('./world.js');
 
 
             let total_attacking_equipment_count = 0;
-            let melee_equipment_count = 0;
+            let control_equipment_count = 0;
+            let corrosive_equipment_count = 0;
+            let electric_equipment_count = 0;
+            let explosion_equipment_count = 0;
+            let freezing_equipment_count = 0;
+            let gravity_equipment_count = 0;
             let hacking_equipment_count = 0;
+            let heat_equipment_count = 0;
+            let laser_equipment_count = 0
+            let melee_equipment_count = 0;
+            let piercing_equipment_count = 0;
+            let plasma_equipment_count = 0;
+            let poison_equipment_count = 0;
+            let radiation_equipment_count = 0;
+            
 
 
             for(let equipment_linker of dirty.equipment_linkers) {
@@ -374,10 +387,32 @@ const world = require('./world.js');
 
 
                             // TODO flesh out all the damage types
-                            if(dirty.object_types[object_type_index].equip_skill === 'melee') {
-                                melee_equipment_count++;
+                            if(dirty.object_types[object_type_index].equip_skill === 'control') {
+                                control_equipment_count++;
+                            } else if(dirty.object_types[object_type_index].equip_skill === 'corrosive') {
+                                corrosive_equipment_count++;
+                            } else if(dirty.object_types[object_type_index].equip_skill === 'electric') {
+                                electric_equipment_count++;
+                            } else if(dirty.object_types[object_type_index].equip_skill === 'explosion') {
+                                explosion_equipment_count++;
+                            } else if(dirty.object_types[object_type_index].equip_skill === 'freezing') {
+                                freezing_equipment_count++;
+                            } else if(dirty.object_types[object_type_index].equip_skill === 'gravity') {
+                                gravity_equipment_count++;
                             } else if(dirty.object_types[object_type_index].equip_skill === 'hacking') {
                                 hacking_equipment_count++;
+                            } else if(dirty.object_types[object_type_index].equip_skill === 'heat') {
+                                heat_equipment_count++;
+                            } else if(dirty.object_types[object_type_index].equip_skill === 'laser') {
+                                laser_equipment_count++;
+                            } else if(dirty.object_types[object_type_index].equip_skill === 'melee') {
+                                melee_equipment_count++;
+                            } else if(dirty.object_types[object_type_index].equip_skill === 'piercing') {
+                                piercing_equipment_count++;
+                            } else if(dirty.object_types[object_type_index].equip_skill === 'poison') {
+                                poison_equipment_count++;
+                            } else if(dirty.object_types[object_type_index].equip_skill === 'radiation') {
+                                radiation_equipment_count++;
                             }
 
                             // If the equip skill/(damage type) isn't in our damage types array yet, add it
@@ -410,6 +445,97 @@ const world = require('./world.js');
                 }
             }
 
+            // Control
+            if(control_equipment_count > 0) {
+                let control_equipment_percent = control_equipment_count / total_attacking_equipment_count;
+                let control_bonus = Math.floor(control_level * control_equipment_percent);
+
+                if(control_bonus > 1) {
+                    damage_amount += control_bonus - 1;
+                }
+            }
+
+            // Corrosive
+            if(corrosive_equipment_count > 0) {
+                let corrosive_equipment_percent = corrosive_equipment_count / total_attacking_equipment_count;
+                let corrosive_bonus = Math.floor(corrosive_level * corrosive_equipment_percent);
+
+                if(corrosive_bonus > 1) {
+                    damage_amount += corrosive_bonus - 1;
+                }
+            }
+
+            // Electric
+            if(electric_equipment_count > 0) {
+                let electric_equipment_percent = electric_equipment_count / total_attacking_equipment_count;
+                let electric_bonus = Math.floor(electric_level * electric_equipment_percent);
+
+                if(electric_bonus > 1) {
+                    damage_amount += electric_bonus - 1;
+                }
+            }
+            
+
+            // Explosion
+            if(explosion_equipment_count > 0) {
+                let explosion_equipment_percent = explosion_equipment_count / total_attacking_equipment_count;
+                let explosion_bonus = Math.floor(explosion_level * explosion_equipment_percent);
+
+                if(explosion_bonus > 1) {
+                    damage_amount += explosion_bonus - 1;
+                }
+            }
+
+            // Freezing
+            if(freezing_equipment_count > 0) {
+                let freezing_equipment_percent = freezing_equipment_count / total_attacking_equipment_count;
+                let freezing_bonus = Math.floor(freezing_level * freezing_equipment_percent);
+
+                if(freezing_bonus > 1) {
+                    damage_amount += freezing_bonus - 1;
+                }
+            }
+
+            // Gravity
+            if(gravity_equipment_count > 0) {
+                let gravity_equipment_percent = gravity_equipment_count / total_attacking_equipment_count;
+                let gravity_bonus = Math.floor(gravity_level * gravity_equipment_percent);
+
+                if(gravity_bonus > 1) {
+                    damage_amount += gravity_bonus - 1;
+                }
+            }
+
+            // Hacking
+            if(hacking_equipment_count > 0) {
+                let hacking_equipment_percent = hacking_equipment_count / total_attacking_equipment_count;
+                let hacking_bonus = Math.floor(hacking_level * hacking_equipment_percent);
+
+                if(hacking_bonus > 1) {
+                    damage_amount += hacking_bonus - 1;
+                }
+            }
+
+            // Heat
+            if(heat_equipment_count > 0) {
+                let heat_equipment_percent = heat_equipment_count / total_attacking_equipment_count;
+                let heat_bonus = Math.floor(heat_level * heat_equipment_percent);
+
+                if(heat_bonus > 1) {
+                    damage_amount += heat_bonus - 1;
+                }
+            }
+
+        
+            // Laser percent
+            if(laser_equipment_count > 0) {
+                let laser_equipment_percent = laser_equipment_count / total_attacking_equipment_count;
+                let laser_bonus = Math.floor(laser_level * laser_equipment_percent);
+
+                if(laser_bonus > 1) {
+                    damage_amount += laser_bonus - 1;
+                }
+            }
 
             // Melee percent
             if(melee_equipment_count > 0) {
@@ -421,12 +547,43 @@ const world = require('./world.js');
                 }
             }
 
-            if(hacking_equipment_count > 0) {
-                let hacking_equipment_percent = hacking_equipment_count / total_attacking_equipment_count;
-                let hacking_bonus = Math.floor(hacking_level * hacking_equipment_percent);
+            // Piercing
+            if(piercing_equipment_count > 0) {
+                let piercing_equipment_percent = piercing_equipment_count / total_attacking_equipment_count;
+                let piercing_bonus = Math.floor(piercing_level * piercing_equipment_percent);
 
-                if(hacking_bonus > 1) {
-                    damage_amount += hacking_bonus - 1;
+                if(piercing_bonus > 1) {
+                    damage_amount += piercing_bonus - 1;
+                }
+            }
+
+            // Plasma
+            if(plasma_equipment_count > 0) {
+                let plasma_equipment_percent = plasma_equipment_count / total_attacking_equipment_count;
+                let plasma_bonus = Math.floor(plasma_level * plasma_equipment_percent);
+
+                if(plasma_bonus > 1) {
+                    damage_amount += plasma_bonus - 1;
+                }
+            }
+
+            // Poison
+            if(poison_equipment_count > 0) {
+                let poison_equipment_percent = poison_equipment_count / total_attacking_equipment_count;
+                let poison_bonus = Math.floor(poison_level * poison_equipment_percent);
+
+                if(poison_bonus > 1) {
+                    damage_amount += poison_bonus - 1;
+                }
+            }
+
+            // Radiation
+            if(radiation_equipment_count > 0) {
+                let radiation_equipment_percent = radiation_equipment_count / total_attacking_equipment_count;
+                let radiation_bonus = Math.floor(radiation_level * radiation_equipment_percent);
+
+                if(radiation_bonus > 1) {
+                    damage_amount += radiation_bonus - 1;
                 }
             }
 
@@ -626,7 +783,7 @@ const world = require('./world.js');
                     damage_monster_data.damage_source_id = data.damage_source_id;
 
                 }
-                await monster.damage(io, pool, dirty, damage_monster_data);
+                await monster.damage(dirty, damage_monster_data);
             }
 
 
@@ -713,7 +870,7 @@ const world = require('./world.js');
 
 
 
-    async function doLinkers(io, pool, dirty) {
+    async function doLinkers(dirty) {
         try {
             //console.log("In doLinkers");
 
@@ -726,27 +883,27 @@ const world = require('./world.js');
 
                     await monsterAttackPlayer(dirty, battle_linker);
                     // we are moving this to the root file - and ticking it
-                    //moveMonster(io, battle_linker);
+                    //moveMonster(battle_linker);
                 } else if(battle_linker.attacking_type === 'npc' && battle_linker.being_attacked_type === 'monster') {
-                    await npcAttackMonster(io, dirty, battle_linker);
+                    await npcAttackMonster(dirty, battle_linker);
                 } else if(battle_linker.attacking_type === 'npc' && battle_linker.being_attacked_type === 'object') {
-                    await npcAttackObject(io, dirty, battle_linker);
+                    await npcAttackObject(dirty, battle_linker);
                 } else if(battle_linker.attacking_type === 'npc' && battle_linker.being_attacked_type === 'player') {
-                    await npcAttackPlayer(io, dirty, battle_linker);
+                    await npcAttackPlayer(dirty, battle_linker);
                 } else if(battle_linker.attacking_type === 'object' && battle_linker.being_attacked_type === 'object') {
-                    await objectAttackObject(io, dirty, battle_linker);
+                    await objectAttackObject(dirty, battle_linker);
                 } else if(battle_linker.attacking_type === 'object' && battle_linker.being_attacked_type === 'planet') {
                     await objectAttackPlanet(dirty, battle_linker);
                 } else if(battle_linker.attacking_type === 'object' && battle_linker.being_attacked_type === 'player') {
-                    await objectAttackPlayer(io, dirty, battle_linker);
+                    await objectAttackPlayer(dirty, battle_linker);
                 } else if(battle_linker.attacking_type === 'player' && battle_linker.being_attacked_type === 'monster') {
-                    await playerAttackMonster(io, pool, dirty, battle_linker);
+                    await playerAttackMonster(dirty, battle_linker);
                 } else if(battle_linker.attacking_type === 'player' && battle_linker.being_attacked_type === 'npc') {
-                    await playerAttackNpc(io, dirty, battle_linker);
+                    await playerAttackNpc(dirty, battle_linker);
                 } else if(battle_linker.attacking_type === 'player' && battle_linker.being_attacked_type === 'object') {
-                    await playerAttackObject(io, dirty, battle_linker);
+                    await playerAttackObject(dirty, battle_linker);
                 } else if(battle_linker.attacking_type === 'player' && battle_linker.being_attacked_type === 'player') {
-                    await playerAttackPlayer(io, dirty, battle_linker);
+                    await playerAttackPlayer(dirty, battle_linker);
                 }  else {
                     console.log("Unknown battle linker type. " + battle_linker.attacking_type + " is attacking a " + battle_linker.being_attacked_type);
                 }
@@ -770,7 +927,7 @@ const world = require('./world.js');
 
             if(!io.sockets.connected[battle_linker.being_attacked_socket_id]) {
                 log(chalk.yellow("Player with being_attacked_socket_id: " + battle_linker.being_attacked_socket_id + " is no longer connected. Removing"));
-                world.removeBattleLinkers(io, dirty, { 'battle_linker_id': battle_linker.id });
+                world.removeBattleLinkers(dirty, { 'battle_linker_id': battle_linker.id });
                 return;
             }
 
@@ -779,13 +936,13 @@ const world = require('./world.js');
 
             if(monster_index === -1) {
                 log(chalk.yellow("Could not find monster id: " + battle_linker.attacking_id + ". monster_index: " + monster_index));
-                world.removeBattleLinkers(io, dirty, { 'monster_id': battle_linker.attacking_id });
+                world.removeBattleLinkers(dirty, { 'monster_id': battle_linker.attacking_id });
                 return;
             }
 
             if(player_index === -1) {
                 log(chalk.yellow("Could not find player id: " + battle_linker.being_attacked_id + ". player_index: " + player_index));
-                world.removeBattleLinkers(io, dirty, { 'player_id': battle_linker.being_attacked_id });
+                world.removeBattleLinkers(dirty, { 'player_id': battle_linker.being_attacked_id });
                 return;
             }
 
@@ -796,26 +953,26 @@ const world = require('./world.js');
 
             if(monster_info.coord === false) {
                 log(chalk.yellow("Could not get the attacking monster coord"));
-                world.removeBattleLinkers(io, dirty, { 'battle_linker_id': battle_linker.id });
+                world.removeBattleLinkers(dirty, { 'battle_linker_id': battle_linker.id });
                 return false;
             }
 
             if(player_info.coord === false) {
                 log(chalk.yellow("Could not get the defending player coord"));
-                world.removeBattleLinkers(io, dirty, { 'battle_linker_id': battle_linker.id });
+                world.removeBattleLinkers(dirty, { 'battle_linker_id': battle_linker.id });
                 return false;
             }
 
             if(monster_info.room !== player_info.room) {
                 log(chalk.yellow("Monster and player don't share the same room"));
-                world.removeBattleLinkers(io, dirty, { 'battle_linker_id': battle_linker.id });
+                world.removeBattleLinkers(dirty, { 'battle_linker_id': battle_linker.id });
                 return false;
             }
 
             // we also remove the battle linker if they are on a planet but not on the same level
             if(monster_info.coord.planet_id && player_info.coord.planet_id && monster_info.coord.level !== player_info.coord.level) {
                 log(chalk.yellow("Monster and player don't share the same planet level"));
-                world.removeBattleLinkers(io, dirty, { 'battle_linker_id': battle_linker.id });
+                world.removeBattleLinkers(dirty, { 'battle_linker_id': battle_linker.id });
                 return false;
             }
 
@@ -826,7 +983,7 @@ const world = require('./world.js');
 
             if(calculating_range > 8) {
                 //log(chalk.yellow("Monster and player are too far apart. Removing battle linker id: " + battle_linker.id));
-                world.removeBattleLinkers(io, dirty, { 'battle_linker_id': battle_linker.id });
+                world.removeBattleLinkers(dirty, { 'battle_linker_id': battle_linker.id });
                 return false;
             }
 
@@ -924,7 +1081,7 @@ const world = require('./world.js');
     }
 
 
-    async function moveMonsters(io, dirty) {
+    async function moveMonsters(dirty) {
 
         try {
             // increment battle_time by 100
@@ -944,7 +1101,7 @@ const world = require('./world.js');
 
                 // If it's evenly divisible - we're on!
                 if(global.battle_time % dirty.monster_types[monster_type_index].attack_movement_delay === 0) {
-                    await monster.move(io, dirty, monster_index, { 'reason': 'battle', 'battle_linker': battle_linker,
+                    await monster.move(dirty, monster_index, { 'reason': 'battle', 'battle_linker': battle_linker,
                         'monster_type_index': monster_type_index });
                 }
 
@@ -967,7 +1124,7 @@ const world = require('./world.js');
 
 
 
-    async function npcAttackMonster(io, dirty, battle_linker) {
+    async function npcAttackMonster(dirty, battle_linker) {
         try {
 
             let npc_index = await main.getNpcIndex(battle_linker.attacking_id);
@@ -975,13 +1132,13 @@ const world = require('./world.js');
 
             if(npc_index === -1) {
                 log(chalk.yellow("Could not find npc id: " + battle_linker.attacking_id));
-                world.removeBattleLinkers(io, dirty, { 'npc_id': battle_linker.attacking_id });
+                world.removeBattleLinkers(dirty, { 'npc_id': battle_linker.attacking_id });
                 return false;
             }
 
             if(monster_index === -1) {
                 log(chalk.yellow("Could not find monster id: " + battle_linker.being_attacked_id));
-                world.removeBattleLinkers(io, dirty, { 'monster_id': battle_linker.being_attacked_id });
+                world.removeBattleLinkers(dirty, { 'monster_id': battle_linker.being_attacked_id });
                 return;
             }
 
@@ -990,13 +1147,13 @@ const world = require('./world.js');
 
             if(npc_info.coord === false) {
                 log(chalk.yellow("Could not get the npc coord"));
-                world.removeBattleLinkers(io, dirty, { 'battle_linker_id': battle_linker.id });
+                world.removeBattleLinkers(dirty, { 'battle_linker_id': battle_linker.id });
                 return false;
             }
 
             if(monster_info.coord === false) {
                 log(chalk.yellow("Could not get the monster coord"));
-                world.removeBattleLinkers(io, dirty, { 'battle_linker_id': battle_linker.id });
+                world.removeBattleLinkers(dirty, { 'battle_linker_id': battle_linker.id });
                 return false;
             }
 
@@ -1006,7 +1163,7 @@ const world = require('./world.js');
 
             if(calculating_range > 8) {
                 log(chalk.yellow("Npc and monster are too far apart"));
-                world.removeBattleLinkers(io, dirty, { 'battle_linker_id': battle_linker.id });
+                world.removeBattleLinkers(dirty, { 'battle_linker_id': battle_linker.id });
                 return false;
             }
 
@@ -1043,7 +1200,7 @@ const world = require('./world.js');
 
             //console.log("Damage amount: " + damage_amount);
 
-            await monster.damage(io, pool, dirty, { 'monster_index': monster_index, 'damage_amount': damage_amount,
+            await monster.damage(dirty, { 'monster_index': monster_index, 'damage_amount': damage_amount,
                 'battle_linker': battle_linker, 'monster_info': monster_info, 'calculating_range': calculating_range });
 
 
@@ -1056,13 +1213,13 @@ const world = require('./world.js');
     }
 
 
-    async function npcAttackObject(io, dirty, battle_linker) {
+    async function npcAttackObject(dirty, battle_linker) {
         try {
 
             let npc_index = await main.getNpcIndex(battle_linker.attacking_id);
             if(npc_index === -1) {
                 log(chalk.yellow("Could not find npc id: " + battle_linker.attacking_id));
-                world.removeBattleLinkers(io, dirty, { 'npc_id': battle_linker.attacking_id });
+                world.removeBattleLinkers(dirty, { 'npc_id': battle_linker.attacking_id });
                 return false;
             }
 
@@ -1070,7 +1227,7 @@ const world = require('./world.js');
 
             if(object_index === -1) {
                 log(chalk.yellow("Could not find object id: " + battle_linker.being_attacked_id));
-                world.removeBattleLinkers(io, dirty, { 'object_id': battle_linker.being_attacked_id });
+                world.removeBattleLinkers(dirty, { 'object_id': battle_linker.being_attacked_id });
                 return;
             }
 
@@ -1080,13 +1237,13 @@ const world = require('./world.js');
 
             if(object_info.coord === false) {
                 log(chalk.yellow("Could not get the attacking object coord"));
-                world.removeBattleLinkers(io, dirty, { 'battle_linker_id': battle_linker.id });
+                world.removeBattleLinkers(dirty, { 'battle_linker_id': battle_linker.id });
                 return false;
             }
 
             if(npc_info.coord === false) {
                 log(chalk.yellow("Could not get the npc coord"));
-                world.removeBattleLinkers(io, dirty, { 'battle_linker_id': battle_linker.id });
+                world.removeBattleLinkers(dirty, { 'battle_linker_id': battle_linker.id });
                 return false;
             }
 
@@ -1096,7 +1253,7 @@ const world = require('./world.js');
 
             if(calculating_range > 8) {
                 log(chalk.yellow("Npc and object are too far apart"));
-                world.removeBattleLinkers(io, dirty, { 'battle_linker_id': battle_linker.id });
+                world.removeBattleLinkers(dirty, { 'battle_linker_id': battle_linker.id });
                 return false;
             }
 
@@ -1112,7 +1269,7 @@ const world = require('./world.js');
 
 
 
-                await world.removeBattleLinkers(io, dirty, { 'battle_linker_id': battle_linker.id });
+                await world.removeBattleLinkers(dirty, { 'battle_linker_id': battle_linker.id });
 
                 return false;
             }
@@ -1166,13 +1323,13 @@ const world = require('./world.js');
 
     exports.npcAttackObject = npcAttackObject;
 
-    async function npcAttackPlayer(io, dirty, battle_linker) {
+    async function npcAttackPlayer(dirty, battle_linker) {
 
         try {
 
             if(!io.sockets.connected[battle_linker.being_attacked_socket_id]) {
                 log(chalk.yellow("Player with being_attacked_socket_id: " + battle_linker.being_attacked_socket_id + " is no longer connected. Removing"));
-                world.removeBattleLinkers(io, dirty, { 'battle_linker_id': battle_linker.id });
+                world.removeBattleLinkers(dirty, { 'battle_linker_id': battle_linker.id });
                 return;
             }
 
@@ -1181,14 +1338,14 @@ const world = require('./world.js');
 
             if(npc_index === -1) {
                 log(chalk.yellow("Could not find npc id: " + battle_linker.attacking_id));
-                world.removeBattleLinkers(io, dirty, { 'npc_id': battle_linker.attacking_id });
+                world.removeBattleLinkers(dirty, { 'npc_id': battle_linker.attacking_id });
                 game.deleteNpc(dirty, battle_linker.attacking_id);
                 return;
             }
 
             if(player_index === -1) {
                 log(chalk.yellow("Could not find player id: " + battle_linker.being_attacked_id + ". player_index: " + player_index));
-                world.removeBattleLinkers(io, dirty, { 'player_id': battle_linker.being_attacked_id });
+                world.removeBattleLinkers(dirty, { 'player_id': battle_linker.being_attacked_id });
                 return;
             }
 
@@ -1197,19 +1354,19 @@ const world = require('./world.js');
 
             if(npc_info.coord === false) {
                 log(chalk.yellow("Could not get the attacking npc coord"));
-                world.removeBattleLinkers(io, dirty, { 'battle_linker_id': battle_linker.id });
+                world.removeBattleLinkers(dirty, { 'battle_linker_id': battle_linker.id });
                 return false;
             }
 
             if(player_info.coord === false) {
                 log(chalk.yellow("Could not get the defending player coord"));
-                world.removeBattleLinkers(io, dirty, { 'battle_linker_id': battle_linker.id });
+                world.removeBattleLinkers(dirty, { 'battle_linker_id': battle_linker.id });
                 return false;
             }
 
             if(npc_info.room !== player_info.room) {
                 log(chalk.yellow("Npc and player don't share the same room"));
-                world.removeBattleLinkers(io, dirty, { 'battle_linker_id': battle_linker.id });
+                world.removeBattleLinkers(dirty, { 'battle_linker_id': battle_linker.id });
                 return false;
             }
 
@@ -1219,7 +1376,7 @@ const world = require('./world.js');
 
             if(calculating_range > 8) {
                 log(chalk.yellow("Npc and player are too far apart"));
-                world.removeBattleLinkers(io, dirty, { 'battle_linker_id': battle_linker.id });
+                world.removeBattleLinkers(dirty, { 'battle_linker_id': battle_linker.id });
                 return false;
             }
 
@@ -1263,7 +1420,7 @@ const world = require('./world.js');
     exports.npcAttackPlayer = npcAttackPlayer;
 
     //  data:   attacking_object_index, defending_object_index
-    async function objectAttackObject(io, dirty, battle_linker, data = false) {
+    async function objectAttackObject(dirty, battle_linker, data = false) {
         try {
 
             let attacking_object_index = -1;
@@ -1282,7 +1439,7 @@ const world = require('./world.js');
             if(attacking_object_index === -1) {
                 log(chalk.yellow("Could not get the attacking object"));
                 if(battle_linker) {
-                    world.removeBattleLinkers(io, dirty, { 'battle_linker_id': battle_linker.id });
+                    world.removeBattleLinkers(dirty, { 'battle_linker_id': battle_linker.id });
                 }
 
                 return false;
@@ -1292,7 +1449,7 @@ const world = require('./world.js');
                 log(chalk.yellow("Could not get the defending object"));
 
                 if(battle_linker) {
-                    world.removeBattleLinkers(io, dirty, { 'battle_linker_id': battle_linker.id });
+                    world.removeBattleLinkers(dirty, { 'battle_linker_id': battle_linker.id });
                 }
 
                 return false;
@@ -1304,7 +1461,7 @@ const world = require('./world.js');
             if(attacking_object_info.coord === false) {
                 log(chalk.yellow("Could not get the attacking object coord"));
                 if(battle_linker) {
-                    world.removeBattleLinkers(io, dirty, { 'battle_linker_id': battle_linker.id });
+                    world.removeBattleLinkers(dirty, { 'battle_linker_id': battle_linker.id });
                 }
 
                 return false;
@@ -1313,7 +1470,7 @@ const world = require('./world.js');
             if(defending_object_info.coord === false) {
                 log(chalk.yellow("Could not get the defending object coord"));
                 if(battle_linker) {
-                    world.removeBattleLinkers(io, dirty, { 'battle_linker_id': battle_linker.id });
+                    world.removeBattleLinkers(dirty, { 'battle_linker_id': battle_linker.id });
                 }
 
                 return false;
@@ -1322,7 +1479,7 @@ const world = require('./world.js');
             if(attacking_object_info.room !== defending_object_info.room) {
                 log(chalk.yellow("Objects don't share the same room"));
                 if(battle_linker) {
-                    world.removeBattleLinkers(io, dirty, { 'battle_linker_id': battle_linker.id });
+                    world.removeBattleLinkers(dirty, { 'battle_linker_id': battle_linker.id });
                 }
 
                 return false;
@@ -1338,7 +1495,7 @@ const world = require('./world.js');
 
             if(calculating_range > 8) {
                 log(chalk.yellow("Objects are too far apart"));
-                world.removeBattleLinkers(io, dirty, { 'battle_linker_id': battle_linker.id });
+                world.removeBattleLinkers(dirty, { 'battle_linker_id': battle_linker.id });
                 return false;
             }
 
@@ -1354,7 +1511,7 @@ const world = require('./world.js');
             if(attack === 0) {
                 console.log("No attack value. Removing battle linker");
 
-                await world.removeBattleLinkers(io, dirty, { 'battle_linker_id': battle_linker.id });
+                await world.removeBattleLinkers(dirty, { 'battle_linker_id': battle_linker.id });
 
                 return false;
             }
@@ -1457,7 +1614,7 @@ const world = require('./world.js');
             if(attacking_object_index === -1) {
                 log(chalk.yellow("Could not get the attacking object"));
                 if(battle_linker) {
-                    world.removeBattleLinkers(io, dirty, { 'battle_linker_id': battle_linker.id });
+                    world.removeBattleLinkers(dirty, { 'battle_linker_id': battle_linker.id });
                 }
 
                 return false;
@@ -1467,7 +1624,7 @@ const world = require('./world.js');
                 log(chalk.yellow("Could not get the defending planet."));
 
                 if(battle_linker) {
-                    world.removeBattleLinkers(io, dirty, { 'battle_linker_id': battle_linker.id });
+                    world.removeBattleLinkers(dirty, { 'battle_linker_id': battle_linker.id });
                 }
 
                 return false;
@@ -1479,7 +1636,7 @@ const world = require('./world.js');
             if(attacking_object_info.coord === false) {
                 log(chalk.yellow("Could not get the attacking object coord"));
                 if(battle_linker) {
-                    world.removeBattleLinkers(io, dirty, { 'battle_linker_id': battle_linker.id });
+                    world.removeBattleLinkers(dirty, { 'battle_linker_id': battle_linker.id });
                 }
 
                 return false;
@@ -1488,7 +1645,7 @@ const world = require('./world.js');
             if(defending_planet_info.coord === false) {
                 log(chalk.yellow("Could not get the defending planet coord"));
                 if(battle_linker) {
-                    world.removeBattleLinkers(io, dirty, { 'battle_linker_id': battle_linker.id });
+                    world.removeBattleLinkers(dirty, { 'battle_linker_id': battle_linker.id });
                 }
 
                 return false;
@@ -1497,7 +1654,7 @@ const world = require('./world.js');
             if(attacking_object_info.room !== 'galaxy') {
                 log(chalk.yellow("Can't attack a planet if you aren't in the galaxy"));
                 if(battle_linker) {
-                    world.removeBattleLinkers(io, dirty, { 'battle_linker_id': battle_linker.id });
+                    world.removeBattleLinkers(dirty, { 'battle_linker_id': battle_linker.id });
                 }
 
                 return false;
@@ -1513,7 +1670,7 @@ const world = require('./world.js');
 
             if(calculating_range > 10) {
                 log(chalk.yellow("Object and planet are too far apart"));
-                world.removeBattleLinkers(io, dirty, { 'battle_linker_id': battle_linker.id });
+                world.removeBattleLinkers(dirty, { 'battle_linker_id': battle_linker.id });
                 return false;
             }
 
@@ -1531,7 +1688,7 @@ const world = require('./world.js');
             if(attack === 0) {
                 console.log("No attack value. Removing battle linker");
 
-                await world.removeBattleLinkers(io, dirty, { 'battle_linker_id': battle_linker.id });
+                await world.removeBattleLinkers(dirty, { 'battle_linker_id': battle_linker.id });
 
                 return false;
             }
@@ -1618,13 +1775,13 @@ const world = require('./world.js');
         }
     }
 
-    async function objectAttackPlayer(io, dirty, battle_linker, data = false) {
+    async function objectAttackPlayer(dirty, battle_linker, data = false) {
 
         try {
 
             if(battle_linker && !io.sockets.connected[battle_linker.being_attacked_socket_id]) {
                 log(chalk.yellow("Player with being_attacked_socket_id: " + battle_linker.being_attacked_socket_id + " is no longer connected. Removing"));
-                world.removeBattleLinkers(io, dirty, { 'battle_linker_id': battle_linker.id });
+                world.removeBattleLinkers(dirty, { 'battle_linker_id': battle_linker.id });
                 return;
             }
 
@@ -1642,7 +1799,7 @@ const world = require('./world.js');
 
                 if(battle_linker) {
                     log(chalk.yellow("Could not find object id: " + battle_linker.attacking_id));
-                    world.removeBattleLinkers(io, dirty, { 'object_id': battle_linker.attacking_id });
+                    world.removeBattleLinkers(dirty, { 'object_id': battle_linker.attacking_id });
                 }
 
 
@@ -1662,7 +1819,7 @@ const world = require('./world.js');
                 log(chalk.yellow("Could not find player"));
                 if(battle_linker) {
                     log(chalk.yellow("Could not find player id: " + battle_linker.being_attacked_id + ". player_index: " + player_index));
-                    world.removeBattleLinkers(io, dirty, { 'player_id': battle_linker.being_attacked_id });
+                    world.removeBattleLinkers(dirty, { 'player_id': battle_linker.being_attacked_id });
                 }
 
                 return;
@@ -1675,19 +1832,19 @@ const world = require('./world.js');
 
             if(object_info.coord === false) {
                 log(chalk.yellow("Could not get the attacking object coord"));
-                world.removeBattleLinkers(io, dirty, { 'battle_linker_id': battle_linker.id });
+                world.removeBattleLinkers(dirty, { 'battle_linker_id': battle_linker.id });
                 return false;
             }
 
             if(player_info.coord === false) {
                 log(chalk.yellow("Could not get the defending player coord"));
-                world.removeBattleLinkers(io, dirty, { 'battle_linker_id': battle_linker.id });
+                world.removeBattleLinkers(dirty, { 'battle_linker_id': battle_linker.id });
                 return false;
             }
 
             if(object_info.room !== player_info.room) {
                 log(chalk.yellow("Object and player don't share the same room"));
-                world.removeBattleLinkers(io, dirty, { 'battle_linker_id': battle_linker.id });
+                world.removeBattleLinkers(dirty, { 'battle_linker_id': battle_linker.id });
                 return false;
             }
 
@@ -1697,7 +1854,7 @@ const world = require('./world.js');
 
             if(calculating_range > 8) {
                 log(chalk.yellow("Object and player are too far apart"));
-                world.removeBattleLinkers(io, dirty, { 'battle_linker_id': battle_linker.id });
+                world.removeBattleLinkers(dirty, { 'battle_linker_id': battle_linker.id });
                 return false;
             }
 
@@ -1748,14 +1905,14 @@ const world = require('./world.js');
 
 
 
-    async function playerAttackMonster(io, pool, dirty, battle_linker) {
+    async function playerAttackMonster(dirty, battle_linker) {
 
         try {
             //console.time("playerAttackMonster");
 
             if(!io.sockets.connected[battle_linker.socket_id]) {
                 console.log("Player is not connected");
-                world.removeBattleLinkers(io, dirty, { 'battle_linker_id': battle_linker.id });
+                world.removeBattleLinkers(dirty, { 'battle_linker_id': battle_linker.id });
                 return;
             }
 
@@ -1765,14 +1922,14 @@ const world = require('./world.js');
 
             if(monster_index === -1) {
                 log(chalk.yellow("Could not find monster id: " + battle_linker.being_attacked_id));
-                world.removeBattleLinkers(io, dirty, { 'monster_id': battle_linker.being_attacked_id });
+                world.removeBattleLinkers(dirty, { 'monster_id': battle_linker.being_attacked_id });
                 return;
             }
 
 
             if(player_index === -1) {
                 log(chalk.yellow("Could not find player id: " + battle_linker.attacking_id));
-                world.removeBattleLinkers(io, dirty, { 'player_id': battle_linker.attacking_id });
+                world.removeBattleLinkers(dirty, { 'player_id': battle_linker.attacking_id });
                 return;
             }
 
@@ -1782,7 +1939,7 @@ const world = require('./world.js');
 
             if(player_info.coord === false) {
                 log(chalk.yellow("Could not get the player coord"));
-                world.removeBattleLinkers(io, dirty, { 'battle_linker_id': battle_linker.id });
+                world.removeBattleLinkers(dirty, { 'battle_linker_id': battle_linker.id });
                 return false;
             }
 
@@ -1795,13 +1952,13 @@ const world = require('./world.js');
 
             if(monster_info.coord === false) {
                 log(chalk.yellow("Could not get the monster coord"));
-                world.removeBattleLinkers(io, dirty, { 'battle_linker_id': battle_linker.id });
+                world.removeBattleLinkers(dirty, { 'battle_linker_id': battle_linker.id });
                 return false;
             }
 
             if(player_info.room !== monster_info.room) {
                 log(chalk.yellow("Player and monster don't share the same room"));
-                world.removeBattleLinkers(io, dirty, { 'battle_linker_id': battle_linker.id });
+                world.removeBattleLinkers(dirty, { 'battle_linker_id': battle_linker.id });
                 return false;
             }
 
@@ -1812,7 +1969,7 @@ const world = require('./world.js');
 
             if(calculating_range > 8) {
                 log(chalk.yellow("Player and object are too far apart"));
-                world.removeBattleLinkers(io, dirty, { 'battle_linker_id': battle_linker.id });
+                world.removeBattleLinkers(dirty, { 'battle_linker_id': battle_linker.id });
                 return false;
             }
 
@@ -1853,7 +2010,7 @@ const world = require('./world.js');
             //console.log("Sending damage types to game.damageMonster:");
             //console.log(player_attack_profile.damage_types);
 
-            await monster.damage(io, pool, dirty, { 'monster_index': monster_index, 'damage_amount': damage_amount,
+            await monster.damage(dirty, { 'monster_index': monster_index, 'damage_amount': damage_amount,
                 'damage_types': player_attack_profile.damage_types,
                 'battle_linker': battle_linker, 'monster_info': monster_info, 'calculating_range': calculating_range });
 
@@ -1932,7 +2089,7 @@ const world = require('./world.js');
 
     }
 
-    async function playerAttackNpc(io, dirty, battle_linker) {
+    async function playerAttackNpc(dirty, battle_linker) {
 
         try {
             console.log("Have that player " + battle_linker.attacking_id + " is attacking npc: " + battle_linker.being_attacked_id);
@@ -1940,7 +2097,7 @@ const world = require('./world.js');
 
             if(!io.sockets.connected[battle_linker.socket_id]) {
                 console.log("Player is not connected");
-                world.removeBattleLinkers(io, dirty, {'battle_linker_id': battle_linker.id });
+                world.removeBattleLinkers(dirty, {'battle_linker_id': battle_linker.id });
                 return;
             }
 
@@ -1950,13 +2107,13 @@ const world = require('./world.js');
 
             if(npc_index === -1) {
                 log(chalk.yellow("Could not find NPC id: " + battle_linker.being_attacked_id));
-                world.removeBattleLinkers(io, dirty, { 'npc_id': battle_linker.being_attacked_id });
+                world.removeBattleLinkers(dirty, { 'npc_id': battle_linker.being_attacked_id });
                 return;
             }
 
             if(player_index === -1) {
                 log(chalk.yellow("Could not find player id: " + battle_linker.attacking_id + ". player_index: " + player_index));
-                world.removeBattleLinkers(io, dirty, { 'player_id': battle_linker.attacking_id });
+                world.removeBattleLinkers(dirty, { 'player_id': battle_linker.attacking_id });
                 return;
             }
 
@@ -1965,7 +2122,7 @@ const world = require('./world.js');
 
             if(player_info.coord === false) {
                 log(chalk.yellow("Could not get the player coord"));
-                world.removeBattleLinkers(io, dirty, { 'battle_linker_id': battle_linker.id });
+                world.removeBattleLinkers(dirty, { 'battle_linker_id': battle_linker.id });
                 return false;
             }
 
@@ -1978,13 +2135,13 @@ const world = require('./world.js');
 
             if(npc_info.coord === false) {
                 log(chalk.yellow("Could not get the npc coord"));
-                world.removeBattleLinkers(io, dirty, { 'battle_linker_id': battle_linker.id });
+                world.removeBattleLinkers(dirty, { 'battle_linker_id': battle_linker.id });
                 return false;
             }
 
             if(player_info.room !== npc_info.room) {
                 log(chalk.yellow("Player and npc don't share the same room"));
-                world.removeBattleLinkers(io, dirty, { 'battle_linker_id': battle_linker.id });
+                world.removeBattleLinkers(dirty, { 'battle_linker_id': battle_linker.id });
                 return false;
             }
 
@@ -1994,7 +2151,7 @@ const world = require('./world.js');
 
             if(calculating_range > 8) {
                 log(chalk.yellow("Player and npc are too far apart"));
-                world.removeBattleLinkers(io, dirty, { 'battle_linker_id': battle_linker.id });
+                world.removeBattleLinkers(dirty, { 'battle_linker_id': battle_linker.id });
                 return false;
             }
 
@@ -2065,13 +2222,13 @@ const world = require('./world.js');
 
     }
 
-    async function playerAttackObject(io, dirty, battle_linker) {
+    async function playerAttackObject(dirty, battle_linker) {
 
         try {
 
             if(!io.sockets.connected[battle_linker.socket_id]) {
                 console.log("Player is not connected");
-                world.removeBattleLinkers(io, dirty, { 'battle_linker_id': battle_linker.id });
+                world.removeBattleLinkers(dirty, { 'battle_linker_id': battle_linker.id });
                 return;
             }
 
@@ -2080,13 +2237,13 @@ const world = require('./world.js');
 
             if(object_index === -1) {
                 log(chalk.yellow("Could not find object id: " + battle_linker.being_attacked_id));
-                world.removeBattleLinkers(io, dirty, { 'object_id': battle_linker.being_attacked_id });
+                world.removeBattleLinkers(dirty, { 'object_id': battle_linker.being_attacked_id });
                 return;
             }
 
             if(player_index === -1) {
                 log(chalk.yellow("Could not find player id: " + battle_linker.attacking_id + ". player_index: " + player_index));
-                world.removeBattleLinkers(io, dirty, { 'player_id': battle_linker.attacking_id });
+                world.removeBattleLinkers(dirty, { 'player_id': battle_linker.attacking_id });
                 return;
             }
 
@@ -2095,7 +2252,7 @@ const world = require('./world.js');
 
             if(player_info.coord === false) {
                 log(chalk.yellow("Could not get the player coord"));
-                world.removeBattleLinkers(io, dirty, { 'battle_linker_id': battle_linker.id });
+                world.removeBattleLinkers(dirty, { 'battle_linker_id': battle_linker.id });
                 return false;
             }
 
@@ -2108,13 +2265,13 @@ const world = require('./world.js');
 
             if(object_info.coord === false) {
                 log(chalk.yellow("Could not get the object coord"));
-                world.removeBattleLinkers(io, dirty, { 'battle_linker_id': battle_linker.id });
+                world.removeBattleLinkers(dirty, { 'battle_linker_id': battle_linker.id });
                 return false;
             }
 
             if(player_info.room !== object_info.room) {
                 log(chalk.yellow("Player and object don't share the same room"));
-                world.removeBattleLinkers(io, dirty, { 'battle_linker_id': battle_linker.id });
+                world.removeBattleLinkers(dirty, { 'battle_linker_id': battle_linker.id });
                 return false;
             }
 
@@ -2124,7 +2281,7 @@ const world = require('./world.js');
 
             if(calculating_range > 8) {
                 log(chalk.yellow("Player and object are too far apart"));
-                world.removeBattleLinkers(io, dirty, { 'battle_linker_id': battle_linker.id });
+                world.removeBattleLinkers(dirty, { 'battle_linker_id': battle_linker.id });
                 return false;
             }
 
@@ -2139,7 +2296,6 @@ const world = require('./world.js');
 
             let damage_amount = attack - defense;
 
-            await planet.sayHello();
 
             let ai_index = await world.getAIProtector(dirty, { 'damage_amount': damage_amount,
                 'object_index': object_index, 'coord': object_info.coord, 'show_output': true });
@@ -2176,19 +2332,19 @@ const world = require('./world.js');
 
     }
 
-    async function playerAttackPlayer(io, dirty, battle_linker) {
+    async function playerAttackPlayer(dirty, battle_linker) {
 
         try {
             console.log("In player attack player");
             if(!io.sockets.connected[battle_linker.socket_id]) {
                 log(chalk.yellow("Attacking player is no longer connected"));
-                world.removeBattleLinkers(io, dirty, { 'battle_linker_id': battle_linker.id });
+                world.removeBattleLinkers(dirty, { 'battle_linker_id': battle_linker.id });
                 return;
             }
 
             if(!io.sockets.connected[battle_linker.being_attacked_socket_id]) {
                 log(chalk.yellow("Being attacked player is no longer connected"));
-                world.removeBattleLinkers(io, dirty, { 'battle_linker_id': battle_linker.id });
+                world.removeBattleLinkers(dirty, { 'battle_linker_id': battle_linker.id });
                 return;
             }
 
@@ -2197,7 +2353,7 @@ const world = require('./world.js');
 
             if(attacking_player_index === -1 || defending_player_index === -1) {
                 log(chalk.yellow("Couldn't find one of the players"));
-                world.removeBattleLinkers(io, dirty, { 'battle_linker_id': battle_linker.id });
+                world.removeBattleLinkers(dirty, { 'battle_linker_id': battle_linker.id });
                 return;
 
             }
@@ -2207,7 +2363,7 @@ const world = require('./world.js');
 
             if(attacking_player_info.coord === false) {
                 log(chalk.yellow("Could not get the attacking player coord"));
-                world.removeBattleLinkers(io, dirty, { 'battle_linker_id': battle_linker.id });
+                world.removeBattleLinkers(dirty, { 'battle_linker_id': battle_linker.id });
                 return false;
             }
 
@@ -2220,13 +2376,13 @@ const world = require('./world.js');
 
             if(defending_player_info.coord === false) {
                 log(chalk.yellow("Could not get the defending object coord"));
-                world.removeBattleLinkers(io, dirty, { 'battle_linker_id': battle_linker.id });
+                world.removeBattleLinkers(dirty, { 'battle_linker_id': battle_linker.id });
                 return false;
             }
 
             if(attacking_player_info.room !== defending_player_info.room) {
                 log(chalk.yellow("Players don't share the same room"));
-                world.removeBattleLinkers(io, dirty, { 'battle_linker_id': battle_linker.id });
+                world.removeBattleLinkers(dirty, { 'battle_linker_id': battle_linker.id });
                 return false;
             }
 
@@ -2236,7 +2392,7 @@ const world = require('./world.js');
 
             if(calculating_range > 8) {
                 log(chalk.yellow("Players are too far apart"));
-                world.removeBattleLinkers(io, dirty, { 'battle_linker_id': battle_linker.id });
+                world.removeBattleLinkers(dirty, { 'battle_linker_id': battle_linker.id });
                 return false;
             }
 

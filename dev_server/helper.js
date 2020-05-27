@@ -2,7 +2,6 @@ var io_handler = require('./io.js');
 var io = io_handler.io;
 var database = require('./database.js');
 var pool = database.pool;
-const { Worker, isMainThread, parentPort } = require('worker_threads');
 const chalk = require('chalk');
 const log = console.log;
 
@@ -26,8 +25,6 @@ function notFalse(the_value) {
 
 
 function rarityRoll() {
-
-    let rarity = false;
 
     let rarity_roll = getRandomIntInclusive(1, 200);
 

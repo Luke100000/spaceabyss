@@ -171,14 +171,10 @@ async function sendInfo(socket, room, dirty, data) {
 
 exports.sendInfo = sendInfo;
 
-async function sayHello() {
-    console.log("HELLO FROM PLANET!");
-}
 
 
 module.exports = {
     getCoordAndRoom,
     getIndex,
-    sendInfo,
-    sayHello
+    sendInfo
 }

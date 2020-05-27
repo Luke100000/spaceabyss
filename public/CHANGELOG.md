@@ -1,3 +1,35 @@
+## [0.1.3] - 2020-05-27
+
+### Added
+- Healing effect sprite, hacking effect sprite, piercing effect sprite
+- I'm testing the idea of an in-game help system. Added a 'help' button next to the chat buttons. When clicked, this will pull up 
+the most recent failure messages that a player has received, more text about them, and link them to the relevant tutorial page.
+
+
+### Fixed
+- There were quite a few bugs with the new effects. Just visual things like not following monsters, or not disappearing all the time. Lots of fixes for theses
+- Bug with attacking objects leftover from testing dependancy issues
+- Events spawning in the galaxy was bugged. They weren't getting the galaxy coord at the time of the event insert. Fixed this.
+- Player attack now has all the possible damage types added/calculated.
+- Fixed many major bugs with pathfinding
+- Galaxy events weren't listening to their limit. Now there's over a hundred asteroids in space XD
+- Mining in your ship could cause you to not be able to walk around your ship anymore if the tiles were full.
+- Bug with calculating player HP when defending from monsters
+- Taking part of an inventory item would make it disappear until your client had to re-pull the information for that inventory item.
+- Logging into the game should work better. The client needed a connected response from the server, but sometimes the server would send that before 
+the client was ready to accept it. Why? No idea! Now the client will ask for that connected message every few seconds until it receives one it 
+is ready for.
+
+
+### Changed
+- Spacelane Beacons, Algae Power Cells, and normal Power Cells now assembly requirements.
+- Manufacturer assembly requirements. No longer requires nano bonders. I think in general I like having one or two main requirements for something,
+rather than a main requirement and a 'bonding/linking/ agent. This changed the manufacturer's salvaging too.
+- Merged mining and salvaging beams with the new effects sprites
+- Lots of updates to make mining and salvaging flow better
+- The spawning rate and decay rates of things were really out of whack in practice. Changed decay from one tick every 10 minutes to one tick every 2 hours. 
+Changed spawning from one tick every 2 hours to one tick every 10 minutes.
+
 ## [0.1.2] - 2020-05-19
 
 ### Added
