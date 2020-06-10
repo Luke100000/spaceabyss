@@ -39,10 +39,6 @@ include('config.php');
 
         socket.on('connect', () => {
             socket.emit('ready');
-            console.log("Socket: ");
-        console.log(socket);
-        console.log(socket.id);
-
         });
 
     } else {
@@ -64,13 +60,13 @@ include('config.php');
     <script src="//space.alphacoders.com/jquery-3.3.1.min.js"></script>
     <script src="//space.alphacoders.com/phaser-3.15.1.js"></script>
 
-    <script src="client_functions.js"></script>
-    <script src="client_network.js?<?php echo rand(1,1000); ?>"></script>
-    <script src="client_click.js"></script>
-    <script src="effects.js?<?php echo rand(1,1000); ?>"></script>
-    <script src="monster.js"></script>
-    <script src="planet.js"></script>
-    <script src="player.js"></script>
+    <script src="client_functions_<?php echo $client_version; ?>.js"></script>
+    <script src="client_network_<?php echo $client_version; ?>.js"></script>
+    <script src="client_click_<?php echo $client_version; ?>.js"></script>
+    <script src="effects_<?php echo $client_version; ?>.js"></script>
+    <script src="monster_<?php echo $client_version; ?>.js"></script>
+    <script src="planet_<?php echo $client_version; ?>.js"></script>
+    <script src="player_<?php echo $client_version; ?>.js"></script>
 
 
     <link href="//space.alphacoders.com/bulma-0.7.2/css/bulma.min.css" rel="stylesheet" media="screen">
@@ -2633,7 +2629,7 @@ include('config.php');
 
                                 // move to the next frame, or reset
                                 let next_frame = animations[i].current_frame + 1;
-                                if(next_frame > object_types[object_type_index].frame_count) {
+                                if(next_frame > object_types[object_type_index].is_active_frame_count) {
                                     next_frame = 1;
                                 }
 

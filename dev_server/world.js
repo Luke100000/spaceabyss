@@ -7,6 +7,7 @@ const uuid = require('uuid/v1');
 const chalk = require('chalk');
 const log = console.log;
 
+const game = require('./game.js');
 const game_object = require('./game_object.js');
 const helper = require('./helper.js');
 const main = require('./space_abyss' + process.env.FILE_SUFFIX + '.js');
@@ -379,10 +380,13 @@ async function addRule(socket, dirty, data) {
         log(chalk.cyan("Got rule_data. Object id: " + data.object_id + " new rule: " + data.new_rule));
 
         // For now we are just going to have a master list
-        let rule_values = ["attack_all_players", "attack_all_players_except_creator", "attack_all_players_except_creator_faction",
-            "protect_all_players", "protect_creator", "protect_creator_property", "protect_self", "allow_all_players",
-            "allow_faction_players", "allow_creator", "allow_monsters", "building_no_others", "floor_no_others",
-            "protect_3", "protect_4"];
+        let rule_values = [
+            "allow_all_players", "allow_faction_players", "allow_creator", "allow_monsters", 
+            "attack_all_players", "attack_all_players_except_creator", "attack_all_players_except_creator_faction",
+            "building_no_others",
+            "floor_no_others",
+            "protect_all_players", "protect_creator", "protect_creator_property", "protect_self", "protect_players_from_players", "protect_players_from_monsters"
+        ];
 
         // make sure the new rule is found in our array of rule values
         let in_array = false;
@@ -568,8 +572,6 @@ async function aiAttack(dirty, data) {
         let spawn_monster_type_id = 33;
         let spawn_monster_data = {};
 
-        console.log("Spawn monster data monster_type_id: " + spawn_monster_data.monster_type_id);
-
         // If we have AI Cores, and more energy, we can try and spawn an edifice
         if (data.attack_level === 2 && dirty.objects[ai_index].energy >= 500) {
             // lets see if there are enough AI Cores to spawn the higher level defense/attack
@@ -643,7 +645,7 @@ async function aiAttack(dirty, data) {
 
                                 let can_place_result = await main.canPlaceMonster('planet',
                                     dirty.planet_coords[checking_planet_coord_index],
-                                    { 'monster_type_id': spawn_monster_data.monster_type_id });
+                                    { 'monster_type_id': spawn_monster_type_id });
 
                                 if (can_place_result) {
                                     placing_planet_coord_index = checking_planet_coord_index;
@@ -692,7 +694,7 @@ async function aiAttack(dirty, data) {
                             if (checking_ship_coord_index !== -1) {
 
                                 let can_place_result = await main.canPlaceMonster('ship', dirty.ship_coords[checking_ship_coord_index],
-                                    { 'monster_type_id': spawn_monster_data.monster_type_id });
+                                    { 'monster_type_id': spawn_monster_type_id });
 
 
                                 if (can_place_result) {
@@ -745,31 +747,38 @@ exports.aiAttack = aiAttack;
 // Higher leve, more generic function than aiAttack. This is mean to see if we start retaliating against something
 async function aiRetaliate(dirty, ai_index, attacking_type, attacking_id) {
 
-    // AI is going to hit back the thing that violated its rules
-    // Make sure that the AI isn't already engaged with this person
-    let existing_attack_linkers = dirty.battle_linkers.filter(filtered => filtered.being_attacked_type === attacking_type &&
-        filtered.being_attacked_id === attacking_id && filtered.attacking_type === 'monster');
-    let already_attacking = false;
+    try {
+        // AI is going to hit back the thing that violated its rules
+        // Make sure that the AI isn't already engaged with this person
+        let existing_attack_linkers = dirty.battle_linkers.filter(filtered => filtered.being_attacked_type === attacking_type &&
+            filtered.being_attacked_id === attacking_id && filtered.attacking_type === 'monster');
+        let already_attacking = false;
 
-    for (let linker of existing_attack_linkers) {
-        let monster_index = await main.getMonsterIndex(linker.attacking_id);
-        if (dirty.monsters[monster_index].monster_type_id === 33 || dirty.monsters[monster_index].monster_type_id === 57) {
-            already_attacking = true;
+        for (let linker of existing_attack_linkers) {
+            let monster_index = await main.getMonsterIndex(linker.attacking_id);
+            if (dirty.monsters[monster_index].monster_type_id === 33 || dirty.monsters[monster_index].monster_type_id === 57) {
+                already_attacking = true;
+            }
         }
+
+        if (!already_attacking) {
+            // and try and attack the attacking player
+            let attack_data = {
+                'ai_id': dirty.objects[ai_index].id,
+                'attacking_type': attacking_type,
+                'attacking_id': attacking_id
+            };
+
+            aiAttack(dirty, attack_data);
+        } else {
+            console.log("AI is already attacking.");
+        }
+    } catch(error) {
+        log(chalk.red("Error in world.aiRetaliate: " + error));
+        console.error(error);
     }
 
-    if (!already_attacking) {
-        // and try and attack the attacking player
-        let attack_data = {
-            'ai_id': dirty.objects[ai_index].id,
-            'attacking_type': attacking_type,
-            'attacking_id': attacking_id
-        };
 
-        aiAttack(dirty, attack_data);
-    } else {
-        console.log("AI is already attacking.");
-    }
 }
 
 exports.aiRetaliate = aiRetaliate;
@@ -1202,14 +1211,12 @@ function complexityCheck(level, complexity) {
         return true;
     } else {
         let failure_max = complexity - level;
-        console.log("Difference in complexity and level is: " + failure_max + ". Need our 1,10 roll higher than that to succeed");
         let rand_result = helper.getRandomIntInclusive(1, 10);
-        console.log("Rand roll (1-10): " + rand_result);
 
         if (rand_result <= failure_max) {
-            console.log("Rolled a: " + rand_result + ". Failed");
+
         } else {
-            console.log("Rolled a: " + rand_result + ". Succeeded");
+
             return true;
         }
     }
@@ -1468,9 +1475,23 @@ async function createPlanetCoord(socket, dirty, data) {
 
 
 // Returns an ai_index if the AI will protect the thing passed in
-async function getAIProtector(dirty, data) {
+/**
+ * 
+ * @param {Object} dirty 
+ * @param {number} damage_amount
+ * @param {Object} coord
+ * @param {string} atatcking_type
+ * @param {Object} data 
+ * @param {number=} data.monster_index
+ * @param {number=} data.object_index
+ * @param {number=} data.player_index
+
+ */
+async function getAIProtector(dirty, damage_amount, coord, attacking_type, data) {
 
     try {
+
+        //console.log("in getAIProtector. Attacking type: " + attacking_type);
         let ai_index = -1;
         let is_protected = false;
     
@@ -1479,7 +1500,7 @@ async function getAIProtector(dirty, data) {
             // TODO code in AI's being able to protect monsters
         }
         // Checking for an object
-        else if (data.object_index) {
+        else if (typeof data.object_index !== 'undefined') {
     
             // Something like a ship that will directly have an ai_id
             if (dirty.objects[data.object_index].ai_id) {
@@ -1487,13 +1508,13 @@ async function getAIProtector(dirty, data) {
             } else {
     
                 // Check the room we are in, and if there's one, see if the rules apply to us
-                if (data.coord.planet_id) {
-                    let planet_index = await planet.getIndex(dirty, { 'planet_id': data.coord.planet_id, 'source': 'world.getAIProtector' });
+                if (coord.planet_id) {
+                    let planet_index = await planet.getIndex(dirty, { 'planet_id': coord.planet_id, 'source': 'world.getAIProtector' });
                     if (planet_index !== -1 && dirty.planets[planet_index].ai_id) {
                         ai_index = await main.getObjectIndex(dirty.planets[planet_index].ai_id);
                     }
-                } else if (data.coord.ship_id) {
-                    let ship_index = await main.getObjectIndex(data.coord.ship_id);
+                } else if (coord.ship_id) {
+                    let ship_index = await main.getObjectIndex(coord.ship_id);
                     if (ship_index !== -1 && dirty.objects[ship_index].ai_id) {
                         ai_index = await main.getObjectIndex(dirty.objects[ship_index].ai_id);
                     }
@@ -1522,16 +1543,18 @@ async function getAIProtector(dirty, data) {
     
     
             }
-        } else if (data.player_index) {
+        } else if (typeof data.player_index !== 'undefined') {
     
+            console.log("have player index");
+
             // Check the room we are in, and if there's one, see if the rules apply to us
-            if (data.coord.planet_id) {
-                let planet_index = await planet.getIndex(dirty, { 'planet_id': data.coord.planet_id, 'source': 'world.getAIProtector - data.player_index' });
+            if (coord.planet_id) {
+                let planet_index = await planet.getIndex(dirty, { 'planet_id': coord.planet_id, 'source': 'world.getAIProtector - data.player_index' });
                 if (planet_index !== -1 && dirty.planets[planet_index].ai_id) {
                     ai_index = await main.getObjectIndex(dirty.planets[planet_index].ai_id);
                 }
-            } else if (data.coord.ship_id) {
-                let ship_index = await main.getObjectIndex(data.coord.ship_id);
+            } else if (coord.ship_id) {
+                let ship_index = await main.getObjectIndex(coord.ship_id);
                 if (ship_index !== -1 && dirty.objects[ship_index].ai_id) {
                     ai_index = await main.getObjectIndex(dirty.objects[ship_index].ai_id);
                 }
@@ -1554,6 +1577,10 @@ async function getAIProtector(dirty, data) {
     
                 if (rules[i].rule === 'protect_all_players') {
                     is_protected = true;
+                }  else if(rules[i].rule === 'protect_players_from_players' && attacking_type === 'player') {
+                    is_protected = true;
+                } else if(rules[i].rule === 'protect_players_from_monsters' && attacking_type === 'monster') {
+
                 } else if (rules[i].rule === 'protect_creator' && dirty.players[data.player_index].id === dirty.objects[ai_index].player_id) {
                     is_protected = true;
                 }
@@ -1573,7 +1600,7 @@ async function getAIProtector(dirty, data) {
         }
     
         // See if there's enough energy
-        if (dirty.objects[ai_index].energy < data.damage_amount) {
+        if (dirty.objects[ai_index].energy < damage_amount) {
     
             if (data.show_output && data.show_output === true) {
                 console.log("AI does not have enough energy");
@@ -1769,14 +1796,14 @@ async function leaveFaction(socket, dirty, data) {
 exports.leaveFaction = leaveFaction;
 
 
-//  data:   planet_index   |   planet_type_index
-async function generatePlanet(socket, dirty, data) {
+
+async function generatePlanet(socket, dirty, planet_index, planet_type_index) {
     try {
 
         console.time("generatePlanet");
-        data.planet_index = parseInt(data.planet_index);
+        planet_index = parseInt(planet_index);
 
-        if (isNaN(data.planet_index) || data.planet_index === -1 || !dirty.planets[data.planet_index]) {
+        if (isNaN(planet_index) || planet_index === -1 || !dirty.planets[planet_index]) {
             log(chalk.yellow("Bad planet_index in world.setPlanetType"));
             return false;
         }
@@ -1786,43 +1813,51 @@ async function generatePlanet(socket, dirty, data) {
             return false;
         }
 
-        if (dirty.planets[data.planet_index].planet_type_id === 26) {
+        if (dirty.planets[planet_index].planet_type_id === 26) {
             log(chalk.yellow("Forming planets can't be generated. Run /setplanettype PLANET_ID PLANET_TYPE_ID first"));
             return false;
         }
 
-        log(chalk.green("Generating planet id: " + dirty.planets[data.planet_index].id));
+        log(chalk.green("Generating planet id: " + dirty.planets[planet_index].id));
 
-        let planet_type_index = main.getPlanetTypeIndex(dirty.planets[data.planet_index].planet_type_id);
+        let planet_type_index = main.getPlanetTypeIndex(dirty.planets[planet_index].planet_type_id);
 
-        let underground_offset = 0;
-        if (dirty.planet_types[data.planet_type_index].size > dirty.planet_types[data.planet_type_index].size_underground) {
-            underground_offset = (dirty.planet_types[data.planet_type_index].size - dirty.planet_types[data.planet_type_index].size_underground) / 2;
+        let underground_x_offset = 0;
+        let underground_y_offset = 0;
+        if (dirty.planet_types[planet_type_index].x_size_above > dirty.planet_types[planet_type_index].x_size_under) {
+            underground_x_offset = (dirty.planet_types[planet_type_index].x_size_above - dirty.planet_types[planet_type_index].y_size_under) / 2;
 
         }
 
-        dirty.planets[data.planet_index].x_size = dirty.planet_types[data.planet_type_index].size;
-        dirty.planets[data.planet_index].y_size = dirty.planet_types[data.planet_type_index].size;
-        dirty.planets[data.planet_index].has_change = true;
+        if (dirty.planet_types[planet_type_index].y_size_above > dirty.planet_types[planet_type_index].y_size_under) {
+            underground_y_offset = (dirty.planet_types[planet_type_index].y_size_above - dirty.planet_types[planet_type_index].y_size_under) / 2;
 
-        for (let i = 0; i > dirty.planets[data.planet_index].lowest_depth; i--) {
+        }
+
+        dirty.planets[planet_index].x_size_above = dirty.planet_types[planet_type_index].x_size_above;
+        dirty.planets[planet_index].y_size_above = dirty.planet_types[planet_type_index].y_size_above;
+        dirty.planets[planet_index].x_size_under = dirty.planet_types[planet_type_index].x_size_under;
+        dirty.planets[planet_index].y_size_under = dirty.planet_types[planet_type_index].y_size_under;
+        dirty.planets[planet_index].has_change = true;
+
+        for (let i = 0; i > dirty.planets[planet_index].lowest_depth; i--) {
             console.log("Generating planet level: " + i);
             await generatePlanetLevel(socket, dirty, {
-                'planet_index': data.planet_index,
-                'generating_level': i, 'planet_type_index': data.planet_type_index
+                'planet_index': planet_index,
+                'generating_level': i, 'planet_type_index': planet_type_index
             });
 
 
             // If we are at level 0, we need to add a spaceport
             if (i === 0) {
                 console.log("Going to build spaceport!");
-                let spaceport_start_x = Math.floor(dirty.planets[data.planet_index].x_size / 2) - 3;
-                let spaceport_start_y = Math.floor(dirty.planets[data.planet_index].y_size / 2) - 3;
+                let spaceport_start_x = Math.floor(dirty.planets[planet_index].x_size_above / 2) - 3;
+                let spaceport_start_y = Math.floor(dirty.planets[planet_index].y_size_above / 2) - 3;
 
                 await game.buildStructure(dirty, {
                     'structure_type_id': 4, 'starting_level': 0,
                     'starting_tile_x': spaceport_start_x, 'starting_tile_y': spaceport_start_y,
-                    'planet_id': dirty.planets[data.planet_index].id, 'is_forced': true
+                    'planet_id': dirty.planets[planet_index].id, 'is_forced': true
                 });
             }
 
@@ -1834,23 +1869,23 @@ async function generatePlanet(socket, dirty, data) {
                 let level_above = i + 1;
 
                 let possible_hole_coords = dirty.planet_coords.filter(planet_coord =>
-                    planet_coord.planet_id === dirty.planets[data.planet_index].id &&
+                    planet_coord.planet_id === dirty.planets[planet_index].id &&
                     planet_coord.level === level_above && !planet_coord.npc_id && !planet_coord.spawns_monster_type_id &&
                     planet_coord.floor_type_id !== 26 && planet_coord.floor_type_id !== 11 && !planet_coord.object_id &&
-                    planet_coord.tile_x < dirty.planet_types[planet_type_index].size_underground + underground_offset &&
-                    planet_coord.tile_y < dirty.planet_types[planet_type_index].size_underground + underground_offset &&
-                    planet_coord.tile_x > underground_offset &&
-                    planet_coord.tile_y > underground_offset);
+                    planet_coord.tile_x < dirty.planet_types[planet_type_index].x_size_under + underground_x_offset &&
+                    planet_coord.tile_y < dirty.planet_types[planet_type_index].y_size_under + underground_y_offset &&
+                    planet_coord.tile_x > underground_x_offset &&
+                    planet_coord.tile_y > underground_y_offset);
 
                 let hole_coord = possible_hole_coords[Math.floor(Math.random() * possible_hole_coords.length)];
 
                 let stairs_coord_index = await main.getPlanetCoordIndex({
-                    'planet_id': dirty.planets[data.planet_index].id,
+                    'planet_id': dirty.planets[planet_index].id,
                     'planet_level': i, 'tile_x': hole_coord.tile_x, 'tile_y': hole_coord.tile_y
                 });
 
                 if (stairs_coord_index === -1) {
-                    log(chalk.yellow("Could not find a coord for the stairs. planet_id: " + dirty.planets[data.planet_index].id +
+                    log(chalk.yellow("Could not find a coord for the stairs. planet_id: " + dirty.planets[planet_index].id +
                         " planet_level: " + i + " tile_x,y: " + hole_coord.tile_x + "," + hole_coord.tile_y));
                 } else {
                     dirty.planet_coords[stairs_coord_index].object_type_id = 63;
@@ -1930,11 +1965,11 @@ async function generatePlanet(socket, dirty, data) {
                     /*
                     if(i + 1 < 0) {
                         let level_above = i + 1;
-                        connectLevel(socket, dirty, { 'planet_index': data.planet_index,
-                            'planet_type_index': data.planet_type_index, 'connecting_level': level_above });
+                        connectLevel(socket, dirty, { 'planet_index': planet_index,
+                            'planet_type_index': planet_type_index, 'connecting_level': level_above });
                     }
-                    connectLevel(socket, dirty, { 'planet_index': data.planet_index,
-                        'planet_type_index': data.planet_type_index, 'connecting_level': i });
+                    connectLevel(socket, dirty, { 'planet_index': planet_index,
+                        'planet_type_index': planet_type_index, 'connecting_level': i });
 
                     */
                 }
@@ -1948,10 +1983,10 @@ async function generatePlanet(socket, dirty, data) {
         }
 
         // Connect up all the levels
-        for (let i = -1; i > dirty.planets[data.planet_index].lowest_depth; i--) {
+        for (let i = -1; i > dirty.planets[planet_index].lowest_depth; i--) {
             await connectLevel(socket, dirty, {
-                'planet_index': data.planet_index,
-                'planet_type_index': data.planet_type_index, 'connecting_level': i
+                'planet_index': planet_index,
+                'planet_type_index': planet_type_index, 'connecting_level': i
             });
         }
 
@@ -1985,14 +2020,20 @@ async function generatePlanetLevel(socket, dirty, data) {
         let entire_map = [[], []];
 
 
-        let level_size = dirty.planet_types[planet_type_index].size;
-        let starting_offset = 0;
+        let level_x_size = dirty.planet_types[planet_type_index].x_size_above;
+        let level_y_size = dirty.planet_types[planet_type_index].y_size_above;
+        let starting_x_offset = 0;
+        let starting_y_offset = 0;
 
         if (data.generating_level < 0) {
-            level_size = dirty.planet_types[planet_type_index].size_underground;
+            level_x_size = dirty.planet_types[planet_type_index].x_size_under;
+            level_y_size = dirty.planet_types[planet_type_index].y_size_under;
 
-            if (dirty.planet_types[planet_type_index].size > dirty.planet_types[planet_type_index].size_underground) {
-                starting_offset = (dirty.planet_types[planet_type_index].size - dirty.planet_types[planet_type_index].size_underground) / 2;
+            if (dirty.planet_types[planet_type_index].x_size_above > dirty.planet_types[planet_type_index].x_size_under) {
+                starting_x_offset = (dirty.planet_types[planet_type_index].x_size_above - dirty.planet_types[planet_type_index].x_size_under) / 2;
+            }
+            if (dirty.planet_types[planet_type_index].y_size_above > dirty.planet_types[planet_type_index].y_size_under) {
+                starting_y_offset = (dirty.planet_types[planet_type_index].y_size_above - dirty.planet_types[planet_type_index].y_size_under) / 2;
             }
         }
 
@@ -2005,8 +2046,8 @@ async function generatePlanetLevel(socket, dirty, data) {
             // See experiments/underground_level_test.js for a description of how this changes planets
             let chance_to_start_alive = 40;
 
-            for (let x = starting_offset; x < level_size + starting_offset; x++) {
-                for (let y = starting_offset; y < level_size + starting_offset; y++) {
+            for (let x = starting_x_offset; x < level_x_size + starting_x_offset; x++) {
+                for (let y = starting_y_offset; y < level_y_size + starting_y_offset; y++) {
 
                     if (!entire_map[x]) entire_map[x] = [];
 
@@ -2019,14 +2060,14 @@ async function generatePlanetLevel(socket, dirty, data) {
                 }
             }
 
-            entire_map = cellSimulationStep(entire_map, level_size, level_size, starting_offset);
-            entire_map = cellSimulationStep(entire_map, level_size, level_size, starting_offset);
+            entire_map = cellSimulationStep(entire_map, level_x_size, level_y_size, starting_x_offset, starting_y_offset);
+            entire_map = cellSimulationStep(entire_map, level_x_size, level_y_size, starting_x_offset, starting_y_offset);
 
 
         }
 
-        for (let x = starting_offset; x < level_size + starting_offset; x++) {
-            for (let y = starting_offset; y < level_size + starting_offset; y++) {
+        for (let x = starting_x_offset; x < level_x_size + starting_x_offset; x++) {
+            for (let y = starting_y_offset; y < level_y_size + starting_y_offset; y++) {
                 let floor_rarity = helper.rarityRoll();
                 let object_rarity = helper.rarityRoll();
                 let monster_rarity = helper.rarityRoll();
@@ -2079,7 +2120,7 @@ async function generatePlanetLevel(socket, dirty, data) {
 
 exports.generatePlanetLevel = generatePlanetLevel;
 
-function cellCountNeighbors(entire_map, x, y, x_size, y_size, starting_offset) {
+function cellCountNeighbors(entire_map, x, y, x_size, y_size, starting_x_offset, starting_y_offset) {
     try {
 
         let count = 0;
@@ -2094,7 +2135,7 @@ function cellCountNeighbors(entire_map, x, y, x_size, y_size, starting_offset) {
 
                 }
                 // A point off the map
-                else if (near_x < starting_offset || near_y < starting_offset || near_x >= x_size + starting_offset || near_y >= y_size + starting_offset) {
+                else if (near_x < starting_x_offset || near_y < starting_y_offset || near_x >= x_size + starting_x_offset || near_y >= y_size + starting_y_offset) {
                     count++;
                 } else if (entire_map[near_x][near_y] === true) {
                     count++;
@@ -2111,7 +2152,7 @@ function cellCountNeighbors(entire_map, x, y, x_size, y_size, starting_offset) {
     }
 }
 
-function cellSimulationStep(old_map, x_size, y_size, starting_offset) {
+function cellSimulationStep(old_map, x_size, y_size, starting_x_offset, starting_y_offset) {
     try {
 
         let birth_limit = 4;
@@ -2120,9 +2161,9 @@ function cellSimulationStep(old_map, x_size, y_size, starting_offset) {
         let new_map = old_map;
 
 
-        for (let x = starting_offset; x < x_size + starting_offset; x++) {
-            for (let y = starting_offset; y < y_size + starting_offset; y++) {
-                let near_alive_count = cellCountNeighbors(old_map, x, y, x_size, y_size, starting_offset);
+        for (let x = starting_x_offset; x < x_size + starting_x_offset; x++) {
+            for (let y = starting_y_offset; y < y_size + starting_y_offset; y++) {
+                let near_alive_count = cellCountNeighbors(old_map, x, y, x_size, y_size, starting_x_offset, starting_y_offset);
 
                 if (old_map[x][y] === true && near_alive_count < death_limit) {
 
@@ -3850,7 +3891,6 @@ async function sendSkinPurchaseLinkers(socket, dirty) {
 
     try {
 
-        console.log("Going to send skin purchase linker info")
 
         let [rows, fields] = await (pool.query("SELECT * FROM skin_purchase_linkers WHERE user_id = ?", [dirty.players[socket.player_index].user_id]));
 
@@ -3980,8 +4020,10 @@ async function setPlanetType(socket, dirty, data) {
         dirty.planets[data.planet_index].planet_type_id = dirty.planet_types[data.planet_type_index].id;
         dirty.planets[data.planet_index].current_hp = 1000000;
         dirty.planets[data.planet_index].max_hp = 1000000;
-        dirty.planets[data.planet_index].x_size = dirty.planet_types[data.planet_type_index].size;
-        dirty.planets[data.planet_index].y_size = dirty.planet_types[data.planet_type_index].size;
+        dirty.planets[data.planet_index].x_size_above = dirty.planet_types[data.planet_type_index].x_size_above;
+        dirty.planets[data.planet_index].y_size_above = dirty.planet_types[data.planet_type_index].y_size_above;
+        dirty.planets[data.planet_index].x_size_under = dirty.planet_types[data.planet_type_index].x_size_under;
+        dirty.planets[data.planet_index].y_size_under = dirty.planet_types[data.planet_type_index].y_size_under;
 
         dirty.planets[data.planet_index].lowest_depth = -1 * helper.getRandomIntInclusive(dirty.planet_types[data.planet_type_index].min_depth,
             dirty.planet_types[data.planet_type_index].max_depth);
@@ -4050,7 +4092,7 @@ async function setPlayerMoveDelay(socket, dirty, player_index) {
 
 
         } else if (dirty.players[player_index].coord_id) {
-            console.log("Player is in galaxy");
+
             let ship_index = await main.getObjectIndex(dirty.players[player_index].ship_id);
 
             if (ship_index !== -1) {

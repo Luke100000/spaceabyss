@@ -1,0 +1,26 @@
+To help me track what's in the tutorial, what needs to be added to the tutorial, and what has
+    pictures and video.
+
+
+
+What Is Space Abyss? NEEDS_PICTURES NEEDS_VIDEO
+
+Gameplay Introduction NEEDS_PICTURES NEEDS_VIDEO
+
+Mining NEEDS_ALL
+
+Attacking NEEDS_ALL
+
+Eating NEEDS_ALL
+
+Equipping NEEDS_ALL
+
+Salvaging NEEDS_ALL
+
+Ship Building NEEDS_ALL
+
+Body Switching NEEDS_ALL
+
+Farming NEEDS_ALL
+
+COOKING NEEDS_ALL

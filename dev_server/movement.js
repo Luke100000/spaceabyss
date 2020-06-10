@@ -60,7 +60,6 @@ const world = require('./world.js');
             let object_rules = dirty.rules.filter(rule => rule.object_id === dirty.objects[object_index].id);
             if(object_rules.length > 0) {
                 for(let rule of object_rules) {
-                    console.log("Have rule: " + rule.rule);
 
                     // If we made the door and there's an allow creator rule
                     if(rule.rule === "allow_creator" && socket.player_id === dirty.objects[object_index].player_id) {
@@ -585,7 +584,7 @@ const world = require('./world.js');
             // The potential to land on the planet - if we aren't piloting a dockable ship ourselves
             else if( (dirty.coords[coord_index].planet_id && dirty.coords[coord_index].planet_type !== "Forming") ||
                 dirty.coords[coord_index].belongs_to_planet_id) {
-                console.log("Coord player is trying to move towards is part of a planet");
+            
 
                 if(dirty.object_types[player_ship_type_index].is_dockable) {
                     socket.emit('chat', { 'message': "You cannot land on a planet with a large, dockable ship", 'scope': 'system' });
@@ -873,7 +872,6 @@ const world = require('./world.js');
             let can_place = await game_object.canPlace(dirty, 'galaxy', dirty.coords[coord_index], { 'object_index': object_index });
 
             if(!can_place) {
-                console.log("Can't do the move - moveGalaxyObject");
                 return false;
             }
 
@@ -912,57 +910,72 @@ const world = require('./world.js');
 
 
             let galaxy_object_count = 0;
-            for(let i = 0; i < dirty.objects.length && galaxy_object_count < global.max_asteroid_count; i++) {
+            for(let i = 0; i < dirty.objects.length; i++) {
                 if(dirty.objects[i] && spawns_in_galaxy_object_type_ids.indexOf(dirty.objects[i].object_type_id) !== -1) {
 
-                    let coord_index = await main.getCoordIndex({ 'coord_id': dirty.objects[i].coord_id });
+                    let rand_move = Math.random(1,10);
 
-                    if(coord_index === -1) {
-                        log(chalk.yellow("Could not find the coord that object id: " + dirty.objects[i].id + " is on"));
+                    if(rand_move === 6) {
+                        let hrstart = new process.hrtime();
+                        let coord_index = await main.getCoordIndex({ 'coord_id': dirty.objects[i].coord_id });
 
-                    } else {
-
-                        // Lets move this guy!
-                        let move_direction = Math.random();
-                        let up_or_down = Math.random();
-                        let random_x_change = 0;
-                        let random_y_change = 0;
-
-                        if (move_direction > .50) {
-                            move_direction = 'x';
-
-                            if (up_or_down > .50) {
-                                random_x_change = 1;
-                            } else {
-                                random_x_change = -1;
-                            }
-
+                        if(coord_index === -1) {
+                            log(chalk.yellow("Could not find the coord that object id: " + dirty.objects[i].id + " is on"));
+    
                         } else {
-                            move_direction = 'y';
-
-                            if (up_or_down > .50) {
-                                random_y_change = 1;
+    
+                            // Lets move this guy!
+                            let move_direction = Math.random();
+                            let up_or_down = Math.random();
+                            let random_x_change = 0;
+                            let random_y_change = 0;
+    
+                            if (move_direction > .50) {
+                                move_direction = 'x';
+    
+                                if (up_or_down > .50) {
+                                    random_x_change = 1;
+                                } else {
+                                    random_x_change = -1;
+                                }
+    
                             } else {
-                                random_y_change = -1;
+                                move_direction = 'y';
+    
+                                if (up_or_down > .50) {
+                                    random_y_change = 1;
+                                } else {
+                                    random_y_change = -1;
+                                }
                             }
+    
+                            let new_object_x = dirty.coords[coord_index].tile_x + random_x_change;
+                            let new_object_y = dirty.coords[coord_index].tile_y + random_y_change;
+    
+                            if(new_object_x < 0 || new_object_x > 100 || new_object_y < 0 || new_object_y > 100) {
+                                // Not moving off the galaxy
+                            } else {
+    
+                                // lets get the new potential planet coord and see if they can move there
+                                let new_coord_data = {
+                                    'tile_x': new_object_x,
+                                    'tile_y': new_object_y
+                                };
+                                let new_coord_index = await main.getCoordIndex(new_coord_data);
+    
+                                if(new_coord_index !== -1) {
+                                    await moveGalaxyObject(dirty, i, coord_index, new_coord_index);
+                                }
+                            }
+    
+    
                         }
 
-                        let new_object_x = dirty.coords[coord_index].tile_x + random_x_change;
-                        let new_object_y = dirty.coords[coord_index].tile_y + random_y_change;
-
-                        // lets get the new potential planet coord and see if they can move there
-                        let new_coord_data = {
-                            'tile_x': new_object_x,
-                            'tile_y': new_object_y
-                        };
-                        let new_coord_index = await main.getCoordIndex(new_coord_data);
-
-                        if(new_coord_index !== -1) {
-                            await moveGalaxyObject(dirty, i, coord_index, new_coord_index);
-                        }
+                        let hrend = process.hrtime(hrstart);
+                        console.info('time to move ONE galaxy object (hr): %ds %dms', hrend[0], hrend[1] / 1000000);
                     }
 
-
+                
 
                 }
             }
@@ -1313,8 +1326,47 @@ const world = require('./world.js');
                 for(let i = starting_x; i <= ending_x; i++) {
                     for(let j = starting_y; j <= ending_y; j++) {
 
-                        // coords don't exist < 0
-                        if(i >= 0 && j >= 0 && i < dirty.planets[planet_index].x_size && j < dirty.planets[planet_index].y_size ) {
+                        let try_to_find_coord = true;
+
+                        // No coords less than 0,0
+                        if(i < 0 || j < 0) {
+                            try_to_find_coord = false;
+
+                        } 
+
+                        // No coords at x_size_above or y_size_above either (since we start at 0,0)
+                        if(dirty.planet_coords[planet_coord_index].level >= 0 && 
+                            ( i >= dirty.planets[planet_index].x_size_above || j >= dirty.planets[planet_index].y_size_above) ) {
+                                try_to_find_coord = false;
+                        } 
+                        
+                        if(dirty.planet_coords[planet_coord_index].level < 0) {
+
+                            let underground_x_offset = 0;
+                            let underground_y_offset = 0;
+                            if (dirty.planets[planet_index].x_size_above > dirty.planets[planet_index].x_size_under) {
+                                underground_x_offset = (dirty.planets[planet_index].x_size_above - dirty.planets[planet_index].y_size_under) / 2;
+            
+                            }
+            
+                            if (dirty.planets[planet_index].y_size_above > dirty.planets[planet_index].y_size_under) {
+                                underground_y_offset = (dirty.planets[planet_index].y_size_above - dirty.planets[planet_index].y_size_under) / 2;
+                            }
+
+                            if(i < underground_x_offset || j < underground_y_offset || i >= underground_x_offset + dirty.planets[planet_index].x_size_under || 
+                                j >= underground_y_offset + dirty.planets[planet_index].y_size_under ) {
+                                try_to_find_coord = false;
+
+                            }
+                        
+
+
+                        }
+                        
+
+
+
+                        if(try_to_find_coord) {
                             //console.log("Sending planet coord x,y: " + i + "," + j + " due to move");
                             let planet_coord_data = { 'planet_id': dirty.planet_coords[planet_coord_index].planet_id,
                                 'planet_level': dirty.planet_coords[planet_coord_index].level, 'tile_x': i, 'tile_y': j };
@@ -1401,8 +1453,8 @@ const world = require('./world.js');
                 if(floor_type_index !== -1 && dirty.floor_types[floor_type_index].movement_modifier) {
 
                     if(dirty.floor_types[floor_type_index].movement_modifier !== socket.movement_modifier) {
-                        console.log("Reset player move_count/totals. Floor movement modifier: " + dirty.floor_types[floor_type_index].movement_modifier +
-                            " socket movement modifier: " + socket.movement_modifier);
+                        //console.log("Reset player move_count/totals. Floor movement modifier: " + dirty.floor_types[floor_type_index].movement_modifier +
+                        //    " socket movement modifier: " + socket.movement_modifier);
                         socket.move_count = 1;
                         socket.move_totals = 0;
                         socket.movement_modifier = dirty.floor_types[floor_type_index].movement_modifier;
@@ -2421,7 +2473,6 @@ const world = require('./world.js');
     async function switchToPlanet(socket, dirty, data) {
 
         try {
-            console.log("Landing on planet " + data.planet_id + " lets see if there's a spaceport tile available");
 
             let player_index = await main.getPlayerIndex({'player_id':socket.player_id});
 
@@ -2448,6 +2499,8 @@ const world = require('./world.js');
             // give the player's ship that they just used to enter the spaceport an attached to
             let ship_index = await main.getObjectIndex(dirty.players[player_index].ship_id);
 
+            let send_refuel_message = false;
+
             // The ship is now docked at this planet, make sure the player knows
             if(ship_index !== -1) {
                 dirty.objects[ship_index].docked_at_planet_id = dirty.planet_coords[spaceport_index].planet_id;
@@ -2466,10 +2519,9 @@ const world = require('./world.js');
                             let ion_drive_object_type_index = main.getObjectTypeIndex(dirty.objects[dirty.objects[ship_index].engine_indexes[i]].object_type_id);
 
                             if(ion_drive_object_type_index !== -1) {
-                                console.log("Refueling ion drive");
+                                send_refuel_message = true;
 
-                                socket.emit('chat', { 'message': "Your ship's ion drives have been refueled", 'scope': 'system' });
-                                socket.emit('result_info', { 'status': 'success', 'text': "Your ship's ion drives have been refueled" });
+
 
                                 dirty.objects[dirty.objects[ship_index].engine_indexes[i]].energy = dirty.object_types[ion_drive_object_type_index].max_energy_storage;
                                 dirty.objects[dirty.objects[ship_index].engine_indexes[i]].has_change = true;
@@ -2500,19 +2552,26 @@ const world = require('./world.js');
 
 
             await player.sendInfo(socket, false, dirty, dirty.players[player_index].id);
-            console.log("Sent player their updated info");
             await player.sendInfo(false, "galaxy", dirty, dirty.players[player_index].id);
             await player.sendInfo(false, "planet_" + dirty.planet_coords[spaceport_index].planet_id, dirty, dirty.players[player_index].id);
 
             // immediately update the map for the socket
             await map.updateMap(socket, dirty);
-            console.log("Sent updated map");
 
             //socket.emit('landed_on_planet_data', { 'planet_id': socket.player_planet_id });
 
 
 
             await world.setPlayerMoveDelay(socket, dirty, player_index);
+
+
+
+            // We are trying to get this to show up on the new view, so putting it last
+            if(send_refuel_message) {
+                socket.emit('chat', { 'message': "Your ship's ion drives have been refueled", 'scope': 'system' });
+                socket.emit('result_info', { 'status': 'success', 'text': "Your ship's ion drives have been refueled" });
+            }
+            
 
 
 
@@ -2530,7 +2589,6 @@ const world = require('./world.js');
     async function switchToPlanetNpc(dirty, npc_index, planet_id) {
 
         try {
-            //console.log("NPC Landing on planet " + planet_id + " lets see if there's a spaceport tile available");
 
 
             await main.grabPlanetCoords(planet_id, 'spaceport');
@@ -2613,7 +2671,6 @@ const world = require('./world.js');
 
             /***** SWITCH TO GALAXY FROM PLANET ******/
             if (dirty.players[player_index].planet_coord_id ) {
-                console.log("Switching to galaxy from planet");
                 let planet_coord_index = await main.getPlanetCoordIndex({ 'planet_coord_id': dirty.players[player_index].planet_coord_id });
 
                 let planet_index = await planet.getIndex(dirty, { 'planet_id': dirty.planet_coords[planet_coord_index].planet_id, 'source': 'movement.switchToGalaxy' });
@@ -2670,9 +2727,6 @@ const world = require('./world.js');
                     return false;
                 }
 
-
-                log(chalk.green("Warp was successful!"));
-
                 socket.map_needs_cleared = true;
 
                 dirty.objects[ship_index].docked_at_planet_id = false;
@@ -2695,7 +2749,6 @@ const world = require('./world.js');
             }
             // Switching to galaxy from ship
             else if (dirty.players[player_index].ship_coord_id) {
-                log(chalk.green("Switching to galaxy from ship"));
 
                 let ship_coord_index = await main.getShipCoordIndex({ 'ship_coord_id': dirty.players[player_index].ship_coord_id });
 
@@ -2737,8 +2790,8 @@ const world = require('./world.js');
 
                         let coord_data = { 'tile_x': random_x, 'tile_y': random_y};
                         let coord_index = await main.getCoordIndex(coord_data);
-                        let can_plae_result = await main.canPlacePlayer({ 'scope': 'galaxy',
-                            'coord': dirty.corods[coord_index], 'player_index': player_index });
+                        let can_place_result = await main.canPlacePlayer({ 'scope': 'galaxy',
+                            'coord': dirty.coords[coord_index], 'player_index': player_index });
                         //let can_place_result = await main.canPlace('galaxy', dirty.coords[coord_index], 'player', dirty.players[player_index].id);
                         if(can_place_result) {
                             placed_ship = true;
@@ -2779,7 +2832,6 @@ const world = require('./world.js');
                         for(let j = tile_y_start; j < tile_y_end; j++) {
                             if(!found_galaxy_coord) {
 
-                                //console.log("Getting galaxy coord: " + i + " , " + j);
                                 let possible_coord_index = await main.getCoordIndex({'tile_x': i, 'tile_y': j});
 
                                 if(possible_coord_index !== -1) {
@@ -2838,7 +2890,7 @@ const world = require('./world.js');
                 }
                 // Just back to the galaxy view from our ship (not docked on anything)
                 else {
-                    console.log("Basic switching from our ship back to the galaxy");
+                    
                     dirty.players[player_index].on_ship_id = false;
                     dirty.players[player_index].previous_ship_coord_id = dirty.players[player_index].ship_coord_id;
                     dirty.players[player_index].ship_coord_id = false;
@@ -2973,7 +3025,6 @@ const world = require('./world.js');
             }
 
             if(ship_coord_index !== -1) {
-                console.log("Found a ship coord");
 
                 // get the galaxy coord that the player was on
                 let coord_index = dirty.coords.findIndex(function(obj) { return obj && obj.player_id === dirty.players[player_index].coord_id; });
@@ -3103,7 +3154,7 @@ const world = require('./world.js');
                 // Go through planet coords, trying to find a spaceport tile on this planet we can land on
                 for(let i = 0; i < dirty.planet_coords.length && destination_coord_index === -1; i++) {
                     if(dirty.planet_coords[i] && dirty.planet_coords[i].planet_id === data.planet_id && dirty.planet_coords[i].floor_type_id === 11) {
-                        console.log("Found a possible spaceport tile");
+                    
                         let can_place_result = false;
                         if(placing_type === 'player') {
                             console.log("Seeing if we can place player there");
@@ -3162,15 +3213,12 @@ const world = require('./world.js');
                     let tile_x_end = tile_x_start + 2;
                     let tile_y_end = tile_y_start + 2;
 
-                    console.log("Checking coords: " + tile_x_start + " , " + tile_y_start + " to " + tile_x_end + " , " + tile_y_end);
-
 
                     let found_galaxy_coord = false;
                     for(let i = tile_x_start; i < tile_x_end; i++) {
                         for(let j = tile_y_start; j < tile_y_end; j++) {
                             if(!found_galaxy_coord) {
 
-                                console.log("Getting galaxy coord: " + i + " , " + j);
                                 let coord_index = await main.getCoordIndex({'tile_x': i, 'tile_y': j});
 
                                 if(coord_index !== -1) {

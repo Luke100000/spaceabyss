@@ -364,8 +364,8 @@ async function deleteObject(dirty, data) {
             data.reason = false;
         }
 
-        console.log("In game.deleteObject for object id: " + dirty.objects[data.object_index].id);
-        console.log("Reason: " + data.reason);
+        //console.log("In game.deleteObject for object id: " + dirty.objects[data.object_index].id);
+        //console.log("Reason: " + data.reason);
 
         //console.log("Deleting object id: " + dirty.objects[data.object_index].id);
 
@@ -612,7 +612,6 @@ async function deleteObject(dirty, data) {
 
 
         if(check_spawned_event_id !== 0 && !data.skip_check_spawned_event) {
-            console.log("Calling checkedSpawnedEvent from game.deleteObject");
             await game.checkSpawnedEvent(dirty, check_spawned_event_id);
         }
 

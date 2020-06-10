@@ -745,16 +745,18 @@ const world = require('./world.js');
 
                 console.log("Found monster to damage");
 
+                let ai_index = -1;
                 let ai_data = {};
+                
                 if(data.planet_coord_index) {
-                    ai_data = { 'damage_amount': data.damage_amount, 'monster_index': being_damaged_monster_index,
-                        'coord': dirty.planet_coords[data.planet_coord_index]};
+                    ai_index = await world.getAIProtector(dirty, data.damage_amount, dirty.planet_coords[data.planet_coord_index], 
+                        data.damage_source_id, { 'monster_index': being_damaged_monster_index });
                 } else if(data.ship_coord_index) {
-                    ai_data = { 'damage_amount': data.damage_amount, 'monster_index': being_damaged_monster_index,
-                        'coord': dirty.ship_coords[data.ship_coord_index]};
+                    ai_index = await world.getAIProtector(dirty, data.damage_amount, dirty.ship_coords[data.ship_coord_index], 
+                        data.damage_source_id, { 'monster_index': being_damaged_monster_index });
                 }
 
-                let ai_index = await world.getAIProtector(dirty, ai_data);
+                
 
 
                 if(ai_index !== -1) {
@@ -794,15 +796,16 @@ const world = require('./world.js');
                 console.log("Found player to damage");
 
                 let ai_data = {};
+                let ai_index = -1;
                 if(data.planet_coord_index) {
-                    ai_data = { 'damage_amount': data.damage_amount, 'player_index': being_damaged_player_index,
-                        'coord': dirty.planet_coords[data.planet_coord_index]};
-                } else if(data.ship_coord_index) {
-                    ai_data = { 'damage_amount': data.damage_amount, 'player_index': being_damaged_player_index,
-                        'coord': dirty.ship_coords[data.ship_coord_index]};
-                }
+                    ai_index = await world.getAIProtector(dirty, data.damage_amount, dirty.planet_coords[data.planet_coord_index],
+                        data.damage_source_type, { 'player_index': being_damaged_player_index });
 
-                let ai_index = await world.getAIProtector(dirty, ai_data);
+                } else if(data.ship_coord_index) {
+                    ai_index = await world.getAIProtector(dirty, data.damage_amount, dirty.ship_coords[data.ship_coord_index],
+                        data.damage_source_type, { 'player_index': being_damaged_player_index });
+
+                }
 
 
                 if(ai_index !== -1) {
@@ -1028,8 +1031,7 @@ const world = require('./world.js');
             if(dirty.monsters[monster_index].monster_type_id === 33 || dirty.monsters[monster_index].monster_type_id === 57) {
 
             } else {
-                ai_index = await world.getAIProtector(dirty, { 'damage_amount': damage_amount,
-                    'player_index': player_index, 'coord': player_info.coord });
+                ai_index = await world.getAIProtector(dirty, damage_amount, player_info.coord, 'monster', { 'player_index': player_index });
             }
 
 
@@ -1181,8 +1183,8 @@ const world = require('./world.js');
             let damage_amount = attack - defense;
 
 
-            let ai_index = await world.getAIProtector(dirty, { 'damage_amount': damage_amount,
-                'monster_index': monster_index, 'coord': monster_info.coord });
+            let ai_index = await world.getAIProtector(dirty, damage_amount, monster_info.coord, 'npc', { 'monster_index': monster_index });
+        
 
 
             if(ai_index !== -1) {
@@ -1293,8 +1295,8 @@ const world = require('./world.js');
             }
 
             // See if there's an AI that comes into play
-            let ai_index = await world.getAIProtector(dirty, { 'damage_amount': damage_amount,
-                'object_index': object_index, 'coord': object_info.coord });
+            let ai_index = await world.getAIProtected(dirty, damage_amount, object_info.coord, 'npc', { 'object_index': object_index });
+        
 
             if(ai_index !== -1) {
                 dirty.objects[ai_index].energy -= damage_amount;
@@ -1541,8 +1543,7 @@ const world = require('./world.js');
             }
 
             // See if there's an AI that comes into play
-            let ai_index = await world.getAIProtector(dirty, { 'damage_amount': damage_amount,
-                'object_index': defending_object_index, 'coord': defending_object_info.coord });
+            let ai_index = await world.getAIProtector(dirty, damage_amount, defending_object_info.coord, 'object', { 'object_index': defending_object_index });
 
             if(ai_index !== -1) {
                 dirty.objects[ai_index].energy -= damage_amount;
@@ -1874,8 +1875,7 @@ const world = require('./world.js');
             // See if there's an AI that comes into play
             let damage_amount = attack - defense;
 
-            let ai_index = await world.getAIProtector(dirty, { 'damage_amount': damage_amount,
-                'player_index': player_index, 'coord': player_info.coord });
+            let ai_index = await world.getAIProtector(dirty, damage_amount, player_info.coord, 'object', { 'player_index': player_index });
 
 
             if(ai_index !== -1) {
@@ -1990,8 +1990,8 @@ const world = require('./world.js');
 
             // See if there's an AI that comes into play
 
-            let ai_index = await world.getAIProtector(dirty, { 'damage_amount': damage_amount,
-                'monster_index': monster_index, 'coord': monster_info.coord });
+            let ai_index = await world.getAIProtector(dirty, damage_amount, monster_info.coord, 'player', { 'monster_index': monster_index });
+
 
 
             if(ai_index !== -1) {
@@ -2169,8 +2169,7 @@ const world = require('./world.js');
             let damage_amount = attack - defense;
 
             // See if there's an AI that comes into play
-            let ai_index = await world.getAIProtector(dirty, { 'damage_amount': damage_amount,
-                'npc_index': npc_index, 'coord': npc_info.coord });
+            let ai_index = await world.getAIProtector(dirty, damage_amount, npc_info.coord, 'player', { 'npc_index': npc_index });
 
 
             if(ai_index !== -1) {
@@ -2296,9 +2295,8 @@ const world = require('./world.js');
 
             let damage_amount = attack - defense;
 
+            let ai_index = await world.getAIProtector(dirty, damage_amount, object_info.coord, 'player', { 'object_index': object_index });
 
-            let ai_index = await world.getAIProtector(dirty, { 'damage_amount': damage_amount,
-                'object_index': object_index, 'coord': object_info.coord, 'show_output': true });
 
             //console.log("AI index returned: " + ai_index);
 
@@ -2401,14 +2399,20 @@ const world = require('./world.js');
             let defense = await player.calculateDefense(dirty, defending_player_index);
 
             if(attack <= defense) {
+                io.to(defending_player_info.room).emit('damaged_data',
+                {'player_id': dirty.players[defending_player_index].id, 'damage_amount': 0, 'was_damaged_type': 'hp',
+                    'damage_source_type':'player', 'damage_source_id': dirty.players[attacking_player_index].id,
+                    'damage_types': player_attack_profile.damage_types,
+                    'calculating_range': calculating_range });
                 return false;
             }
 
             // See if there's an AI that comes into play
             let damage_amount = attack - defense;
 
-            let ai_index = await world.getAIProtector(dirty, { 'damage_amount': damage_amount,
-                'player_index': defending_player_index, 'coord': defending_player_info.coord });
+            let ai_index = await world.getAIProtector(dirty, damage_amount, defending_player_info.coord, 'player', { 'player_index': defending_player_index });
+
+        
 
             if(ai_index !== -1) {
                 dirty.objects[ai_index].energy -= damage_amount;
@@ -2417,6 +2421,7 @@ const world = require('./world.js');
                 io.to(defending_player_info.room).emit('damaged_data',
                     {'player_id': dirty.players[defending_player_index].id, 'damage_amount': damage_amount, 'was_damaged_type': 'energy',
                         'damage_source_type':'player', 'damage_source_id': dirty.players[attacking_player_index].id,
+                        'damage_types': player_attack_profile.damage_types,
                         'calculating_range': calculating_range });
 
                 await world.aiRetaliate(dirty, ai_index, battle_linker.attacking_type, battle_linker.attacking_id);
@@ -2451,6 +2456,7 @@ const world = require('./world.js');
             io.sockets.connected[battle_linker.socket_id].emit('damaged_data', {
                 'player_id': dirty.players[defending_player_index].id, 'damage_amount': damage_amount, 'was_damaged_type': 'hp',
                 'damage_source_type':'player','damage_source_id': dirty.players[attacking_player_index].id,
+                'damage_types': player_attack_profile.damage_types,
                 'calculating_range': calculating_range
             });
 
@@ -2460,6 +2466,7 @@ const world = require('./world.js');
 
         } catch(error) {
             log(chalk.red("Error in battle.playerAttackPlayer: " + error));
+            console.error(error);
         }
 
     }

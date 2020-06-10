@@ -20,6 +20,9 @@
 
 
 
+    moveGalaxyObjects takes too much time
+    moveMonsters takes too much time
+        potentially limit monster moving to the levels that players are currently on. 
 
 
 ************************ UNSORTED IDEAS *****************************:
@@ -1208,7 +1211,11 @@ It wouldn't be a bad idea to code in more granular control of generating planets
 
 I've been thinking of having the pathways be a little more wide by default. 2 squares instead of 1.
 
+Most spaceships and such 
 
+
+
+right click on your door > manage > add a rule that you can go through it. I'll make it automatically add that rule when they are made.
 
 
 

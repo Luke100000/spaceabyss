@@ -1,3 +1,51 @@
+## [0.1.5] - 2020-06-09
+
+
+### Added
+
+
+### Fixed
+- Various bugs with the server switch
+- Bug with converting things (using water to heal an algae vat)
+- Repair effect
+- Shuttles can't be walked on anymore (this makes them disappear)
+- The process that runs Space Abyss works a little differently on the new server. A couple of instances of the game were running simultaneously O_o Fixed this.
+- Fixed some residual issues from multiple instances of the game trying to run at the same time.
+
+### Changed
+- Planet types and planets now have 4 attributes for size, x and y for both above and under ground. This gives a little more flexability to planet shapes. 
+- Worked on some efficiency improvements for moving monsters.
+- Server!!! Space Abyss now has its own server.
+- Updated the Azure planet to the new generation system
+
+
+## [0.1.4] - 2020-06-05
+
+
+### Added
+- is_full_game_file_index property to object types. Now things that store energy can visually show players if they are full or not.
+- You now receive a more clear success message when landing on a planet, and your ion drives are refilled.
+- An error message if you are trying to place a floor, and there is no coord below.
+
+### Fixed
+- A little if statement bug that caused the right animation to display instead of the left animation sometimes
+- Issue with text going off the game screen.
+- Ice can now be mined into ice containers
+- Kick beans, when planted, now turn into kick plants, not kick beans
+- Multiple issues with tint and object names
+- Multiples of the same effect type will now be displayed
+- Bug with monsters spawning things
+- AI's spawning defensive monster types
+- If the object in an inventory item can no longer be found, the inventory item will be deleted.
+- I BELIEVE that I have fixed another bug with monsters not showing up on the correct tile.
+
+### Changed
+- Object types now use a max_energy_storage property instead of max_storage for clarity
+- Object types now have a is_active_frame_count property instead of a frame_count property, again for clarity
+- Energy storage can now be assembled, and not just spawned on certain ships when they are created.
+- Expanded the energy storage capacity of AI batteries, and made them more difficult to assemble.
+- Assembly requirements from Ship Shield Generators and Voon Steaks
+
 ## [0.1.3] - 2020-05-27
 
 ### Added

@@ -353,6 +353,8 @@ var io;
 
         try {
 
+            log(chalk.red("game.convert says that it is a newer version of this. Investigate!"));
+
             let storage_object_id = parseInt(data.storage_object_id);
 
 
@@ -439,14 +441,14 @@ var io;
 
                     // For each thing in the inventory item, we do the energy addition
                     for(let i = 0; i < put_amount; i++ ) {
-                        if(dirty.objects[storage_object_index].energy >= dirty.object_types[storage_object_type_index].max_storage) {
+                        if(dirty.objects[storage_object_index].energy >= dirty.object_types[storage_object_type_index].max_energy_storage) {
                             console.log("Storage is full now");
                             socket.emit('chat', { 'message': "Storage is now full", 'scope': 'system' });
                             return false;
                         }
                         let new_storage_amount = dirty.objects[storage_object_index].energy + using_conversion_linker.output_amount;
-                        if(new_storage_amount  > dirty.object_types[storage_object_type_index].max_storage) {
-                            new_storage_amount = dirty.object_types[storage_object_type_index].max_storage;
+                        if(new_storage_amount  > dirty.object_types[storage_object_type_index].max_energy_storage) {
+                            new_storage_amount = dirty.object_types[storage_object_type_index].max_energy_storage;
                         }
 
                         // reduce the amount in the inventory item

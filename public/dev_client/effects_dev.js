@@ -35,29 +35,11 @@ function addEffect(data) {
     for(let i = 0; i < data.damage_types.length; i++) {
 
         if(debug_effects) {
-            console.log("Damage tyep: " + data.damage_types[i]);
+            console.log("Damage type: " + data.damage_types[i]);
         }
 
 
         let effect_sprite_index = -1;
-
-        // See if we already have a matching effect sprite active
-        for(let e = 0; e < effect_sprites.length && effect_sprite_index === -1; e++) {
-
-            if(effect_sprites[e] && effect_sprites[e].visible === true && effect_sprites[e].damage_type === data.damage_types[i]) {
-
-                effect_sprite_index = e;
-
-                if(debug_effects) {
-                    console.log("Found a matching active effect sprite");
-                }
-                
-                
-            }
-
-        }
-
-
 
         // See if we have a non-visible effect sprite
         for(let e = 0; e < effect_sprites.length && effect_sprite_index === -1; e++) {
@@ -120,14 +102,17 @@ function addEffect(data) {
 
     
         // Setting the textures and offsets specific to the effect being drawn
-        if(data.damage_types[i] === 'addiction') {
+        if(data.damage_types[i] === 'addiction' || data.damage_types[i] === 'decay') {
             new_texture_key = 'addiction-effect';
             new_texture_animation_key = 'addiction-effect-animation';
             data.x += 32;
-        } else if(data.damage_types[i] === 'decay') {
+        } /* else if(data.damage_types[i] === 'decay') {
             new_texture_key = 'decay-effect';
             new_texture_animation_key = 'decay-effect-animation';
             data.x += 32;
+        } */ else if(data.damage_types[i] === 'energy') {
+            new_texture_key = 'energy-effect';
+            new_texture_animation_key = 'energy-effect-animation';
         } else if(data.damage_types[i] === 'explosion') {
             new_texture_key = 'explosion-effect';
             new_texture_animation_key = 'explosion-effect-animation';
@@ -180,19 +165,19 @@ function addEffect(data) {
             new_texture_key = 'poison-effect';
             new_texture_animation_key = 'poison-effect-animation';
             data.x += 32;
-        } else if(data.damage_types[i] === 'salvaging') {
-            new_texture_key = 'salvaging-effect';
-            new_texture_animation_key = 'salvaging-effect-animation';
-            effect_type = 'beam';
-            data.x += 32;
-            data.y += 32;
         } else if(data.damage_types[i] === 'radiation') {
             new_texture_key = 'radiation-effect';
             new_texture_animation_key = 'radiation-effect-animation';
             data.x += 32;
         } else if(data.damage_types[i] === 'repairing') {
-            new_texture_key = 'repair-effect';
-            new_texture_animation_key = 'repair-effect-animation';
+            new_texture_key = 'repairing-effect';
+            new_texture_animation_key = 'repairing-effect-animation';
+            data.x += 32;
+            data.y += 32;
+        } else if(data.damage_types[i] === 'salvaging') {
+            new_texture_key = 'salvaging-effect';
+            new_texture_animation_key = 'salvaging-effect-animation';
+            effect_type = 'beam';
             data.x += 32;
             data.y += 32;
         }
@@ -273,10 +258,15 @@ function addEffect(data) {
             } else if(data.damage_source_type === 'player') {
             
                 let player_index = getPlayerIndex(data.damage_source_id);
-                if(players[player_index].sprite) {
-                    effect_sprites[effect_sprite_index].x = players[player_index].sprite.x;
-                    effect_sprites[effect_sprite_index].y = players[player_index].sprite.y;
+                if(player_index !== -1) {
+                    if(players[player_index].sprite) {
+                        effect_sprites[effect_sprite_index].x = players[player_index].sprite.x;
+                        effect_sprites[effect_sprite_index].y = players[player_index].sprite.y;
+                    }
+                } else {
+                    socket.emit('request_player_info', { 'player_id': data.damage_source_id });
                 }
+                
                 
                 if(debug_effects) {
                     console.log("damage_source_type was player");
@@ -366,6 +356,8 @@ function updateEffectSprites(moved_type, moved_index) {
 
             let effect_needs_update = false;
 
+            /*
+
             if( effect_sprites[i].object_id) {
 
                 console.log("Have an effect sprite to update!");
@@ -388,12 +380,20 @@ function updateEffectSprites(moved_type, moved_index) {
 
                 effect_sprites[i].rotation = angle_between;
     
-            } else if(moved_type === 'monster' && effect_sprites[i].monster_id === monsters[moved_index].id) {
+            } 
+            */
+            if(moved_type === 'monster' && effect_sprites[i].monster_id === monsters[moved_index].id) {
                 effect_needs_update = true;
                 effect_sprites[i].destination_x = monsters[moved_index].sprite.x;
                 effect_sprites[i].destination_y = monsters[moved_index].sprite.y;
             }
             
+            if(moved_type === 'object' && effect_sprites[i].object_id === objects[moved_index].id) {
+                effect_needs_update = true;
+                effect_sprites[i].destination_x = objects[moved_index].sprite.x;
+                effect_sprites[i].destination_y = objects[moved_index].sprite.y;
+            }
+
             else if(moved_type === 'player' && effect_sprites[i].damage_source_type === 'player' && effect_sprites[i].damage_source_id === players[moved_index].id) {
 
                 effect_needs_update = true;

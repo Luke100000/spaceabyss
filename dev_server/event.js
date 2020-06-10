@@ -174,7 +174,7 @@ async function spawn(dirty, event_index, data) {
 
         
 
-        let debug_event_ids = [64,66];
+        let debug_event_ids = [];
 
         let planet_index = -1;
         let planet_event_linker_index = -1;
@@ -893,7 +893,6 @@ async function tickSpawning(dirty) {
         }
 
 
-        log(chalk.green("In galaxy spawn part!"));
         // Spawn Events In The Galaxy!
         let galaxy_event_index = -1;
         let galaxy_rarity = helper.rarityRoll();
@@ -921,7 +920,6 @@ async function tickSpawning(dirty) {
         }
 
 
-        log(chalk.green("Going to spawn event IN GALAXY " + dirty.events[galaxy_event_index].name + " id: " + dirty.events[galaxy_event_index].id));
         await spawn(dirty, galaxy_event_index, { 'scope': 'galaxy'});
 
 

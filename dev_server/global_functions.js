@@ -364,8 +364,8 @@ async function placeObject(socket, dirty, data) {
         else if(dirty.object_types[object_type_index].is_stairs) {
 
 
-
             console.log("Player is placing stairs");
+
 
             if(dirty.object_types[object_type_index].id === 63) {
                 log(chalk.red("Can't place the default un-attackable stairs"));
@@ -377,11 +377,16 @@ async function placeObject(socket, dirty, data) {
 
                 await updateCoordGeneric(socket, { 'ship_coord_index': data.ship_coord_index, 'object_index': object_index });
                 return true;
+            } else if(typeof data.ship_coord_index !== "undefined") {
+
+                socket.emit('result_info', { 'status': 'failure', 'text': "Can't place stairs on ships"});
+                return false;
             }
 
             // Also needs to be level 0 or higher
             if(dirty.planet_coords[data.planet_coord_index].level < 0) {
                 console.log("Can't place stairs on levels < 0");
+                socket.emit('result_info', { 'status': 'failure', 'text': "Can't place stairs underground"});
                 return false;
             }
 

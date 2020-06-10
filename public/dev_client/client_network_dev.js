@@ -376,6 +376,18 @@ socket.on('coord_data', function(data) {
 
 //  data:   damage_types (piercing,laser,repairing,healing,etc)   |   damage_source_type (monster,npc,player,object,etc)   |   damage_source_id
 //          monster_id | npc_id | object_id | planet_id | player_id
+/**
+ * @param {Object} data
+ * @param {Array} data.damage_types (piercing,laser,repairing,healing,etc)
+ * @param {string} data.damage_source_type (monster,npc,object,player)
+ * @param {int} data.damage_source_id The ID of the thing that did the damage
+ * @param {int=} data.monster_id If a monster was attacked, its ID
+ * @param {int=} data.npc_id If an npc was attacked, its ID
+ * @param {int=} data.object_id If an object was attacked, its ID
+ * @param {int=} data.planet_id If a planet was attacked, its ID
+ * @param {int=} data.player_id If a player was ttacked, its ID
+ * @param 
+ */
 socket.on('damaged_data', function(data) {
 
     //console.log(data.damage_types);
@@ -504,65 +516,6 @@ socket.on('damaged_data', function(data) {
     }
 
 
-    // Certain damage types will need the x,y of the attacker too. So lets get those now, since we are getting all the data
-    // in this function
-    /* - I'm puting this information gathering in effect.addEffect
-    let attacker_x = -100;
-    let attacker_y = -100;
-
-    if(data.damage_types && data.damage_types.includes('laser')) {
-        if(data.damage_source_type === 'monster') {
-            let attacking_monster_index = getMonsterIndex(data.damage_source_id);
-            if(attacking_monster_index === -1) {
-                return false;
-            }
-
-            let attacking_monster_info = getMonsterInfo(attacking_monster_index);
-            if(attacking_monster_info.coord) {
-                attacker_x = tileToPixel(attacking_monster_info.coord.tile_x);
-                attacker_y = tileToPixel(attacking_monster_info.coord.tile_y);
-            }
-
-        } else if(data.damage_source_type === 'player') {
-            let attacking_player_index = getPlayerIndex(data.damage_source_id);
-            if(attacking_player_index === -1) {
-                return false;
-            }
-
-            let attacking_player_info = getPlayerInfo(attacking_player_index);
-            if(attacking_player_info.coord) {
-                attacker_x = tileToPixel(attacking_player_info.coord.tile_x);
-                attacker_y = tileToPixel(attacking_player_info.coord.tile_y);
-            }
-        } else if(data.damage_source_type === 'object') {
-            let attacking_object_index = getObjectIndex(data.damage_source_id);
-            if(attacking_object_index === -1) {
-                console.log("Damage source is an object, but we don't have that object yet ( id: " + data.damage_source_id + " ). Requesting and returning false");
-                socket.emit('request_object_info', { 'object_id': data.damage_source_id });
-                return;
-            }
-
-            let attacking_object_type_index = getObjectTypeIndex(objects[attacking_object_index].object_type_id);
-
-            // If this is an active ship
-            if(object_types[attacking_object_type_index].is_ship) {
-
-            }
-
-            let attacking_object_info = getObjectInfo(attacking_object_index);
-            if(attacking_object_info.coord) {
-                attacker_x = tileToPixel(attacking_object_info.coord.tile_x);
-                attacker_y = tileToPixel(attacking_object_info.coord.tile_y);
-                console.log("Object id: " + objects[attacking_object_index].id + " is attacking. Set attacker x,y: " + attacker_x + "," + attacker_y);
-
-            } else {
-                console.log("%c Could not get attacker x,y", log_warning);
-            }
-        }
-    }
-    */
-
-
     if(data.flavor_text) {
         console.log("Got damaged data with flavor tex!");
         text_important.setText(data.flavor_text);
@@ -588,452 +541,13 @@ socket.on('damaged_data', function(data) {
     addEffect(effect_data);
     addInfoNumber(drawing_x, drawing_y, effect_data);
 
+    // Sometimes, and AI or something else will mean that energy is being damaged, not HP. We add an effect for that.
+    if(data.was_damaged_type && data.was_damaged_type === 'energy') {
+        effect_data.damage_types = ['energy'];
+        addEffect(effect_data);
+    }
+
 });
-
-
-
-/*
-socket.on('damaged_data', function(data) {
-    console.log("Got damaged data");
-    console.log(data);
-
-    // sometimes we have a calculating range inputted, otherwise, make it -1;
-    let calculating_range = -1;
-    if(data.calculating_range) {
-        calculating_range = data.calculating_range;
-        //console.log("Range from server is: " + data.calculating_range);
-    } else {
-        //console.log("No range from server");
-    }
-
-    // Monster was damaged
-    if(data.monster_id) {
-
-        let monster_index = monsters.findIndex(function(obj) { return obj && obj.id === data.monster_id; });
-
-        if(monster_index === -1) {
-            console.log("Got damaged data, but don't have the monster");
-            return false;
-        }
-
-        let coord_index = -1;
-        let x = -100;
-        let y = -100;
-        if(monsters[monster_index].planet_coord_id) {
-            coord_index = planet_coords.findIndex(function(obj) { return obj && obj.id === monsters[monster_index].planet_coord_id; });
-            if(coord_index === -1) {
-                return false;
-            }
-            x = planet_coords[coord_index].tile_x * tile_size;
-            y = planet_coords[coord_index].tile_y * tile_size;
-        } else if(monsters[monster_index].ship_coord_id) {
-            coord_index = ship_coords.findIndex(function(obj) { return obj && obj.id === monsters[monster_index].ship_coord_id; });
-            if(coord_index === -1) {
-                return false;
-            }
-            x = ship_coords[coord_index].tile_x * tile_size;
-            y = ship_coords[coord_index].tile_y * tile_size;
-        }
-
-
-        let info_number_data = { 'x': x, 'y': y, 'damage_amount': data.damage_amount, 'damage_type': data.was_damaged_type,
-            'defender_type': 'monster', 'defender_id': data.monster_id, 'attacker_type': data.damage_source_type,
-            'attacker_id': data.damage_source_id, 'calculating_range': calculating_range };
-
-        console.log("Damage types in on('damaged_data')");
-        console.log(data.damage_types);
-        addEffect({ 'x': x, 'y': y, 'damage_types': data.damage_types });
-        addInfoNumber(info_number_data);
-
-        // TODO try and re-implement laser type stuff. Player -> monster action. Laser logic is in /old
-
-
-        if(data.damage_source_type === 'player' && data.damage_source_id === player_id) {
-            //console.log("Player has damaged monster");
-
-            if(!monsters[monster_index].player_is_attacking) {
-                monsters[monster_index].player_is_attacking = true;
-            }
-
-            // lets add a system message that we damaged the monster
-            $('#chat_system').append($('<p>').text("You attacked the monster for " + data.damage_amount + " damage"));
-
-
-
-            if(!$("#chat_system").is(":visible")) {
-                unread_system_messages = unread_system_messages + 1;
-
-                $('#chatswitch_system').text("System (" + unread_system_messages + ")");
-                //console.log("chat system is not visible");
-            } else {
-                let out = document.getElementById("chat_system");
-                let isScrolledToBottom = out.scrollHeight - out.clientHeight <= out.scrollTop + 1;
-
-                //if (isScrolledToBottom) {
-                    out.scrollTop = out.scrollHeight - out.clientHeight
-                //}
-
-                //console.log("Scrolling chat system: " + out.scrollTop);
-            }
-
-        }
-
-        // we COULD mabye put this in when the laser hits so we aren't updating the monster's HP before the hit
-        if(data.was_damaged_type == 'hp') {
-
-            //console.log("Monster's current hp: " + monsters[monster_index].current_hp);
-
-            monsters[monster_index].current_hp = monsters[monster_index].current_hp - data.damage_amount;
-
-            //console.log("Monster's hp after the attack: " + monsters[monster_index].current_hp + " data.damage_amount: " + data.damage_amount);
-
-            if(monsters[monster_index].current_hp > 0) {
-                redrawBars();
-            } else {
-                //console.log("Calling remove monster on " + monsters[monster_index].id + " since HP is <= 0");
-                removeMonster(monsters[monster_index].id);
-
-            }
-        }
-
-
-
-
-    } else if(data.npc_id) {
-
-        let npc_index = npcs.findIndex(function(obj) { return obj && obj.id == data.npc_id; });
-
-        if(npc_index !== -1) {
-            console.log("Found npc in npcs");
-
-            let has_attack_box = false;
-            let available_attack_box = false;
-            // see if we have an attack box at this location
-            for(let i = 0; i < attack_boxes.length; i++) {
-                if(attack_boxes[i].x == npcs[npc_index].x && attack_boxes[i].y == npcs[npc_index].y) {
-                    // already have attack box here
-                    has_attack_box = true;
-                }
-
-                if(attack_boxes[i].is_visible == false) {
-                    available_attack_box = attack_boxes[i];
-                }
-            }
-
-            if(!has_attack_box && !available_attack_box) {
-                attack_boxes.push({ 'x': npcs[npc_index].x, 'y': npcs[npc_index].y, 'is_visible': true });
-            }
-
-            let info_number_data = { 'x': npcs[npc_index].x, 'y': npcs[npc_index].y, 'damage_amount': data.damage_amount, 'damage_type': data.was_damaged_type,
-                'defender_type': 'npc', 'defender_id': parseInt(data.npc_id), 'attacker_type': data.damage_source_type,
-                'attacker_id': data.damage_source_id, 'calculating_range': calculating_range };
-
-            addInfoNumber(info_number_data);
-
-            //addInfoNumber(npcs[npc_index].x, npcs[npc_index].y, data.damage_amount, data.was_damaged_type);
-
-            // TODO try and re-implement laser type stuff. Player -> monster action. Laser logic is in /old
-
-
-            if(data.damage_source_type === 'player' && data.damage_source_id === player_id) {
-                console.log("Player has damaged npc");
-
-                if(!npcs[npc_index].player_is_attacking) {
-                    npcs[npc_index].player_is_attacking = true;
-                }
-
-            }
-
-            // we COULD mabye put this in when the laser hits so we aren't updating the monster's HP before the hit
-            if(data.was_damaged_type == 'hp') {
-
-                console.log("NPC's current hp: " + npcs[npc_index].current_hp);
-
-                npcs[npc_index].current_hp = npcs[npc_index].current_hp - data.damage_amount;
-
-                console.log("NPC's hp after the attack: " + npcs[npc_index].current_hp + " data.damage_amount: " + data.damage_amount);
-
-                if(npcs[npc_index].current_hp > 0) {
-                    redrawBars();
-                } else {
-                    console.log("removing npc on " + npcs[npc_index].id + " since HP is <= 0");
-                    // remove the tile
-
-
-                }
-            }
-        } else {
-            console.log("Could not find monster id: " + data.monster_id + " in our list of monsters");
-        }
-
-    }
-    // An Object Was Damaged
-    else if(data.object_id) {
-
-        let object_index = objects.findIndex(function(obj) { return obj && obj.id === data.object_id; });
-
-        if(object_index === -1) {
-            console.log("%c Object was damaged, but we don't have info for it ", log_warning);
-            socket.emit('request_object_info', { 'object_id': data.object_id });
-            return false;
-        }
-
-        let object_type_index = object_types.findIndex(function(obj) { return obj && obj.id === objects[object_index].object_type_id; });
-
-        if(object_type_index === -1) {
-            console.log("%c Could not find object type for object", log_warning);
-        }
-
-        // It's a ship, so it's on the galaxy
-
-        if(object_types[object_type_index].is_ship) {
-
-            let coord_index = coords.findIndex(function(obj) { return obj && obj.id === objects[object_index].coord_id; });
-
-            if(coord_index !== -1) {
-
-                let info_number_data = { 'x': tileToPixel(coords[coord_index].tile_x), 'y': tileToPixel(coords[coord_index].tile_y),
-                    'damage_amount': data.damage_amount, 'was_damaged_type': data.was_damaged_type,
-                    'defender_type': 'object', 'defender_id': parseInt(data.object_id), 'attacker_type': data.damage_source_type,
-                    'attacker_id': data.damage_source_id, 'calculating_range': calculating_range };
-
-                addInfoNumber(info_number_data);
-
-                //addInfoNumber(coords[coord_index].tile_x * tile_size, coords[coord_index].tile_y * tile_size, data.damage_amount, data.was_damaged_type);
-            }
-
-            // Find the player who's ship this is
-            let player_index = players.findIndex(function(obj) { return obj && obj.id === objects[object_index].player_id; });
-
-            // If the player who's ship this is isn't online, nearby, or us, we might not have that player's info on the client side
-            if(player_index !== -1) {
-
-
-                // The ship attacked was our ship
-                if(players[player_index].id === player_id) {
-                    // lets add a system message that we damaged the monster
-                    $('#chat_system').append($('<p>').text("Ship attacked your ship for " + data.damage_amount + " damage"));
-
-                    var height = 0;
-                    $('#chat_system p').each(function(i, value){
-                        height += parseInt($(this).height());
-                    });
-
-                    height += '';
-
-                    $('#chat_system').animate({scrollTop: height});
-
-                    if(!$("#chat_system").is(":visible")) {
-                        unread_system_messages = unread_system_messages + 1;
-
-                        $('#chatswitch_system').text("System (" + unread_system_messages + ")");
-                    }
-                }
-            }
-
-
-        } else {
-            //console.log("Found object in known object_placements!");
-
-            if(objects[object_index].coord_id) {
-                let coord_index = coords.findIndex(function(obj) { return obj && obj.id === objects[object_index].coord_id; });
-
-                if(coord_index !== -1) {
-
-                    let info_number_data = { 'x': tileToPixel(coords[coord_index].tile_x), 'y': tileToPixel(coords[coord_index].tile_y),
-                        'damage_amount': data.damage_amount, 'damage_type': data.was_damaged_type,
-                        'defender_type': 'object', 'defender_id': parseInt(data.object_id), 'attacker_type': data.damage_source_type,
-                        'attacker_id': data.damage_source_id, 'calculating_range': calculating_range };
-
-                    addInfoNumber(info_number_data);
-
-                    //addInfoNumber(tileToPixel(planet_coords[coord_index].tile_x), tileToPixel(planet_coords[coord_index].tile_y), data.damage_amount, data.was_damaged_type);
-                }
-            }
-
-            if(objects[object_index].planet_coord_id) {
-                let coord_index = planet_coords.findIndex(function(obj) { return obj && obj.id === objects[object_index].planet_coord_id; });
-
-                if(coord_index !== -1) {
-
-                    let drawing_x = tileToPixel(planet_coords[coord_index].tile_x);
-                    let drawing_y = tileToPixel(planet_coords[coord_index].tile_y);
-
-
-                    addEffect({ 'x': drawing_x, 'y': drawing_y, 'damage_types': data.damage_types, 'was_damaged_type': data.was_damaged_type });
-
-
-                    let info_number_data = { 'x': drawing_x, 'y': drawing_y,
-                        'damage_amount': data.damage_amount, 'damage_type': data.was_damaged_type,
-                        'defender_type': 'object', 'defender_id': parseInt(data.object_id), 'attacker_type': data.damage_source_type,
-                        'attacker_id': data.damage_source_id, 'calculating_range': calculating_range };
-
-                    addInfoNumber(info_number_data);
-
-                    //addInfoNumber(tileToPixel(planet_coords[coord_index].tile_x), tileToPixel(planet_coords[coord_index].tile_y), data.damage_amount, data.was_damaged_type);
-                }
-            } else if(objects[object_index].ship_coord_id) {
-                let coord_index = ship_coords.findIndex(function(obj) { return obj && obj.id === objects[object_index].ship_coord_id; });
-
-                if(coord_index !== -1) {
-
-                    let info_number_data = { 'x': tileToPixel(ship_coords[coord_index].tile_x), 'y': tileToPixel(ship_coords[coord_index].tile_y),
-                        'damage_amount': data.damage_amount, 'damage_type': data.was_damaged_type,
-                        'defender_type': 'object', 'defender_id': parseInt(data.object_id), 'attacker_type': data.damage_source_type,
-                        'attacker_id': data.damage_source_id, 'calculating_range': calculating_range };
-
-                    addInfoNumber(info_number_data);
-
-                    //addInfoNumber(tileToPixel(planet_coords[coord_index].tile_x), tileToPixel(planet_coords[coord_index].tile_y), data.damage_amount, data.was_damaged_type);
-                }
-            }
-
-
-
-        }
-
-
-
-        let hp_message = "Updating object's HP from: " + objects[object_index].current_hp;
-        objects[object_index].current_hp = objects[object_index].current_hp - data.damage_amount;
-        hp_message += " to: " + objects[object_index].current_hp;
-        //console.log(hp_message);
-
-
-        redrawBars();
-
-
-        // we know the destination - now find the source and do the shot
-        // lets start out with the easiest condition - where OUR player just shot an object
-        if(data.damage_source_type === 'player' && data.damage_source_id === player_id) {
-            //console.log("Player is shooting object");
-
-
-            // TODO this better
-            //attack_box.x = tileToPixel(known_object_placements[object_index].tile_x);
-            //attack_box.y = tileToPixel(known_object_placements[object_index].tile_y);
-
-            //user_player_is_attacking_type = 'object';
-            //user_player_is_attacking_type_id = known_object_placements[object_index].id;
-
-
-        }
-
-
-    }
-    // A player was damaged
-    else if(data.player_id) {
-
-        data.player_id = parseInt(data.player_id);
-
-        let coord_index = -1;
-        let tile_x = -100;
-        let tile_y = -100;
-        if(current_view === 'planet') {
-            coord_index = planet_coords.findIndex(function(obj) { return obj && obj.player_id === data.player_id; });
-            if(coord_index !== -1) {
-                tile_x = planet_coords[coord_index].tile_x;
-                tile_y = planet_coords[coord_index].tile_y;
-            }
-
-        } else if(current_view === 'ship') {
-            coord_index = ship_coords.findIndex(function(obj) { return obj && obj.player_id === data.player_id; });
-            if(coord_index !== -1) {
-                tile_x = ship_coords[coord_index].tile_x;
-                tile_y = ship_coords[coord_index].tile_y;
-            }
-        }
-
-
-        let player_index = players.findIndex(function(obj) { return obj && obj.id === data.player_id; });
-
-        if(coord_index !== -1) {
-
-            let info_number_data = { 'x': tileToPixel(tile_x), 'y': tileToPixel(tile_y),
-                'damage_amount': data.damage_amount, 'damage_type': data.was_damaged_type,
-                'defender_type': 'player', 'defender_id': parseInt(data.player_id), 'attacker_type': data.damage_source_type,
-                'attacker_id': data.damage_source_id, 'calculating_range': calculating_range };
-
-            addInfoNumber(info_number_data);
-
-            //addInfoNumber(planet_coords[coord_index].tile_x * tile_size, planet_coords[coord_index].tile_y * tile_size, data.damage_amount, data.was_damaged_type);
-        }
-
-        if(player_index !== -1) {
-            players[player_index].current_hp = players[player_index].current_hp - parseInt(data.damage_amount);
-
-            redrawBars();
-        }
-
-        // It was us that was damaged
-        if(data.player_id === player_id) {
-            // lets add a system message that we damaged the monster
-            if(data.damage_source_type === 'addiction') {
-                $('#chat_system').append($('<p>').text("Addiction damaged you for " + data.damage_amount + " damage"));
-            } else if(data.damage_source_type === 'floor') {
-                $('#chat_system').append($('<p>').text("The floor damaged you for " + data.damage_amount + " damage"));
-            } else if(data.damage_source_type === 'healing') {
-                $('#chat_system').append($('<p>').text("You healed " + data.damage_amount + " damage"));
-            } else {
-
-                $('#chat_system').append($('<p>').text(data.damage_source_type + " attacked you for " + data.damage_amount + " damage"));
-            }
-
-            if(!$("#chat_system").is(":visible")) {
-                unread_system_messages = unread_system_messages + 1;
-
-                $('#chatswitch_system').text("System (" + unread_system_messages + ")");
-            } else {
-                let out = document.getElementById("chat_system");
-
-                out.scrollTop = out.scrollHeight - out.clientHeight;
-
-                //console.log("Scrolled chat_system. scrollTop: " + out.scrollTop);
-            }
-
-            // update our details display
-            generatePlayerInfoDisplay();
-        }
-
-    }
-    // Just showing an effect on a planet coord
-    else if(data.planet_coord_id) {
-        let coord_index = planet_coords.findIndex(function(obj) { return obj && obj.id === parseInt(data.planet_coord_id); });
-
-        if(coord_index !== -1) {
-            let x = planet_coords[coord_index].tile_x * tile_size;
-            let y = planet_coords[coord_index].tile_y * tile_size;
-
-            let damage_types = [];
-            damage_types.push(data.damage_type);
-            addEffect({ 'x': x, 'y': y, 'damage_types': damage_types });
-        }
-
-    }
-    // Just showing an effect on a ship coord
-    else if(data.ship_coord_id) {
-        let coord_index = ship_coords.findIndex(function(obj) { return obj && obj.id === parseInt(data.ship_coord_id); });
-
-        if(coord_index !== -1) {
-            let x = ship_coords[coord_index].tile_x * tile_size;
-            let y = ship_coords[coord_index].tile_y * tile_size;
-            let damage_types = [];
-            damage_types.push(data.damage_type);
-            addEffect({ 'x': x, 'y': y, 'damage_types': damage_types });
-        }
-
-    }
-
-    if(data.flavor_text) {
-        console.log("Got damaged data with flavor tex!");
-        text_important.setText(data.flavor_text);
-        text_important.setVisible(true);
-        text_important_time = our_time;
-    }
-});
-
-
-*/
 
 
 socket.on('disconnect', function() {
@@ -1093,10 +607,6 @@ socket.on('elevator_linker_info', function(data) {
 
 socket.on('equipment_linker_info', function(data) {
 
-    console.log("Got equipment_linker_info");
-    console.log(data);
-
-
     data.equipment_linker.id = parseInt(data.equipment_linker.id);
 
     // see if we already have this equipment linker
@@ -1145,9 +655,6 @@ socket.on('coord_info', function (data) {
         if(client_player_index === -1 || shouldDraw(client_player_info.coord, coords[coord_index], "coord_info") ||
             (current_view === "galaxy" && coords[coord_index].planet_id)) {
 
-            if(coords[coord_index].object_type_id === 138) {
-                console.log("Drawing asteroid from coord info");
-            }
 
             drawCoord('galaxy', coords[coord_index]);
         }
@@ -1184,10 +691,7 @@ socket.on('coord_info', function (data) {
         if(client_player_index === -1 || shouldDraw(client_player_info.coord, coords[coord_index], "coord_info - update")) {
             if(coords[coord_index].object_id !== data.coord.object_id || coords[coord_index].belongs_to_object_id !== data.coord.belongs_to_object_id) {
 
-                //console.log(coords[coord_index].object_id + " doesn't match " + data.coord.object_id + " redrawing coord");
-                if(coords[coord_index].object_type_id === 138) {
-                    console.log("Drawing asteroid from updated coord info");
-                }
+
                 drawCoord('galaxy', data.coord);
             }
 
@@ -1434,12 +938,27 @@ socket.on('login_data', function(data) {
         redrawMap();
 
         socket.emit('request_skin_purchase_linker_data');
-        console.log("Requesting skin purchase linker data");
 
     } else {
         $('#login_status').append("<span style='color:red;'>Login Failed</span>");
         console.log("%c Login failed", log_danger);
     }
+});
+
+
+/**
+ * @param {Object} data
+ * @param {number} data.player_id
+ */
+socket.on('logout_info', function(data) {
+
+    data.player_id = parseInt(data.player_id);
+    let player_index = getPlayerIndex(data.player_id);
+
+    if(player_index !== -1) {
+        destroyPlayerSprite(players[player_index]);
+    }
+
 });
 
 
@@ -1598,7 +1117,7 @@ socket.on('monster_info', function(data) {
     //console.log("Got monster info for monster id: " + data.monster.id);
 
     if(monster_index === -1) {
-        console.log("Did not have monster in monsters. Adding monster id: " + data.monster.id);
+        //console.log("Did not have monster in monsters. Adding monster id: " + data.monster.id);
 
 
         monster_index = monsters.push(data.monster) - 1;
@@ -1613,7 +1132,7 @@ socket.on('monster_info', function(data) {
         if(should_draw_result === true) {
             createMonsterSprite(monster_index);
         } else {
-            console.log("%c Not drawing monster id: " + monsters[monster_index].id, log_warning);
+            //console.log("%c Not drawing monster id: " + monsters[monster_index].id, log_warning);
             if(!client_player_info.coord) {
                 console.log("Client player doesn't have a coord yet");
             }
@@ -1638,7 +1157,7 @@ socket.on('monster_info', function(data) {
         if(should_draw_result === true) {
             createMonsterSprite(monster_index);
         } else {
-            console.log("%c Not drawing monster id: " + monsters[monster_index].id, log_warning);
+            //console.log("%c Not drawing monster id: " + monsters[monster_index].id, log_warning);
             if(!client_player_info.coord) {
                 console.log("Client player doesn't have a coord yet");
             }
@@ -2129,6 +1648,22 @@ socket.on('object_info', function(data) {
         }
 
 
+        // If there are any equipment linkers with this, remove them
+        for(let i = 0; i < equipment_linkers.length; i++) {
+            if(equipment_linkers[i] && equipment_linkers[i].object_id === data.object.id) {
+                delete equipment_linkers[i];
+            }
+        }
+    
+
+        // If there are any inventory items with this, remove them
+        for(let i = 0; i < inventory_items.length; i++) {
+            if(inventory_items[i] && inventory_items[i].object_id === data.objec.id) {
+                delete inventory_items[i];
+            }
+        }
+
+
         return;
 
     }
@@ -2241,9 +1776,6 @@ socket.on('object_info', function(data) {
 
         if(client_player_info && shouldDraw(client_player_info.coord, object_info.coord, "object_info")) {
 
-            if(data.object.object_type_id === 138) {
-                console.log("Drawing it!");
-            }
 
             drawCoord(object_info.scope, object_info.coord);
 
@@ -2258,38 +1790,7 @@ socket.on('object_info', function(data) {
 
             }
 
-            // If there's a name, show that
-            if(objects[object_index].name) {
-
-                let object_player_index = players.findIndex(function(obj) { return obj && obj.id === objects[object_index].player_id; });
-
-                if(object_player_index !== -1) {
-                    // Make sure the object doesn't match a current player body or ship
-                    let player_using_index = players.findIndex(function(obj) { return obj &&
-                        (obj.body_id === objects[object_index].id || obj.ship_id === objects[object_index].id);  });
-
-                    if(player_using_index === -1) {
-                        //console.log("Object has name, and is not an active body/ship. Setting that");
-                        if(!objects[object_index].name_text) {
-                            let scene_game = game.scene.getScene('sceneGame');
-
-                            objects[object_index].name_text = scene_game.add.text(tileToPixel(object_info.coord.tile_x) - 18,
-                                tileToPixel(object_info.coord.tile_y) - 14, objects[object_index].name, {
-                                    fontSize: 14,
-                                    padding: { x: 10, y: 5},
-                                    stroke: '#000000',
-                                    strokeThickness: 3,
-                                    fill: '#ffffff'});
-                            objects[object_index].name_text.setDepth(11);
-
-
-                        }
-                    }
-                }
-
-
-
-            }
+            redrawObject(object_index);
 
             if(objects[object_index].current_hp !== object_types[object_type_index].hp) {
                 redrawBars();
@@ -2390,9 +1891,12 @@ socket.on('object_info', function(data) {
             }
         }
 
+        let redraw_object = false;
+        let redraw_bars = false;
+
         let update_ship_management_display = false;
         // Name change - only case this matters right now is for if a client ship is renamed
-        if(data.object.name !== objects[object_index].name && data.object.player_id === client_player_id) {
+        if(data.object.name !== objects[object_index].name) {
             console.log("We have a new name for an object that belongs to us");
             let object_type_index = object_types.findIndex(function(obj) { return obj &&
                 obj.id === objects[object_index].object_type_id; });
@@ -2402,10 +1906,18 @@ socket.on('object_info', function(data) {
                 update_ship_management_display = true;
 
             }
+
+            redraw_object = true;
+        
         }
 
-        let redraw_object = false;
-        let redraw_bars = false;
+        if(data.object.tint !== objects[object_index].tint) {
+            redraw_object = true;
+        }
+
+
+
+
 
         // Player id change
         if(parseInt(data.object.player_id) !== parseInt(objects[object_index].player_id)) {
@@ -2468,52 +1980,10 @@ socket.on('object_info', function(data) {
 
             if(client_player_info && shouldDraw(client_player_info.coord, object_info.coord, "object_info")) {
 
-                if(data.object.object_type_id === 138) {
-                    console.log("Drawing existing asteroid object!");
-                }
 
                 drawCoord(object_info.scope, object_info.coord);
+                redrawObject(object_index);
 
-
-                // If there's a tint, set that
-                if(data.object.tint && data.object.tint !== objects[object_index].tint) {
-                    console.log("Object has tint change. Setting tint");
-                    let object_tile = map.getTileAt(object_info.coord.tile_x, object_info.coord.tile_y, false, 'layer_object');
-
-                    if(object_tile) {
-                        object_tile.tint = data.object.tint;
-                    }
-
-                }
-
-                // If there's a name, show that
-                if(data.object.name && data.object.name !== objects[object_index].name) {
-                    console.log("Object has name change. Setting that");
-
-                    // The name could be removed
-                    if(data.object.name.length === 0) {
-                        if(objects[object_index].name_text) {
-                            objects[object_index].name_text.destroy();
-                        }
-                    }
-                    if(!objects[object_index].name_text) {
-                        let scene_game = game.scene.getScene('sceneGame');
-
-                        objects[object_index].name_text = scene_game.add.text(tileToPixel(object_info.coord.tile_x) - 18,
-                            tileToPixel(object_info.coord.tile_y) - 14, objects[object_index].name, {
-                                fontSize: 14,
-                                padding: { x: 10, y: 5},
-                                stroke: '#000000',
-                                strokeThickness: 3,
-                                fill: '#ffffff'});
-
-                        objects[object_index].name_text.setDepth(11);
-
-
-                    } else {
-                        objects[object_index].name_text.setText(data.object.name);
-                    }
-                }
             }
 
 
@@ -2559,7 +2029,6 @@ socket.on('object_info', function(data) {
             let other_player_index = players.findIndex(function (obj) { return obj && obj.id === objects[object_index].player_id; });
 
             if(other_player_index === -1) {
-                console.log("Object has player not in our other_players. Requesting their info");
                 socket.emit('request_player_info', { 'player_id': objects[object_index].player_id });
             }
         }
@@ -3326,7 +2795,7 @@ socket.on('research_info', function(data) {
 
 socket.on('result_info', function(data) {
 
-    console.log("Got result info");
+
     let scene_game = game.scene.getScene('sceneGame');
 
 
@@ -3344,6 +2813,8 @@ socket.on('result_info', function(data) {
     if(data.object_id) {
         object_index = objects.findIndex(function(obj) { return obj && obj.id === parseInt(data.object_id); });
     }
+
+
 
     // If the result info is associated with an object and we have the object, - we can display it there
     if(object_index !== -1) {
@@ -3401,11 +2872,11 @@ socket.on('result_info', function(data) {
     let rand_x = getRandomIntInclusive(-32, 32);
     let rand_y = getRandomIntInclusive(0, 32);
 
-    let result_text = 'Success!';
+    let result_text = '';
     let fill = '#34f425';
 
     if(data.status === 'failure') {
-        result_text = 'Failure.';
+        result_text = '';
         fill = '#f44242';
     }
 
@@ -3418,8 +2889,8 @@ socket.on('result_info', function(data) {
 
     // We're going to need to wrap this text if it's gonna go off the edge
     let game_width = 64 * show_cols;
-    // Our max width game width - our start
-    let text_width = game_width - rand_x;
+    let text_width = base_x - camera.scrollX;
+    // trying a different way - position in the container
 
 
 
@@ -3648,7 +3119,6 @@ socket.on('ship_view_data', function(data) {
 });
 
 socket.on('skin_purchase_linker_info', function(data) {
-    console.log("Got skin purchase linker info");
 
     let skin_purchase_linker_index = skin_purchase_linkers.findIndex(function(obj) { return obj && obj.id === data.skin_purchase_linker.id; });
 
@@ -3752,7 +3222,6 @@ socket.on('view_change_data', function(data) {
 
     } else if(data.view === 'planet') {
 
-        console.log("In planet section");
         current_view = 'planet';
 
         //$('#launch').empty();

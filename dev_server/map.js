@@ -101,8 +101,7 @@ const world = require('./world.js');
 
     }
 
-    // TODO we need a solution for planet levels > 0. I THINK the only real way to go about it is to just load
-    // TODO planet coords with level > 0 into memory on server load, so we know we don't have to query the DB
+
     async function updateMapPlanet(socket, dirty) {
         try {
             //console.log("In updateMapPlanet");
@@ -129,17 +128,52 @@ const world = require('./world.js');
             let ending_y = starting_y + global.show_rows + 1;
 
             // No point in querying planet coords less than 0 since they don't exist
-            // TODO get the planet size, and make sure ending_x and ending_y are <= the max coords for the planet
-            if(starting_x < 0) { starting_x = 0; }
-            if(starting_y < 0) { starting_y = 0; }
+            
+            if(dirty.planet_coords[coord_index].level >= 0) {
+                if(starting_x < 0) { starting_x = 0; }
+                if(starting_y < 0) { starting_y = 0; }
+    
+                if(ending_x >= dirty.planets[planet_index].x_size_above) {
+                    ending_x = dirty.planets[planet_index].x_size_above -1;
+                }
+    
+                if(ending_y > dirty.planets[planet_index].y_size_above) {
+                    ending_y = dirty.planets[planet_index].y_size_above -1;
+                }
+            } else {
 
-            if(ending_x > dirty.planets[planet_index].x_size) {
-                ending_x = dirty.planets[planet_index].x_size;
+                let underground_x_offset = 0;
+                let underground_y_offset = 0;
+                if (dirty.planets[planet_index].x_size_above > dirty.planets[planet_index].x_size_under) {
+                    underground_x_offset = (dirty.planets[planet_index].x_size_above - dirty.planets[planet_index].y_size_under) / 2;
+
+                }
+
+                if (dirty.planets[planet_index].y_size_above > dirty.planets[planet_index].y_size_under) {
+                    underground_y_offset = (dirty.planets[planet_index].y_size_above - dirty.planets[planet_index].y_size_under) / 2;
+                }
+
+                if(starting_x < underground_x_offset) {
+                    starting_x = underground_x_offset;
+                }
+
+                if(starting_y < underground_y_offset) {
+                    starting_y = underground_y_offset;
+                }
+
+                if(ending_x >= dirty.planets[planet_index].x_size_under + underground_x_offset) {
+                    ending_x = dirty.planets[planet_index].x_size_under + underground_x_offset - 1;
+                }
+
+                if(ending_y >= dirty.planets[planet_index].y_size_under + underground_y_offset) {
+                    ending_y = dirty.planets[planet_index].y_size_under + underground_y_offset - 1;
+                }
+
             }
 
-            if(ending_y > dirty.planets[planet_index].y_size) {
-                ending_y = dirty.planets[planet_index].y_size;
-            }
+
+
+            
 
 
             let found_coords = [];
@@ -172,7 +206,10 @@ const world = require('./world.js');
                         }
                     }
 
-                    if(!in_found_coords) {
+                    // We will already have all planet coords > level 0 in memory guarenteed
+                    if(!in_found_coords && dirty.planet_coords[coord_index].level <= 0) {
+
+
                         //console.log("Did not find coord tile_x,y: " + i + "," + j + " in found coords");
                         let planet_coord_data = { 'planet_id': dirty.planet_coords[coord_index].planet_id,
                             'planet_level': dirty.planet_coords[coord_index].level, 'tile_x': i, 'tile_y': j };
@@ -203,6 +240,7 @@ const world = require('./world.js');
 
         } catch(error) {
             log(chalk.red("Error in map.updateMapPlanet:" + error));
+            console.error(error);
         }
 
 

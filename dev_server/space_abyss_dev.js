@@ -859,7 +859,7 @@ inits.init(function(callback) {
 });
 
 // Load up planet coords that spawn monsters
-inits.init(function(callback) {
+inits.init(1, function(callback) {
     pool.query("SELECT * FROM planet_coords WHERE spawns_monster_type_id != false", function(err, rows, fields) {
         if(err) throw err;
 
@@ -869,6 +869,23 @@ inits.init(function(callback) {
         }
 
         console.log("Loaded planet coords that spawn monsters into memory");
+
+        callback(null);
+    });
+});
+
+// Load up planet coords that are > level 0
+inits.init(2, function(callback) {
+    pool.query("SELECT * FROM planet_coords WHERE level > 0", function(err, rows, fields) {
+        if(err) throw err;
+
+        if(rows[0]) {
+            for(let i = 0; i < rows.length; i++) {
+                dirty.planet_coords.push(rows[i]);
+            }
+            console.log("Loaded " + rows.length + " planet coords that are > level 0");
+        }
+
 
         callback(null);
     });
@@ -1210,7 +1227,6 @@ io.sockets.on('connection', function (socket) {
 
     
     socket.emit('news', { status: 'Connected'});
-    console.log("emitted news thing to socket id:" + socket.id);
 
     socket.logged_in = false;
     socket.map_needs_cleared = false;
@@ -1609,6 +1625,11 @@ io.sockets.on('connection', function (socket) {
         await game.sendFactionData(socket, dirty);
     });
 
+    socket.on('request_fix', async function(data) {
+        console.log("Got request fix data");
+        await game.fix(socket, dirty, data);
+    });
+
     socket.on('request_skin_purchase_linker_data', async function() {
         await world.sendSkinPurchaseLinkers(socket, dirty);
     });
@@ -1819,12 +1840,10 @@ io.sockets.on('connection', function (socket) {
     socket.on('view_change_data', async function (data) {
 
         try {
-            console.log("Got view change data");
 
             let player_index = await getPlayerIndex({ 'player_id': socket.player_id });
 
             if (data.new_view === 'ship') {
-                console.log("Switching to ship");
                 await movement.switchToShip(socket, dirty);
 
                 await world.setPlayerMoveDelay(socket, dirty, player_index);
@@ -2354,7 +2373,15 @@ module.exports.getPlanetTypeIndex = getPlanetTypeIndex;
 
 
 //  data:   ship_coord_id   OR   (   ship_id   |   level   |   tile_x   |   tile_y   )
-
+/**
+ * 
+ * @param {Object} data 
+ * @param {number=} data.ship_coord_id
+ * @param {number=} data.ship_id
+ * @param {number=} data.level
+ * @param {number=} data.tile_x
+ * @param {number=} data.tile_y
+ */
 async function getShipCoordIndex(data) {
 
     try {
@@ -2567,8 +2594,13 @@ async function loginPlayer(socket, dirty, data) {
             console.log("Creating a ship for player id: " + dirty.players[player_index].id);
             let new_ship_id = await world.insertObjectType(false, dirty, { 'object_type_id': 114, 'player_id': dirty.players[player_index].id });
             let new_ship_index = await getObjectIndex(new_ship_id);
-            dirty.players[player_index].ship_id = new_ship_id;
-            dirty.players[player_index].has_change = true;
+            if(new_ship_index !== -1) {
+                dirty.players[player_index].ship_id = new_ship_id;
+                dirty.players[player_index].has_change = true;
+            } else {
+                log(chalk.red("Error creating a ship for player!"));
+            }
+            
 
             // I believe this is being taken care of in world.insertObjectType
             //await world.generateShip(dirty, new_ship_index);
@@ -2588,7 +2620,6 @@ async function loginPlayer(socket, dirty, data) {
             let planet_coord_index = await getPlanetCoordIndex({'planet_coord_id': dirty.players[player_index].previous_planet_coord_id });
 
             if(planet_coord_index !== -1) {
-                console.log("Got planet coord");
 
                 let can_place_result = await canPlacePlayer({ 'scope': 'planet',
                     'coord': dirty.planet_coords[planet_coord_index], 'player_index': player_index });
@@ -2918,7 +2949,7 @@ module.exports.canPlaceFloor = canPlaceFloor;
 async function canPlaceMonster(scope, coord, data) {
     try {
 
-        let debug_monster_type_id = 33;
+        let debug_monster_type_id = 0;
 
         let checking_coords = [];
 
@@ -3787,6 +3818,8 @@ async function disconnectPlayer(socket) {
                 await updateCoordGeneric(socket, {'planet_coord_index': planet_coord_index, 'player_id': false });
 
             }
+
+
         }
 
         if(dirty.players[player_index].ship_coord_id) {
@@ -3856,6 +3889,7 @@ async function disconnectPlayer(socket) {
         console.log("Sending updated player info to the room");
 
         await player.sendInfo(socket, player_info.room, dirty, dirty.players[player_index].id);
+        io.to(player_info.room).emit('logout_info', { 'player_id': dirty.players[player_index].id });
 
 
         socket.disconnect();
@@ -4068,6 +4102,12 @@ async function getPlanetCoordIndex(data) {
         } else if(data.monster_id) { // TODO huh? Monster id?
             planet_coord_index = dirty.planet_coords.findIndex(function(obj) { return obj && obj.spawned_monster_id === parseInt(data.spawned_monster_id); });
         } else if(data.planet_id) {
+
+            if(data.tile_x < 0 || data.tile_y < 0) {
+                console.log("Returning -1 on getPlanetCoordIndex. No coords < 0");
+                return -1;
+            }
+
             //console.log("Checking based on planet id: " + data.planet_id + " planet_level: " + data.planet_level + " tile_x: " + data.tile_x + " and tile_y: " + data.tile_y);
             planet_coord_index = dirty.planet_coords.findIndex(function(obj) {
                 return obj && obj.planet_id === parseInt(data.planet_id) && obj.level === parseInt(data.planet_level) &&
@@ -4082,6 +4122,42 @@ async function getPlanetCoordIndex(data) {
                 " data.tile_y: " + data.tile_y));
             console.trace("TRACED!");
             return -1;
+        }
+
+        // Never try and get a planet coord that is out of range of the planet
+        if(planet_coord_index === -1 && data.planet_id && data.planet_level) {
+            let planet_index = await planet.getIndex(dirty, { 'planet_id': data.planet_id });
+
+            // Planet has been regenerated and is using the new x/y above x/y below system
+            if(planet_index !== -1 && dirty.planets[planet_index].x_size_above) {
+
+                let underground_x_offset = 0;
+                let underground_y_offset = 0;
+                if (dirty.planets[planet_index].x_size_above > dirty.planets[planet_index].x_size_under) {
+                    underground_x_offset = (dirty.planets[planet_index].x_size_above - dirty.planets[planet_index].y_size_under) / 2;
+
+                }
+
+                if (dirty.planets[planet_index].y_size_above > dirty.planets[planet_index].y_size_under) {
+                    underground_y_offset = (dirty.planets[planet_index].y_size_above - dirty.planets[planet_index].y_size_under) / 2;
+                }
+
+                if(data.planet_level >= 0) {
+                    if(data.tile_x > dirty.planets[planet_index].x_size_above || data.tile_y > dirty.planets[planet_index].y_size_above) {
+                        console.log("Returning -1 on getPlanetCoordIndex. No coords > " + dirty.planets[planet_index].x_size_above + "," + dirty.planets[planet_index].y_size_above + "on this planet");
+                        return -1;
+                    }
+                } else {
+
+                    if(data.tile_x < underground_x_offset || data.tile_y < underground_y_offset ||
+                        data.tile_x >= dirty.planets[planet_index].x_size_under + underground_x_offset || 
+                        data.tile_y >= dirty.planets[planet_index].y_size_under + underground_y_offset) {
+                            console.log("Returning -1 on getPlanetCoordIndex. Underground was out of bounds");
+                            return -1;
+                        }
+
+                }
+            }
         }
 
         // we need to add it
@@ -4169,6 +4245,7 @@ async function getPlanetCoordIndex(data) {
         return planet_coord_index;
     } catch(error) {
         log(chalk.red("Error in getPlanetCoordIndex: " + error));
+        console.error(error);
     }
 
 
@@ -4206,7 +4283,7 @@ async function getObjectIndex(object_id) {
 
         if(typeof object_id === "undefined" || object_id === null) {
             console.log("Received invalid request. In getObjectIndex");
-            return false;
+            return -1;
         }
 
         //console.log("In getObjectIndex");
@@ -4216,6 +4293,7 @@ async function getObjectIndex(object_id) {
         if(isNaN(object_id)) {
             log(chalk.yellow("NaN object id passed into getObjectIndex"));
             console.trace("TRACED!");
+            return -1;
         }
 
         let object_index = dirty.objects.findIndex(function(obj) { return obj && obj.id === object_id; });
@@ -4304,6 +4382,15 @@ async function getObjectIndex(object_id) {
                     await (pool.query("DELETE FROM equipment_linkers WHERE id = ?", [dirty.equipment_linkers[equipment_linker_index].id]));
 
                     delete dirty.equipment_linkers[equipment_linker_index];
+                }
+
+                // If there's an inventory item with this object, we remvoe it
+                let inventory_item_index = dirty.inventory_items.findIndex(function(obj) { return obj && obj.object_id === object_id; });
+                if(inventory_item_index !== -1) {
+                    console.log("Found an inventory item with this object");
+                    await (pool.query("DELETE FROM inventory_items WHERE id = ?", [dirty.inventory_items[inventory_item_index].id]));
+
+                    delete dirty.inventory_items[inventory_item_index];
                 }
 
                 return object_index;
@@ -4906,27 +4993,23 @@ async function getRules(object_id) {
             //console.log("Found at least one rule");
             for(let i = 0; i < rows.length; i++) {
                 let rule = rows[i];
-                console.log("Checking rule id: " + rule.id);
 
                 // just make sure we don't already have it
                 let rule_index = dirty.rules.findIndex(function(obj) { return obj && obj.id === parseInt(rule.id); });
 
                 // Don't already have it in memory, add it
                 if(rule_index === -1) {
-                    console.log("Adding to dirty");
                     rule_index = dirty.rules.push(rule) - 1;
 
                     dirty.rules[rule_index].id = parseInt(dirty.rules[rule_index].id);
                     dirty.rules[rule_index].object_id = parseInt(dirty.rules[rule_index].object_id);
 
-                    log(chalk.cyan("Added rule id: " + dirty.rules[rule_index].id));
-                } else {
-                    console.log("Already have it: " + dirty.rules[rule_index].rule);
                 }
             }
         }
     } catch(error) {
         log(chalk.red("Error in main.getRules: " + error));
+        console.error(error);
     }
 
 }
@@ -5409,9 +5492,9 @@ async function writeDirty(show_output = false) {
     dirty.planets.forEach(function(writing_planet, i) {
         if(writing_planet.has_change) {
             let sql = "UPDATE planets SET ai_id = ?, coord_id = ?, current_hp = ?, lowest_depth = ?, max_hp = ?, name = ?, " +
-                "planet_type_id = ?, player_id = ?, type = ?, x_size = ?, y_size = ? WHERE id = ?";
+                "planet_type_id = ?, player_id = ?, type = ?, x_size_above = ?, y_size_above = ?, x_size_under = ?, y_size_under = ? WHERE id = ?";
             let inserts = [writing_planet.ai_id, writing_planet.coord_id, writing_planet.current_hp, writing_planet.lowest_depth, writing_planet.max_hp, writing_planet.name,
-                writing_planet.planet_type_id, writing_planet.player_id, writing_planet.type, writing_planet.x_size, writing_planet.y_size, writing_planet.id];
+                writing_planet.planet_type_id, writing_planet.player_id, writing_planet.type, writing_planet.x_size_above, writing_planet.y_size_above, writing_planet.x_size_under, writing_planet.y_size_under, writing_planet.id];
 
             pool.query(sql, inserts, function(err, result) {
                 if(err) throw err;
@@ -5782,8 +5865,10 @@ async function tickGrowths(dirty) {
 
 async function tickGalaxyObjects(dirty) {
     try {
-
+        let hrstart = new process.hrtime();
         await movement.moveGalaxyObjects(dirty);
+        let hrend = process.hrtime(hrstart);
+        console.info('Execution time movement.moveGalaxyObjects (hr): %ds %dms', hrend[0], hrend[1] / 1000000);
     } catch(error) {
         log(chalk.red("Error in tickGalaxyObjects: " + error));
         console.error(error);
@@ -5836,9 +5921,15 @@ async function tickMonsterSpawns(dirty) {
 
 async function tickMoveMonsters(dirty) {
     try {
+        // TODO another pass at efficiency for this.
+        //let hrstart = new process.hrtime();
         await game.tickMoveMonsters(dirty);
+        //let hrend = process.hrtime(hrstart);
+        //console.info('Execution time game.tickMoveMonsters (hr): %ds %dms', hrend[0], hrend[1] / 1000000);
+        
     } catch(error) {
         log(chalk.red("Error in calling game.tickMoveMonsters: " + error));
+        console.error(error);
     }
 }
 
@@ -5918,7 +6009,10 @@ async function tickResearches(dirty) {
 }
 
 async function tickSpawners(dirty) {
+    let hrstart = new process.hrtime();
     await game.tickSpawners(dirty);
+    let hrend = process.hrtime(hrstart);
+    console.info('Execution time game.tickSpawners (hr): %ds %dms', hrend[0], hrend[1] / 1000000);
 }
 
 async function tickSalvaging(dirty) {

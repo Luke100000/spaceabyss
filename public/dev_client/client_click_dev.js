@@ -37,9 +37,8 @@ function submitAutopilotDestination() {
 }
 
 function submitChatMessage() {
-    console.log("in submitChatMessage");
+    
     let message = $('#chat_message').val();
-    console.log("Sending chat message: " + message + " with scope: " + current_chat);
     socket.emit('chat_data', { 'message': message, 'scope': current_chat });
     $('#chat_message').val('');
 
@@ -636,24 +635,24 @@ $(document).on('click', 'button', function () {
                 $('#click_menu').append("<span class='error-message'>Error: " + recent_failure_messages[i].text + "</span><br>");
 
                 if(recent_failure_messages[i].text === 'Your beam mangled up something advanced') {
-                    $('#click_menu').append("<a class='button is-small' href='https://space.alphacoders.com/site/tutorial/salvaging'>Salvaging Tutorial</a> This object has some complex/advanced salvage opportunities. " + 
-                        "As your salvaging levels up, you'll succeed more often here. <a class='button is-small' href='https://space.alphacoders.com/site/tutorial/complexity'>Complexity</a>");
+                    $('#click_menu').append("<a target='_blank' class='button is-small' href='https://space.alphacoders.com/site/tutorial/salvaging'>Salvaging Tutorial</a> This object has some complex/advanced salvage opportunities. " + 
+                        "As your salvaging levels up, you'll succeed more often here. <a target='_blank' class='button is-small' href='https://space.alphacoders.com/site/tutorial/complexity'>Complexity</a>");
                 }
 
                 if(recent_failure_messages[i].text === 'Ship Has No Floor Space') {
-                    $('#click_menu').append("<a class='button is-small' href='https://space.alphacoders.com/site/tutorial/mining'>Mining Tutorial</a> By default, the things your ship " + 
+                    $('#click_menu').append("<a target='_blank' class='button is-small' href='https://space.alphacoders.com/site/tutorial/mining'>Mining Tutorial</a> By default, the things your ship " + 
                     "mines and salvages are put on random floor tiles on your ship. Build a Bulk Container for most things, or an Ice Container for ice specifically, and your " + 
                     "ship will automatically store mined/salvaged materials in it.<br><br>You can always just switch to your ship view and pick things up as they are mined/salvaged too.");
                 }
 
                 if(recent_failure_messages[i].text === 'Your beam is a bit weak') {
-                    $('#click_menu').append("<a class='button is-small' href='https://space.alphacoders.com/site/tutorial/mining'>Mining Tutorial</a> This object has some complex/advanced mining opportunities. " + 
-                        "As your mining levels up, you'll succeed more often here. <a class='button is-small' href='https://space.alphacoders.com/site/tutorial/complexity'>Complexity</a>");
+                    $('#click_menu').append("<a target='_blank' class='button is-small' href='https://space.alphacoders.com/site/tutorial/mining'>Mining Tutorial</a> This object has some complex/advanced mining opportunities. " + 
+                        "As your mining levels up, you'll succeed more often here. <a target='_blank' class='button is-small' href='https://space.alphacoders.com/site/tutorial/complexity'>Complexity</a>");
                 }
 
                 if(recent_failure_messages[i].text.includes('Assembling') && recent_failure_messages[i].text.includes('Failed')) {
-                    $('#click_menu').append("<a class='button is-small' href='https://space.alphacoders.com/site/tutorial/manufacturing'>Manufacturing Tutorial</a> The object that you " + 
-                    " tried to make has a higher <a class='button is-small' href='https://space.alphacoders.com/site/tutorial/complexity'>complexity</a> than your manufacturing skill." + 
+                    $('#click_menu').append("<a target='_blank' class='button is-small' href='https://space.alphacoders.com/site/tutorial/manufacturing'>Manufacturing Tutorial</a> The object that you " + 
+                    " tried to make has a higher <a target='_blank' class='button is-small' href='https://space.alphacoders.com/site/tutorial/complexity'>complexity</a> than your manufacturing skill." + 
                     " keep manufacturing things, and your level will increase, making difficult things easier.");
                 }
 
@@ -908,14 +907,23 @@ $(document).on('click', 'button', function () {
 
 
     if(split_name[0] == 'plant') {
+
         console.log("Got plant data");
         console.log("Got clicked_id as " + clicked_id);
         let clicked_x = $('#' + clicked_id).attr('x');
         let clicked_y = $('#' + clicked_id).attr('y');
+        let planet_coord_id = 0;
+        if($('#' + clicked_id).attr('planet_coord_id')) {
+            planet_coord_id = $('#' + clicked_id).attr('planet_coord_id');
+
+            socket.emit("plant_data", {inventory_item_id: split_name[1], planet_coord_id: planet_coord_id });
+        } else if($('#' + clicked_id).attr('ship_coord_id')) {
+            ship_coord_id = $('#' + clicked_id).attr('ship_coord_id');
+            socket.emit("plant_data", {inventory_item_id: split_name[1], ship_coord_id, ship_coord_id });
+        }
 
 
-        console.log("Sending plant inventory_id: " + split_name[1] + " at " + clicked_x + "," + clicked_y);
-        socket.emit("plant_data", {inventory_item_id: split_name[1], x: clicked_x, y: clicked_y});
+        
 
         $('#click_menu').empty();
         $('#click_menu').hide();

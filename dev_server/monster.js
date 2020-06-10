@@ -10,6 +10,7 @@ const game = require('./game.js');
 const game_object = require('./game_object.js');
 const helper = require('./helper.js');
 const main = require('./space_abyss' + process.env.FILE_SUFFIX + '.js');
+const planet = require('./planet.js');
 const world = require('./world.js');
 
 
@@ -163,8 +164,19 @@ async function damage(dirty, data) {
             if(data.battle_linker && data.battle_linker.attacking_type === 'player') {
                 let player_index = await main.getPlayerIndex({ 'player_id': data.battle_linker.attacking_id });
                 //console.log("Adding exp to player");
-                dirty.players[player_index].exp = dirty.players[player_index].exp + dirty.monster_types[monster_type_index].exp;
-                dirty.players[player_index].has_change = true;
+
+                if(helper.notFalse(dirty.monster_types[monster_type_index].exp)) {
+                    dirty.players[player_index].exp = dirty.players[player_index].exp + dirty.monster_types[monster_type_index].exp;
+                    dirty.players[player_index].has_change = true;
+                } else {
+                    log(chalk.red("BIG ISSUE! Monster type id: " + dirty.monster_types[monster_type_index].id + " gives no exp!"));
+                }
+
+
+
+                if(main.isFalse(dirty.players[player_index].exp)) {
+                    log(chalk.red("BIG ISSUE! Player just killed monster type id: " + dirty.monster_types[monster_type_index].id + " and has 0 exp!"));
+                }
 
                 await game.addKilledLinker(dirty.players[player_index].player_id, dirty.monsters[data.monster_index].monster_type_id);
 
@@ -500,7 +512,6 @@ async function getCoordAndRoom(dirty, monster_index) {
 
 exports.getCoordAndRoom = getCoordAndRoom;
 
-//  i (monster_index)   data:   reason   |   monster_type_index
 /**
  *
  * @param dirty
@@ -538,12 +549,18 @@ async function move(dirty, i, data) {
 
         if(dirty.monsters[i].planet_coord_id) {
 
-            planet_coord_index = await main.getPlanetCoordIndex(
-                { 'planet_coord_id': dirty.monsters[i].planet_coord_id });
-
-            if(planet_coord_index === -1) {
-                return false;
+            if(typeof dirty.monsters[i].planet_coord_index !== "undefined") {
+                planet_coord_index = dirty.monsters[i].planet_coord_index;
+            } else {
+                planet_coord_index = await main.getPlanetCoordIndex(
+                    { 'planet_coord_id': dirty.monsters[i].planet_coord_id });
+    
+                if(planet_coord_index === -1) {
+                    return false;
+                }
             }
+
+           
 
             old_coord = dirty.planet_coords[planet_coord_index];
             old_coord_index = planet_coord_index;
@@ -816,13 +833,6 @@ async function move(dirty, i, data) {
 
 
 
-
-
-        // We need a list of coords to check based on the movement_tile_width and movement_tile_height
-        // of the monster
-
-        let can_place_data = { 'monster_type_id': dirty.monster_types[data.monster_type_index].id };
-
         //if(dirty.monsters[i].id === 5128) {
         //    can_place_data.debug = true;
         //}
@@ -862,8 +872,8 @@ async function move(dirty, i, data) {
 
 
                 worker.on('message', (path) => {
-                    console.log("Monster id: " + dirty.monsters[i].id + " path from worker is:");
-                    console.log(path);
+                    //console.log("Monster id: " + dirty.monsters[i].id + " path from worker is:");
+                    //console.log(path);
                     dirty.monsters[i].path = path;
                 });
 
@@ -1045,60 +1055,16 @@ async function move(dirty, i, data) {
 
         if(scope === 'planet') {
             dirty.monsters[i].planet_coord_id = new_coord.id;
+            dirty.monsters[i].planet_coord_index = new_coord_index;
             dirty.monsters[i].has_change = true;
         } else if(scope === 'ship') {
             dirty.monsters[i].ship_coord_id = new_coord.id;
+            dirty.monsters[i].ship_coord_index = new_coord_index;
             dirty.monsters[i].has_change = true;
         }
 
-
-        //if(dirty.monsters[i].id === 5128) {
-        //    log(chalk.cyan("Moved monster from planet coord id: " + old_coord.id +
-        //        " to planet_coord_id: " + new_coord.id));
-        //    log(chalk.yellow("monster id for this new planet coord: " + dirty.planet_coords[new_coord_index].monster_id));
-        //}
-
-
-        // and update our monster
-
-
         // update the room with the move
         io.to(room).emit('monster_info', { 'monster': dirty.monsters[i] });
-
-
-
-        /*********************************** TEMP CLEANUP THINGS TO LET US KNOW SOMETHING IS WRONG ****************/
-
-        /*
-        main.clearMonsterExtraCoords(i);
-
-        if(scope === 'planet') {
-            // do a check to see if there's a planet coord with the monster id that doesn't match what the monster has now
-            let monster_planet_coords = dirty.planet_coords.filter(planet_coord => planet_coord.monster_id === dirty.monsters[i].id);
-
-            if(monster_planet_coords.length > 1) {
-                log(chalk.red("Monster id " + dirty.monsters[i].id + " is on too many planet coords!"));
-                console.log("We just moved monster from planet coord id: " + old_coord.id +
-                    " to planet coord id: " + new_coord.id);
-
-                for(let coord of monster_planet_coords) {
-                    console.log("Planet coord id: " + coord.id + " has monster id: " + coord.monster_id);
-
-                    if(coord.id !== dirty.monsters[i].planet_coord_id) {
-                        let removing_index = await main.getPlanetCoordIndex({ 'planet_coord_id': coord.id });
-                        await main.updateCoordGeneric(false, {'planet_coord_index': removing_index, 'monster_id': false });
-                        console.log("Updated monster id to false");
-                    }
-                }
-
-            }
-        }
-        */
-
-
-
-        /******************************** END TEMP ************************************************/
-
 
 
     } catch(error) {
