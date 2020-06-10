@@ -1,3 +1,16 @@
+## [0.1.6] - 2020-06-10
+
+
+### Added
+
+
+### Fixed
+- Player sprites now disappear when players logout
+- Basic manufacturing without being assembled in an object works again
+
+
+### Changed
+
 ## [0.1.5] - 2020-06-09
 
 

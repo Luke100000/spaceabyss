@@ -3503,20 +3503,38 @@ function generateAssemblyListItem(object_type, object_assembly_linkers, assembli
         if (assembling_object === false || assembling_object.object_type_id !== 116) {
             html_string += " <button id='assemble_" + object_type.id + "_all' class='button is-default is-small' ";
             html_string += " object_type_id='" + object_type.id + "' ";
-            html_string += " being_assembled_in_object_id='" + assembling_object.id + "' amount='all'>All</button>";
+            if(assembling_object !== false) {
+                html_string += " being_assembled_in_object_id='" + assembling_object.id + "'";
+            }
+            html_string += "amount='all'>All</button>";
 
             html_string += " <button id='assemble_" + object_type.id + "_10' class='button is-default is-small' ";
             html_string += " object_type_id='" + object_type.id + "' ";
-            html_string += " being_assembled_in_object_id='" + assembling_object.id + "' amount='10'>10</button>";
+
+            if(assembling_object !== false) {
+                html_string += " being_assembled_in_object_id='" + assembling_object.id + "'";
+            }
+
+            html_string += " amount='10'>10</button>";
 
             html_string += " <button id='assemble_" + object_type.id + "_1' class='button is-default is-small' ";
             html_string += " object_type_id='" + object_type.id + "' ";
-            html_string += " being_assembled_in_object_id='" + assembling_object.id + "' amount='1'>1</button>";
+
+            if(assembling_object !== false) {
+                html_string += " being_assembled_in_object_id='" + assembling_object.id + "'";
+            }
+
+            html_string += " amount='1'>1</button>";
 
         } else {
             html_string += " <button id='assemble_" + object_type.id + "_1' class='button is-default is-small' ";
             html_string += " object_type_id='" + object_type.id + "' ";
-            html_string += " being_assembled_in_object_id='" + assembling_object.id + "' amount='1'>Assemble</button>";
+
+            if(assembling_object !== false) {
+                html_string += " being_assembled_in_object_id='" + assembling_object.id + "'";
+            }
+
+            html_string += " amount='1'>Assemble</button>";
         }
 
         html_string += "</div>";

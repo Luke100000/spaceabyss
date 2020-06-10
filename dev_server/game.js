@@ -571,6 +571,8 @@ const world = require('./world.js');
 
         try {
 
+            console.log("data.being_assembled_in_object_id: " + data.being_assembled_in_object_id);
+
             let player_index = await main.getPlayerIndex({ 'player_id': socket.player_id });
 
             if(player_index === -1) {
