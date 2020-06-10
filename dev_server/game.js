@@ -5072,7 +5072,7 @@ const world = require('./world.js');
 
                         // Galaxy - it's all local
                         if(dirty.players[sending_player_index].coord_id && dirty.players[other_player_index].coord_id) {
-
+                            other_socket.emit('chat', {'message': message, 'scope': data.scope });
                         }
                         // Planet - make sure they are on the same planet
                         else if(dirty.players[sending_player_index].planet_coord_id && dirty.players[other_player_index].planet_coord_id) {

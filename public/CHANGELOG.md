@@ -1,3 +1,20 @@
+## [0.1.7] - 2020-06-10
+
+### Added
+
+
+### Fixed
+- Previously, if you logged in the galaxy and another player was around you, you would not see the player until they moved. Fixed this in the galaxy.
+- The ships of other players now disappear when they land on a planet and you are still in the galaxy.
+- A few other delays with showing other players.
+- If you buy a pod, it will now re-generate the spaceport display immediately.
+- Local message sending should now work in the galaxy
+- Chat should scroll to the bottom properly now
+
+
+### Changed
+- Planets in the galaxy will now show up sooner. Less pop in.
+
 ## [0.1.6] - 2020-06-10
 
 
@@ -7,9 +24,16 @@
 ### Fixed
 - Player sprites now disappear when players logout
 - Basic manufacturing without being assembled in an object works again
+- Previously, if you logged in the galaxy and another player was around you, you would not see the player until they moved. Fixed this in the galaxy.
+- The ships of other players now disappear when they land on a planet and you are still in the galaxy.
+- A few other delays with showing other players.
+- If you buy a pod, it will now re-generate the spaceport display immediately.
+- Local message sending should now work in the galaxy
+- Chat should scroll to the bottom properly now
 
 
 ### Changed
+- Planets in the galaxy will now show up sooner. Less pop in.
 
 ## [0.1.5] - 2020-06-09
 

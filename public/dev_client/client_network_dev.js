@@ -278,7 +278,10 @@ socket.on('chat', function(data){
 
             $('#chatswitch_local').text("Local (" + unread_local_messages + ")");
         } else {
-            $('#chat_local').scrollTop = $('#chat_local').scrollHeight;
+
+            let out = document.getElementById("chat_local");
+
+            out.scrollTop = out.scrollHeight - out.clientHeight;
         }
 
     } else if(data.scope == 'global') {
@@ -290,7 +293,11 @@ socket.on('chat', function(data){
 
             $('#chatswitch_global').text("Global (" + unread_global_messages + ")");
         } else {
-            $('#chat_global').scrollTop = $('#chat_global').scrollHeight;
+
+            let out = document.getElementById("chat_global");
+
+            out.scrollTop = out.scrollHeight - out.clientHeight;
+
         }
 
 
@@ -303,7 +310,11 @@ socket.on('chat', function(data){
 
             $('#chatswitch_faction').text("Faction (" + unread_gfaction_messages + ")");
         } else {
-            $('#chat_faction').scrollTop = $('#chat_faction').scrollHeight;
+
+            let out = document.getElementById("chat_faction");
+
+            out.scrollTop = out.scrollHeight - out.clientHeight;
+
         }
     } else if(data.scope == 'system') {
         $('#chat_system').append($('<p>').text(data.message));
@@ -886,7 +897,6 @@ socket.on('login_data', function(data) {
             }
 
             if(players[client_player_index].sprite) {
-                console.log("Following our player");
                 camera.startFollow(players[client_player_index].sprite);
             }
 
@@ -1686,6 +1696,8 @@ socket.on('object_info', function(data) {
         objects[object_index].id = parseInt(objects[object_index].id);
         object_info = getObjectInfo(object_index);
 
+        let object_type_index = getObjectTypeIndex(objects[object_index].object_type_id);
+
         // Our body!
         if(client_player_id && players[client_player_index] && objects[object_index].id === players[client_player_index].body_id) {
             //console.log("Received our body object. Attempting to create and place our sprite");
@@ -1734,6 +1746,11 @@ socket.on('object_info', function(data) {
             generateAirlockDisplay();
         }
 
+        // A new ship
+        if(client_player_id && object_types[object_type_index].is_ship && objects[object_index].player_id === client_player_id && current_view === 'planet') {
+            generateSpaceportDisplay();
+        }
+
 
 
         // It's also possible that the object was the body or the ship of another player
@@ -1759,9 +1776,6 @@ socket.on('object_info', function(data) {
         if(inventory_index !== -1) {
             generateInventoryDisplay();
         }
-
-        // If it's our ship, we update our management ship display
-        let object_type_index = object_types.findIndex(function(obj) { return obj && obj.id === objects[object_index].object_type_id; });
 
         if(objects[object_index].player_id === client_player_id && object_types[object_type_index].is_ship) {
             generateShipManagementDisplay();
@@ -2184,6 +2198,19 @@ socket.on('planet_coord_info', function (data) {
                 generateSpaceportDisplay();
 
             }
+        } 
+        // We are just adding a planet coord that another player is on
+        else if(planet_coords[coord_index].player_id) {
+
+            console.log("Got a planet coord with a different player on it");
+
+            let other_player_index = getPlayerIndex(planet_coords[coord_index].player_id);
+            if(other_player_index !== -1) {
+                let update_player_data = {};
+                update_player_data.player = players[other_player_index];
+                updatePlayer(update_player_data, other_player_index);
+            }
+
         }
 
 
@@ -2353,11 +2380,9 @@ socket.on('player_info', function(data) {
         return false;
     }
 
-    //console.log("Got player info for player id: " + data.player.id);
 
     let redraw_map = false;
 
-    //console.log("Got player info data for player_id: " + data.player.id);
 
     let player_index = players.findIndex(function(obj) { return obj && obj.id === parseInt(data.player.id); });
     // If it's a player we should draw, we add a player sprite

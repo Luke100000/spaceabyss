@@ -122,7 +122,6 @@ function addPlayer(player_index, player_info) {
 
     // If the player we just added is us, always show us :D
     if (client_player_id && players[player_index].id === client_player_id) {
-        console.log("Just got information for the client's player!");
 
         client_player_index = player_index;
         if (!players[client_player_index].sprite) {
@@ -135,7 +134,6 @@ function addPlayer(player_index, player_info) {
                 players[client_player_index].sprite.x = client_player_info.coord.tile_x & tile_size;
                 players[client_player_index].sprite.y = client_player_info.coord.tile_y & tile_size;
 
-                console.log("Following our player");
                 camera.startFollow(players[client_player_index].sprite);
             }
 
@@ -145,7 +143,7 @@ function addPlayer(player_index, player_info) {
 
     } else if (player_info.coord === false || client_player_info.coord === false) {
         if (player_info.coord === false) {
-            //console.log("Could not get player info");
+            console.log("Could not get player info for player id: " + players[player_index].id);
         }
 
         if (client_player_info.coord === false) {
@@ -1014,14 +1012,10 @@ function createPlayerSprite(player_index) {
             setPlayerMoveDelay(player_index);
 
         } else {
-            console.log("%c No idea where to put player sprite!", log_warning);
-            console.log("Player id: " + players[player_index].id + " coord_id: " + players[player_index].coord_id + " ship_coord_id: " + players[player_index].ship_coord_id);
-            console.log("Current have x many ship coords: " + ship_coords.length);
-            for (let i = 0; i < ship_coords.length; i++) {
-                if (ship_coords[i].id === players[player_index].ship_coord_id) {
-                    console.log("Found the ship coord. It has player id: " + ship_coords[i].player_id);
-                }
-            }
+            console.log("%c No idea where to put player sprite for player id: " + players[player_index].id + "!", log_warning);
+            console.log("Player id: " + players[player_index].id + " coord_id: " + players[player_index].coord_id + 
+            " ship_coord_id: " + players[player_index].ship_coord_id + " planet_coord_id: " + players[player_index].planet_coord_id);
+        
         }
 
 
@@ -1066,6 +1060,24 @@ function createPlayerSprite(player_index) {
             console.log("%c Error setting player sprite depth: " + error, log_danger);
         }
 
+    }
+
+    // We just drew us - lets update the other player's around us
+    if(players[player_index].sprite && player_index === client_player_index) {
+
+        for(let i = 0; i < players.length; i++) {
+
+            if(players[i] && i !== client_player_index) {
+
+                let update_other_player_data = {};
+                update_other_player_data.player = players[i];
+                updatePlayer(update_other_player_data, i);
+            }
+        }
+
+        if(current_view === 'planet') {
+            generateSpaceportDisplay();
+        }
     }
 
 
@@ -1327,7 +1339,6 @@ function drawCoord(type, coord) {
         object_index = objects.findIndex(function (obj) { return obj && obj.id === coord.object_id; });
 
         if (object_index === -1) {
-            console.log("Don't have object");
             draw_object = false;
             socket.emit('request_object_info', { 'object_id': coord.object_id });
 
@@ -1344,6 +1355,11 @@ function drawCoord(type, coord) {
 
             if (other_player_index !== -1) {
                 console.log("Object is other player's ship");
+
+                // Doesn't hurt to check and see if we draw the player here
+                if(shouldDraw(client_player_info.coord, coord)) {
+                    createPlayerSprite(other_player_index);
+                }
                 draw_object = false;
             }
 
@@ -1432,7 +1448,7 @@ function drawCoord(type, coord) {
         // find the origin planet coord
         let origin_coord_index = coords.findIndex(function (obj) { return obj && obj.planet_id === coord.belongs_to_planet_id; });
         if (origin_coord_index === -1) {
-            console.log("Don't have origin for planet yet");
+            //console.log("Don't have origin for planet yet");
             return;
         }
 
@@ -1452,9 +1468,6 @@ function drawCoord(type, coord) {
             return false;
         }
 
-        if(coord.id === 198) {
-            console.log("planet display linker layer: " + planet_type_display_linkers[display_linker_index].layer);
-        }
 
         // TODO we need to listen to the layer of the linker. Could just be a display linker
         //console.log("Adding " + planet_type_display_linkers[display_linker_index].game_file_index + " at coord");
@@ -5170,10 +5183,6 @@ function mapAddObjectType(object_type_id, tile_x, tile_y) {
 // If we need to access something here, we need to make sure map.js in planet_data and ship_data is sending the data
 function mapAddObject(object) {
 
-    if(object.id === 85294) {
-        console.log("In mapAddObject for object id: " + object.id);
-    }
-    
 
     if (!object) {
         return false;
@@ -5262,9 +5271,6 @@ function mapAddObject(object) {
 
             //if (!is_active_ship) {
 
-                if(object.id === 85294) {
-                    console.log("Drawing " + object.id + "at tile_x,y: " + object_info.coord.tile_x + "," + object_info.coord.tile_y + " on layer: " + layer);
-                }
 
                 map.putTileAt(object_types[object_type_index].game_file_index, object_info.coord.tile_x, object_info.coord.tile_y, false, layer);
             //}
@@ -9443,6 +9449,7 @@ function urlName(name) {
 }
 
 
+// Updating a player that is NOT the client player
 function updatePlayer(data, player_index) {
 
 
@@ -9461,6 +9468,7 @@ function updatePlayer(data, player_index) {
             if (coord_index !== -1 && shouldDraw(client_player_info.coord, planet_coords[coord_index])) {
                 // If they don't have a sprite, insta move them there
                 if (!players[player_index].sprite) {
+                    players[player_index].planet_coord_id = data.player.planet_coord_id;
                     createPlayerSprite(player_index);
 
                     movePlayerInstant(player_index, planet_coords[coord_index].tile_x * tile_size + tile_size / 2,
@@ -9573,6 +9581,12 @@ function updatePlayer(data, player_index) {
 
         }
     } else if (current_view === 'galaxy') {
+
+
+        // Seems like they switched to a planet
+        if(data.player.planet_coord_id) {
+            destroyPlayerSprite(players[player_index]);
+        }
 
         if (!data.player.coord_id || data.player.coord_id === 0) {
             // Just gonna comment this out for now. What we have happening is that when other players are switching

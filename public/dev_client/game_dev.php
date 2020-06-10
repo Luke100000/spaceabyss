@@ -693,7 +693,7 @@ include('config.php');
     var animations;
     var attack_rectangle;
     var current_player_image = false;
-    var current_chat = 'system';
+    var current_chat = 'local';
     var current_view = 'unknown';
     var level_modifier = 0.10;
     var difficult_level_modifier = 0.20;

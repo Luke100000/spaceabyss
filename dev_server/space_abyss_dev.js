@@ -1726,7 +1726,25 @@ io.sockets.on('connection', function (socket) {
     });
 
     socket.on('request_planet_info', async function(data) {
-        await planet.sendInfo(socket, false, dirty, { 'planet_id': data.planet_id });
+
+        data.planet_id = parseInt(data.planet_id);
+        let planet_index = await planet.getIndex(dirty, { 'planet_id': data.planet_id });
+
+        if(planet_index === -1) {
+            return false;
+        }
+        
+        await planet.sendInfo(socket, false, dirty, { 'planet_index': planet_index });
+
+        // Lets send the coord the planet is on too
+        if(typeof socket.player_index !== "undefined" && dirty.players[socket.player_index].coord_id) {
+            let coord_index = await getCoordIndex({ 'coord_id': dirty.planets[planet_index].coord_id });
+
+            if(coord_index !== -1) {
+                await world.sendCoordInfo(socket, false, dirty, {'coord_index': coord_index });
+            }
+        }
+
     });
 
 

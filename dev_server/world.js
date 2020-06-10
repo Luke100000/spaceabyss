@@ -3460,7 +3460,15 @@ function sendActiveSalvaging(socket, room, dirty, active_salvaging_index, remove
 exports.sendActiveSalvaging = sendActiveSalvaging;
 
 
-// ship_coord_index   OR   ship_coord_id
+/**
+ * 
+ * @param {Object} socket 
+ * @param {string} room 
+ * @param {Object} dirty 
+ * @param {Object} data 
+ * @param {number=} data.coord_id
+ * @param {number=} data.coord_index
+ */
 async function sendCoordInfo(socket, room, dirty, data) {
 
     try {

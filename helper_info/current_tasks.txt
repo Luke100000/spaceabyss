@@ -13,8 +13,11 @@ DOING NOW:
 
     draw stimshot/stimpack/whatever
 
-    When you buy a pod, it doesn't auto update the planet displayport display
 
+    I need a better way of sending an admin message to everyone about server updates
+    
+    Client is repeatedly moving too fast!
+        I should really try to fix this, make it not happen
 
 
     Having multiple ships is not intuitive
