@@ -84,9 +84,6 @@ socket.on('assembled_in_linker_data', function(data) {
 
 socket.on('assembly_info', function(data) {
 
-    console.log("Got assembly info");
-    console.log(data.assembly);
-
 
     // lets see if we need to add this to our list of active assemblies
     let active_assembly_index = active_assemblies.findIndex(function (obj) { return obj && obj.id === parseInt(data.assembly.id); });
@@ -2400,6 +2397,16 @@ socket.on('player_info', function(data) {
     // Updated player info
     else {
 
+        let update_spaceport_display = false;
+        if(client_player_id && data.player.id === client_player_id && current_view === 'planet') {
+
+            if(players[client_player_index].planet_coord_id !== data.player.planet_coord_id) {
+                update_spaceport_display = true;
+            }
+
+        }
+
+
         if(client_player_id && data.player.id === client_player_id) {
             //console.log("Calling updatePlayerClient");
             updatePlayerClient(data);
@@ -2424,16 +2431,9 @@ socket.on('player_info', function(data) {
         players[player_index].max_hp = data.player.max_hp;
 
 
-        let update_spaceport_display = false;
-        if(client_player_id && data.player.id === client_player_id && current_view === 'planet') {
+       
 
-            if(players[client_player_index].planet_coord_id !== data.player.planet_coord_id) {
-                update_spaceport_display = true;
-            }
 
-        }
-
-        players[player_index].planet_coord_id = data.player.planet_coord_id;
 
         let moved_on_ship = false;
         // Object.is is checking for the same value

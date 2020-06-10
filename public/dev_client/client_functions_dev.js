@@ -142,13 +142,8 @@ function addPlayer(player_index, player_info) {
 
 
     } else if (player_info.coord === false || client_player_info.coord === false) {
-        if (player_info.coord === false) {
-            console.log("Could not get player info for player id: " + players[player_index].id);
-        }
 
-        if (client_player_info.coord === false) {
-            console.log("Could not get client_player_info");
-        }
+        // Not going to have enough info to addPlayer
 
     } else if (shouldDraw(client_player_info.coord, player_info.coord)) {
 
@@ -1430,10 +1425,6 @@ function drawCoord(type, coord) {
         }
 
     } else if (coord.belongs_to_planet_id > 0 && current_view === 'galaxy') {
-
-        if(coord.id === 198) {
-            console.log("Drawing coord with belongs to planet id: " + coord.belongs_to_planet_id); 
-        }
 
 
         let planet_index = planets.findIndex(function (obj) { return obj && obj.id === coord.belongs_to_planet_id; });
@@ -5285,11 +5276,27 @@ function mapAddObject(object) {
 
 function checkForClientMove(time, tile_x = false, tile_y = false) {
 
+
+    let debug_moving = false;
+
+    if(debug_moving) {
+        console.log("In checkForClientMove");
+    }
+
     if (client_player_index === -1) {
+
+        if(debug_moving) {
+            console.log("Don't have client player");
+        }
         return false;
     }
 
     if (!upKey.isDown && !downKey.isDown && !leftKey.isDown && !rightKey.isDown) {
+
+        if(debug_moving) {
+            console.log("No arrow keys are pressed");
+        }
+        
         return false;
     }
 
@@ -5297,6 +5304,11 @@ function checkForClientMove(time, tile_x = false, tile_y = false) {
 
     // Trying -50 to see if it helps movement flow
     if (time_since_last_move < (move_delay - 50)) {
+
+        if(debug_moving) {
+            console.log("Client can't move yet");
+        }
+        
         return false;
 
     }
@@ -5314,7 +5326,9 @@ function checkForClientMove(time, tile_x = false, tile_y = false) {
     let player_info = getPlayerInfo(client_player_index);
 
     if (!player_info.coord) {
-        console.log("Could not find player's coord");
+        if(debug_moving) {
+            console.log("Could not find player's coord");
+        }
         return false;
     }
 
@@ -5334,7 +5348,7 @@ function checkForClientMove(time, tile_x = false, tile_y = false) {
         let player_coord_index = -1;
 
 
-        // ship_coord_id before coord_id is important since being on our ship is a view - ship is sitll on a galaxy coord
+        // ship_coord_id before coord_id is important since being on our ship is a view - ship is still on a galaxy coord
         if (players[client_player_index].ship_coord_id) {
 
             // return false if the client and server don't agree on the ship coord the client is on
@@ -5370,9 +5384,13 @@ function checkForClientMove(time, tile_x = false, tile_y = false) {
             }
         } else if (players[client_player_index].coord_id) {
 
-            // return false if the client and server don't agree on the planet coord the client is on
+            if(debug_moving) {
+                console.log("client is in galaxy");
+            }
+
+            // return false if the client and server don't agree on the galaxy coord the client is on
             if (client_move_coord_id && client_move_coord_id !== players[client_player_index].coord_id) {
-                console.log("%c Server and client don't agree on the coord the player is on", log_warning);
+                console.log("%c Server and client don't agree on the coord the player is on client_move_coord_id: " + client_move_coord_id + " player coord_id: " + players[client_player_index].coord_id, log_warning);
 
                 // If it's been this way for a while (testing at 2 seconds), reset the client back to server
                 let been_this_way_time = our_time - players[client_player_index].move_start_time;
@@ -5507,12 +5525,19 @@ function checkForClientMove(time, tile_x = false, tile_y = false) {
     /*********************** END MOBILE PART? *********************/
 
     if (!player_trying_to_move) {
-        //console.log("Player is not trying to move");
+        if(debug_moving) {
+            console.log("Player is not trying to move");
+        }
+        
         return false;
     }
 
     if (checking_coord_index === -1) {
-        //console.log("Could not find coord to check");
+
+        if(debug_moving) {
+            console.log("Could not find coord to check");
+        }
+        
 
         // If our level is > 1 send it anyways - maybe we fall
         if (players[client_player_index].planet_coord_id && player_info.coord.level > 0) {
@@ -5553,7 +5578,11 @@ function checkForClientMove(time, tile_x = false, tile_y = false) {
             console.log("ship coord move denied based on player id: " + ship_coords[checking_coord_index].player_id);
         }
     } else if (players[client_player_index].coord_id) {
-        //console.log("Moving in galaxy");
+
+        if(debug_moving) {
+            console.log("Moving in galaxy");
+        }
+        
 
 
         // Special cases like if there's a planet
@@ -5568,6 +5597,10 @@ function checkForClientMove(time, tile_x = false, tile_y = false) {
             });
 
             if (can_place_result === false) {
+
+                if(debug_moving) {
+                    console.log("Can place in galaxy result false");
+                }
                 deny_move = true;
             }
         }
@@ -5614,22 +5647,38 @@ function checkForClientMove(time, tile_x = false, tile_y = false) {
     }
 
     if (deny_move) {
-        console.log("Move was denied");
+        if(debug_moving) {
+            console.log("Move was denied");
+        }
+        
         return false;
     }
 
     if (movement_direction === false) {
-        console.log("Movement direction was false");
+
+        if(debug_moving) {
+            console.log("Movement direction was false");
+        }
+        
         return false;
     }
 
 
     // AND START THE MOVE!
     if (players[client_player_index].ship_coord_id) {
+        if(debug_moving) {
+            console.log("Calling movePlayerFlow - ship");
+        }
         movePlayerFlow(client_player_index, 'ship', ship_coords[checking_coord_index], 'movePlayer');
     } else if (players[client_player_index].planet_coord_id) {
+        if(debug_moving) {
+            console.log("Calling movePlayerFlow - planet");
+        }
         movePlayerFlow(client_player_index, 'planet', planet_coords[checking_coord_index], 'movePlayer');
     } else if (players[client_player_index].coord_id) {
+        if(debug_moving) {
+            console.log("Calling movePlayerFlow - galaxy");
+        }
         movePlayerFlow(client_player_index, 'galaxy', coords[checking_coord_index], 'movePlayer');
     }
 
@@ -6117,7 +6166,7 @@ function movePlayerFlow(player_index, destination_coord_type, destination_coord,
     // Some extra things if we are moving our client player
     if (client_player_index !== -1 && player_index === client_player_index) {
 
-        //console.log("Sending move data");
+        //console.log("Sending move data: coord_id: " + destination_coord.id);
         socket.emit('move_data', { 'destination_coord_type': destination_coord_type, 'destination_coord_id': destination_coord.id });
         last_move_sent = our_time;
 
@@ -6175,7 +6224,6 @@ function movePlayerFlow(player_index, destination_coord_type, destination_coord,
 
             // LEFT !
             if (players[player_index].destination_x < players[player_index].sprite.x) {
-                console.log("Playing left animation. destination_x: " + players[player_index].destination_x + " sprite_x: " + players[player_index].sprite.x);
 
                 if (players[player_index].sprite.anims.getCurrentKey() !== 'player-cargo-ship-left-animation') {
                     players[player_index].sprite.anims.play('player-cargo-ship-left-animation');
@@ -9643,6 +9691,8 @@ function updatePlayerClient(data) {
     //console.log("In updatePlayerClient");
 
     let update_spaceport_display = false;
+    let updated_client_planet_coord_id = false;
+    let updated_client_ship_coord_id = false;
 
     // We switched planet levels
     if (current_view === 'planet') {
@@ -9651,6 +9701,14 @@ function updatePlayerClient(data) {
         if (data.player.planet_coord_id) {
 
             let client_moved = false;
+            let client_moved_levels = false;
+
+
+            let new_planet_coord_index = planet_coords.findIndex(function (obj) { return obj && obj.id === data.player.planet_coord_id; });
+
+            if (new_planet_coord_index !== -1 && planet_coords[new_planet_coord_index].level !== client_player_info.coord.level) {
+                client_moved_levels = true;
+            }
 
             // Player switched ships on a planet - so switching in a spaceport
             if (players[client_player_index].ship_id !== data.player.ship_id) {
@@ -9658,11 +9716,12 @@ function updatePlayerClient(data) {
             }
 
             if (players[client_player_index].planet_coord_id !== data.player.planet_coord_id) {
+                //console.log("Server sent that client moved in planet view to coord id: " + data.player.planet_coord_id);
                 update_spaceport_display = true;
                 client_moved = true;
             }
 
-            let new_planet_coord_index = planet_coords.findIndex(function (obj) { return obj && obj.id === data.player.planet_coord_id; });
+            
 
             if (new_planet_coord_index === -1) {
                 socket.emit('request_planet_coord_info', { 'planet_coord_id': data.player.planet_coord_id });
@@ -9680,16 +9739,21 @@ function updatePlayerClient(data) {
                     players[client_player_index].destination_coord_id === planet_coords[new_planet_coord_index].id) {
 
                 } else {
+                    updated_client_planet_coord_id = true;
+                    players[client_player_index].planet_coord_id = data.player.planet_coord_id;
                     movePlayerFlow(client_player_index, 'planet', planet_coords[new_planet_coord_index], 'updatePlayerClient > planet');
                 }
 
 
             }
+
             // We moved levels
-            else if (planet_coords[new_planet_coord_index].level !== client_player_info.coord.level) {
+            if (client_moved_levels) {
+
+                updated_client_planet_coord_id = true;
+                players[client_player_index].planet_coord_id = data.player.planet_coord_id;
 
                 clearPreviousLevel();
-
 
 
                 client_move_planet_coord_id = false;
@@ -9705,6 +9769,8 @@ function updatePlayerClient(data) {
 
 
             }
+
+
 
             // We aren't doing any of this in any of the other views
             /*
@@ -9800,7 +9866,14 @@ function updatePlayerClient(data) {
         if (data.player.ship_coord_id) {
 
 
+            let client_changed_levels = false;
+
+
             let coord_index = ship_coords.findIndex(function (obj) { return obj && obj.id === data.player.ship_coord_id; });
+
+            if (ship_coords[coord_index].level !== client_player_info.coord.level) {
+                client_changed_levels = true;
+            }
 
             if (coord_index === -1) {
                 socket.emit('request_ship_coord_info', { 'ship_coord_id': data.player.ship_coord_id });
@@ -9808,10 +9881,16 @@ function updatePlayerClient(data) {
             // Normal Ship Move
             else if (players[client_player_index].ship_coord_id !== data.player.ship_coord_id && ship_coords[coord_index].level === client_player_info.coord.level) {
                 //console.log("Moving to ship coord id: " + ship_coords[coord_index].id + " tile x,y: " + ship_coords[coord_index].tile_x + "," + ship_coords[coord_index].tile_y);
+                players[client_player_index].ship_coord_id = data.player.ship_coord_id;
+                updated_client_ship_coord_id = true;
                 movePlayerFlow(client_player_index, 'ship', ship_coords[coord_index], 'updatePlayerClient > ship');
             }
             // We moved to a different level
-            else if (ship_coords[coord_index].level !== client_player_info.coord.level) {
+            
+            if (client_changed_levels) {
+                players[client_player_index].ship_coord_id = data.player.ship_coord_id;
+                updated_client_ship_coord_id = true;
+            
                 clearPreviousLevel();
                 client_move_ship_coord_id = false;
 
@@ -9819,14 +9898,22 @@ function updatePlayerClient(data) {
                     ship_coords[coord_index].tile_x * tile_size + tile_size / 2,
                     ship_coords[coord_index].tile_y * tile_size + tile_size / 2);
             }
+
+
+            if(!updated_client_ship_coord_id) {
+                players[client_player_index].ship_coord_id = data.player.ship_coord_id;
+            }
         }
     }
 
     // Galaxy view and we moved
     else if (current_view === 'galaxy' && data.player.coord_id && data.player.coord_id !== client_player_info.coord.id) {
-        //console.log("Client galaxy move");
+        
+        //console.log("Server sent that client moved in galaxy to coord id: " + data.player.coord_id);
         let coord_index = coords.findIndex(function (obj) { return obj && obj.id === data.player.coord_id; });
 
+
+        players[client_player_index].coord_id = data.player.coord_id;
         if (coord_index !== -1) {
             movePlayerFlow(client_player_index, 'galaxy', coords[coord_index], 'updatePlayerClient > galaxy');
         }
@@ -9950,6 +10037,19 @@ function updatePlayerClient(data) {
         }
 
     }
+
+
+    if(!updated_client_planet_coord_id) {
+        players[client_player_index].planet_coord_id = data.player.planet_coord_id;
+    }
+
+    if(!updated_client_ship_coord_id) {
+        players[client_player_index].ship_coord_id = data.player.ship_coord_id;
+    }
+
+
+    players[client_player_index].coord_id = data.player.coord_id;
+    
 
 }
 

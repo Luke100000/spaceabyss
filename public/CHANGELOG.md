@@ -1,3 +1,8 @@
+## [0.1.8] - 2020-06-10
+
+### Fixed
+- Some of the changes made to make players show up better made movement worse when the server was moderately laggy. I've improved this.
+
 ## [0.1.7] - 2020-06-10
 
 ### Added

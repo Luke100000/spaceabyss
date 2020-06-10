@@ -1560,6 +1560,7 @@ io.sockets.on('connection', function (socket) {
 
         try {
 
+
             //console.log("Got move data for player id:" + dirty.players[socket.player_index].id + " socket.player_index: " +
             //    socket.player_index + " socket id: " + socket.id + " destination_coord_id: " + data.destination_coord_id);
             data.source = 'manual';

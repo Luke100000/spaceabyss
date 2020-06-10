@@ -235,7 +235,7 @@ const world = require('./world.js');
 
             if(!time_allowed) {
 
-                //console.log("Client can't move yet");
+                console.log("Client can't move yet");
 
                 // If we are within 200 ms of our next move, queue this up at a next move
                 /*
