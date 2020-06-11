@@ -2660,7 +2660,6 @@ const world = require('./world.js');
     async function switchToGalaxy(socket, dirty, reason = false) {
 
         try {
-            console.log("In movement.switchToGalaxy");
 
             let player_index = await main.getPlayerIndex({'player_id':socket.player_id});
 

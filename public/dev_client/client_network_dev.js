@@ -525,7 +525,6 @@ socket.on('damaged_data', function(data) {
 
 
     if(data.flavor_text) {
-        console.log("Got damaged data with flavor tex!");
         text_important.setText(data.flavor_text);
         text_important.setVisible(true);
         text_important_time = our_time;
@@ -1142,6 +1141,7 @@ socket.on('monster_info', function(data) {
             //console.log("%c Not drawing monster id: " + monsters[monster_index].id, log_warning);
             if(!client_player_info.coord) {
                 console.log("Client player doesn't have a coord yet");
+                
             }
 
             if(!monster_info.coord) {
@@ -1665,7 +1665,7 @@ socket.on('object_info', function(data) {
 
         // If there are any inventory items with this, remove them
         for(let i = 0; i < inventory_items.length; i++) {
-            if(inventory_items[i] && inventory_items[i].object_id === data.objec.id) {
+            if(inventory_items[i] && inventory_items[i].object_id === data.object.id) {
                 delete inventory_items[i];
             }
         }
@@ -2149,7 +2149,8 @@ socket.on('object_type_display_linker_info', function(data) {
 socket.on('planet_coord_info', function (data) {
 
 
-    let debug_planet_coord_ids = [442333];
+
+    let debug_planet_coord_ids = [];
 
     if(!data.planet_coord) {
         console.log("%c planet_coord_info without planet coord", log_warning);
@@ -2169,7 +2170,7 @@ socket.on('planet_coord_info', function (data) {
 
         coord_index = planet_coords.push(data.planet_coord) - 1;
 
-        if(client_player_index === -1 || shouldDraw(client_player_info.coord, planet_coords[coord_index], 'planet_coord_info')) {
+        if(client_player_index === -1 || client_player_info.coord === false || shouldDraw(client_player_info.coord, planet_coords[coord_index], 'planet_coord_info')) {
 
             if(debug_planet_coord_ids.indexOf(data.planet_coord.id) !== -1) {
                 console.log("Drawing it");
@@ -2186,8 +2187,18 @@ socket.on('planet_coord_info', function (data) {
 
             // It looks like we just got the planet coord that we are on
             // So now if we grab our client_player_info, we should have a coord.
+            console.log("Got planet coord with our player on it");
+
+            let client_player_info_coord_is_false = false;
+            if(client_player_info.coord === false) {
+                client_player_info_coord_is_false = true;
+            }
             client_player_info = getPlayerInfo(client_player_index);
-            console.log("Would maybe insta move player now");
+            
+            if(client_player_info_coord_is_false) {
+                console.log("Redrawing map, since we previously did not have a coord for the player");
+                redrawMap();
+            }
 
             if(spaceport_display_needs_regeneration) {
 

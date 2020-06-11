@@ -8614,21 +8614,18 @@ function showClickMenuObject(coord) {
     if (object_types[object_type_index].is_converter) {
         $('#click_menu').append("<div>");
 
-        console.log("Object type is converter");
-        console.log("Have " + object_type_conversion_linkers.length + " conversion linkers in client");
+        
         let conversion_linkers = object_type_conversion_linkers.filter(linker => linker.object_type_id === object_types[object_type_index].id);
 
         if (conversion_linkers) {
             conversion_linkers.forEach(function (conversion_linker) {
 
-                console.log("Found conversion linker for object type!");
 
                 if (conversion_linker.input_type === "hp") {
                     $('#click_menu').append("<button class='button is-default' id='convert_hp' converter_object_id='" + objects[object_index].id + "'>Get paid for some life force</button>");
                 }
 
                 if (conversion_linker.input_type === "object_type") {
-                    console.log("Conversion linker input type is object_type");
                     // let players put their stuff in and see what happens!
                     let player_inventory_items = inventory_items.filter(inventory_item => inventory_item.player_id === client_player_id);
 
@@ -9500,6 +9497,9 @@ function urlName(name) {
 // Updating a player that is NOT the client player
 function updatePlayer(data, player_index) {
 
+    let updated_planet_coord_id = false;
+    let updated_ship_coord_id = false;
+    let updated_coord_id = false;
 
     if (current_view === 'planet') {
 
@@ -9517,6 +9517,7 @@ function updatePlayer(data, player_index) {
                 // If they don't have a sprite, insta move them there
                 if (!players[player_index].sprite) {
                     players[player_index].planet_coord_id = data.player.planet_coord_id;
+                    updated_planet_coord_id = true;
                     createPlayerSprite(player_index);
 
                     movePlayerInstant(player_index, planet_coords[coord_index].tile_x * tile_size + tile_size / 2,
@@ -9524,6 +9525,8 @@ function updatePlayer(data, player_index) {
                 }
                 // Otherwise, flow them there
                 else if (data.player.planet_coord_id !== players[player_index].planet_coord_id) {
+                    players[player_index].planet_coord_id = data.player.planet_coord_id;
+                    updated_planet_coord_id = true;
                     movePlayerFlow(player_index, 'planet', planet_coords[coord_index], 'updatePlayer > planet');
                 }
 
@@ -9590,6 +9593,8 @@ function updatePlayer(data, player_index) {
                 }
                 // Otherwise, flow them there
                 else if (data.player.ship_coord_id !== players[player_index].ship_coord_id) {
+                    players[player_index].ship_coord_id = data.player.ship_coord_id;
+                    updated_ship_coord_id = true;
                     movePlayerFlow(player_index, 'ship', ship_coords[coord_index], 'updatePlayer > ship');
                 }
 
@@ -9663,6 +9668,8 @@ function updatePlayer(data, player_index) {
             }
             // Otherwise, flow them there
             else if (data.player.coord_id !== players[player_index].coord_id) {
+                players[player_index].coord_id = data.player.coord_id;
+                updated_coord_id = true;
                 movePlayerFlow(player_index, 'galaxy', coords[coord_index], 'updatePlayer > galaxy');
             } else {
                 console.log("There was no move");
@@ -9679,8 +9686,18 @@ function updatePlayer(data, player_index) {
         }
 
 
+    }
 
+    if(!updated_coord_id) {
+        players[player_index].coord_id = data.player.coord_id;
+    }
 
+    if(!updated_planet_coord_id) {
+        players[player_index].planet_coord_id = data.player.planet_coord_id;
+    }
+
+    if(!updated_ship_coord_id) {
+        players[player_index].ship_coord_id = data.player.ship_coord_id;
     }
 
 

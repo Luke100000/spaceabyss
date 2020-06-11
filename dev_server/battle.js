@@ -1394,7 +1394,6 @@ const world = require('./world.js');
             let new_player_hp = dirty.players[player_index].current_hp - damage_amount;
 
             if(new_player_hp <= 0) {
-                console.log("Calling killPlayer from npcAttackPlayer");
                 await game.killPlayer(dirty, player_index);
 
             } else {

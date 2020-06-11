@@ -1,3 +1,16 @@
+## [0.1.10] - 2020-06-11
+
+### Fixed
+- You can now switch bodies - and other things that look for interactions will now work better
+
+## [0.1.9] - 2020-06-11
+
+
+### Fixed
+- You can now register again! Registration was a bit broken after the server move. EEEk!
+- The last coord of planets will now be sent. Off by one errors are rough.
+- An error with getting inventory items would cause the 'Back To Galaxy' button to disappear
+
 ## [0.1.8] - 2020-06-10
 
 ### Fixed

@@ -3,6 +3,9 @@
 DOING NOW:
 
 
+    Make sure the algae power cell shows up
+
+    Lets see if we can switching logging in to asynchronous.
 
     NORMAL TUTORIAL!
     VIDEO TUTORIAL!

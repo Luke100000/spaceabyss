@@ -75,7 +75,6 @@ function addEffect(data) {
         effect_sprites[effect_sprite_index].damage_source_id = data.damage_source_id;
 
         if(data.monster_id) {
-            console.log("Added effect with monster id: " + data.monster_id);
             effect_sprites[effect_sprite_index].monster_id = data.monster_id;
         }
 
@@ -84,7 +83,6 @@ function addEffect(data) {
         }
 
         if(data.object_id) {
-            console.log("Added object id to effect sprite");
             effect_sprites[effect_sprite_index].object_id = data.object_id;
         }
         
@@ -205,7 +203,6 @@ function addEffect(data) {
             }
             effect_sprites[effect_sprite_index].setTexture(new_texture_key);
 
-            console.log("Effect texture key: " + effect_sprites[effect_sprite_index].texture.key);
             effect_sprites[effect_sprite_index].play(new_texture_animation_key);
 
             // Reset the displayWidth

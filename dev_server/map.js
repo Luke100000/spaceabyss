@@ -134,11 +134,11 @@ const world = require('./world.js');
                 if(starting_y < 0) { starting_y = 0; }
     
                 if(ending_x >= dirty.planets[planet_index].x_size_above) {
-                    ending_x = dirty.planets[planet_index].x_size_above -1;
+                    ending_x = dirty.planets[planet_index].x_size_above - 1;
                 }
     
                 if(ending_y > dirty.planets[planet_index].y_size_above) {
-                    ending_y = dirty.planets[planet_index].y_size_above -1;
+                    ending_y = dirty.planets[planet_index].y_size_above - 1;
                 }
             } else {
 
@@ -192,9 +192,8 @@ const world = require('./world.js');
 
             // quick iterate through our map, and run getPlanetCoordIndex on the ones we didn't find
 
-            // TODO not sure this is great for levels > 0
-            for(let i = starting_x; i < ending_x; i++) {
-                for (let j = starting_y; j < ending_y; j++) {
+            for(let i = starting_x; i <= ending_x; i++) {
+                for (let j = starting_y; j <= ending_y; j++) {
 
                     let in_found_coords = false;
                     let sending_coord_index = -1;

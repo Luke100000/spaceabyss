@@ -602,8 +602,6 @@ const world = require('./world.js');
 
             if(data.object_type_id) {
 
-                console.log("Have object type id");
-
 
                 let object_type_id = parseInt(data.object_type_id);
 
@@ -614,16 +612,12 @@ const world = require('./world.js');
                     return false;
                 }
 
-                console.log("Got object type index: " + object_type_index);
-
                 let requirements_met = await checkAssemblyRequirements(socket, dirty, 'object_type', object_type_id);
 
                 if(!requirements_met) {
                     socket.emit('chat', { 'message': "Unable to assemble. Did not meet assembly requirements", 'scope': 'system'});
                     return false;
                 }
-
-                console.log("Assembly requirements met");
 
                 /**************** ASSEMBLED IN OBJECT ************************/
                 if(dirty.object_types[object_type_index].assembled_in_object) {
@@ -719,7 +713,6 @@ const world = require('./world.js');
                     // set our assembler object is_active to true
                     dirty.objects[assembler_object_index].is_active = true;
                     let assembler_info = await game_object.getCoordAndRoom(dirty, assembler_object_index);
-                    //console.log("Calling sendObjectInfo from game.assemble");
                     await game_object.sendInfo(socket, assembler_info.room, dirty, assembler_object_index, 'game.assemble');
                     //log(chalk.cyan("Object id: " + dirty.objects[assembler_object_index].id + " is active: " + dirty.objects[assembler_object_index].is_active));
 
@@ -1646,11 +1639,7 @@ const world = require('./world.js');
 
                 console.log("Npc is killed");
 
-
-
-                //console.log("Calling deleteNpc with npc index: " + data.npc_index);
                 await deleteNpc(dirty, dirty.npcs[data.npc_index].id);
-                //console.log("Done with deleteNpc");
 
             } else {
                 //console.log("npc not dead yet");
@@ -3670,13 +3659,13 @@ const world = require('./world.js');
                     return false;
                 }
 
-                if( (   dirty.planet_coords[player_planet_coord_index].tile_x === the_coord.tile_x ||
-                    dirty.planet_coords[player_planet_coord_index].tile_x + 1 === the_coord.tile_x ||
-                    dirty.planet_coords[player_planet_coord_index].tile_x - 1 === the_coord.tile_x) &&
-                    (   dirty.planet_coords[player_planet_coord_index].tile_y === the_coord.tile_y ||
-                        dirty.planet_coords[player_planet_coord_index].tile_y + 1 === the_coord.tile_y ||
-                        dirty.planet_coords[player_planet_coord_index].tile_y - 1 === the_coord.tile_y) ) {
+                let distance_x = Math.abs(dirty.planet_coords[player_planet_coord_index].tile_x - the_coord.tile_x);
+                let distance_y = Math.abs(dirty.planet_coords[player_planet_coord_index].tile_y - the_coord.tile_y);
+
+                if(distance_x <= 2 && distance_y <= 2) {
                     return true;
+                } else {
+                    console.log("Too far away");
                 }
 
 
@@ -3691,16 +3680,17 @@ const world = require('./world.js');
                     return false;
                 }
 
+                let distance_x = Math.abs(dirty.ship_coords[player_ship_coord_index].tile_x - the_coord.tile_x);
+                let distance_y = Math.abs(dirty.ship_coords[player_ship_coord_index].tile_y - the_coord.tile_y);
 
-
-                if( (   dirty.ship_coords[player_ship_coord_index].tile_x === the_coord.tile_x ||
-                    dirty.ship_coords[player_ship_coord_index].tile_x + 2 === the_coord.tile_x ||
-                    dirty.ship_coords[player_ship_coord_index].tile_x - 2 === the_coord.tile_x) &&
-                    (   dirty.ship_coords[player_ship_coord_index].tile_y === the_coord.tile_y ||
-                        dirty.ship_coords[player_ship_coord_index].tile_y + 2 === the_coord.tile_y ||
-                        dirty.ship_coords[player_ship_coord_index].tile_y - 2 === the_coord.tile_y) ) {
+                if(distance_x <= 2 && distance_y <= 2) {
                     return true;
+                } else {
+                    console.log("Too far away");
                 }
+
+
+            
 
 
             }
@@ -9548,7 +9538,6 @@ const world = require('./world.js');
 
             if(result) {
                 let new_id = result.insertId;
-                console.log("Got new research id: " + new_id);
                 let [rows, fields] = await (pool.query("SELECT * FROM researches WHERE id = ?", [new_id]));
                 if(rows[0]) {
                     let adding_research = rows[0];
@@ -9860,7 +9849,8 @@ const world = require('./world.js');
             } else if(dirty.players[player_index].ship_coord_id) {
                 new_body_coord_index = await main.getShipCoordIndex({ 'ship_coord_id': dirty.objects[object_index].ship_coord_id });
                 old_player_coord_index = await main.getShipCoordIndex({'ship_coord_id': dirty.players[player_index].ship_coord_id });
-                if(!await canInteract(socket, dirty, 'ship_coord', dirty.ship_coords[new_body_coord_index])) {
+                let can_interact_result = await canInteract(socket, dirty, 'ship_coord', dirty.ship_coords[new_body_coord_index]);
+                if(can_interact_result === false) {
                     body_switch_allowed = false;
                 }
             }
@@ -9871,8 +9861,10 @@ const world = require('./world.js');
             console.log("Seeing if the body is already in use");
             let other_player_index = await main.getPlayerIndex({ 'body_id': dirty.objects[object_index].id });
 
+            console.log("Other player index: " + other_player_index);
+
             // We have to check that no other player is using the body. This means grabbing from mysql.
-            if(other_player_index !== -1) {
+            if(other_player_index !== -1 && other_player_index !== player_index) {
                 body_switch_allowed = false;
             }
 

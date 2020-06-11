@@ -2480,7 +2480,7 @@ async function loginPlayer(socket, dirty, data) {
 
         console.log("Socket id: " + socket.id + " sent login info: " + trying_player_name + " " + trying_email + "," + trying_password);
 
-        let [rows, fields] = await (pool.query("SELECT id,name,password FROM users WHERE email = ?", [trying_email]));
+        let [rows, fields] = await (pool.query("SELECT id,name,password,password_temp,password_node FROM users WHERE email = ?", [trying_email]));
 
         if(!rows[0]) {
             socket.emit('login_data', { 'status': 'failed'});
@@ -2491,19 +2491,69 @@ async function loginPlayer(socket, dirty, data) {
 
         let user = rows[0];
 
+
+        // 1. OLD LOGIN METHOD
         let modified_trying_password = crypto.createHash('sha256').update(trying_password).digest('base64');
 
         // we need to convert the password to the 'node' version.
-        let user_pass_php = String(rows[0].password);
+        let user_pass_php = rows[0].password;
         let user_password_node_version =  user_pass_php.substr(0,2) + 'a' + user_pass_php.substr(3);
 
         console.log("user_pass_php: " + user_pass_php);
         console.log("user_password_node_version: " + user_password_node_version);
+        console.log("modified_trying_password: " + modified_trying_password);
+
+        
+
+        let login_success = false;
 
         if(!bcrypt.compareSync(modified_trying_password, user_password_node_version)) {
-            console.log("Invalid login info");
+            console.log("Invalid login info - normal");
+        } else {
+            login_success = true;
+        }
+
+
+        // 2. Look for a temp password - this is as we transition from PHP to node
+        if(user.password_temp && user.password_temp === trying_password) {
+
+            log(chalk.green("password_temp succeeded!"));
+            login_success = true;
+            if(!user.password_node) {
+                let password_node = bcrypt.hashSync(user.password_temp);
+                let [result] = await (pool.query("UPDATE users SET password_node = ? WHERE id = ?", [password_node, user.id]));
+            }
+            
+        } else {
+            console.log("Invalid login info - password_temp");
+        }
+
+        // 3. NODE PASSWORD LOGIN
+ 
+        if(user.password_node) {
+            console.log("User has node password");
+
+            if(bcrypt.compareSync(trying_password, user.password_node)) {
+                log(chalk.green("Node password successfull"));
+                // remove the temp password
+                login_success = true;
+
+                if(user.password_temp) {
+                    // We successfully logged in with a node password - remove the password_temp
+                    let [result] = await (pool.query("UPDATE users SET password_temp = ? WHERE id = ?", ['', user.id]));
+                }
+                
+            } else {
+                log(chalk.red("Node password failed"));
+
+            }
+        }
+
+
+        if(!login_success) {
             socket.emit('login_data', {'status':'failed' });
             return false;
+
         }
 
 
@@ -4697,6 +4747,7 @@ async function getPlayerIndex(data) {
 
     } catch(error) {
         log(chalk.red("Error in getPlayerIndex: " + error));
+        console.error(error);
     }
 
 }
