@@ -273,7 +273,7 @@ include('config.php');
 
 
     </div>
-    <div style="flex: 1; order: 2; margin-left:10px; margin-top:10px;">
+    <div style="flex: 1; order: 2; margin-left:10px; margin-top:10px; height: 100vh; overflow-y: scroll;">
 
         <!-- Our line of buttons! -->
         <script type="text/javascript">

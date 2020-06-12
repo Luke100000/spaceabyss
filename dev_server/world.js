@@ -1092,12 +1092,14 @@ async function checkObjectBattleConditions(socket, dirty, object_id, checking_ty
             if (player_index === -1) {
                 log(chalk.yellow("Could not find the player"));
                 return false;
-                player_info = await getPlayerCoordAndRoom(dirty, player_index);
+                
+            }
 
-                // If the player is on a spaceport tile, we won't be able to attack the player
-                if (player_info.coord && player_info.coord.floor_type_id === 11) {
-                    return false;
-                }
+            player_info = await getPlayerCoordAndRoom(dirty, player_index);
+
+            // If the player is on a spaceport tile, we won't be able to attack the player
+            if (player_info.coord && player_info.coord.floor_type_id === 11) {
+                return false;
             }
         }
 

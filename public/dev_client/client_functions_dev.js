@@ -8065,16 +8065,8 @@ function showClickMenu(pointer) {
 
 
 
-            } else {
-                if (planet_index === -1) {
-                    console.log("Don't have planet");
-                } else if (planets[planet_index].player_id !== client_player_id) {
-                    console.log("Player player id: " + planets[planet_index].player_id + " not same as client player id: " + client_player_id);
-                }
-            }
-        } else {
-            //console.log("Client is not on planet");
-        }
+            } 
+        } 
         // Same if we're on a ship, and it's our ship
 
     }

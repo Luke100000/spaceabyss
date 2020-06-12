@@ -2478,7 +2478,7 @@ async function loginPlayer(socket, dirty, data) {
         let trying_password = data.password;
         let valid_user = false;
 
-        console.log("Socket id: " + socket.id + " sent login info: " + trying_player_name + " " + trying_email + "," + trying_password);
+        //console.log("Socket id: " + socket.id + " sent login info: " + trying_player_name + " " + trying_email + "," + trying_password);
 
         let [rows, fields] = await (pool.query("SELECT id,name,password,password_temp,password_node FROM users WHERE email = ?", [trying_email]));
 

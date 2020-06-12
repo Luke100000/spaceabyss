@@ -38,6 +38,17 @@ function addEffect(data) {
             console.log("Damage type: " + data.damage_types[i]);
         }
 
+        // If there's already an exact match sprite visible, we won't need another one
+        for(let e = 0; e < effect_sprites.length; e++) {
+            if(effect_sprites[e] && effect_sprites[e].visible === true && 
+                effect_sprites[e].damage_source_id === data.damage_types[i].damage_source_id && 
+                effect_sprites[e].damage_source_type === data.damage_tyeps[i].damage_source_type && 
+                effect_sprites[e].damage_type === data.damage_types[i]) {
+                    console.log("Already have a sprite doing exactly this!");
+                    return false;
+                }
+        }
+
 
         let effect_sprite_index = -1;
 
@@ -379,19 +390,23 @@ function updateEffectSprites(moved_type, moved_index) {
     
             } 
             */
+
+            // Monster that is the beam destination moved
             if(moved_type === 'monster' && effect_sprites[i].monster_id === monsters[moved_index].id) {
                 effect_needs_update = true;
                 effect_sprites[i].destination_x = monsters[moved_index].sprite.x;
                 effect_sprites[i].destination_y = monsters[moved_index].sprite.y;
             }
             
+            // Object that is the beam destination moved
             if(moved_type === 'object' && effect_sprites[i].object_id === objects[moved_index].id) {
                 effect_needs_update = true;
                 effect_sprites[i].destination_x = objects[moved_index].sprite.x;
                 effect_sprites[i].destination_y = objects[moved_index].sprite.y;
             }
 
-            else if(moved_type === 'player' && effect_sprites[i].damage_source_type === 'player' && effect_sprites[i].damage_source_id === players[moved_index].id) {
+            // Player that is the beam source moved
+            if(moved_type === 'player' && effect_sprites[i].damage_source_type === 'player' && effect_sprites[i].damage_source_id === players[moved_index].id) {
 
                 effect_needs_update = true;
                 effect_sprites[i].x = players[moved_index].sprite.x;
@@ -399,7 +414,16 @@ function updateEffectSprites(moved_type, moved_index) {
 
                 
 
-            } else if(moved_type === 'object' && effect_sprites[i].damage_source_type === 'object' && effect_sprites[i].damage_source_id === objects[moved_index].id) {
+            } 
+
+            // Player that is the beam destination moved
+            if(moved_type === 'player' && effect_sprites[i].player_id === players[moved_index].id) {
+                effect_needs_update = true;
+                effect_sprites[i].destination_x = players[moved_index].sprite.x;
+                effect_sprites[i].destination_y = players[moved_index].sprite.y;
+            }
+            
+            if(moved_type === 'object' && effect_sprites[i].damage_source_type === 'object' && effect_sprites[i].damage_source_id === objects[moved_index].id) {
 
                 console.log("Effect with object attacking needs update!");
                 effect_needs_update = true;

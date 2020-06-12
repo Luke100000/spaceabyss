@@ -1852,21 +1852,23 @@ const world = require('./world.js');
                 object_info.coord.tile_x, object_info.coord.tile_y,
                 player_info.coord.tile_x, player_info.coord.tile_y);
 
-            if(calculating_range > 8) {
+            if(calculating_range > dirty.object_types[object_type_index].max_attack_range) {
                 log(chalk.yellow("Object and player are too far apart"));
                 world.removeBattleLinkers(dirty, { 'battle_linker_id': battle_linker.id });
                 return false;
             }
 
-            let attack = await calculateObjectAttack(dirty, object_index);
+            let object_attack_profile = await calculateObjectAttack(dirty, object_index);
+            let attack = object_attack_profile.damage_amount;
             let defense = await player.calculateDefense(dirty, player_index);
 
-            if(attack <= defense) {
+            if(object_attack_profile.damage_amount <= defense) {
 
                 // I think it will be better if we send damaged data even for a non hit
                 io.to(player_info.room).emit('damaged_data',
                     {'player_id': dirty.players[player_index].id, 'damage_amount': 0, 'was_damaged_type': 'hp',
                         'damage_source_type':'object', 'damage_source_id': dirty.objects[object_index].id,
+                        'damage_types': object_attack_profile.damage_types,
                         'calculating_range': calculating_range });
                 return false;
             }
@@ -1884,6 +1886,7 @@ const world = require('./world.js');
                 io.to(player_info.room).emit('damaged_data',
                     {'player_id': dirty.players[player_index].id, 'damage_amount': damage_amount, 'was_damaged_type': 'energy',
                         'damage_source_type':'object', 'damage_source_id': dirty.objects[object_index].id,
+                        'damage_types': object_attack_profile.damage_types,
                         'calculating_range': calculating_range });
 
                 await world.aiRetaliate(dirty, ai_index, battle_linker.attacking_type, battle_linker.attacking_id);
@@ -1892,6 +1895,7 @@ const world = require('./world.js');
 
 
             await game.damagePlayer(dirty, { 'player_index': player_index, 'damage_amount': damage_amount,
+                'damage_types': object_attack_profile.damage_types,
                 'battle_linker': battle_linker, 'calculating_range': calculating_range });
 
 

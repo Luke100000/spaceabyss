@@ -1722,14 +1722,37 @@ const world = require('./world.js');
 
     exports.damagePlanet = damagePlanet;
 
-    // player_index   |   damage_amount   |   battle_linker (optional)  |   damage_types (array) |   calculating_range   |   flavor_text
+    /**
+     * 
+     * @param {Object} dirty 
+     * @param {Object} data 
+     * @param {number} data.player_index
+     * @param {number} data.damage_amount
+     * @param {Object=} data.battle_linker
+     * @param {Array} data.damage_types
+     * @param {number} calculating_range
+     * @param {String=} flavor_text
+     */
     async function damagePlayer(dirty, data) {
         try {
+
 
 
             let new_player_hp = dirty.players[data.player_index].current_hp - data.damage_amount;
 
             console.log("New player hp: " + new_player_hp);
+
+            if(isNaN(new_player_hp)) {
+                log(chalk.red("Something damaged a player and set their HP to NaN!!!!"));
+                console.trace("INVESTIGATE!");
+
+                if(isNan(dirty.players[data.player_index].current_hp)) {
+                    log(chalk.red("Player has NaN HP! Gave them 100 HP!"));
+                    dirty.players[data.player_index].current_hp = 100;
+                    dirty.players[data.player_index].has_change = true;
+                }
+                return false;
+            }
 
             if(!data.flavor_text) {
                 data.flavor_text = false;

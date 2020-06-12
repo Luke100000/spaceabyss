@@ -20,9 +20,13 @@
 
 
 
-    moveGalaxyObjects takes too much time
-    moveMonsters takes too much time
-        potentially limit monster moving to the levels that players are currently on. 
+    See if we can make the right side of space abyss scroll so the left side doesn't move around
+
+    
+    Lets see if we can switching logging in to asynchronous.
+
+    
+    have the health page send a warning email if the levels of certain things are too low
 
 
 ************************ UNSORTED IDEAS *****************************:
@@ -1211,7 +1215,8 @@ It wouldn't be a bad idea to code in more granular control of generating planets
 
 I've been thinking of having the pathways be a little more wide by default. 2 squares instead of 1.
 
-Most spaceships and such 
+Most spaceships and such
+
 
 
 

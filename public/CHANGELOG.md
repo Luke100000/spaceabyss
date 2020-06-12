@@ -1,3 +1,24 @@
+## [0.1.11] - 2020-06-12
+
+### Added
+- A couple of territe deposits will spawn on the top level of desert and slaver planets
+
+### Fixed
+- Objects attacking players would set their HP to NaN - which isn't a great HP to have as a player. Added in a return false and some tracing to see if this is happening anywhere else.
+- Beam type effects will be removed when something is out of range of an object.
+- Objects can't attack players on Spaceport tiles
+
+
+### Changed
+- Increased the amount of asteroids and comets that can spawn in the galaxy from 12 and 6 to 50 and 50, respectively.
+- Removed the Nano Bonder requirement for assembling a Forge
+- Assembly Requirements for Thiol Extractor from 10 Territe to 5 Refined Territe. 
+- Complexity of Thiol Extractor reduced from 20 to 12
+- Updated Algae Power Cell. Lots of changes. Required Algae research. Increased complexity. Eatable by machine bodies. Added in images. 
+- Reduced the number of times algae has to be researched from 20 to 10
+- Territe deposits spawn 10 Territe instead of 8 Territe
+- The right side of the game will now only scroll the right side instead of the entire page.
+
 ## [0.1.10] - 2020-06-11
 
 ### Fixed

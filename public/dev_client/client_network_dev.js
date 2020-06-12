@@ -178,7 +178,7 @@ socket.on('battle_linker_info', function(data) {
                         effect_sprites[i].object_id = false;
                         effect_sprites[i].setVisible(false);
 
-                }
+                    }
 
                     if(battle_linkers[battle_linker_index].being_attacked_type === 'planet' && 
                         battle_linkers[battle_linker_index].being_attacked_id === effect_sprites[i].planet_id) {
@@ -186,6 +186,12 @@ socket.on('battle_linker_info', function(data) {
                         effect_sprites[i].planet_id = false;
                         effect_sprites[i].setVisible(false);
                     }
+
+                    if(battle_linkers[battle_linker_index].being_attacked_type === 'player' && 
+                        battle_linkers[battle_linker_index].being_attacked_id === effect_sprites[i].player_id) {
+                            effect_sprites[i].player_id = false;
+                            effect_sprites[i].setVisible(false);  
+                        }
 
                 }
 

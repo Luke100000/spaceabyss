@@ -24,7 +24,7 @@ Territe:
 
 
 
-    Syntite:
+    Refined Territe:
         Requirements:
             Territe must be researched
         Complexity: 6
@@ -33,8 +33,10 @@ Territe:
         Easiest way to obtain: Just processing. Takes a tiny amount of skill, but is trivial
 
 
-        Gold:
-            Mostly used as an additive for non-conducting, or non corrosion properties.
+
+
+    Gold:
+        Mostly used as an additive for non-conducting, or non corrosion properties.
 
 
         Plasteel:
@@ -73,10 +75,10 @@ Territe:
                         Spun Diamond
 
 
-    Thiol:
-        Obtained Via: Thiol deposits on acid planets
-        Complexity: 15
-        Easiest way to obtain: Thiol deposits on acid planets. 500 HP 25 Attack
+        Thiol:
+            Obtained Via: Thiol deposits on acid planets
+            Complexity: 15
+            Easiest way to obtain: Thiol deposits on acid planets. 500 HP 25 Attack
 
 
 
