@@ -1,3 +1,17 @@
+## [0.1.12] - 2020-06-13
+
+### Added
+- The server will continue to try and place monster drops, and player drops (deaths) that are unable to initially place
+
+### Fixed
+- The bodies of players should drop in more cases now. Previously if the body couldn't drop on the coord it wanted, it wouldn't be created, and all the inventory
+would be lost. It's now created regardless. See Added for how we then process it.
+
+
+### Changed
+- The failure message you receive when you try and land on a forming planet has been changed from 'Spaceport is full' to 'Planet Is Forming'
+
+
 ## [0.1.11] - 2020-06-12
 
 ### Added

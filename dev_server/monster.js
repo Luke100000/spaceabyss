@@ -344,7 +344,7 @@ async function deleteMonster(dirty, data) {
                             'amount': drop_linker.amount });
                     } else if(monster_info.scope === 'ship') {
                         //console.log("Monster is dropping amount: " + drop_linker.amount + " of object_type_id: " + drop_linker.dropped_object_type_id);
-                        await main.updateCoordGeneric(false, { 'planet_coord_index': placing_coord_index, 'object_type_id': drop_linker.dropped_object_type_id,
+                        await main.updateCoordGeneric(false, { 'ship_coord_index': placing_coord_index, 'object_type_id': drop_linker.dropped_object_type_id,
                             'amount': drop_linker.amount });
                     }
 
@@ -354,9 +354,9 @@ async function deleteMonster(dirty, data) {
                     log(chalk.green("Put something in the waiting drops!"));
                     // We... couldn't find a spot!
                     if(monster_info.scope === "planet") {
-                        dirty.waiting_drops.push({'object_type_id': drop_linker.dropped_object_type_id, 'planet_coord_index': monster_info.coord_index });
+                        dirty.waiting_drops.push({'object_type_id': drop_linker.dropped_object_type_id, 'amount': drop_linker.amount, 'planet_coord_index': monster_info.coord_index });
                     } else if(monster_info.scope === "ship") {
-                        dirty.waiting_drops.push({'object_type_id': drop_linker.dropped_object_type_id, 'ship_coord_index': monster_info.coord_index });
+                        dirty.waiting_drops.push({'object_type_id': drop_linker.dropped_object_type_id, 'amount': drop_linker.amount, 'ship_coord_index': monster_info.coord_index });
                     }
 
 
@@ -906,7 +906,7 @@ async function move(dirty, i, data) {
                     }
                 }
 
-                console.log("Sending " + pathfinding_coords.length + " coords into the pathfinding worker");
+                //console.log("Sending " + pathfinding_coords.length + " coords into the pathfinding worker");
 
                 worker_data = { 'coords': pathfinding_coords, 'monster': dirty.monsters[i],
                     'origin_x': dirty.planet_coords[planet_coord_index].tile_x, 'origin_y': dirty.planet_coords[planet_coord_index].tile_y,

@@ -6099,6 +6099,10 @@ async function tickTraps(dirty) {
     await game.tickTraps(dirty);
 }
 
+async function tickWaitingDrops(dirty) {
+    await world.tickWaitingDrops(dirty);
+}
+
 async function updateMaps(dirty) {
     Object.keys(io.sockets.sockets).forEach(function(id) {
 
@@ -6129,6 +6133,7 @@ setInterval(tickSalvaging, 5000, dirty);
 
 // 10 seconds
 setInterval(tickMoveMonsters, 10000, dirty);
+setInterval(tickWaitingDrops, 10000, dirty);
 
 // 20 seconds
 setInterval(tickAddictions, 20000, dirty);

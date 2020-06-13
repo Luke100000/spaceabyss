@@ -354,6 +354,7 @@ var io;
         try {
 
             log(chalk.red("game.convert says that it is a newer version of this. Investigate!"));
+            console.trace("TRACING");
 
             let storage_object_id = parseInt(data.storage_object_id);
 

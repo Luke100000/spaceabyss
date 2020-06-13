@@ -120,6 +120,7 @@ async function canPlace(dirty, scope, coord, data) {
 
         if(object_type_id === 0) {
             log(chalk.yellow("With object type display linkers, we need an object type id. Pass it in explicitely (object_type_id), or pass in an object (object_index)"));
+            console.trace("TRACEEED");
             return false;
         }
 
@@ -264,6 +265,93 @@ async function canPlace(dirty, scope, coord, data) {
 }
 
 exports.canPlace = canPlace;
+
+
+/**
+ * 
+ * @param {Object} dirty 
+ * @param {number} tiles_around 
+ * @param {Object} data 
+ * @param {number=} data.planet_coord_index
+ * @param {number=} data.ship_coord_index
+ * @param {number=} data.object_index
+ * @param {number=} data.object_type_id
+ */
+async function canPlaceAround(dirty, tiles_around, data) {
+
+    try {
+
+        let origin_tile_x;
+        let origin_tile_y;
+        let placing_coord_index = -1;
+
+
+        if(typeof data.planet_coord_index !== 'undefined') {
+            origin_tile_x = dirty.planet_coords[data.planet_coord_index].tile_x;
+            origin_tile_y = dirty.planet_coords[data.planet_coord_index].tile_y;
+        }
+        
+        if(typeof data.ship_coord_index !== 'undefined') {
+            origin_tile_x = dirty.ship_coords[data.ship_coord_index].tile_x;
+            origin_tile_y = dirty.ship_coords[data.ship_coord_index].tile_y;
+        }
+        
+
+        for(let x = origin_tile_x - tiles_around; placing_coord_index === -1 && x <= origin_tile_x + tiles_around; x++) {
+            for(let y = origin_tile_y - tiles_around; placing_coord_index === -1 && y <= origin_tile_y + tiles_around; y++) {
+
+                let trying_coord_index = -1;
+                let can_place_data = {};
+                if(typeof data.object_index !== 'undefined') {
+                    can_place_data.object_index = data.object_index;
+                }
+
+                if(typeof data.object_type_id !== 'undefined') {
+                    can_place_data.object_type_id = data.object_type_id;
+                }
+
+
+                if(data.planet_coord_index) {
+                    trying_coord_index = await main.getPlanetCoordIndex({ 'planet_id': dirty.planet_coords[data.planet_coord_index].planet_id, 
+                    'planet_level': dirty.planet_coords[data.planet_coord_index].level, 'tile_x': x, 'tile_y': y });
+
+                    if(trying_coord_index !== -1) {
+                        let can_place_result = await canPlace(dirty, 'planet', dirty.planet_coords[trying_coord_index], can_place_data );
+                        if(can_place_result === true) {
+                            placing_coord_index = trying_coord_index;
+                        }
+                    }
+
+                    
+                }
+
+                if(data.ship_coord_index) {
+                    trying_coord_index = await main.getShipCoordIndex({ 'ship_id': dirty.ship_coords[data.ship_coord_index].ship_id, 
+                    'level': dirty.ship_cords[data.planet_coord_index].level, 'tile_x': x, 'tile_y': y });
+
+                    if(trying_coord_index !== -1) {
+                        let can_place_result = await canPlace(dirty, 'ship', dirty.ship_coords[trying_coord_index], can_place_data );
+                        if(can_place_result === true) {
+                            placing_coord_index = trying_coord_index;
+                        }
+                    }
+                }
+
+
+            }
+        }
+
+        return placing_coord_index;
+
+
+    } catch(error) {
+        log(chalk.red("Error in game_object.canPlaceAround: " + error));
+        console.error(error);
+    }
+
+}
+
+exports.canPlaceAround = canPlaceAround;
 
 
 //      object_index   |   damage_amount   |   battle_linker (OPTIONAL)   |   object_info   |   calculating_range (OPTIONAL)

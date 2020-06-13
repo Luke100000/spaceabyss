@@ -1740,7 +1740,6 @@ const world = require('./world.js');
 
             let new_player_hp = dirty.players[data.player_index].current_hp - data.damage_amount;
 
-            console.log("New player hp: " + new_player_hp);
 
             if(isNaN(new_player_hp)) {
                 log(chalk.red("Something damaged a player and set their HP to NaN!!!!"));
@@ -3763,8 +3762,13 @@ const world = require('./world.js');
                 console.log("Got player socket id as: " + player_socket.id);
             }
 
-            let new_object_id = false;
-            let new_object_index = -1;
+
+            // We're going to spawn a dead body whether we can place it or not
+            let insert_object_type_data = { 'object_type_id': 151 };
+            let new_object_id = await world.insertObjectType(false, dirty, insert_object_type_data);
+            let new_object_index = await main.getObjectIndex(new_object_id);
+
+            console.log("Created the dead body");
 
             // Players can die while on a planet, in their ship, or if their ship got destroyed
 
@@ -3775,14 +3779,13 @@ const world = require('./world.js');
                 dirty.planet_coords[coord_index].player_id = false;
                 dirty.planet_coords[coord_index].has_change = true;
 
-                // spawn a dead body
-                if(await game_object.canPlace(dirty, 'planet', dirty.planet_coords[coord_index],
-                    { 'object_type_id': 151 })) {
-                    let insert_object_type_data = { 'object_type_id': 151 };
-                    new_object_id = await world.insertObjectType(false, dirty, insert_object_type_data);
-                    new_object_index = await main.getObjectIndex(new_object_id);
 
-                    console.log("Created the dead body");
+                let can_place_result = await game_object.canPlace(dirty, 'planet', dirty.planet_coords[coord_index],
+                    { 'object_type_id': 151 });
+
+                // place the dead body
+                if(can_place_result) {
+                    
 
                     await main.placeObject(false, dirty, { 'object_index': new_object_index,
                         'planet_coord_index': coord_index });
@@ -3793,9 +3796,18 @@ const world = require('./world.js');
                         dirty, { 'planet_coord_index': coord_index});
                     */
                     console.log("Added it to planet coord, and sent planet coord info");
+
                 } else {
-                    log(chalk.yellow("Could not place dead body. Insta losing all your inventory isn't super fun!"));
+
+                    dirty.waiting_drops.push({'object_index': new_object_index, 'planet_coord_index': coord_index });
+                    log(chalk.yellow("Could not place dead body. Pushed to waiting_drops"));
                 }
+
+                
+
+
+
+               
 
 
 
@@ -3804,15 +3816,14 @@ const world = require('./world.js');
             else if(dirty.players[player_index].ship_coord_id) {
                 let coord_index = await main.getShipCoordIndex({ 'ship_coord_id': dirty.players[player_index].ship_coord_id });
 
-                // spawn a dead body
-                let insert_object_type_data = { 'object_type_id': 151 };
-                new_object_id = await world.insertObjectType(false, dirty, insert_object_type_data);
-                new_object_index = await main.getObjectIndex(new_object_id);
-                console.log("Created the dead body");
+
 
                 // Don't want to overwrite the object that is already on the tile
                 if(!dirty.ship_coords[coord_index].object_id) {
                     await main.updateCoordGeneric(player_socket, { 'ship_coord_index': coord_index, 'player_id': false, 'object_index': new_object_index });
+                } else {
+                    dirty.waiting_drops.push({'object_index': new_object_index, 'ship_coord_index': coord_index });
+                    log(chalk.yellow("Could not place dead body. Pushed to waiting_drops"));
                 }
 
 
@@ -3822,7 +3833,7 @@ const world = require('./world.js');
 
             } else if(dirty.players[player_index].coord_id) {
                 /// ?????????????????
-                log(chalk.yellow("Ship should have been damaged, not player"));
+                log(chalk.yellow("Ship should have been damaged, not player. Maybe ship got to 0 HP?"));
                 return false;
             }
 
@@ -5393,7 +5404,6 @@ const world = require('./world.js');
     async function processRepairingLinker(dirty, i) {
 
         try {
-            console.log("Processing repairing linker");
             let complexity = 0;
 
             if(!io.sockets.connected[dirty.repairing_linkers[i].player_socket_id]) {
@@ -5519,7 +5529,7 @@ const world = require('./world.js');
 
 
             let object_type_used_for_repair_index = main.getObjectTypeIndex(object_type_used_for_repair_id);
-            console.log("We will use " + dirty.object_types[object_type_used_for_repair_index].name + " to repair this");
+            //console.log("We will use " + dirty.object_types[object_type_used_for_repair_index].name + " to repair this");
 
             let inventory_item_index = dirty.inventory_items.findIndex(function(obj) { return obj &&
                 obj.player_id === dirty.repairing_linkers[i].player_id && obj.object_type_id === dirty.object_types[object_type_used_for_repair_index].id; });

@@ -2,6 +2,9 @@
 
 DOING NOW:
 
+    Looks like there are some server errors when people die. Fix and test!
+
+        Put something in the waiting drops! - Make sure we are checking occasionally to see if we can drop these.
 
 
     NORMAL TUTORIAL!

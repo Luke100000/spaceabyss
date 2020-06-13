@@ -9541,7 +9541,9 @@ function updatePlayer(data, player_index) {
 
                     // If the new body previously had a name on it, we remove that now
                     let new_body_index = objects.findIndex(function (obj) { return obj && obj.id === data.player.body_id; });
-                    if (objects[new_body_index].name_text) {
+                    if(new_body_index === -1) {
+                        socket.emit('request_object_info', { 'object_id': data.player.body_id });
+                    } else if (objects[new_body_index].name_text) {
                         objects[new_body_index].name_text.destroy();
                     }
 
@@ -9601,7 +9603,11 @@ function updatePlayer(data, player_index) {
 
                     // If the new body previously had a name on it, we remove that now
                     let new_body_index = objects.findIndex(function (obj) { return obj && obj.id === data.player.body_id; });
-                    if (objects[new_body_index].name_text) {
+                    if(new_body_index === -1) {
+
+                        socket.emit('request_object_info', { 'object_id': data.player.body_id });
+
+                    } else if (objects[new_body_index].name_text) {
                         objects[new_body_index].name_text.destroy();
                     }
 
@@ -9977,7 +9983,11 @@ function updatePlayerClient(data) {
         generateEquipmentDisplay();
         // If the new body previously had a name on it, we remove that now
         let new_body_index = objects.findIndex(function (obj) { return obj && obj.id === data.player.body_id; });
-        if (objects[new_body_index].name_text) {
+        if(new_body_index === -1) {
+
+            socket.emit('request_object_info', { 'object_id': data.player.body_id });
+
+        } else if (objects[new_body_index].name_text) {
             objects[new_body_index].name_text.destroy();
         }
 

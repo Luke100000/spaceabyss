@@ -1547,7 +1547,6 @@ async function getAIProtector(dirty, damage_amount, coord, attacking_type, data)
             }
         } else if (typeof data.player_index !== 'undefined') {
     
-            console.log("have player index");
 
             // Check the room we are in, and if there's one, see if the rules apply to us
             if (coord.planet_id) {
@@ -4716,6 +4715,97 @@ async function submitBid(socket, dirty, data) {
 }
 
 exports.submitBid = submitBid;
+
+
+// Waiting drops will either have an object_index, or an object_type_id. Waiting drops will also either have a planet_coord_index, or a ship_coord_index
+async function tickWaitingDrops(dirty) {
+
+    try {
+
+        let hrstart = new process.hrtime();
+        console.log("In world.tickWaitingDrops");
+
+        for(let i = 0; i < dirty.waiting_drops.length; i++) {
+
+            if(dirty.waiting_drops[i]) {
+                console.log("Have waiting drop!");
+                console.log(dirty.waiting_drops[i]);
+
+                let place_around_data = {};
+
+
+                // 
+                if(typeof dirty.waiting_drops[i].planet_coord_index !== "undefined") {
+                    place_around_data.planet_coord_index = dirty.waiting_drops[i].planet_coord_index;
+                }
+
+                if(typeof dirty.waiting_drops[i].ship_coord_index !== "undefined") {
+                    place_around_data.ship_coord_index = dirty.waiting_drops[i].ship_coord_index;
+                }
+
+                if(typeof dirty.waiting_drops[i].object_index !== "undefined") {
+                    place_around_data.object_index = dirty.waiting_drops[i].object_index;
+                }
+
+                if(typeof dirty.waiting_drops[i].object_type_id !== "undefined") {
+                    place_around_data.object_type_id = dirty.waiting_drops[i].object_type_id;
+                }
+
+
+                let placing_coord_index = await game_object.canPlaceAround(dirty, 2, place_around_data);
+
+                if(placing_coord_index !== -1) {
+                    log(chalk.green("We found a coord where we can put our waiting drop!"));
+
+                    let update_coord_data = {};
+
+                    if(typeof dirty.waiting_drops[i].object_index !== "undefined") {
+                        update_coord_data.object_index = dirty.waiting_drops[i].object_index;
+                    }
+    
+                    if(typeof dirty.waiting_drops[i].object_type_id !== "undefined") {
+                        update_coord_data.object_type_id = dirty.waiting_drops[i].object_type_id;
+                    }
+
+                    if(dirty.waiting_drops[i].amount) {
+                        update_coord_data.amount = dirty.waiting_drops[i].amount;
+                    }
+
+
+                    if(typeof dirty.waiting_drops[i].planet_coord_index !== 'undefined') {
+
+                        update_coord_data.planet_coord_index = placing_coord_index;
+                      
+                    } else if(typeof dirty.waiting_drops[i].ship_coord_index !== 'undefined') {
+                        update_coord_data.ship_coord_index = placing_coord_index;
+                       
+                    }
+                    console.log("Sending to updateCoordGeneric:");
+                    console.log(update_coord_data);
+
+                    await main.updateCoordGeneric(false, update_coord_data);
+                    console.log("Should have done it!");
+                    delete dirty.waiting_drops[i];
+
+                }
+                
+
+            }
+
+        }
+
+        let hrend = process.hrtime(hrstart);
+        console.info('Time to process waitingDrops (hr): %ds %dms', hrend[0], hrend[1] / 1000000);
+
+    } catch(error) {
+        log(chalk.red("Error in world.tickWaitingDrops: " + error));
+        console.error(error);
+    }
+
+
+}
+
+exports.tickWaitingDrops = tickWaitingDrops;
 
 
 // type   |   type_index   |   change

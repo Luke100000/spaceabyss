@@ -1271,7 +1271,6 @@ const world = require('./world.js');
                 }
 
                 if(!passed_rules) {
-                    console.log("Did not pass rules");
                     socket.emit('move_failure', { 'failed_planet_coord_id': dirty.planet_coords[planet_coord_index].id,
                         'return_to_planet_coord_id': dirty.planet_coords[previous_planet_coord_index].id });
                     socket.emit('result_info', { 'status': 'failure', 'text': 'Not allowed due to rules',
@@ -2111,7 +2110,6 @@ const world = require('./world.js');
                 }
 
                 if(!passed_rules) {
-                    console.log("Did not pass rules");
                     socket.emit('move_failure', { 'failed_ship_coord_id': dirty.ship_coords[ship_coord_index].id,
                         'return_to_ship_coord_id': dirty.ship_coords[previous_ship_coord_index].id });
                     socket.emit('result_info', { 'status': 'failure', 'text': 'Not allowed due to rules',
@@ -2485,13 +2483,25 @@ const world = require('./world.js');
             let spaceport_index = await warpTo(socket, dirty, { 'player_index': player_index, 'warping_to': 'spaceport', 'planet_id': data.planet_id });
 
             if(spaceport_index === -1) {
-                console.log("Looks like spaceport tiles are full");
-                //socket.emit('chat', {'message': 'Spaceport is full', 'scope':'system'});
+                let failed_planet_index = await planet.getIndex(dirty, { 'planet_id': data.planet_id });
+                if(failed_planet_index !== -1 && dirty.planets[failed_planet_index].planet_type_id === 26) {
 
-                socket.emit('move_failure', {
-                    'return_to_coord_id': dirty.coords[data.previous_coord_index].id });
-                socket.emit('result_info', { 'status': 'failure', 'text': 'Spaceport Is Full' });
-                return false;
+                    socket.emit('move_failure', {
+                        'return_to_coord_id': dirty.coords[data.previous_coord_index].id });
+                    socket.emit('result_info', { 'status': 'failure', 'text': 'Planet Is Forming' });
+                    return false;
+
+
+                } else {
+                    console.log("Looks like spaceport tiles are full. Planet id: " + data.planet_id);
+                    //socket.emit('chat', {'message': 'Spaceport is full', 'scope':'system'});
+    
+                    socket.emit('move_failure', {
+                        'return_to_coord_id': dirty.coords[data.previous_coord_index].id });
+                    socket.emit('result_info', { 'status': 'failure', 'text': 'Spaceport Is Full' });
+                    return false;
+                }
+                
             }
 
 
