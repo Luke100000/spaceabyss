@@ -42,7 +42,7 @@ function addEffect(data) {
         for(let e = 0; e < effect_sprites.length; e++) {
             if(effect_sprites[e] && effect_sprites[e].visible === true && 
                 effect_sprites[e].damage_source_id === data.damage_types[i].damage_source_id && 
-                effect_sprites[e].damage_source_type === data.damage_tyeps[i].damage_source_type && 
+                effect_sprites[e].damage_source_type === data.damage_types[i].damage_source_type && 
                 effect_sprites[e].damage_type === data.damage_types[i]) {
                     console.log("Already have a sprite doing exactly this!");
                     return false;

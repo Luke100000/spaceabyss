@@ -850,10 +850,10 @@ $(document).on('click', 'button', function () {
 
             for(let e = 0; e < effect_sprites.length; e++) {
 
-                if(effect_sprites[i] && effect_sprites[i].visible && effect_sprites[i].object_id === stop_mining_object_id && 
-                    effect_sprites[i].damage_source_type === 'player' && effect_sprites[i].damage_source_id === players[client_player_index].id) {
-                        effect_sprites[i].object_id = false;
-                        effect_sprites[i].setVisible(false);
+                if(effect_sprites[e] && effect_sprites[e].visible && effect_sprites[e].object_id === stop_mining_object_id && 
+                    effect_sprites[e].damage_source_type === 'player' && effect_sprites[e].damage_source_id === players[client_player_index].id) {
+                        effect_sprites[e].object_id = false;
+                        effect_sprites[e].setVisible(false);
                     }
 
             }
@@ -1265,8 +1265,6 @@ $(document).on('click', 'button', function () {
 
     if(split_name[0] === 'viewchange') {
         let new_view = $('#' + clicked_id).attr('newview');
-
-        console.log("New view is: " + new_view);
 
         socket.emit('view_change_data', { 'new_view': new_view });
     }

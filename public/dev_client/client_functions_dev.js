@@ -2693,6 +2693,26 @@ function getRandomIntInclusive(min, max) {
     return Math.floor(Math.random() * (max - min + 1)) + min; //The maximum is inclusive and the minimum is inclusive
 }
 
+function isFalse(the_value) {
+
+    if(typeof the_value === "undefined" || the_value === 0 || the_value === "0" ||
+        the_value === false || the_value === null || the_value === "null") {
+        return true;
+    }
+
+    return false;
+}
+
+function notFalse(the_value) {
+
+    if(typeof the_value === "undefined" || the_value === 0 || the_value === "0" ||
+        the_value === false || the_value === null || the_value === "null" || the_value === "") {
+        return false;
+    }
+
+    return true;
+}
+
 function pointerDownDesktop(pointer, pointerTileX, pointerTileY) {
 
 
@@ -7057,7 +7077,7 @@ function redrawBars() {
 
         // some simple colour changing to make it look like a health bar
         if (object.hp_percent > 100) {
-            graphics.fillStyle(0x4287f5);
+            graphics.fillStyle(0x00ffaa);
         } else if (object.hp_percent < 32) {
             graphics.fillStyle(0xff0000);
         }
@@ -8173,8 +8193,6 @@ function showClickMenuMonster(coord) {
         if (monsters[monster_index].has_spawned_object) {
             $('#click_menu').append("<button class='button is-default' id='pickup_" + coord.monster_id +
                 "' monster_id='" + coord.monster_id + "'>Harvest " + monster_types[monster_type_index].name + "</button><br>");
-        } else {
-            console.log("Monster does not have spawned object: " + monsters[monster_index].has_spawned_object);
         }
 
     }

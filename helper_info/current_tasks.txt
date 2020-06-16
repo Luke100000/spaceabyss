@@ -2,6 +2,9 @@
 
 DOING NOW:
 
+    Blue bars on everything are always at 100% now. INVESTIGATE!
+
+    Make sure ships beyond the initial 4 have engine mounts and weapon mounts
 
     Octopus body and water movement
         I THINK the easiest way to add and apply it is.... an object type property O_o
@@ -11,8 +14,8 @@ DOING NOW:
 
     switch font awesome to self hosted
 
-    Media on the site!
-    Think of space haven, starmancer? whatever it's called. 
+    autopilot seems to be broken
+
 
     make sure crashed meteorites work (salvage them?)
 

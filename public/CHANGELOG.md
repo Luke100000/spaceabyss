@@ -1,3 +1,19 @@
+## [0.1.16] - 2020-06-16
+
+
+### Fixed
+- Old manufacturers, research stations, forges, and food replicators have been set to 10 HP to match the new ones.
+- Hopefully another fix or two so the 'Back To Galaxy' button doesn't disapper
+- Fix for effect sprites when mining is stopped
+
+### Changed
+- The color of an HP bar with HP > 100%
+
+## [0.1.15] - 2020-06-16
+
+### Fixed
+- A bug with showing effects that would cause some buttons to not show up
+
 ## [0.1.14] - 2020-06-16
 
 ### Added

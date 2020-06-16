@@ -1,4 +1,3 @@
-
 socket.on('addiction_linker_info', function(data) {
 
     if(!data.addiction_linker) {
@@ -98,7 +97,6 @@ socket.on('assembly_info', function(data) {
         delete active_assemblies[active_assembly_index];
     } else {
         // update the active assembly
-        console.log("Updated existing assembly");
         active_assemblies[active_assembly_index] = data.assembly;
         active_assemblies[active_assembly_index].id = parseInt(active_assemblies[active_assembly_index].id);
     }
@@ -152,7 +150,6 @@ socket.on('battle_linker_info', function(data) {
 
     if(data.remove) {
 
-        console.log("Have remove battle linker info");
 
         if(battle_linker_index !== -1) {
             //console.log("Removing battle linker with id" + battle_linkers[battle_linker_index].id);
@@ -797,8 +794,6 @@ socket.on('inventory_item_info', function(data) {
 
         delete inventory_items[inventory_index];
 
-        console.log(inventory_items[inventory_index]);
-
         generateInventoryDisplay();
 
         console.log("Removed inventory item");
@@ -1146,12 +1141,12 @@ socket.on('monster_info', function(data) {
         } else {
             //console.log("%c Not drawing monster id: " + monsters[monster_index].id, log_warning);
             if(!client_player_info.coord) {
-                console.log("Client player doesn't have a coord yet");
+                //console.log("Client player doesn't have a coord yet");
                 
             }
 
             if(!monster_info.coord) {
-                console.log("Don't have a coord for the monster yet");
+                //console.log("Don't have a coord for the monster yet");
             }
         }
 
@@ -1172,11 +1167,11 @@ socket.on('monster_info', function(data) {
         } else {
             //console.log("%c Not drawing monster id: " + monsters[monster_index].id, log_warning);
             if(!client_player_info.coord) {
-                console.log("Client player doesn't have a coord yet");
+                //console.log("Client player doesn't have a coord yet");
             }
 
             if(!monster_info.coord) {
-                console.log("Don't have a coord for the monster yet");
+                //console.log("Don't have a coord for the monster yet");
             }
         }
 
@@ -1952,7 +1947,10 @@ socket.on('object_info', function(data) {
 
         }
 
-        if(!Object.is(parseInt(objects[object_index].docked_at_planet_id), parseInt(data.object.docked_at_planet_id))) {
+        if(!isNaN(parseInt(data.object.docked_at_planet_id)))
+
+
+        if(notFalse(data.object.docked_at_planet_id) && !isNaN(parseInt(data.object.docked_at_planet_id))) {
         //if(parseInt(objects[object_index].docked_at_planet_id) !== parseInt(data.object.docked_at_planet_id)) {
             if(objects[object_index].id === players[client_player_index].ship_id) {
                 console.log("Got docked_at_planet_id change for the player's ship");
@@ -3191,8 +3189,6 @@ socket.on('stop_attack_data', function(data) {
 
 socket.on('view_change_data', function(data) {
 
-    console.log("Got view change data: " + data.view);
-
 
     // we no longer have a destination x/y
     if(client_player_id) {
@@ -3245,7 +3241,6 @@ socket.on('view_change_data', function(data) {
 
         planet_coords = [];
 
-        console.log("Cleared players from client");
         players.forEach(function(player, i) {
             if(player.id !== client_player_id) {
                 if(player.sprite) {
