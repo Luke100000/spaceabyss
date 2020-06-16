@@ -313,7 +313,7 @@ Curiosity as an aspect of certain NPCs, monsters, races, AIs, etc
 
 Bioluminescent plants. Glowing underground
 
-Organic ships. Like flying int he mouth of a whale. A modified one with an exoskeleton and plants growing inside for the air.
+Organic ships. Like flying in the mouth of a whale. A modified one with an exoskeleton and plants growing inside for the air.
 
 POTENTIAL HACKING TYPE:
     Go to attack an AI. Slowly adds more and more, stronger and stronger constructs. You can jump to a different spot in... memory? to avoid,
@@ -337,8 +337,7 @@ I like the idea of information that can be lost, or is particularly hard to obta
 
 Attacking Overhaul
 
-    Range and Melee for monsters. One large issue is that for melee, the monster would need to be able to get close to the player
-    Need to think of an figure out range and melee for monsters
+
 
     Maybe some neat way of crafting viruses to attack MLM things
 
@@ -368,6 +367,7 @@ Having a pirate engine in your mind, hacking shared throughts. Looking for looph
 
 Helping biogrove planets. Hurting biogrove planets via AI dust and stuff. The idea that Biogrove planets, and the things
     that make them up, are at conflict with AI type things.
+    Maybe I could have something bad spawn on the Biogrove planet if AI Dust is placed there. Spawns some sapper type of thing.
 
 Feeding/helping one thing, and having a big effect because a bunch of seemingly unconnected things, are connected.
     Most common version of this is like watering a flower, and all the flowers in the area grow.
@@ -1142,7 +1142,13 @@ Diamond Ship
 Quark-gluon plasma missle
 Microton AM warheads
 
-Could have a monster looking portal as an event. Basically make a portal, but it looks like a huge monster mouth. Transports you to 'inside the monster' (Could just be a ship in the code )
+Could have a monster looking portal (still an object type) as an event. Basically make a portal, but it looks like a huge monster mouth. Transports you to 'inside the monster' (Could just be a ship in the code )
+    To add this we would need an is_portal attribute on OBJECT TYPES so there are multiple possible portals.
+
+    Would spawn a ship, and we would just not add that ship to any coords. Things like this would probably be at risk of being deleted
+        at some point, so would add another attribute to object types can_be_nowhere. I suppose :p This would also work for the great ship.
+        Stuff like: https://images.gemquery.com/254/content_2549852.jpg for the object type. 2x2 tiles.
+
 
 Could have a player body that changes over time.
     Could do this with Ruel bodies - over time they slowly crystalize.
@@ -1211,11 +1217,17 @@ The idea that a massive ship or planet gathers mass as it moves through space. E
 Monsters that spawn meat slowly. Regens. Could have something that you harvest/cut on, and takes a bit to regenerate the
     mass. I also want milk slerm to produce slerm milk.
 
+
+Have an event that spawns a small area of machine farmland ( created/machine-farm-plant.ase ) and have a large farming machine monster
+    guarding it https://images.gemquery.com/254/content_2549853.jpg
+
+Have 1/2 burried robot heads and other bits 'buried' on desert and slaver planets. Salvagable for neat things.
+    https://images.gemquery.com/254/content_2549852.jpg
+    https://images.gemquery.com/254/content_2549851.jpg
+
 It wouldn't be a bad idea to code in more granular control of generating planets - ability to re-generate a specific level.
 
 I've been thinking of having the pathways be a little more wide by default. 2 squares instead of 1.
-
-Most spaceships and such
 
 
 

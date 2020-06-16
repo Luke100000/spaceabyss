@@ -101,7 +101,7 @@ async function calculateDefense(dirty, object_index, damage_types = []) {
 async function canPlace(dirty, scope, coord, data) {
     try {
 
-        let debug_object_type_id = 223;
+        let debug_object_type_id = 151;
 
         let checking_coords = [];
 
@@ -246,6 +246,14 @@ async function canPlace(dirty, scope, coord, data) {
                     }
                     return false;
                 }
+
+                // If the coord we are checking only has an object type id (no object), return false
+                if(checking_coord.object_type_id && main.isFalse(checking_coord.object_id)) {
+                    if(dirty.object_types[object_type_index].id === debug_object_type_id || data.show_output) {
+                        log(chalk.yellow("Coord has object id or belongs to object id and it doesn't match the object we passed in"));
+                    }
+                    return false;
+                }
             }
 
             if(scope === 'galaxy' && checking_coord.planet_id || checking_coord.belongs_to_planet_id) {
@@ -295,6 +303,8 @@ async function canPlaceAround(dirty, tiles_around, data) {
             origin_tile_x = dirty.ship_coords[data.ship_coord_index].tile_x;
             origin_tile_y = dirty.ship_coords[data.ship_coord_index].tile_y;
         }
+
+        
         
 
         for(let x = origin_tile_x - tiles_around; placing_coord_index === -1 && x <= origin_tile_x + tiles_around; x++) {
@@ -302,6 +312,7 @@ async function canPlaceAround(dirty, tiles_around, data) {
 
                 let trying_coord_index = -1;
                 let can_place_data = {};
+
                 if(typeof data.object_index !== 'undefined') {
                     can_place_data.object_index = data.object_index;
                 }
@@ -316,7 +327,11 @@ async function canPlaceAround(dirty, tiles_around, data) {
                     'planet_level': dirty.planet_coords[data.planet_coord_index].level, 'tile_x': x, 'tile_y': y });
 
                     if(trying_coord_index !== -1) {
+
+                        console.log("Trying coord id: " + dirty.planet_coords[trying_coord_index])
+
                         let can_place_result = await canPlace(dirty, 'planet', dirty.planet_coords[trying_coord_index], can_place_data );
+                        console.log("Can place result: " + can_place_result);
                         if(can_place_result === true) {
                             placing_coord_index = trying_coord_index;
                         }

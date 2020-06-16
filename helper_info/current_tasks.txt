@@ -2,13 +2,14 @@
 
 DOING NOW:
 
-    Looks like there are some server errors when people die. Fix and test!
 
-        Put something in the waiting drops! - Make sure we are checking occasionally to see if we can drop these.
-
+    Octopus body and water movement
+        I THINK the easiest way to add and apply it is.... an object type property O_o
 
     NORMAL TUTORIAL!
     VIDEO TUTORIAL!
+
+    switch font awesome to self hosted
 
     Media on the site!
     Think of space haven, starmancer? whatever it's called. 
@@ -94,17 +95,29 @@ NEED TO DRAW
 ART TASKS
 
 
+Modification from last batch:
+
+1. Player Pod ( #5 last batch ) was for an idle animation. Re-attaching. The centered design works, we just need some blinking and such :)
+Size: 12x16
+Frame Count: One idle animation
+Flavor Text: The default ship that players have - a single person pod.
+Reference Image: https://images.gemquery.com/252/content_2528976.jpg
+Notes: You are basically doing a cosmetic premium version of the existing pod - https://space.alphacoders.com/player-pod-animated.png . You don't have to match the frame count, but it is a very simple thing :)
+
+
+2. Science Vessel Animation
+Frames: 
+    idle animation: ~3-5 frames - Whatever looks nice.
+Notes: Since this ship is circular, I don't know that there is much point for a up/down/left/right. So we are just doing an idle animation. Let me know if you 
+have any ideas for a left/right/up/down that would be cool.
+
+3. Exodium Asteroid
+
+
+
 life herb seedling
 
-algae vat
-    30x30 max
-    base frame
-    active animation that starts with the base frame
-    1 full/completed frame
 
-ruined algae vat
-
-fish body for Alexander
 
 
 MONSTER PROGRESSION
@@ -119,7 +132,7 @@ algae
 blue algae
 algae power cell
 
-science vessel
+
 
 
 exodium asteroid

@@ -1180,7 +1180,6 @@ const world = require('./world.js');
 
             console.log("In game.convert");
 
-            // STEP 1: Make sure we are working with an object type that converts things
             let converter_object_index = await main.getObjectIndex(parseInt(data.converter_object_id));
 
             if(converter_object_index === -1) {
@@ -1469,11 +1468,13 @@ const world = require('./world.js');
 
                     if(socket) {
                         console.log("Sending result_info");
-                        socket.emit('result_info', { 'status': 'failure', 'object_id': dirty.objects[converter_object_index].id });
+                        socket.emit('result_info', { 'status': 'failure', 'text': "You botched the job",
+                            'object_id': dirty.objects[converter_object_index].id });
                     }
 
                 } else {
                     console.log("Success");
+
 
                     let new_converter_object_hp = dirty.objects[converter_object_index].current_hp + using_conversion_linker.output_amount;
 
@@ -1484,8 +1485,21 @@ const world = require('./world.js');
                         new_converter_object_hp = dirty.object_types[converter_object_type_index].hp + level_difference;
 
                         // The player should be notified about this
-                        let text = "Your aren't skilled enough to increase HP further";
-                        socket.emit('chat', { 'scope': 'system', 'message': text, 'is_important': true });
+                        let text = "You aren't skilled enough to increase HP further";
+                        if(socket) {
+                            socket.emit('chat', { 'scope': 'system', 'message': text, 'is_important': true });
+                            socket.emit('result_info', { 'status': 'failure', 'text': "Not skilled enough to increase HP further", 
+                            'object_id': dirty.objects[converter_object_index].id});
+                        }
+                        
+                    } else {
+
+                        if(socket) {
+                            socket.emit('chat', { 'message': 'You helped it stay in good condition', 'scope': 'system' });
+                            socket.emit('result_info', { 'status': 'success', 'text':  "+" + using_conversion_linker.output_amount + "HP",
+                            'object_id': dirty.objects[converter_object_index].id });
+                        }
+
                     }
 
                     log(chalk.cyan("Updated HP to: " + new_converter_object_hp));
@@ -1495,9 +1509,7 @@ const world = require('./world.js');
                     await game_object.sendInfo(socket, converter_info.room, dirty, converter_object_index);
 
 
-                    if(socket) {
-                        socket.emit('chat', { 'message': 'You helped it stay in good condition', 'scope': 'system' });
-                    }
+                   
 
 
                     if(socket) {
@@ -5928,7 +5940,7 @@ const world = require('./world.js');
 
                 
 
-                // If the object's new hp < 10, remove it
+                // If the object's new hp <= 0, remove it
                 if(dirty.objects[object_index].current_hp <= 0) {
                     await game_object.deleteObject(dirty, {'object_index': object_index });
 

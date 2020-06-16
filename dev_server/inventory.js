@@ -353,9 +353,6 @@ var io;
 
         try {
 
-            log(chalk.red("game.convert says that it is a newer version of this. Investigate!"));
-            console.trace("TRACING");
-
             let storage_object_id = parseInt(data.storage_object_id);
 
 
@@ -385,9 +382,14 @@ var io;
 
             let storage_object_type_index = main.getObjectTypeIndex(dirty.objects[storage_object_index].object_type_id);
 
-            // If it's not something that converts, or can have inventory, error message back to the client
-            if(!dirty.object_types[storage_object_type_index].is_converter && !dirty.object_types[storage_object_type_index].can_have_inventory) {
-                socket.emit('chat', { 'message': "Things cannot be placed in that object", 'scope':'system' });
+            if(dirty.object_types[storage_object_type_index].is_converter) {
+                log(chalk.red("Use game.convert instead!"));
+                console.trace("TRACED!!!");
+                return false;
+            }
+
+            if(!dirty.object_types[storage_object_type_index].can_have_inventory) {
+                log(chalk.yellow("Storage object type cannot have inventory"));
                 return false;
             }
 
@@ -403,201 +405,43 @@ var io;
                 }
             }
 
-            // We have two basic object types that can accept object/object_type inputs
-            // First is a converter. It accepts specific inputs (object_type_conversion_linkers)
-            if(dirty.object_types[storage_object_type_index].is_converter) {
-
-
-                console.log("Player is putting something in a converter");
-
-                // lets see if there are matching conversion linkers
-                let conversion_linkers = dirty.object_type_conversion_linkers.filter(linker =>
-                    linker.object_type_id === dirty.objects[storage_object_index].object_type_id &&
-                    linker.input_object_type_id === dirty.inventory_items[inventory_item_index].object_type_id);
-                console.log("Found " + conversion_linkers.length + " conversion linkers for this");
-
-                if(conversion_linkers.length === 0) {
-                    socket.emit('chat', { 'message': 'That item cannot be placed in there', 'scope': 'system' });
-                    return false;
-                }
-
-                let object_info = await game_object.getCoordAndRoom(dirty, storage_object_index);
-                let using_conversion_linker = false;
-
-                // TODO - gotta PICK ONE!
-                if(conversion_linkers.length > 1) {
-                    log(chalk.red("Code Picking One!"));
-                } else {
-                    using_conversion_linker = conversion_linkers[0];
-                }
-
-                console.log("Using conversion linker: " );
-                console.log(using_conversion_linker);
-
-
-
-                if(using_conversion_linker.output_type === 'energy') {
-
-
-
-                    // For each thing in the inventory item, we do the energy addition
-                    for(let i = 0; i < put_amount; i++ ) {
-                        if(dirty.objects[storage_object_index].energy >= dirty.object_types[storage_object_type_index].max_energy_storage) {
-                            console.log("Storage is full now");
-                            socket.emit('chat', { 'message': "Storage is now full", 'scope': 'system' });
-                            return false;
-                        }
-                        let new_storage_amount = dirty.objects[storage_object_index].energy + using_conversion_linker.output_amount;
-                        if(new_storage_amount  > dirty.object_types[storage_object_type_index].max_energy_storage) {
-                            new_storage_amount = dirty.object_types[storage_object_type_index].max_energy_storage;
-                        }
-
-                        // reduce the amount in the inventory item
-                        await removeFromInventory(socket, dirty, { 'inventory_item_id': dirty.inventory_items[inventory_item_index].id, 'amount': 1 });
-
-                        dirty.objects[storage_object_index].energy = new_storage_amount;
-                        dirty.objects[storage_object_index].has_change = true;
-
-                        // send the updated object info
-                        game_object.sendInfo(socket, object_info.room, dirty, storage_object_index);
-
-                    }
-
-                } else if(using_conversion_linker.output_type === "hp") {
-
-                    if(socket === false) {
-                        log(chalk.red("Can't do an HP conversion without a player to check skill for"));
-                        return false;
-                    }
-
-                    let player_index = await main.getPlayerIndex({ 'player_id': socket.player_id });
-
-                    if(player_index === -1) {
-                        log(chalk.red("Could not get player for to HP conversion linker execution"));
-                        return false;
-                    }
-
-                    // Player is placing an item in something to heal it
-                    // If the player's farming level is less than the complexity of the item, there's a failure chance.
-                    let farming_level = await world.getPlayerLevel(dirty, { 'player_index': player_index, 'skill_type': 'farming' });
-
-                    let success = world.complexityCheck(farming_level, dirty.object_types[storage_object_type_index].complexity);
-                    // If the player's farming level is above the complexity, there's a chance to increase beyond the maximum hp
-
-                    // On a failure, we damage the object instead
-                    if(!success) {
-                        console.log("Failure");
-
-                        let damage_amount = dirty.object_types[storage_object_type_index].complexity - farming_level;
-
-                        await game_object.damage(dirty, { 'object_index': storage_object_index, 'damage_amount': damage_amount,
-                             'object_info': object_info });
-                        await game_object.sendInfo(socket, object_info.room, dirty, storage_object_index);
-
-
-                        socket.emit('chat', { 'message': 'Your attempt to help has failed, and you have damaged it instead', 'scope': 'system' });
-
-                        // and still reduce our inventory
-                        await removeFromInventory(socket, dirty, { 'inventory_item_id': dirty.inventory_items[inventory_item_index].id, 'amount': 1 });
-
-                        await world.increasePlayerSkill(socket, dirty, player_index, ['farming']);
-
-                        console.log("Sending result_info");
-                        socket.emit('result_info', { 'status': 'failure', 'object_id': dirty.objects[storage_object_index].id });
-
-                        return;
-                    }
-
-                    console.log("Success");
-
-                    // and still reduce our inventory
-                    await removeFromInventory(socket, dirty, { 'inventory_item_id': dirty.inventory_items[inventory_item_index].id, 'amount': 1 });
-
-                    let new_storage_object_hp = dirty.objects[storage_object_index].current_hp + using_conversion_linker.output_amount;
-
-                    let level_difference = farming_level - dirty.object_types[storage_object_type_index].complexity;
-
-                    // Reset to max we can heal to based on our level vs complexity
-                    if(new_storage_object_hp > dirty.object_types[storage_object_type_index].hp + level_difference) {
-                        new_storage_object_hp = dirty.object_types[storage_object_type_index].hp + level_difference;
-
-                    }
-
-                    log(chalk.cyan("Updated HP to: " + new_storage_object_hp));
-                    dirty.objects[storage_object_index].current_hp = new_storage_object_hp;
-                    dirty.objects[storage_object_index].has_change = true;
-
-                    await game_object.sendInfo(socket, object_info.room, dirty, storage_object_index);
-
-
-                    socket.emit('chat', { 'message': 'You helped it stay in good condition', 'scope': 'system' });
-
-                    await world.increasePlayerSkill(socket, dirty, player_index, ['farming']);
-
-                    console.log("Sending result_info");
-                    socket.emit('result_info', { 'status': 'success', 'object_id': dirty.objects[storage_object_index].id });
-
-                }
-
-                else if(using_conversion_linker.output_type === "object_type") {
-                    // I suppose we can just give it to the player/npc for now
-
-                    // For now just test adding to the player
-                    let adding_to_data = { 'adding_to_type': 'player', 'adding_to_id': dirty.players[socket.player_index].id,
-                        'object_type_id': using_conversion_linker.output_object_type_id, 'amount':using_conversion_linker.output_amount };
-                    await addToInventory(socket, dirty, adding_to_data);
-
-
-
-                } else {
-                    log(chalk.yellow("Not sure what this outputs"));
-                }
-
-
-
-            }
+            
 
             // The other type is simple storing objects/object_types
             // TODO allow for rules for storing (and taking) things
             // Commented out: && dirty.objects[storage_object_index].player_id === socket.player_id
             // Reason, kind of the TODO above. Have more tiers of smart storage with locks and junk
 
-            if(!dirty.object_types[storage_object_type_index].can_have_inventory) {
-                log(chalk.yellow("That object type cannot have inventory"));
-                return false;
+            let adding_to_data;
+
+            if(dirty.inventory_items[inventory_item_index].object_id) {
+                adding_to_data = { 'adding_to_type': 'object', 'adding_to_id': dirty.objects[storage_object_index].id,
+                    'object_id': dirty.inventory_items[inventory_item_index].object_id,
+                    'object_type_id': dirty.inventory_items[inventory_item_index].object_type_id, 'amount':put_amount };
+            } else if(dirty.inventory_items[inventory_item_index].object_type_id) {
+                adding_to_data = { 'adding_to_type': 'object', 'adding_to_id': dirty.objects[storage_object_index].id,
+                    'object_type_id': dirty.inventory_items[inventory_item_index].object_type_id, 'amount':put_amount };
+            } else if(dirty.inventory_items[inventory_item_index].floor_type_id) {
+                adding_to_data = { 'adding_to_type': 'object', 'adding_to_id': dirty.objects[storage_object_index].id,
+                    'floor_type_id': dirty.inventory_items[inventory_item_index].floor_type_id, 'amount':put_amount };
             }
 
+            await addToInventory(socket, dirty, adding_to_data);
 
-            if(dirty.object_types[storage_object_type_index].can_have_inventory ) {
-                let adding_to_data;
+            let remove_inventory_data = { 'inventory_item_id': dirty.inventory_items[inventory_item_index].id,
+                'amount': put_amount };
+            await removeFromInventory(socket, dirty, remove_inventory_data);
+            //removeInventoryItem(socket, dirty, inventory_item.id);
 
-                if(dirty.inventory_items[inventory_item_index].object_id) {
-                    adding_to_data = { 'adding_to_type': 'object', 'adding_to_id': dirty.objects[storage_object_index].id,
-                        'object_id': dirty.inventory_items[inventory_item_index].object_id,
-                        'object_type_id': dirty.inventory_items[inventory_item_index].object_type_id, 'amount':put_amount };
-                } else if(dirty.inventory_items[inventory_item_index].object_type_id) {
-                    adding_to_data = { 'adding_to_type': 'object', 'adding_to_id': dirty.objects[storage_object_index].id,
-                        'object_type_id': dirty.inventory_items[inventory_item_index].object_type_id, 'amount':put_amount };
-                } else if(dirty.inventory_items[inventory_item_index].floor_type_id) {
-                    adding_to_data = { 'adding_to_type': 'object', 'adding_to_id': dirty.objects[storage_object_index].id,
-                        'floor_type_id': dirty.inventory_items[inventory_item_index].floor_type_id, 'amount':put_amount };
-                }
-
-                await addToInventory(socket, dirty, adding_to_data);
-
-                let remove_inventory_data = { 'inventory_item_id': dirty.inventory_items[inventory_item_index].id,
-                    'amount': put_amount };
-                await removeFromInventory(socket, dirty, remove_inventory_data);
-                //removeInventoryItem(socket, dirty, inventory_item.id);
-
-                await sendInventory(socket, false, dirty, 'player', socket.player_id);
-                await game_object.sendInfo(socket, storage_object_info.room, dirty, storage_object_index);
-                await sendInventory(socket, storage_object_info.room, dirty, 'object', dirty.objects[storage_object_index].id);
-            }
+            await sendInventory(socket, false, dirty, 'player', socket.player_id);
+            await game_object.sendInfo(socket, storage_object_info.room, dirty, storage_object_index);
+            await sendInventory(socket, storage_object_info.room, dirty, 'object', dirty.objects[storage_object_index].id);
+            
 
 
         } catch(error) {
             log(chalk.red("Error in inventory.place: " + error));
+            console.error(error);
         }
     }
 
@@ -719,7 +563,8 @@ var io;
                 dirty.inventory_items.has_change = true;
 
 
-                if(dirty.inventory_items[inventory_item_index].player_id && socket && socket.player_id === dirty.inventory_items[inventory_item_index].player_id) {
+                // They took from it - they should know about the change
+                if(socket) {
                     socket.emit('inventory_item_info', { 'inventory_item': dirty.inventory_items[inventory_item_index] });
                 }
 

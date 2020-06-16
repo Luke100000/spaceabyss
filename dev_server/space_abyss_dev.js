@@ -6133,7 +6133,7 @@ setInterval(tickSalvaging, 5000, dirty);
 
 // 10 seconds
 setInterval(tickMoveMonsters, 10000, dirty);
-setInterval(tickWaitingDrops, 10000, dirty);
+
 
 // 20 seconds
 setInterval(tickAddictions, 20000, dirty);
@@ -6146,6 +6146,10 @@ setInterval(writeDirty, 20000);
 // 30 seconds
 setInterval(tickResearches, 30000, dirty);
 setInterval(tickMonsterDecay, 30000, dirty);
+
+
+// 60 seconds
+setInterval(tickWaitingDrops, 60000, dirty);
 
 
 // 150 seconds ( 2 and a 1/2 minutes)

@@ -1,3 +1,29 @@
+## [0.1.14] - 2020-06-16
+
+### Added
+- Helpful messages about the results when a player is healing something like an Algae Vat
+
+### Fixed
+- Bodies and other waiting drops that are objects will no longer spawn on wall tiles in -1 and below, removing a wall that was supposed to be unremovable :D
+
+### Changed
+- Simplified the inventory.place function. I had begun moving about 1/2 of it to game.convert, and finished this.
+- New manufacturers, forges, research stations, and food replicators spawn with 10 HP to work with the recently updated salvaging system
+- Algae vats can no longer be salvaged
+- Trae will no longer drop Trae Seedlings. This didn't work in the server anyways. If I wanted to re-ad this in the future, I should have it drop an object type
+that grows into a monster.
+- More monsters on the machine planet are weak to hacking damage.
+
+## [0.1.13] - 2020-06-14
+
+### Fixed
+- Invalid waiting drops will now be deleted. Investigating where they are coming from (I believe it's monsters)
+
+
+### Changed
+- Reduced the frequency at which the server will try and place waiting drops (10 seconds -> 60 seconds)
+
+
 ## [0.1.12] - 2020-06-13
 
 ### Added

@@ -4722,14 +4722,20 @@ async function tickWaitingDrops(dirty) {
 
     try {
 
-        let hrstart = new process.hrtime();
-        console.log("In world.tickWaitingDrops");
+        //let hrstart = new process.hrtime();
+        //console.log("In world.tickWaitingDrops");
 
         for(let i = 0; i < dirty.waiting_drops.length; i++) {
 
             if(dirty.waiting_drops[i]) {
                 console.log("Have waiting drop!");
                 console.log(dirty.waiting_drops[i]);
+
+                if(typeof dirty.waiting_drops[i].object_type_id !== 'undefined' && main.isFalse(dirty.waiting_drops[i].object_type_id)) {
+                    log(chalk.yellow("INVALID WAITING LINKER!"));
+                    delete dirty.waiting_drops[i];
+
+                }
 
                 let place_around_data = {};
 
@@ -4773,6 +4779,7 @@ async function tickWaitingDrops(dirty) {
 
 
                     if(typeof dirty.waiting_drops[i].planet_coord_index !== 'undefined') {
+                        console.log("Planet coord id: " + dirty.planet_coords[placing_coord_index].id);
 
                         update_coord_data.planet_coord_index = placing_coord_index;
                       
@@ -4794,8 +4801,8 @@ async function tickWaitingDrops(dirty) {
 
         }
 
-        let hrend = process.hrtime(hrstart);
-        console.info('Time to process waitingDrops (hr): %ds %dms', hrend[0], hrend[1] / 1000000);
+        //let hrend = process.hrtime(hrstart);
+        //console.info('Time to process waitingDrops (hr): %ds %dms', hrend[0], hrend[1] / 1000000);
 
     } catch(error) {
         log(chalk.red("Error in world.tickWaitingDrops: " + error));
