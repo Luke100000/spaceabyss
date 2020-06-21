@@ -166,12 +166,18 @@ function addPlayer(player_index, player_info) {
     if (players[player_index].coord_id) {
         let ship_index = objects.findIndex(function (obj) { return obj && obj.id === players[player_index].ship_id });
         if (ship_index !== -1) {
-            console.log("Already had a ship object, but didn't know if was an active ship. Now we know it's the active ship of a player in the galaxy");
-            let coord_index = coords.findIndex(function (obj) { return obj && obj.id === objects[ship_index].coord_id; });
-            if (coord_index !== -1) {
-                console.log("Cleared out the ship");
-                map.putTileAt(-1, coords[coord_index].tile_x, coords[coord_index].tile_y, false, 'layer_object');
+            console.log("Already had a ship object id: " + objects[ship_index].id + ", but didn't know if was an active ship. Now we know it's the active ship of a player in the galaxy");
+
+
+            for(let i = 0; i < coords.length; i++) {
+                if(coords[i] && (coords[i].object_id === objects[ship_index].id || coords[i].belongs_to_object_id === objects[ship_index].id)) {
+                    map.putTileAt(-1, coords[i].tile_x, coords[i].tile_y, false, 'layer_object');
+                }
             }
+
+            console.log("Cleared out the ship");
+               
+
         }
     }
 
@@ -842,12 +848,14 @@ function createNpcSprite(npc_index) {
 function createPlayerSprite(player_index) {
 
     if (typeof player_index === 'undefined' || player_index === -1) {
+        console.log("Not drawing undefined/invalid player");
         return false;
     }
 
     // If the player isn't in the same room/level as us, there's no need to try creating their sprite
     // Player isn't even logged in right now
     if (players[player_index].planet_coord_id === 0 && players[player_index].ship_coord_id === 0 && players[player_index].coord_id === 0) {
+        console.log("All coords are false for this player");
         return false;
     }
 
@@ -978,6 +986,7 @@ function createPlayerSprite(player_index) {
     }
 
     if (new_texture_key === false) {
+        console.log("New texture key is false");
         return false;
     }
 
@@ -1331,11 +1340,13 @@ function drawCoord(type, coord) {
 
 
     if (coord.object_id) {
+
         object_index = objects.findIndex(function (obj) { return obj && obj.id === coord.object_id; });
 
         if (object_index === -1) {
             draw_object = false;
             socket.emit('request_object_info', { 'object_id': coord.object_id });
+
 
         } else if (client_player_index !== -1 && objects[object_index].id === players[client_player_index].ship_id) {
 
@@ -1353,9 +1364,26 @@ function drawCoord(type, coord) {
 
                 // Doesn't hurt to check and see if we draw the player here
                 if(shouldDraw(client_player_info.coord, coord)) {
+                    console.log("Creating other player sprite!");
                     createPlayerSprite(other_player_index);
+                } else {
+
+                    console.log("Not in a spot we should draw");
+
                 }
                 draw_object = false;
+
+                /*
+                // Make sure the object is removed from any galaxy coords 
+                if(current_view === 'galaxy') {
+                    console.log("Removing ")
+                    for(let c = 0; c < coords.length; c++) {
+                        if(coords[c] && coords[c].object_id === players[other_player_index].ship_id || coords[c].belongs_to_object_id === players[other_player_index].ship_id) {
+
+                        }
+                    }
+                }
+                */
             }
 
             // we also don't draw it here if it's the active ship of an npc in the galaxy
@@ -1466,6 +1494,14 @@ function drawCoord(type, coord) {
             coord.tile_x, coord.tile_y, false, planet_type_display_linkers[display_linker_index].layer);
 
 
+    }
+
+    // A unique display for ship coords with is_weapon_hardpoint or is_engine_hardpoint and no object
+    if(coord.ship_id && !coord.object_id && (coord.is_weapon_hardpoint || coord.is_engine_hardpoint)) {
+        //console.log("Placed empty hardpoint image");
+        map.putTileAt(106,
+            coord.tile_x, coord.tile_y, false, 'layer_object');
+        map.putTileAt(95, coord.tile_x, coord.tile_y - 1, false, 'layer_above');
     }
 
 }
@@ -2492,6 +2528,8 @@ function getPlayerObjectTypeIndex(showing_player) {
 
 function generateAirlockDisplay() {
 
+    console.log("In generateAirlockDisplay");
+
     $('#launch').empty();
 
 
@@ -2504,7 +2542,14 @@ function generateAirlockDisplay() {
 
 
     let ship_coord_index = ship_coords.findIndex(function (obj) { return obj && obj.id === players[client_player_index].ship_coord_id; });
-
+    let on_ship_index = -1;
+    let on_ship_type_index = -1;
+    if(ship_coord_index !== -1) {
+        on_ship_index = getObjectIndex(ship_coords[ship_coord_index].ship_id);
+        if(on_ship_index !== -1) {
+            on_ship_type_index = getObjectTypeIndex(objects[on_ship_index].object_type_id);
+        }
+    }
 
     if (client_ship_index === -1 || ship_coord_index === -1) {
         airlock_display_needs_regeneration = true;
@@ -2526,8 +2571,14 @@ function generateAirlockDisplay() {
         }
 
     } else if (current_view === "ship") {
+
         $('#launch').append('<button class="button is-success" id="viewchange" newview="galaxy"><i class="fad fa-rocket"></i> Launch With Current Ship</button>');
     }
+
+    if(on_ship_type_index !== -1 && object_types[on_ship_type_index].is_dockable) {
+        on_ship_is_dockable = true;
+    }
+
 
 
 
@@ -2550,6 +2601,8 @@ function generateAirlockDisplay() {
         if (docked_ships.length > 0) {
             console.log("Player has at least one ship docked at this station");
 
+            $('#launch').append("<br>");
+
 
             docked_ships.forEach(function (ship) {
 
@@ -2566,6 +2619,7 @@ function generateAirlockDisplay() {
         }
 
         // we should only let the player have one pod at a spaceport
+        // TODO check this on the server side David!
         if (!has_pod) {
             $('#launch').append('<button class="button is-default" id="buy_pod" object_type_id="114">Buy A Pod</button>');
         }
@@ -2968,6 +3022,14 @@ function pointerDownDesktop(pointer, pointerTileX, pointerTileY) {
 
             if (temp_coord.structure_id && debug_mode) {
                 $('#coord_data').append("Structure ID: " + temp_coord.structure_id);
+            }
+
+            if(temp_coord.is_engine_hardpoint) {
+                $('#coord_data').append("Engine Hardpoint");
+            }
+
+            if(temp_coord.is_weapon_hardpoint) {
+                $('#coord_data').append("Weapon Hardpoint");
             }
 
         } else {
@@ -5208,7 +5270,7 @@ function mapAddObject(object) {
 
     let object_info = getObjectInfo(object_index);
 
-    if (!object_info.coord) {
+    if (!object_info.coord && !objects[object_index].docked_at_planet_id && !objects[object_index].docked_at_object_id) {
 
         console.log("Could not get coord for object id: " + object.id);
         socket.emit('request_fix', { 'object_id': object.id });
@@ -5963,7 +6025,7 @@ function checkLevelIncrease(old_player_data, new_player_data) {
 
 function loadMonsterSprites(planet_type_id) {
 
-    console.log("In loadMonsterSprites for planet type id: " + planet_type_id);
+    //console.log("In loadMonsterSprites for planet type id: " + planet_type_id);
 
     if (planet_type_id !== 29) {
         return true;
@@ -6532,7 +6594,7 @@ function movePlayerFlow(player_index, destination_coord_type, destination_coord,
 
             // LEFT !
             if (players[player_index].destination_x < players[player_index].sprite.x) {
-                console.log("Shuttle left animation");
+                //console.log("Shuttle left animation");
 
                 if (players[player_index].sprite.anims.getCurrentKey() !== 'player-shuttle-left-animation') {
                     players[player_index].sprite.anims.play('player-shuttle-left-animation');
@@ -6541,7 +6603,7 @@ function movePlayerFlow(player_index, destination_coord_type, destination_coord,
             }
             // RIGHT!
             else if (players[player_index].destination_x > players[player_index].sprite.x) {
-                console.log("Shuttle right animation");
+                //console.log("Shuttle right animation");
                 if (players[player_index].sprite.anims.getCurrentKey() !== 'player-shuttle-right-animation') {
                     players[player_index].sprite.anims.play('player-shuttle-right-animation');
                 }
@@ -7448,7 +7510,7 @@ function redrawMap() {
     let player_info = getPlayerInfo(client_player_index);
 
     if (!player_info.coord) {
-        console.log("%c Could not find the coord the player is on to redraw the map", log_warning);
+        //console.log("%c Could not find the coord the player is on to redraw the map", log_warning);
         map_needs_redraw = true;
         return false;
     }
@@ -7696,7 +7758,24 @@ function setPlayerMoveDelay(player_index) {
         } else if (!object_types[ship_type_index].move_delay) {
             // ship doesn't have a move delay set
             players[player_index].current_move_delay = 500;
+            console.log("%c Set a move delay for this ship David!", log_warning);
         }
+
+        if(object_types[ship_type_index].needs_engines && typeof objects[ship_index].current_engine_power !== 'undefined') {
+
+            let ship_move_delay = object_types[ship_type_index].move_delay * ( object_types[ship_type_index].engine_power_required / objects[ship_index].current_engine_power);
+
+            if(!isNaN(ship_move_delay)) {
+                players[player_index].current_move_delay = ship_move_delay;
+            } else {
+                console.log("%c Ship tried to set move delay to NaN", log_warning);
+            }
+            
+
+            
+        }
+
+
     }
 
 
@@ -7862,7 +7941,7 @@ function showClickMenu(pointer) {
 
 
         // OBJECTS
-        if (coord.object_id) {
+        if (coord.object_id || coord.belongs_to_object_id) {
             showClickMenuObject(coord);
 
         } else if (coord.object_type_id) {
@@ -7879,12 +7958,15 @@ function showClickMenu(pointer) {
         // SHIP ENGINE
         if (coord.is_engine_hardpoint) {
             console.log("Player right clicked on a coord that is a engine hardpoint");
+            showClickMenuShipEngine(coord);
+            return true;
         }
 
         // SHIP WEAPON
         if (coord.is_weapon_hardpoint) {
             console.log("Player right clicked on a coord that is a weapon hardpoint");
             showClickMenuShipWeapon(coord);
+            return true;
         }
 
         if (current_view === "galaxy" && (coord.planet_id || coord.belongs_to_planet_id)) {
@@ -8270,7 +8352,15 @@ function showClickMenuNpc(coord) {
 function showClickMenuObject(coord) {
     //console.log("Has object id");
     let attack_object_shown = false;
-    let object_index = objects.findIndex(function (obj) { return obj && obj.id === coord.object_id; });
+    let object_index = -1;
+
+    if(coord.object_id) {
+        object_index = objects.findIndex(function (obj) { return obj && obj.id === coord.object_id; });
+    } else if(coord.belongs_to_object_id) {
+        object_index = objects.findIndex(function (obj) { return obj && obj.id === coord.belongs_to_object_id; });
+    }
+
+    
 
     if (object_index === -1) {
         return false;
@@ -8425,15 +8515,27 @@ function showClickMenuObject(coord) {
             //if(!objects[object_index].player_id ||
             //    (objects[object_index].player_id === client_player_id && objects[object_index].id !== players[client_player_index].ship_id)) {
 
+
+
             if(object_types[object_type_index].can_be_claimed) {
+
+
+                // Turns out claiming pods is a mess (non-abandoned pods everywhere)
+                if(object_types[object_type_index].id !== 114) {
+
+                    $('#click_menu').append("<button id='claimship_" + objects[object_index].id +
+                    "' class='button is-info is-small'>Claim Ship</button><br>");
+                }
+                
+
                 $('#click_menu').append("<button id='switchship_" + objects[object_index].id +
-                "' class='button is-warning is-small'>Claim and Switch To Ship</button><br>");
+                "' class='button is-warning is-small'>Claim and Switch To Ship (Abandons Current Ship)</button><br>");
             }
 
             
         } else if (objects[object_index].player_id === client_player_id && objects[object_index].id !== players[client_player_index].ship_id) {
             $('#click_menu').append("<button id='switchship_" + objects[object_index].id + "' object_id='" + objects[object_index].id +
-                "' class='button is-warning is-small'>Switch To</button>");
+                "' class='button is-warning is-small'>Switch To (Abandons Current Ship)</button>");
         }
 
 
@@ -8465,7 +8567,7 @@ function showClickMenuObject(coord) {
         */
 
         // If it's Our ship, we can also set a destination
-        if (coord.object_id === players[client_player_index].ship_id) {
+        if (coord.object_id === players[client_player_index].ship_id || coord.belongs_to_object_id === players[client_player_index].ship_id) {
 
             $('#click_menu').append("<button class='button is-info' id='showautopilot' " +
                 "top='" + mouse_y + "' left='" + mouse_x + "'>Set Autopilot Destination</button>");
@@ -8918,7 +9020,8 @@ function showClickMenuObject(coord) {
 
 
 
-    if (object_types[object_type_index].can_be_attacked) {
+    // Let abandoned pods be attackable too
+    if (object_types[object_type_index].can_be_attacked || (object_types[object_type_index].id === 114 && isFalse(objects[object_index].player_id)) ) {
         //console.log("can be attacked");
 
         // see if we are already attacking based on the battle linkers we have
@@ -9128,12 +9231,18 @@ function showClickMenuShipEngine(coord) {
 
     let ship_engine_string = "";
 
+    let had_ship_engine_in_inventory = false;
+
     for (let i = 0; i < inventory_items.length; i++) {
         if (inventory_items[i] && inventory_items[i].player_id === players[client_player_index].id) {
 
             let object_type_index = getObjectTypeIndex(inventory_items[i].object_type_id);
 
             if (object_type_index !== -1 && object_types[object_type_index].is_ship_engine) {
+
+                if(!had_ship_engine_in_inventory) {
+                    had_ship_engine_in_inventory = true;
+                }
 
                 ship_engine_string += "<div style='display:inline-block; position:relative; width:146px; height:74px; " +
                     " background-image: url(https://space.alphacoders.com/" +
@@ -9156,14 +9265,20 @@ function showClickMenuShipEngine(coord) {
         }
     }
 
+    if(!had_ship_engine_in_inventory) {
+        ship_engine_string += "You can install a ship engine here. Build ship engines in a Manufacturer!";
+    }
+
     $('#click_menu').append(ship_engine_string);
 }
+
 
 function showClickMenuShipWeapon(coord) {
 
     // Go through the player's inventory, and let them drop (install) a weapon here
 
     let ship_weapon_string = "";
+    let had_ship_weapon_in_inventory = false;
 
     for (let i = 0; i < inventory_items.length; i++) {
         if (inventory_items[i] && inventory_items[i].player_id === players[client_player_index].id) {
@@ -9171,6 +9286,10 @@ function showClickMenuShipWeapon(coord) {
             let object_type_index = getObjectTypeIndex(inventory_items[i].object_type_id);
 
             if (object_type_index !== -1 && object_types[object_type_index].is_ship_weapon) {
+
+                if(!had_ship_weapon_in_inventory) {
+                    had_ship_weapon_in_inventory = true;
+                }
 
                 ship_weapon_string += "<div style='display:inline-block; position:relative; width:146px; height:74px; " +
                     " background-image: url(https://space.alphacoders.com/" +
@@ -9193,6 +9312,10 @@ function showClickMenuShipWeapon(coord) {
         }
     }
 
+    if(!had_ship_weapon_in_inventory) {
+        ship_weapon_string += "You can install a ship weapon here. Build ship weapons in a Forge!";
+    }
+
     $('#click_menu').append(ship_weapon_string);
 
 }
@@ -9200,6 +9323,7 @@ function showClickMenuShipWeapon(coord) {
 function showDockedShip(ship) {
 
     let html_string = "";
+    html_string += "<div class='white-text'>";
 
     let docked_ship_type_index = object_types.findIndex(function (obj) {
         return obj &&
@@ -9224,6 +9348,7 @@ function showDockedShip(ship) {
         html_string += "<button id='switchship_" + ship.id + "' object_id='" + ship.id + "' class='button is-warning is-small'>Switch To</button>";
     }
 
+    html_string += "</div>";
 
     html_string += "<br>";
 
@@ -9657,6 +9782,26 @@ function updatePlayer(data, player_index) {
             destroyPlayerSprite(players[player_index]);
         }
 
+        // We're also going to want to destroy the player's ship sprite if they are docking on another ship
+        // Not sure if this will work as intended
+        if(isFalse(data.player.coord_id)) {
+
+            console.log("Calling destroyPlayerSprite from updatePlayer");
+
+            destroyPlayerSprite(players[player_index]);
+
+            // If the player's previous ship is dockable - we want to make sure it's drawn immediately
+            let player_ship_index = getObjectIndex(players[player_index].ship_id);
+            if(player_ship_index !== -1) {
+                let player_ship_type_index = getObjectTypeIndex(objects[player_ship_index].object_type_id);
+                if(player_ship_type_index !== -1 && object_types[player_ship_type_index].is_dockable) {
+                    console.log("Adding dockable ship base sprite back in");
+                    mapAddObject(objects[player_ship_index]);
+                }
+            }
+
+        }
+
         if (!data.player.coord_id || data.player.coord_id === 0) {
             // Just gonna comment this out for now. What we have happening is that when other players are switching
             // to their ship views, it's removing the ship from the galaxy view. This is not ideal.
@@ -9677,6 +9822,7 @@ function updatePlayer(data, player_index) {
 
             // If they don't have a sprite, insta move them there
             if (!players[player_index].sprite) {
+                players[player_index].coord_id = data.player.coord_id;
                 createPlayerSprite(player_index);
 
                 movePlayerInstant(player_index, coords[coord_index].tile_x * tile_size + tile_size / 2,
@@ -9902,9 +10048,15 @@ function updatePlayerClient(data) {
             let client_changed_levels = false;
 
 
+
+            let previous_coord_index = -1;
+            if(players[client_player_index].ship_coord_id) {
+                previous_coord_index = ship_coords.findIndex(function(obj) { return obj && obj.id === players[client_player_index].ship_coord_id });
+            }
+            
             let coord_index = ship_coords.findIndex(function (obj) { return obj && obj.id === data.player.ship_coord_id; });
 
-            if (ship_coords[coord_index].level !== client_player_info.coord.level) {
+            if (coord_index !== -1 && ship_coords[coord_index] && ship_coords[coord_index].level !== client_player_info.coord.level) {
                 client_changed_levels = true;
             }
 
@@ -9933,9 +10085,17 @@ function updatePlayerClient(data) {
             }
 
 
+            if((coord_index !== -1 && ship_coords[coord_index].object_type_id === 266) || (previous_coord_index !== -1 && ship_coords[previous_coord_index].object_type_id === 266)) {
+                generateAirlockDisplay();
+            }
+
+
+
             if(!updated_client_ship_coord_id) {
                 players[client_player_index].ship_coord_id = data.player.ship_coord_id;
             }
+
+
         }
     }
 

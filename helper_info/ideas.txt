@@ -1236,6 +1236,95 @@ right click on your door > manage > add a rule that you can go through it. I'll 
 
 
 
+Just in general more eggs. Fish eggs, alien eggs. Frog style eggs
+Firefly Squid
+Digestive sac - use to build corrosive weapons
+Mantis shrimp
+
+Jelly
+Poisonous Jelly
+Poisonous barb
+Algae bloom at surface
+Should integrate slerm stuff somehow
+
+Gravemind - Halo
+High Charity mobile capital city
+
+Admin needs to be able to warp to a ship
+
+Glassing the surface of a planet
+
+I'm undecided about just being able to hack attack AIs from on premise, or to allow it from anywhere, just with a strength modifier
+
+Cyberpunk soda - could just use slerm berries for it to start
+
+Have a building spawn with... cyberpunk gang types? When the boss is defeated, despawn the building, 'blow it up!' or something.
+I do eventually want this role taken up by npcs - maybe I'm not that far off.
+
+Cyberdyne
+Neodyne
+
+Mobile defense drone - Like a normal defense drone but it walks around
+
+transparent, black outline body
+
+Labs that spawn with old computer tech - like a Serial Experiments Lain scene.
+
+I want an event that spawns a tower. Like Azure Dreams.
+
+Hard Light - Halo
+
+Assassin caterpillar
+Glow worm caves
+
+Hacking probe
+semiotic malware
+Metamaterial
+Central processor - faceted flame of black crystal
+
+heavy machine gun
+laser cannon
+Every cubic millimeter has been claimed by one company or another and changes hands from millisecond to millisecond as the market moves
+Large machine spitting out black liquid
+
+The idea that a monster poison or radiation attack would have an 'addiction' chance. If we integrated it 
+    with the eating system, and just called it like the 'status/effect/impact' system, then we could have 
+    that scale in the same way as traditional addictions.
+
+
+The ability to allow costs for going through portals, or other requirements.
+
+Solar panel tile that heals machines
+
+"Her breath smelled like beetles in matchboxes"
+
+Jovian/Jupiter type of planet. Would want a couple of moons close to it too. Could have a unique body type for that
+    as well
+
+Planet type that is a set of islands. Would need a flying body to go around (or portals)
+
+Jax
+
+Armored crawlers
+Frames - adaptable machine bodies that plug into other machines
+Plenipootentiary
+Lock Provisos
+Astro America
+Taransay
+Waggoner Ames
+Belfort
+Maryam
+Laser cutter
+Mining charge (explosive)
+antibody bots (healing?)
+
+Our machine world needs some sort of a firewall defense (could just be a monster that shows up in some neat condition)
+
+Heavy duty laser drill
+
+Subsurface nanobots
+Biotech plagues
+
 ***************** END UNSORTED IDEAS ************************************************************************
 
 

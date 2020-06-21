@@ -1,3 +1,26 @@
+## [0.1.17] - 2020-06-20
+
+
+### Added
+- Ships more advanced than a pod now need engines to move. The first set of ships will be created with engines, a ship shield, and energy storage. 
+More advaned ships do not come with any of this. Players will need to add engines to the ship. It's effectively a way of transitioning players into the sandbox of ships.
+If a ship has no engines, it will not move. 
+- Admin ability to move any object to any place (Currently there are disappeared Space Stations on the galaxy - now it's easy to bring them back in game)
+- A 'Claim Ship' button
+
+### Fixed
+- Airlock display now shows up when you move onto an airlock
+- Many bugs relating to docking on larger ships/stations, and controlling dockable ships/stations.
+- Bug that wasn't writing new player data until the server shutdown
+
+
+### Changes
+- Voon Steaks can now be picked up
+- Updated ship types to the new engine/weapon system
+- When determining whether a player can be placed on a ship, use the canPlacePlayer function over the previous custom IF statement.
+
+
+
 ## [0.1.16] - 2020-06-16
 
 

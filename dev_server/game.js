@@ -7,7 +7,7 @@ const log = console.log;
 const uuid = require('uuid/v1');
 
 const event = require('./event.js');
-const game = require('./game.js');
+//const game = require('./game.js');
 const game_object = require('./game_object.js');
 const helper = require('./helper.js');
 const inventory = require('./inventory.js');
@@ -2455,6 +2455,9 @@ const world = require('./world.js');
      * @param socket
      * @param dirty
      * @param {Object} data
+     * @param {number} data.inventory_item_id
+     * @param {number} data.x - tile x
+     * @param {number} data.y - tile y
      * @returns {Promise<boolean>}
      */
     async function drop(socket, dirty, data) {
@@ -2623,7 +2626,11 @@ const world = require('./world.js');
             if(scope === 'ship' && dirty.object_types[object_type_index].is_ship_weapon && temp_coord.is_weapon_hardpoint) {
                 console.log("Pre verified can place TRUE!");
                 pre_verified_can_place = true;
-            } else {
+            } else if(scope === 'ship' && dirty.object_types[object_type_index].is_ship_engine && temp_coord.is_engine_hardpoint) {
+                console.log("Pre verified can place TRUE!");
+                pre_verified_can_place = true;
+            }
+            else {
                 console.log("Did not pre-verify. Scope: " + scope + " is_ship_weapon: " +
                     dirty.object_types[object_type_index].is_ship_weapon + " is_weapon_hardpoint: " + temp_coord.is_weapon_hardpoint);
             }
@@ -2725,7 +2732,8 @@ const world = require('./world.js');
                         await main.updateCoordGeneric(socket, { 'ship_coord_index': coord_index, 'object_type_id': false });
                     }
 
-                    if(dirty.object_types[object_type_index].is_ship_engine) {
+                    if(dirty.object_types[object_type_index].is_ship_engine && temp_coord.object_id) {
+                        
                         let removing_object_index = await main.getObjectIndex(temp_coord.object_id);
                         if(removing_object_index !== -1) {
                             await game_object.deleteObject(dirty, { 'object_index': removing_object_index });
@@ -2754,6 +2762,16 @@ const world = require('./world.js');
 
                         dirty.objects[object_index].is_active = true;
                         await game_object.sendInfo(socket, false, dirty, object_index);
+                    }
+
+                    // If this was a ship engine, re-calculate the engine power for the ship
+                    if(dirty.object_types[object_type_index].is_ship_engine) {
+                        console.log("Added a ship engine to a ship. Going to call world.attachShipEngines");
+                        let ship_index = await main.getObjectIndex(temp_coord.ship_id);
+                        if(ship_index !== -1) {
+                            await world.attachShipEngines(dirty, ship_index);
+                            await game_object.sendInfo(socket, false, dirty, ship_index);
+                        }
                     }
 
 
@@ -4602,7 +4620,52 @@ const world = require('./world.js');
                 console.log("Admin moving npc id: " + npc_id + " to planet coord id: " + destination_coord_id);
                 movement.adminMoveNpc(socket, dirty, npc_id, destination_coord_id);
 
-            } else if(data.message.includes("/moveplanet ")) {
+            } else if(data.message.includes("/moveobject ")) {
+                console.log("Was sent in /moveobject message");
+                let split = data.message.split(" ");
+                let object_id = parseInt(split[1]);
+                let coord_type = split[2];
+                let coord_id = parseInt(split[3]);
+
+                let object_index = await main.getObjectIndex(object_id);
+
+                if(object_index === -1) {
+                    return false;
+                }
+
+                let place_data = {};
+                place_data.object_index = object_index;
+
+                if(coord_type === 'galaxy') {
+                    let coord_index = await main.getCoordIndex({ 'coord_id': coord_id });
+                    if(coord_index === -1) {
+                        return false;
+                    }
+
+                    place_data.coord_index = coord_index;
+                } else if(coord_type === 'planet') {
+                    let coord_index = await main.getPlanetCoordIndex({ 'planet_coord_id': coord_id });
+                    if(coord_index === -1) {
+                        return false;
+                    }
+
+                    place_data.planet_coord_index = coord_index;
+                } else if(coord_type === 'ship') {
+                    let coord_index = await main.getShipCoordIndex({ 'ship_coord_id': coord_id });
+                    if(coord_index === -1) {
+                        return false;
+                    }
+
+                    place_data.ship_coord_index = coord_index;
+                }
+
+
+                let placed_result = await main.placeObject(socket, dirty, place_data);
+
+                console.log("Placed result: " + placed_result);
+            }
+            
+            else if(data.message.includes("/moveplanet ")) {
                 console.log("Was sent in /movePlanet message");
 
                 let split = data.message.split(" ");
@@ -4612,7 +4675,56 @@ const world = require('./world.js');
                 console.log("Moving planet id: " + planet_id + " to coord id " + destination_coord_id);
 
                 await movement.moveEntirePlanet(socket, dirty, planet_id, destination_coord_id);
+            } else if(data.message.includes("/moveto ")) {
+                console.log("Was sent in /moveto message");
+                let split = data.message.split(" ");
+                let moving_to_type = split[1];
+                let moving_to_id = parseInt(split[2]);
+
+                if(moving_to_type === "planet") {
+                    await movement.switchToPlanet(socket, dirty, { 'planet_id': moving_to_id });
+                } else if(moving_to_type === "ship") {
+
+                    // We need to get the ship so that we know it's in memory
+                    let ship_index = await main.getObjectIndex(moving_to_id);
+                    
+                    let ship_coord_index = -1
+
+                    for(let i = 0; i < dirty.ship_coords.length && ship_coord_index === -1; i++) {
+
+                        if(dirty.ship_coords[i] && dirty.ship_coords[i].ship_id === moving_to_id) {
+
+                            let can_place_result = await main.canPlacePlayer({ 'scope': 'ship', 'coord': dirty.ship_coords[i], 'player_index': socket.player_index });
+
+                            if(can_place_result === true) {
+                                ship_coord_index = i;
+                            }
+
+                        }
+
+                    }
+
+                    if(ship_coord_index === -1) {
+                        return false;
+                    }
+
+
+            
+
+                    dirty.players[socket.player_index].previous_coord_id = false;
+                    dirty.players[socket.player_index].coord_id = false;
+                    dirty.players[socket.player_index].ship_coord_id = dirty.ship_coords[ship_coord_index].id;
+                    dirty.players[socket.player_index].has_change = true;
+                    socket.map_needs_cleared = true;
+                    await player.sendInfo(socket, "ship_" + dirty.ship_coords[ship_coord_index].ship_id, dirty, dirty.players[socket.player_index].id);
+                    
+                    socket.emit('view_change_data', { 'view': 'ship'});
+                    await map.updateMap(socket, dirty);
+                }
+
+                console.log("Done with admin moveto");
             }
+
             else if (data.message.includes("/reloadevent")) {
                 console.log("Was sent /reloadevent message");
                 let split = data.message.split(" ");

@@ -210,6 +210,9 @@ module.exports.eat = eat;
  * @param {Object} data
  * @param {number=} data.object_id
  * @param {number=} data.object_index
+ * @param {number=} data.planet_coord_index
+ * @param {number=} data.ship_coord_index
+ * @param {number=} data.coord_index
  * @returns {Promise<boolean>}
  */
 async function placeObject(socket, dirty, data) {

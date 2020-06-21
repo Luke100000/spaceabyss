@@ -8,7 +8,9 @@ game.processAdminChatMessage
 /destroyplanet PLANET_ID
 /generateplanet PLANET_ID
 /move (UP|DOWN)
+/moveto TYPE (SHIP) TYPE_ID
 /movenpc NPC_ID planet_coord_id
+/moveobject OBJECT ID COORD_TYPE COORD_ID
 /moveplanet PLANET_ID coord_id
 /reloadevent EVENT_ID
 /replacefloor COORD_TYPE(planet|ship|galaxy) COORD_ID NEW_FLOOR_TYPE_ID

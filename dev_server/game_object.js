@@ -630,6 +630,21 @@ async function deleteObject(dirty, data) {
         await (pool.query("DELETE FROM rules WHERE object_id = ?", [dirty.objects[data.object_index].id]));
 
 
+        // Recalculate ship engines and engine power if this object type is_ship_engine
+        if(dirty.object_types[object_type_index].is_ship_engine && dirty.objects[data.object_index].ship_coord_id) {
+            console.log("A ship engine was destroyed!!");
+
+            let ship_coord_index = await main.getShipCoordIndex({ 'ship_coord_id': dirty.objects[data.object_index].ship_coord_id});
+            if(ship_coord_index !== -1) {
+                let ship_index = await main.getObjectIndex(dirty.ship_coords[ship_coord_index].ship_id);
+                if(ship_index !== -1) {
+                    await world.attachShipEngines(dirty, ship_index);
+                    await sendInfo(socket, false, dirty, ship_index);
+                }
+            }
+        }
+
+
 
         //console.log("Sending object info with remove from game.deleteObject");
         if(object_info !== false) {

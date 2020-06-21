@@ -463,6 +463,14 @@ $(document).on('click', 'button', function () {
 
     }
 
+    if(split_name[0] === 'claimship') {
+        console.log("Player is claiming ship id: " + split_name[1]);
+        socket.emit('claim_ship_data', { 'ship_id': split_name[1] });
+
+        $('#click_menu').empty();
+        $('#click_menu').hide();
+    }
+
     if(split_name[0] == 'clear') {
         resetMap();
     }
@@ -519,6 +527,8 @@ $(document).on('click', 'button', function () {
         }
     }
 
+
+
     if(split_name[0] === 'deleterule') {
         let rule_id = $('#' + clicked_id).attr('rule_id');
 
@@ -563,8 +573,6 @@ $(document).on('click', 'button', function () {
         if($('#' + clicked_id).attr('amount')) {
             amount = $('#' + clicked_id).attr('amount');
         }
-
-        console.log("Sending drop data " + split_name[1] + " " + clicked_x + "x" + clicked_y);
 
         socket.emit("drop_data", {inventory_item_id: split_name[1], 'x': clicked_x, 'y':clicked_y,
             'amount': amount });
@@ -1209,7 +1217,6 @@ $(document).on('click', 'button', function () {
     }
 
     if(split_name[0] === 'switchship') {
-        console.log("player is switching ships");
         socket.emit('switch_ship_data', { 'ship_id': split_name[1] });
 
         $('#click_menu').empty();

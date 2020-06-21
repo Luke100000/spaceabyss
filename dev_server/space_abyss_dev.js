@@ -1482,6 +1482,11 @@ io.sockets.on('connection', function (socket) {
         await game.processChatMessage(socket, dirty, data);
     });
 
+    socket.on('claim_ship_data', async function(data) {
+        console.log("Got claim_ship_data. data.ship_id: " + data.ship_id);
+        await player.claimShip(socket, dirty, parseInt(data.ship_id));
+    });
+
     socket.on('convert_data', async function(data) {
         console.log("Got convert_data");
         await game.convert(socket, dirty, data);
@@ -3201,6 +3206,13 @@ module.exports.canPlaceMonster = canPlaceMonster;
 
 // The logic in this function is very close to the logic in the client function
 //      data:   scope   |   coord   |   player_index   |   show_output
+/**
+ * @param {Object} data 
+ * @param {String} data.scope
+ * @param {Object} data.coord
+ * @param {number} data.player_index
+ * @param {boolean=} data.show_output
+ */
 async function canPlacePlayer(data) {
 
     try {
@@ -5592,11 +5604,20 @@ async function writeDirty(show_output = false) {
         }
     });
 
+    for(let i = 0; i < dirty.players.length; i++) {
+        if(dirty.players[i] && dirty.players[i].has_change) {
+            await writePlayerDirty(dirty.players[i], i);
+        }
+    }
+
+    /*
+    I legit think this was not working.
     dirty.players.forEach(function(writing_player, i) {
         if(player.has_change) {
             writePlayerDirty(writing_player, i);
         }
     });
+    */
 
     dirty.player_relationship_linkers.forEach(function(linker, i) {
         if(linker.has_change) {
@@ -5610,6 +5631,7 @@ async function writeDirty(show_output = false) {
             dirty.player_relationship_linkers[i].has_change = false;
         }
     });
+    
 
     dirty.player_research_linkers.forEach(function(linker, i) {
         if(linker.has_change) {

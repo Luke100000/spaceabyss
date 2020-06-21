@@ -2,15 +2,37 @@
 
 DOING NOW:
 
-    Blue bars on everything are always at 100% now. INVESTIGATE!
 
-    Make sure ships beyond the initial 4 have engine mounts and weapon mounts
+
+
+    Need to make sure Gabriel's Space Station has engine and weapon mounts.
+
+            Gabriel's Space Station disappeared when he logged out - things that can be docked at
+                need to stay in the game
+
+
+    Once I'm done with all this I have to test:
+        1. Pods moving
+        2. Things moving with all, part, 0 engines
+
+    Exodium Knife - requires quick matter knife research
+
+    Thiol Extractor image
 
     Octopus body and water movement
         I THINK the easiest way to add and apply it is.... an object type property O_o
 
-    NORMAL TUTORIAL!
-    VIDEO TUTORIAL!
+
+    Ship tutorial
+
+    
+    If we can't place a player in the galaxy, try the coords around the player instead of random
+        Search server for: 'Was not able to place player on planet or specific galaxy coord. Getting a random one'
+        Players can effectively force a warp
+
+    Need to change move delay server side so players' can't switch to body/ship/body/ship to reset the move delay. Also, probably shouldn't have a 10 move 
+        wiggle window for really slow things like stations.
+
 
     switch font awesome to self hosted
 
@@ -55,6 +77,8 @@ DOING NOW:
 
     Need to expand on augments
 
+    admin /moveto ship is buggy!!!
+
 
     Make those merchant spots do stuff!
 
@@ -98,28 +122,7 @@ NEED TO DRAW
 ART TASKS
 
 
-Modification from last batch:
-
-1. Player Pod ( #5 last batch ) was for an idle animation. Re-attaching. The centered design works, we just need some blinking and such :)
-Size: 12x16
-Frame Count: One idle animation
-Flavor Text: The default ship that players have - a single person pod.
-Reference Image: https://images.gemquery.com/252/content_2528976.jpg
-Notes: You are basically doing a cosmetic premium version of the existing pod - https://space.alphacoders.com/player-pod-animated.png . You don't have to match the frame count, but it is a very simple thing :)
-
-
-2. Science Vessel Animation
-Frames: 
-    idle animation: ~3-5 frames - Whatever looks nice.
-Notes: Since this ship is circular, I don't know that there is much point for a up/down/left/right. So we are just doing an idle animation. Let me know if you 
-have any ideas for a left/right/up/down that would be cool.
-
-3. Exodium Asteroid
-
-
-
 life herb seedling
-
 
 
 

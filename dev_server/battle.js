@@ -1512,7 +1512,14 @@ const world = require('./world.js');
             if(attack === 0) {
                 console.log("No attack value. Removing battle linker");
 
+
+                if(battle_linker.socket_id) {
+                    io.to(battle_linker.socket_id).emit('result_info', {'status': 'failure', 'text': 'No attack power. Do your weapons have energy/material?'});
+                }
+
+
                 await world.removeBattleLinkers(dirty, { 'battle_linker_id': battle_linker.id });
+                
 
                 return false;
             }
@@ -1687,6 +1694,10 @@ const world = require('./world.js');
             // For whatever reason, the object has no more attacking power (ships, batteries, etc). Remove the battle linker
             if(attack === 0) {
                 console.log("No attack value. Removing battle linker");
+
+                if(battle_linker.socket_id) {
+                    io.to(battle_linker.socket_id).emit('result_info', {'status': 'failure', 'text': 'No attack power. Do your weapons have energy/material?'});
+                }
 
                 await world.removeBattleLinkers(dirty, { 'battle_linker_id': battle_linker.id });
 

@@ -319,6 +319,7 @@ LASER
 MELEE
 No Equip (Fists - Melee)
     Quick Matter Knife
+            Exodium Knife
                     Diamond Claw
 
 
@@ -603,9 +604,9 @@ FREE
                                         TIER 10 - Crystadmantium (Crystonium), Antimatter
 
 
-Pod ( drawn )
+Pod (DRAWN)
 
-    Mining ( drawn )
+    Mining (DRAWN)
 
         Mining Frigate 
 
@@ -617,7 +618,7 @@ Pod ( drawn )
 
 
 
-    Cargo Ship ( drawn )
+    Cargo Ship (DRAWN)
 
         Light freighter ( https://images.gemquery.com/254/content_2542324.jpg )
 
@@ -628,15 +629,15 @@ Pod ( drawn )
 
         Tanker (Have Image Idea)
 
-            Blockade Runner (drawn)
+            Blockade Runner (DRAWN)
 
 
 
-            Cutter ( have image ) Movement speed: 500 10 Batteries 10 Circuits 20 Exodium
+            Cutter (DRAWN)
 
 
 
-            Lancer ( being drawn )
+            Lancer (DRAWN)
             Striker ( have image idea )
                 Corvette
                 Destroyer ( have image idea )
@@ -646,6 +647,11 @@ Pod ( drawn )
                         Dreadnought ( have image idea )
                         Battlecruiser
                             Supercruiser
+
+            Living Wood Ship
+
+            Water Ship
+                                Water City
 
             Silk Ship
                         Spun Diamond Silk Ship
@@ -657,9 +663,9 @@ Pod ( drawn )
 
 
 
-    Fighter
+    Fighter (DRAWN)
 
-    Shuttle (have image drawn )
+    Shuttle (DRAWN)
 
         Yacht ( have image idea )
 

@@ -785,24 +785,39 @@ exports.aiRetaliate = aiRetaliate;
 
 
 // Used to associate the engine with the ship, so that we can easily add fuel, remove fuel from the engine objects
-// as the ship moves around
+// as the ship moves around, as well as calculate speed
 async function attachShipEngines(dirty, ship_index) {
 
     try {
 
+        console.time("attachShipEngines");
+
+        let engine_object_type_ids = [];
+        for(let i = 0; i < dirty.object_types.length; i++) {
+            if(dirty.object_types[i] && dirty.object_types[i].is_ship_engine) {
+                engine_object_type_ids.push(dirty.object_types[i].id);
+            }
+        }
+
         // Go through all the ship coords in dirty, finding engines
         let engine_indexes = [];
+        let total_engine_power = 0;
 
-        //console.time("attachShipEngines");
+
 
         for (let i = 0; i < dirty.ship_coords.length; i++) {
-            if (dirty.ship_coords[i].ship_id === dirty.objects[ship_index].id && dirty.ship_coords[i].object_type_id === 265) {
+            if (dirty.ship_coords[i] && dirty.ship_coords[i].ship_id === dirty.objects[ship_index].id && engine_object_type_ids.indexOf(dirty.ship_coords[i].object_type_id) !== -1) {
 
                 let drive_index = await main.getObjectIndex(dirty.ship_coords[i].object_id);
 
                 if (drive_index !== -1) {
 
                     engine_indexes.push(drive_index);
+
+                    let drive_object_type_index = main.getObjectTypeIndex(dirty.ship_coords[i].object_type_id);
+                    if(drive_object_type_index !== -1) {
+                        total_engine_power += dirty.object_types[drive_object_type_index].engine_power;
+                    }
 
                 } else {
                     console.log("Could not find ion drive to refuel");
@@ -812,8 +827,11 @@ async function attachShipEngines(dirty, ship_index) {
         }
 
         dirty.objects[ship_index].engine_indexes = engine_indexes;
+        dirty.objects[ship_index].current_engine_power = total_engine_power;
 
-        //console.timeEnd("attachShipEngines");
+        console.log("Set current_engine_power to: " + dirty.objects[ship_index].current_engine_power);
+
+        console.timeEnd("attachShipEngines");
 
     } catch (error) {
         log(chalk.red("Error in world.attachShipEngines: " + error));
@@ -4090,7 +4108,7 @@ async function setPlayerMoveDelay(socket, dirty, player_index) {
                 if (body_type_index === -1) {
                     log(chalk.yellow("Did not find object type of body id: " + dirty.objects[body_index].id));
                 } else if (!dirty.object_types[body_type_index].move_delay) {
-                    socket.move_delay = 500
+                    socket.move_delay = 500;
                 } else {
                     socket.move_delay = dirty.object_types[body_type_index].move_delay;
                 }
@@ -4108,7 +4126,32 @@ async function setPlayerMoveDelay(socket, dirty, player_index) {
                 let ship_type_index = main.getObjectTypeIndex(dirty.objects[ship_index].object_type_id);
                 if (ship_type_index !== -1) {
                     if (dirty.object_types[ship_type_index].move_delay) {
+
+
                         socket.move_delay = dirty.object_types[ship_type_index].move_delay;
+
+                        if(dirty.object_types[ship_type_index].needs_engines && typeof dirty.objects[ship_index].current_engine_power !== 'undefined') {
+
+                            // Division by 0 is bad stuff - just set it to 1000000 and if move delay is 1000000, always deny the move
+                            if(dirty.objects[ship_index].current_engine_power === 0) {
+                                socket.move_delay = 1000000;
+                            } else {
+                                socket.move_delay = socket.move_delay * ( dirty.object_types[ship_type_index].engine_power_required / dirty.objects[ship_index].current_engine_power);
+                            }
+
+                            
+
+                            console.log("Ship engines changed move delay to: " + socket.move_delay);
+                        } else {
+                            if(!dirty.object_types[ship_type_index].needs_engines) {
+                                console.log("Ship does not require engines");
+                            }
+
+                            if(typeof dirty.objects[ship_index].current_engine_power === 'undefined') {
+                                console.log("Ship current_engine_power is undefined");
+                            }
+                        }
+                        
                     }
                 }
             }

@@ -651,6 +651,10 @@ socket.on('coord_info', function (data) {
         return false;
     }
 
+    if(data.coord.object_id === 86021) {
+        console.log("Got coord with object id: " + data.coord.object_id + " on it");
+    }
+
     //console.log("Recieved coord info (galaxy coord)");
 
     let id = parseInt(data.coord.id);
@@ -664,6 +668,10 @@ socket.on('coord_info', function (data) {
         // planet coord. We are getting it for a reason!
         if(client_player_index === -1 || shouldDraw(client_player_info.coord, coords[coord_index], "coord_info") ||
             (current_view === "galaxy" && coords[coord_index].planet_id)) {
+
+            if(coords[coord_index].object_id === 86021) {
+                console.log("Calling drawCoord from coord_info for coord with object id: " + coords[coord_index].object_id + " on it");
+            }
 
 
             drawCoord('galaxy', coords[coord_index]);
@@ -789,14 +797,11 @@ socket.on('inventory_item_info', function(data) {
     let inventory_index = inventory_items.findIndex(function (obj) { return obj && obj.id === parseInt(data.inventory_item.id); });
 
     if(data.remove && inventory_index !== -1) {
-        console.log("Server said to remove inventory_item_id: " + data.inventory_item.id);
-
 
         delete inventory_items[inventory_index];
 
         generateInventoryDisplay();
 
-        console.log("Removed inventory item");
         return false;
 
     } else {
@@ -898,9 +903,6 @@ socket.on('login_data', function(data) {
             }
 
         }
-
-        console.log("Got starting view as: " + current_view);
-
 
 
         // populate the launch button so we can navigate out of our starting view
@@ -1606,6 +1608,10 @@ socket.on('object_info', function(data) {
 
     //console.log("Received object_info_data for object id: " + data.object.id);
 
+    if(data.object.id === 86021) {
+        console.log("Got object_info for object id: " + data.object.id);
+    }
+
     if(data.remove ) {
         console.log("%c Server said to remove object id: " + data.object.id, log_warning);
 
@@ -1724,7 +1730,7 @@ socket.on('object_info', function(data) {
 
         // Our ship - galaxy view!
         if(client_player_id && players[client_player_index] && objects[object_index].id === players[client_player_index].ship_id && current_view === 'galaxy') {
-            console.log("Have our ship object. Attempting to create and place our sprite");
+            console.log("Have our ship object id: " + objects[object_index].id + ". Attempting to create and place our sprite");
             createPlayerSprite(client_player_index);
             if(players[client_player_index].sprite) {
                 client_player_info = getPlayerInfo(client_player_index);
@@ -1787,6 +1793,10 @@ socket.on('object_info', function(data) {
 
 
         if(client_player_info && shouldDraw(client_player_info.coord, object_info.coord, "object_info")) {
+
+            if(objects[object_index].id === 86021) {
+                console.log("Calling drawCoord for object id: " + objects[object_index].id);
+            }
 
 
             drawCoord(object_info.scope, object_info.coord);
@@ -1947,17 +1957,8 @@ socket.on('object_info', function(data) {
 
         }
 
-        if(!isNaN(parseInt(data.object.docked_at_planet_id)))
-
 
         if(notFalse(data.object.docked_at_planet_id) && !isNaN(parseInt(data.object.docked_at_planet_id))) {
-        //if(parseInt(objects[object_index].docked_at_planet_id) !== parseInt(data.object.docked_at_planet_id)) {
-            if(objects[object_index].id === players[client_player_index].ship_id) {
-                console.log("Got docked_at_planet_id change for the player's ship");
-            }
-
-            console.log(parseInt(objects[object_index].docked_at_planet_id));
-            console.log(parseInt(data.object.docked_at_planet_id));
             generateSpaceportDisplay();
         }
 
@@ -1985,6 +1986,7 @@ socket.on('object_info', function(data) {
         objects[object_index].docked_at_planet_id = parseInt(data.object.docked_at_planet_id);
         objects[object_index].docked_at_object_id = parseInt(data.object.docked_at_object_id);
         objects[object_index].tint = data.object.tint;
+        objects[object_index].current_engine_power = parseInt(data.object.current_engine_power);
         //objects[object_index] = data.object;
 
         if(update_ship_management_display) {
@@ -2500,7 +2502,6 @@ socket.on('player_info', function(data) {
             players[player_index].ship_id = data.player.ship_id;
 
             if(parseInt(data.player.id) === client_player_id) {
-                console.log("WE have a new ship!!");
                 update_spaceport_display = true;
             }
             setPlayerMoveDelay(player_index);
@@ -3215,7 +3216,6 @@ socket.on('view_change_data', function(data) {
 
     if(data.view === 'galaxy') {
 
-        console.log("View change to galaxy!");
         on_planet = false;
 
         //console.log("Emptied launch");
@@ -3269,10 +3269,7 @@ socket.on('view_change_data', function(data) {
         ship_coords = [];
 
         if(data.planet_type_id) {
-            console.log("View change data had a planet type id: " + data.planet_type_id);
             loadMonsterSprites(data.planet_type_id);
-        } else {
-            console.log("View change data did NOT have a planet_type_id");
         }
 
 
@@ -3280,7 +3277,6 @@ socket.on('view_change_data', function(data) {
 
         // I think if we are going from galaxy to ship we need to reset all the player sprites anyways
         if(current_view === 'galaxy') {
-            console.log("Clearing all player sprites");
             players.forEach(function(player) {
                 if(player.sprite) {
                     player.sprite.destroy();

@@ -208,6 +208,16 @@ const world = require('./world.js');
                 socket.move_delay = 500;
             }
 
+            // The player is trying to move a ship with no engines
+            if(socket.move_delay === 1000000) {
+                console.log("Player is trying to move a ship with no engines");
+
+                socket.emit('result_info', { 'status': 'failure', 'text': 'Your ship needs engines!' });
+                socket.emit('move_failure', { 'failed_coord_id': data.destination_coord_id,
+                'return_to_coord_id': dirty.players[player_index].coord_id });
+                return false;
+            }
+
             let movement_delay = socket.move_delay;
 
             // We have a temporary movement modifier. Maybe a tile we are on is slowing us down (water for most body types)
@@ -638,28 +648,31 @@ const world = require('./world.js');
             // Remove energy from the engines
             let paid_for_move = false;
 
-            for(let i = 0; i < dirty.objects[player_ship_index].engine_indexes.length; i++) {
-                if(!paid_for_move && dirty.objects[dirty.objects[player_ship_index].engine_indexes[i]].energy >= 1) {
-                    dirty.objects[dirty.objects[player_ship_index].engine_indexes[i]].energy--;
-                    dirty.objects[dirty.objects[player_ship_index].engine_indexes[i]].has_change = true;
-                    game_object.sendInfo(socket, false, dirty, dirty.objects[player_ship_index].engine_indexes[i]);
-
-                    if(dirty.objects[dirty.objects[player_ship_index].engine_indexes[i]].object_type_id === 265 && dirty.objects[dirty.objects[player_ship_index].engine_indexes[i]].energy === 200) {
-                        socket.emit('result_info', {'status': 'failure', 'text': 'Engine Low On Fuel' });
+            if(dirty.objects[player_ship_index].engine_indexes) {
+                for(let i = 0; i < dirty.objects[player_ship_index].engine_indexes.length; i++) {
+                    if(!paid_for_move && dirty.objects[dirty.objects[player_ship_index].engine_indexes[i]].energy >= 1) {
+                        dirty.objects[dirty.objects[player_ship_index].engine_indexes[i]].energy--;
+                        dirty.objects[dirty.objects[player_ship_index].engine_indexes[i]].has_change = true;
+                        game_object.sendInfo(socket, false, dirty, dirty.objects[player_ship_index].engine_indexes[i]);
+    
+                        if(dirty.objects[dirty.objects[player_ship_index].engine_indexes[i]].object_type_id === 265 && dirty.objects[dirty.objects[player_ship_index].engine_indexes[i]].energy === 200) {
+                            socket.emit('result_info', {'status': 'failure', 'text': 'Engine Low On Fuel' });
+                        }
+    
+                        if(dirty.objects[dirty.objects[player_ship_index].engine_indexes[i]].object_type_id === 265 && dirty.objects[dirty.objects[player_ship_index].engine_indexes[i]].energy === 100) {
+                            socket.emit('result_info', {'status': 'failure', 'text': 'Dock At Planet Soon!' });
+                        }
+    
+                        if(dirty.objects[dirty.objects[player_ship_index].engine_indexes[i]].object_type_id === 265 && dirty.objects[dirty.objects[player_ship_index].engine_indexes[i]].energy === 50) {
+                            socket.emit('result_info', {'status': 'failure', 'text': 'Engine Critically Low On Fuel' });
+                        }
+    
+                        paid_for_move = true;
                     }
-
-                    if(dirty.objects[dirty.objects[player_ship_index].engine_indexes[i]].object_type_id === 265 && dirty.objects[dirty.objects[player_ship_index].engine_indexes[i]].energy === 100) {
-                        socket.emit('result_info', {'status': 'failure', 'text': 'Dock At Planet Soon!' });
-                    }
-
-                    if(dirty.objects[dirty.objects[player_ship_index].engine_indexes[i]].object_type_id === 265 && dirty.objects[dirty.objects[player_ship_index].engine_indexes[i]].energy === 50) {
-                        socket.emit('result_info', {'status': 'failure', 'text': 'Engine Critically Low On Fuel' });
-                    }
-
-                    paid_for_move = true;
+    
                 }
-
             }
+            
 
             // Some ships don't need engines
             if(!dirty.object_types[player_ship_type_index].needs_engines || dirty.objects[player_ship_index].id < 81089) {
@@ -2465,7 +2478,7 @@ const world = require('./world.js');
      * @param dirty
      * @param {Object} data
      * @param {number} data.planet_id
-     * @param {number} data.previous_coord_index
+     * @param {number=} data.previous_coord_index
      * @returns {Promise<boolean>}
      */
     async function switchToPlanet(socket, dirty, data) {
@@ -2486,8 +2499,12 @@ const world = require('./world.js');
                 let failed_planet_index = await planet.getIndex(dirty, { 'planet_id': data.planet_id });
                 if(failed_planet_index !== -1 && dirty.planets[failed_planet_index].planet_type_id === 26) {
 
-                    socket.emit('move_failure', {
-                        'return_to_coord_id': dirty.coords[data.previous_coord_index].id });
+
+                    if(typeof data.previous_coord_index !== 'undefined') {
+                        socket.emit('move_failure', {
+                            'return_to_coord_id': dirty.coords[data.previous_coord_index].id });
+                    }
+                    
                     socket.emit('result_info', { 'status': 'failure', 'text': 'Planet Is Forming' });
                     return false;
 
@@ -2496,8 +2513,11 @@ const world = require('./world.js');
                     console.log("Looks like spaceport tiles are full. Planet id: " + data.planet_id);
                     //socket.emit('chat', {'message': 'Spaceport is full', 'scope':'system'});
     
-                    socket.emit('move_failure', {
-                        'return_to_coord_id': dirty.coords[data.previous_coord_index].id });
+                    if(typeof data.previous_coord_index !== 'undefined') {
+                        socket.emit('move_failure', {
+                            'return_to_coord_id': dirty.coords[data.previous_coord_index].id });
+                    }
+                    
                     socket.emit('result_info', { 'status': 'failure', 'text': 'Spaceport Is Full' });
                     return false;
                 }
@@ -2514,6 +2534,7 @@ const world = require('./world.js');
             // The ship is now docked at this planet, make sure the player knows
             if(ship_index !== -1) {
                 dirty.objects[ship_index].docked_at_planet_id = dirty.planet_coords[spaceport_index].planet_id;
+                dirty.objects[ship_index].coord_id = false;
 
                 // If the ship has an ion drive, the spaceport fills it back up
 
@@ -2827,13 +2848,14 @@ const world = require('./world.js');
 
                 // 1. OUR SHIP IS DOCKED
                 if(dirty.objects[player_ship_index].docked_at_object_id) {
-                    //console.log("Launching with docked ship");
+                    console.log("Launching FROM docked ship. Docked ship is on galaxy coord id: " + dirty.coords[ship_galaxy_coord_index].id);
+
                     let tile_x_start = dirty.coords[ship_galaxy_coord_index].tile_x - 1;
                     let tile_y_start = dirty.coords[ship_galaxy_coord_index].tile_y - 1;
                     let tile_x_end = tile_x_start + 2;
                     let tile_y_end = tile_y_start + 2;
 
-                    console.log("Checking coords: " + tile_x_start + " , " + tile_y_start + " to " + tile_x_end + " , " + tile_y_end);
+                    console.log("Checking coords: " + tile_x_start + "," + tile_y_start + " to " + tile_x_end + "," + tile_y_end);
 
                     let placing_galaxy_coord_index = -1;
                     let found_galaxy_coord = false;
@@ -2899,6 +2921,7 @@ const world = require('./world.js');
                 }
                 // Just back to the galaxy view from our ship (not docked on anything)
                 else {
+                    console.log("PLAIN LAUNCH!");
                     
                     dirty.players[player_index].on_ship_id = false;
                     dirty.players[player_index].previous_ship_coord_id = dirty.players[player_index].ship_coord_id;
@@ -3012,6 +3035,14 @@ const world = require('./world.js');
 
                     if(dirty.ship_coords[i] && dirty.ship_coords[i].ship_id === dirty.objects[ship_index].id) {
 
+                        let can_place_result = await main.canPlacePlayer({ 'scope': 'ship', 'coord': dirty.ship_coords[i], 'player_index': player_index });
+
+                        if(can_place_result === true) {
+                            ship_coord_index = i;
+                        }
+
+                        /*
+                        Removed in favor of using canPlacePlayer. Leaving for an update or two just incase I notice some changes. 0.1.17
                         // If there's nothing there, we can place the player
                         if(!dirty.ship_coords[i].object_type_id && !dirty.ship_coords[i].player_id && !dirty.ship_coords[i].monster_id && 
                             !dirty.ship_coords[i].npc_id) {
@@ -3025,6 +3056,7 @@ const world = require('./world.js');
                             }
 
                         }
+                        */
 
                     }
 
@@ -3402,7 +3434,9 @@ const world = require('./world.js');
         move,
         moveGalaxyObjects,
         switchToGalaxy,
-        switchToShip
+        switchToPlanet,
+        switchToShip,
+        warpTo
     }
 
 

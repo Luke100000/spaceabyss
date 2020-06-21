@@ -86,6 +86,93 @@ async function calculateDefense(dirty, player_index, damage_type = false) {
 exports.calculateDefense = calculateDefense;
 
 
+/**
+ * 
+ * @param {Object} socket 
+ * @param {Object} dirty 
+ * @param {number} ship_id 
+ */
+async function claimShip(socket, dirty, ship_id) {
+    try {
+
+
+        if(isNaN(ship_id)) {
+            log(chalk.yellow("isNaN ship_id"));
+            return false;
+        }
+
+        log(chalk.cyan("Player is claiming a ship! with id: " + ship_id));
+
+        if(typeof socket.player_index === 'undefined') {
+            log(chalk.yellow("Socket doesn't have a player yet"));
+            return false;
+        }
+        let ship_index = await main.getObjectIndex(parseInt(ship_id));
+
+        if(ship_index === -1) {
+            log(chalk.yellow("Couldn't find ship"));
+            return false;
+        }
+
+
+
+        // Make sure the new ship isn't owned by someone already
+        if(dirty.objects[ship_index].npc_id || (dirty.objects[ship_index].player_id && dirty.objects[ship_index].player_id !== dirty.players[socket.player_index].id) ) {
+            console.log("Can't claim a ship that is already owned by someone");
+            socket.emit('chat', { 'message': "Can't claim ship. Already owned", 'scope':'system' });
+            socket.emit('result_info', { 'status': 'failure', 'text': "That ship is already owned"});
+            return false;
+        }
+
+        let ship_object_type_index = main.getObjectTypeIndex(dirty.objects[ship_index].object_type_id);
+
+        if(!dirty.object_types[ship_object_type_index].can_be_claimed) {
+            console.log("This cannot be claimed");
+            socket.emit('chat', { 'message': "Cannot be claimed", 'scope':'system' });
+            socket.emit('result_info', { 'status': 'failure', 'text': dirty.object_types[ship_object_type_index].name + " will not let you claim it" });
+            return false; 
+        }
+
+        if(dirty.object_types[ship_object_type_index].id === 114) {
+            console.log("Can't just claim a pod");
+            socket.emit('chat', { 'message': "Cannot be claimed", 'scope':'system' });
+            socket.emit('result_info', { 'status': 'failure', 'text': "You can't claim pods (but can switch to them)" });
+            return false; 
+        }
+
+
+        // The new ship is now controlled by the player
+        dirty.objects[ship_index].player_id = dirty.players[socket.player_index].id;
+        dirty.objects[ship_index].has_change = true;
+
+        await game_object.sendInfo(socket, "galaxy", dirty, ship_index);
+
+
+        for(let i = 0; i < dirty.ship_coords.length; i++) {
+            if(dirty.ship_coords[i] && dirty.ship_coords[i].ship_id === dirty.objects[ship_index].id) {
+
+                // Switch the airlock over to the claiming player too
+                if(dirty.ship_coords[i].object_type_id === 266) {
+                    let changing_object_index = await main.getObjectIndex(dirty.ship_coords[i].object_id);
+                    if(changing_object_index !== -1) {
+                        dirty.objects[changing_object_index].player_id = dirty.players[socket.player_index].id;
+                        dirty.objects[changing_object_index].has_change = true;
+                    }
+                }
+
+            }
+        }
+
+
+    } catch(error) {
+        log(chalk.red("Error in player.claimShip: " + error));
+        console.error(error);
+    }
+}
+
+exports.claimShip = claimShip;
+
+
 async function sendInfo(socket, room, dirty, player_id) {
 
     try {
@@ -235,6 +322,7 @@ exports.sendShips = sendShips;
                 dirty.players[player_index].has_change = true;
 
                 // We switched ships while on a ship that isn't dockable - meaning we jumped out!
+                /*
                 if(!dirty.objects[old_ship_index].is_dockable) {
 
                     let previous_ship_coord_index = await main.getShipCoordIndex({ 'ship_coord_id': dirty.players[player_index].ship_coord_id });
@@ -245,12 +333,14 @@ exports.sendShips = sendShips;
                     dirty.players[player_index].previous_ship_coord_id = false;
                     dirty.players[player_index].has_change = true;
                 }
+
                 // We're still at the same place on the ship we are currently on
                 else {
 
                     console.log("Just set a new ship_id for the player");
 
                 }
+                */
 
 
                 await sendInfo(socket, false, dirty, dirty.players[player_index].id);
@@ -408,6 +498,7 @@ exports.sendShips = sendShips;
 
 module.exports = {
     calculateDefense,
+    claimShip,
     sendInfo,
     sendShips,
     switchShip
