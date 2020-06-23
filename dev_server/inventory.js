@@ -560,7 +560,7 @@ var io;
             } else {
                 //console.log("Reducing inventory amount by " + data.amount);
                 dirty.inventory_items[inventory_item_index].amount = dirty.inventory_items[inventory_item_index].amount - data.amount;
-                dirty.inventory_items.has_change = true;
+                dirty.inventory_items[inventory_item_index].has_change = true;
 
 
                 // They took from it - they should know about the change

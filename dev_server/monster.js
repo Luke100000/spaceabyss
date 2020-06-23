@@ -14,7 +14,7 @@ const planet = require('./planet.js');
 const world = require('./world.js');
 
 
-async function calculateDefense(dirty, monster_index, damage_types = []) {
+async function calculateDefense(dirty, monster_index, damage_types = [], attack_profile = false) {
 
     try {
 
@@ -31,8 +31,122 @@ async function calculateDefense(dirty, monster_index, damage_types = []) {
             defense = dirty.monster_types[monster_type_index].defense;
         }
 
-        // modify for each damage type we encounter.....
-        if(damage_types.length > 0) {
+
+        
+
+        // Prioritize calculating based on a full attack profile being sent in
+
+        if(attack_profile !== false) {
+
+            if( typeof attack_profile.control_equipment_count !== 'undefined' && attack_profile.control_equipment_count !== 0 && 
+                dirty.monster_types[monster_type_index].control_defense_modifier) {
+
+                defense += (dirty.monster_types[monster_type_index].control_defense_modifier * attack_profile.control_equipment_count);
+
+            }
+
+            
+            if( typeof attack_profile.corrosive_equipment_count !== 'undefined' && attack_profile.corrosive_equipment_count !== 0 && 
+                dirty.monster_types[monster_type_index].corrosive_defense_modifier) {
+
+                defense += (dirty.monster_types[monster_type_index].corrosive_defense_modifier * attack_profile.corrosive_equipment_count);
+
+            }
+
+            
+            if( typeof attack_profile.electric_equipment_count !== 'undefined' && attack_profile.electric_equipment_count !== 0 && 
+                dirty.monster_types[monster_type_index].electric_defense_modifier) {
+
+                defense += (dirty.monster_types[monster_type_index].electric_defense_modifier * attack_profile.electric_equipment_count);
+
+            }
+
+            
+            if( typeof attack_profile.explosion_equipment_count !== 'undefined' && attack_profile.explosion_equipment_count !== 0 && 
+                dirty.monster_types[monster_type_index].explosion_defense_modifier) {
+
+                defense += (dirty.monster_types[monster_type_index].explosion_defense_modifier * attack_profile.explosion_equipment_count);
+
+            }
+
+            
+            if( typeof attack_profile.freezing_equipment_count !== 'undefined' && attack_profile.freezing_equipment_count !== 0 && 
+                dirty.monster_types[monster_type_index].freezing_defense_modifier) {
+
+                defense += (dirty.monster_types[monster_type_index].freezing_defense_modifier * attack_profile.freezing_equipment_count);
+
+            }
+
+            
+            if( typeof attack_profile.gravity_equipment_count !== 'undefined' && attack_profile.gravity_equipment_count !== 0 && 
+                dirty.monster_types[monster_type_index].gravity_defense_modifier) {
+
+                defense += (dirty.monster_types[monster_type_index].gravity_defense_modifier * attack_profile.gravity_equipment_count);
+
+            }
+
+            if( typeof attack_profile.hacking_equipment_count !== 'undefined' && attack_profile.hacking_equipment_count !== 0 && 
+                dirty.monster_types[monster_type_index].hacking_defense_modifier) {
+
+                defense += (dirty.monster_types[monster_type_index].hacking_defense_modifier * attack_profile.hacking_equipment_count);
+
+            }
+
+            
+            if( typeof attack_profile.heat_equipment_count !== 'undefined' && attack_profile.heat_equipment_count !== 0 && 
+                dirty.monster_types[monster_type_index].heat_defense_modifier) {
+
+                defense += (dirty.monster_types[monster_type_index].heat_defense_modifier * attack_profile.heat_equipment_count);
+
+            }
+
+            
+            if( typeof attack_profile.laser_equipment_count !== 'undefined' && attack_profile.laser_equipment_count !== 0 && 
+                dirty.monster_types[monster_type_index].laser_defense_modifier) {
+
+                defense += (dirty.monster_types[monster_type_index].laser_defense_modifier * attack_profile.laser_equipment_count);
+
+            }
+
+            
+            if( typeof attack_profile.melee_equipment_count !== 'undefined' && attack_profile.melee_equipment_count !== 0 && 
+                dirty.monster_types[monster_type_index].melee_defense_modifier) {
+
+                defense += (dirty.monster_types[monster_type_index].melee_defense_modifier * attack_profile.melee_equipment_count);
+
+            }
+
+            if( typeof attack_profile.piercing_equipment_count !== 'undefined' && attack_profile.piercing_equipment_count !== 0 && 
+                dirty.monster_types[monster_type_index].piercing_defense_modifier) {
+                    
+                defense += (dirty.monster_types[monster_type_index].piercing_defense_modifier * attack_profile.piercing_equipment_count);
+            }
+
+            
+            if( typeof attack_profile.plasma_equipment_count !== 'undefined' && attack_profile.plasma_equipment_count !== 0 && 
+                dirty.monster_types[monster_type_index].plasma_defense_modifier) {
+
+                defense += (dirty.monster_types[monster_type_index].plasma_defense_modifier * attack_profile.plasma_equipment_count);
+
+            }
+
+            
+            if( typeof attack_profile.poison_equipment_count !== 'undefined' && attack_profile.poison_equipment_count !== 0 && 
+                dirty.monster_types[monster_type_index].poison_defense_modifier) {
+
+                defense += (dirty.monster_types[monster_type_index].poison_defense_modifier * attack_profile.poison_equipment_count);
+
+            }
+
+            
+            if( typeof attack_profile.radiation_equipment_count !== 'undefined' && attack_profile.radiation_equipment_count !== 0 && 
+                dirty.monster_types[monster_type_index].radiation_defense_modifier) {
+
+                defense += (dirty.monster_types[monster_type_index].radiation_defense_modifier * attack_profile.radiation_equipment_count);
+
+            }
+
+        } else if(damage_types.length > 0) {
 
 
             for(let i = 0; i < damage_types.length; i++) {

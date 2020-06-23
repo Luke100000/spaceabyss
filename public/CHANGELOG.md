@@ -1,3 +1,34 @@
+## [0.1.19] - 2020-06-23
+
+
+### Added
+- While complexity is a mechanic I'm super fond of, I think adding some clarity for players on what to expect when manufacturing things will prevent some 
+needless wasting of resources and frustration. I've added a tag next to the name of things you can assemble to show how difficult it is for the player.
+- A function to try and help fix when ships aren't removed properly from their coords
+- AIs can now spawn monsters in the Galaxy to protect the planet and ships they are protecting.
+
+### Fixed
+- Error killing players that are attacked by objects
+- Image for Microcontroller, Crystal, Blockade Runner, Lancer, Thiol Extractor
+
+
+### Changed
+- Instead of a single per attack bonus, attack bonuses are applied for each piece of equipment
+- Ion drive now takes 10 ticks instead of 20 ( In general, building ship engines should take a long time, but this is the intro one )
+- When switching bodies, the player is set to the current HP of the new body.
+- Pod HP changed from 100 to 10 so abandoned pods decay faster and are quicker to kill.
+
+## [0.1.18] - 2020-06-21
+
+### Fixed
+- Hopefully I finally squashed the bug that was causing the 'Back To Galaxy' button to disappear
+- Potentially fixed an issue that sometimes put players on ship 2 (yes, a ship with ID 2)
+- Bug with inventory items not always updating to the database
+
+### Changed
+- Algae Vats produce 6 Algae instead of 2 Algae
+
+
 ## [0.1.17] - 2020-06-20
 
 
@@ -14,7 +45,7 @@ If a ship has no engines, it will not move.
 - Bug that wasn't writing new player data until the server shutdown
 
 
-### Changes
+### Changed
 - Voon Steaks can now be picked up
 - Updated ship types to the new engine/weapon system
 - When determining whether a player can be placed on a ship, use the canPlacePlayer function over the previous custom IF statement.

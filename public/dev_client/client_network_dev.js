@@ -938,6 +938,7 @@ socket.on('login_data', function(data) {
 
         } else if(current_view === 'ship') {
 
+            console.log("Calling generateAirlockDisplay 2");
             generateAirlockDisplay();
 
         }
@@ -1747,6 +1748,7 @@ socket.on('object_info', function(data) {
 
         // Our ship - ship view!
         if(client_player_id && objects[object_index].id === players[client_player_index].ship_id && current_view === 'ship') {
+            console.log("Calling generateAirlockDisplay 3");
             generateAirlockDisplay();
         }
 
@@ -1788,6 +1790,7 @@ socket.on('object_info', function(data) {
         // If our view is a ship, and the new ship is docked at the same ship we are on
         if(object_types[object_type_index].is_ship && objects[object_index].docked_at_object_id && current_view === 'ship' &&
             objects[object_index].docked_at_object_id === client_player_info.coord.ship_id) {
+                console.log("Calling generateAirlockDisplay 4");
             generateAirlockDisplay();
         }
 
@@ -2461,6 +2464,7 @@ socket.on('player_info', function(data) {
         players[player_index].ship_coord_id = data.player.ship_coord_id;
 
         if(client_player_id && data.player.id === client_player_id && moved_on_ship) {
+            console.log("Calling generateAirlockDisplay 5");
             generateAirlockDisplay();
         }
 
@@ -2604,7 +2608,7 @@ socket.on('player_info', function(data) {
             if(current_view === 'planet') {
                 generateSpaceportDisplay();
             } else if(current_view === 'ship') {
-                console.log("Generating airlock display again");
+                console.log("Calling generateAirlockDisplay 6");
                 generateAirlockDisplay();
             }
 
@@ -3107,6 +3111,7 @@ socket.on('ship_coord_info', function(data) {
             if(airlock_display_needs_regeneration) {
 
                 airlock_display_needs_regeneration = false;
+                console.log("Calling generateAirlockDisplay 7");
                 generateAirlockDisplay();
 
             }
@@ -3156,6 +3161,7 @@ socket.on('ship_coord_info', function(data) {
 });
 
 socket.on('ship_view_data', function(data) {
+    console.log("Calling generateAirlockDisplay 8");
     generateAirlockDisplay();
 });
 
@@ -3218,7 +3224,7 @@ socket.on('view_change_data', function(data) {
 
         on_planet = false;
 
-        //console.log("Emptied launch");
+        console.log("Emptied launch in view_change_data");
         $('#launch').empty();
 
         let html_string = "";
@@ -3291,6 +3297,7 @@ socket.on('view_change_data', function(data) {
         //console.log("%c Changing view to ship. Seeing if the body updates", log_warning);
         current_view = 'ship';
 
+        console.log("Calling generateAirlockDisplay 9");
         generateAirlockDisplay();
 
         // see what body the player has

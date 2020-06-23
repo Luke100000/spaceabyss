@@ -646,7 +646,24 @@ const world = require('./world.js');
 
             return { 'damage_amount': damage_amount, 'damage_types': damage_types,
                 'radius_damage_amounts': radius_damage_amounts,
-                'decrement_equipment_linker_ids': decrement_equipment_linker_ids };
+                'decrement_equipment_linker_ids': decrement_equipment_linker_ids,
+                'control_equipment_count': control_equipment_count,
+                'corrosive_equipment_count': corrosive_equipment_count,
+                'electric_equipment_count': electric_equipment_count,
+                'explosion_equipment_count': explosion_equipment_count,
+                'freezing_equipment_count': freezing_equipment_count,
+                'gravity_equipment_count': gravity_equipment_count,
+                'hacking_equipment_count': hacking_equipment_count,
+                'heat_equipment_count': heat_equipment_count,
+                'laser_equipment_count': laser_equipment_count,
+                'melee_equipment_count': melee_equipment_count,
+                'piercing_equipment_count': piercing_equipment_count,
+                'plasma_equipment_count': plasma_equipment_count,
+                'poison_equipment_count': poison_equipment_count,
+                'radiation_equipment_count': radiation_equipment_count
+
+            
+            };
         } catch(error) {
             log(chalk.red("Error in battle.calculatePlayerAttack: " + error));
         }
@@ -882,11 +899,10 @@ const world = require('./world.js');
 
             for(let battle_linker of battle_linkers) {
 
-                if(battle_linker.attacking_type === 'monster' && battle_linker.being_attacked_type === 'player') {
-
+                if(battle_linker.attacking_type === 'monster' && battle_linker.being_attacked_type === 'object') {
+                    await monsterAttackObject(dirty, battle_linker);
+                } else if(battle_linker.attacking_type === 'monster' && battle_linker.being_attacked_type === 'player') {
                     await monsterAttackPlayer(dirty, battle_linker);
-                    // we are moving this to the root file - and ticking it
-                    //moveMonster(battle_linker);
                 } else if(battle_linker.attacking_type === 'npc' && battle_linker.being_attacked_type === 'monster') {
                     await npcAttackMonster(dirty, battle_linker);
                 } else if(battle_linker.attacking_type === 'npc' && battle_linker.being_attacked_type === 'object') {
@@ -907,7 +923,9 @@ const world = require('./world.js');
                     await playerAttackObject(dirty, battle_linker);
                 } else if(battle_linker.attacking_type === 'player' && battle_linker.being_attacked_type === 'player') {
                     await playerAttackPlayer(dirty, battle_linker);
-                }  else {
+                }  
+                
+                else {
                     console.log("Unknown battle linker type. " + battle_linker.attacking_type + " is attacking a " + battle_linker.being_attacked_type);
                 }
             }
@@ -919,6 +937,109 @@ const world = require('./world.js');
     }
 
     exports.doLinkers = doLinkers;
+
+    async function monsterAttackObject(dirty, battle_linker) {
+
+        try {
+            log(chalk.green("Monster " + battle_linker.attacking_id + " is attacking object " + battle_linker.being_attacked_id));
+
+            battle_linker.turn_count += 1;
+
+
+            let monster_index = await main.getMonsterIndex(battle_linker.attacking_id);
+            let object_index = await main.getObjectIndex(battle_linker.being_attacked_id);
+
+            if(monster_index === -1) {
+                log(chalk.yellow("Could not find monster id: " + battle_linker.attacking_id + ". monster_index: " + monster_index));
+                world.removeBattleLinkers(dirty, { 'monster_id': battle_linker.attacking_id });
+                return;
+            }
+
+            if(object_index === -1) {
+                log(chalk.yellow("Could not find object id: " + battle_linker.being_attacked_id));
+                world.removeBattleLinkers(dirty, { 'object_id': battle_linker.being_attacked_id });
+                return;
+            }
+
+            let monster_type_index = main.getMonsterTypeIndex(dirty.monsters[monster_index].monster_type_id);
+
+            let monster_info = await monster.getCoordAndRoom(dirty, monster_index);
+            let object_info = await game_object.getCoordAndRoom(dirty, object_index);
+
+            if(monster_info.coord === false) {
+                log(chalk.yellow("Could not get the attacking monster coord"));
+                world.removeBattleLinkers(dirty, { 'battle_linker_id': battle_linker.id });
+                return false;
+            }
+
+            if(object_info.coord === false) {
+                log(chalk.yellow("Could not get the object coord"));
+                world.removeBattleLinkers(dirty, { 'battle_linker_id': battle_linker.id });
+                return false;
+            }
+
+            if(monster_info.room !== object_info.room) {
+                log(chalk.yellow("Monster and object don't share the same room"));
+                world.removeBattleLinkers(dirty, { 'battle_linker_id': battle_linker.id });
+                return false;
+            }
+
+            // we also remove the battle linker if they are on a planet but not on the same level
+            if(monster_info.coord.planet_id && object_info.coord.planet_id && monster_info.coord.level !== object_info.coord.level) {
+                log(chalk.yellow("Monster and object don't share the same planet level"));
+                world.removeBattleLinkers(dirty, { 'battle_linker_id': battle_linker.id });
+                return false;
+            }
+
+
+            let calculating_range = await calculateRange(
+                monster_info.coord.tile_x, monster_info.coord.tile_y,
+                object_info.coord.tile_x, object_info.coord.tile_y);
+
+            if(calculating_range > 8) {
+                log(chalk.yellow("Monster and object are too far apart. Removing battle linker id: " + battle_linker.id));
+                world.removeBattleLinkers(dirty, { 'battle_linker_id': battle_linker.id });
+                return false;
+            }
+
+
+            let monster_attack = await getMonsterAttack(dirty, monster_index, calculating_range);
+
+            if(monster_attack === false) {
+                return false;
+            }
+
+            let attack = monster_attack.damage_amount;
+
+            let flavor_text = false;
+            if(monster_attack.flavor_text) {
+                flavor_text = monster_attack.flavor_text;
+                //console.log("Setting flavor text to: " + flavor_text);
+            }
+
+
+            //let attack = await calculateMonsterAttack(dirty, monster_index, calculating_range);
+            // TODO add
+            let defense = await game_object.calculateDefense(dirty, object_index, monster_attack.damage_type);
+
+            if(attack <= defense) {
+                return false;
+            }
+
+            let damage_amount = monster_attack.damage_amount - defense;
+
+            await game_object.damage(dirty, { 'object_index': object_index, 'damage_amount': damage_amount,
+            'damage_types': [monster_attack.damage_type],
+            'battle_linker': battle_linker, 'object_info': object_info, 'calculating_range': calculating_range });
+
+        } catch(error) {
+            log(chalk.red("Error in battle.monsterAttackObject: " + error));
+            console.error(error);
+        }
+
+
+
+    }
 
 
     async function monsterAttackPlayer(dirty, battle_linker) {
@@ -1717,9 +1838,8 @@ const world = require('./world.js');
 
             let damage_amount = attack - defense;
 
-            // TODO - if an AI is present, we would want the AI to spawn something in space!!!!
 
-            /*
+            /* Not sure that this shielded stuff applies to planets
             let shielded = await world.shielded(dirty, damage_amount, defending_object_index);
 
             if(shielded) {
@@ -1730,8 +1850,25 @@ const world = require('./world.js');
 
                 return;
             }
+            */
 
             // See if there's an AI that comes into play
+            let ai_index = await world.getAIProtector(dirty, damage_amount, defending_planet_info.coord, 'object', { 'planet_index': defending_planet_index });
+
+            if(ai_index !== -1) {
+                dirty.objects[ai_index].energy -= damage_amount;
+                dirty.objects[ai_index].has_change = true;
+
+                io.to(defending_planet_info.room).emit('damaged_data',
+                    {'planet_id': dirty.planets[defending_planet_index].id, 'damage_amount': damage_amount, 'was_damaged_type': 'energy',
+                        'damage_source_type':'object', 'damage_source_id': dirty.objects[attacking_object_index].id,
+                        'calculating_range': calculating_range, 'damage_types': object_attack_profile.damage_types });
+
+                await world.aiRetaliate(dirty, ai_index, battle_linker.attacking_type, battle_linker.attacking_id);
+                return;
+            }
+
+            /*
             let ai_index = await world.getAIProtector(dirty, { 'damage_amount': damage_amount,
                 'object_index': defending_object_index, 'coord': defending_object_info.coord });
 
@@ -1770,8 +1907,10 @@ const world = require('./world.js');
                 return;
             }
 
-
             */
+
+
+            
 
             // No AI - Do the attack/defense normally
             await game.damagePlanet(dirty, { 'planet_index': defending_planet_index, 'damage_amount': damage_amount,
@@ -1991,12 +2130,14 @@ const world = require('./world.js');
 
             let attack = player_attack_profile.damage_amount;
             //console.log("Player attack is: " + attack);
-            let defense = await monster.calculateDefense(dirty, monster_index, player_attack_profile.damage_types);
+            let defense = await monster.calculateDefense(dirty, monster_index, player_attack_profile.damage_types, player_attack_profile);
 
 
             if(attack <= defense) {
                 return false;
             }
+
+            console.log("Attack: " + attack + " defense: " + defense);
 
             let damage_amount = attack - defense;
 

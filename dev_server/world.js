@@ -540,6 +540,8 @@ async function addToArea(socket, dirty, data) {
 
 exports.addToArea = addToArea;
 
+
+
 /*
 data:   ai_id   |   atacking_type   |   attacking_id
 */
@@ -548,8 +550,261 @@ data:   ai_id   |   atacking_type   |   attacking_id
  * @param dirty
  * @param data
  * @param {number} data.ai_id
+ * @param {number} data.attacking_type
+ * @param {number} data.attacking_id
  * @returns {Promise<boolean>}
  */
+async function aiAttack(dirty, data) {
+
+    try {
+
+        let ai_index = await main.getObjectIndex(data.ai_id);
+
+        if (ai_index === -1) {
+            return false;
+        }
+
+        if (dirty.objects[ai_index].energy < 100) {
+            log(chalk.yellow("Not enough energy for any actions"));
+            return false;
+        }
+
+
+        log(chalk.green("In battle.aiAttack. Having AI Attack type: " + data.attacking_type + " id: " + data.attacking_id));
+
+        let energy_used = 100;
+        let spawn_monster_type_id = 33;
+        let spawn_monster_data = {};
+        spawn_monster_data.attack_on_spawn_type = data.attacking_type;
+        spawn_monster_data.attack_on_spawn_id = data.attacking_id;
+
+
+        let scope = "";
+        let room = false;
+        let being_attacked_index = -1;
+        let being_attacked_coord_index = -1;
+
+        if(data.attacking_type === 'player') {
+            being_attacked_index = await main.getPlayerIndex({ 'player_id': data.attacking_id });
+        } else if(data.attacking_type === 'object') {
+            being_attacked_index = await main.getObjectIndex(data.attacking_id);
+        } else if(data.attacking_type === 'monster') {
+            being_attacked_index = await main.getMonsterIndex(data.attacking_id);
+        }
+
+        if(being_attacked_index === -1) {
+            log(chalk.yellow("Could not find what the AI is supposed to attack"));
+            return false;
+        }
+
+
+        let origin_tile_x = -1;
+        let origin_tile_y = -1;
+
+        // Next up - find our scope and origin coord
+        if(data.attacking_type === 'player' && dirty.players[being_attacked_index].planet_coord_id) {
+            console.log("Set scope to planet");
+            scope = 'planet';
+            being_attacked_coord_index = await main.getPlanetCoordIndex(
+                { 'planet_coord_id': dirty.players[being_attacked_index].planet_coord_id });
+            if(being_attacked_coord_index === -1) {
+                log(chalk.yellow("Could not find that planet coord"));
+                return false;
+            }
+            origin_tile_x = dirty.planet_coords[being_attacked_coord_index].tile_x;
+            origin_tile_y = dirty.planet_coords[being_attacked_coord_index].tile_y;
+
+        } else if(data.attacking_type === 'player' && dirty.players[being_attacked_index].ship_coord_id) {
+            console.log("Set scope to ship");
+            scope = 'ship';
+            being_attacked_coord_index = await main.getShipCoordIndex(
+                { 'ship_coord_id': dirty.players[being_attacked_index].ship_coord_id });
+            if(being_attacked_coord_index === -1) {
+                log(chalk.yellow("Could not find that ship coord"));
+                return false;
+            }
+            origin_tile_x = dirty.ship_coords[being_attacked_coord_index].tile_x;
+            origin_tile_y = dirty.ship_coords[being_attacked_coord_index].tile_y;
+
+        } else if(data.attacking_type === 'object' && dirty.objects[being_attacked_index].coord_id) {
+            console.log("Set scope to galaxy");
+            scope = 'galaxy';
+            spawn_monster_type_id = 107;
+            being_attacked_coord_index = await main.getCoordIndex({ 'coord_id': dirty.objects[being_attacked_index].coord_id });
+            if(being_attacked_coord_index === -1) {
+                log(chalk.yellow("Could not find that galaxy coord"));
+                return false;
+            }
+            origin_tile_x = dirty.coords[being_attacked_coord_index].tile_x;
+            origin_tile_y = dirty.coords[being_attacked_coord_index].tile_y;
+
+        } else {
+
+            console.log("Did not set scope");
+            if(data.attacking_type === 'object') {
+                console.log("galaxy/planet/ship coord_id: " + dirty.objects[being_attacked_index].coord_id + "," + dirty.objects[being_attacked_index].planet_coord_id +
+                    "," + dirty.objects[being_attacked_index].ship_coord_id);
+            }
+        }
+
+        console.log("Origin tile_x,y: " + origin_tile_x + "," + origin_tile_y);
+
+        // Lets Find Our Coord!
+        let placing_coord_index = -1;
+        for(let x = origin_tile_x - 1; x <= origin_tile_x + 1 && placing_coord_index === -1; x++) {
+            for(let y = origin_tile_y - 1; y <= origin_tile_y + 1 && placing_coord_index === -1; y++) {
+
+                if(scope === 'planet') {
+                    console.log("Checking planet x,y: " + x + "," + y);
+
+                    let checking_data = {
+                        'planet_id': dirty.planet_coords[being_attacked_coord_index].planet_id,
+                        'planet_level': dirty.planet_coords[being_attacked_coord_index].level,
+                        'tile_x': x, 'tile_y': y
+                    };
+                    let checking_planet_coord_index = await main.getPlanetCoordIndex(checking_data);
+
+                    if (checking_planet_coord_index !== -1) {
+
+                        let can_place_result = await main.canPlaceMonster('planet',
+                            dirty.planet_coords[checking_planet_coord_index],
+                            { 'monster_type_id': spawn_monster_type_id });
+
+                        if (can_place_result === true) {
+                            placing_coord_index = checking_planet_coord_index;
+                            spawn_monster_data.planet_coord_index = placing_coord_index;
+                            room = "planet_" + dirty.planet_coords[checking_planet_coord_index].planet_id;
+
+                        }
+
+                    }
+
+                } else if(scope === 'ship') {
+                    console.log("Checking ship x,y: " + x + "," + y);
+
+                    let checking_data = {
+                        'ship_id': dirty.ship_coords[being_attacked_coord_index].ship_id,
+                        'level': dirty.ship_coords[being_attacked_coord_index].level,
+                        'tile_x': x, 'tile_y': y
+                    };
+                    let checking_ship_coord_index = await main.getShipCoordIndex(checking_data);
+
+                    if (checking_ship_coord_index !== -1) {
+
+                        let can_place_result = await main.canPlaceMonster('ship',
+                            dirty.ship_coords[checking_ship_coord_index],
+                            { 'monster_type_id': spawn_monster_type_id });
+
+                        if (can_place_result === true) {
+                            placing_coord_index = checking_ship_coord_index;
+                            spawn_monster_data.ship_coord_index = placing_coord_index;
+                            room = "ship_" + dirty.ship_coords[checking_ship_coord_index].ship_id;
+
+                        }
+
+                    }
+
+                } else if(scope === 'galaxy') {
+                    console.log("Checking galaxy x,y: " + x + "," + y);
+                    let checking_data = {
+                        'tile_x': x, 'tile_y': y
+                    };
+                    let checking_coord_index = await main.getCoordIndex(checking_data);
+
+                    if (checking_coord_index !== -1) {
+
+                        let can_place_result = await main.canPlaceMonster('galaxy',
+                            dirty.coords[checking_coord_index],
+                            { 'monster_type_id': spawn_monster_type_id });
+
+                        if (can_place_result === true) {
+                            placing_coord_index = checking_coord_index;
+                            spawn_monster_data.coord_index = placing_coord_index;
+                            room = "galaxy";
+
+                        }
+
+                    }
+
+                } else {
+                    log(chalk.yellow("No scope?"));
+                }
+
+            }
+        }
+
+        // If we can't place, open up a rift in FREAKING SPACE TIME AND GRAVITY THE CLEVER GIRL!
+        if(placing_coord_index === -1) {
+            log(chalk.yellow("MAKE THE AI DO SOMETHING STILL!!"));
+            return false;
+        }
+
+
+
+        // The potential for escalation!
+        // TODO eventually we should just 'attach' the AI core count to AIs like we do with ships to save on lookups
+        if(data.attack_level === 2 && dirty.objects[ai_index].energy >= 500 && (scope === 'planet' || scope === 'ship') ) {
+            let ai_core_count = 0;
+
+            for(let i = 0; i < dirty.objects.length && ai_core_count < 1; i++ ) {
+                if(dirty.objects[i] && dirty.objects[i].object_type_id === 162) {
+
+                    if(dirty.objects[ai_index].planet_coord_id && dirty.objects[i].planet_id === dirty.objects[ai_index].planet_id) {
+                        ai_core_count++;
+
+                    } else if (dirty.objects[ai_index].ship_coord_id && dirty.objects[i].ship_id === dirty.objects[ai_index].ship_id) {
+                        ai_core_count++;
+                    }
+
+                }
+            }
+
+            if(ai_core_count >= 1) {
+                spawn_monster_type_id = 57;
+                energy_used = 500;
+                log(chalk.green("Set to spawn edifice"));
+
+            }
+            
+        }
+
+
+        spawnMonster(dirty, spawn_monster_type_id, spawn_monster_data);
+
+
+
+        dirty.objects[ai_index].energy -= energy_used;
+        dirty.objects[ai_index].has_change = true;
+
+        // send the updated ai (object) info to the room
+        console.log("Sending updated ai info to room");
+        await game_object.sendInfo(false, room, dirty, ai_index);
+
+
+
+    } catch (error) {
+        log(chalk.red("Error in world.aiAttack: " + error));
+        console.error(error);
+    }
+
+}
+
+exports.aiAttack = aiAttack;
+
+
+/* OLD FUNCTION
+data:   ai_id   |   atacking_type   |   attacking_id
+*/
+/**
+ *
+ * @param dirty
+ * @param data
+ * @param {number} data.ai_id
+ * @param {number} data.attacking_type
+ * @param {number} data.attacking_id
+ * @returns {Promise<boolean>}
+ */
+/*
 async function aiAttack(dirty, data) {
 
     try {
@@ -567,6 +822,8 @@ async function aiAttack(dirty, data) {
             log(chalk.yellow("Not enough energy for any actions"));
             return false;
         }
+
+
 
         let energy_used = 100;
         let spawn_monster_type_id = 33;
@@ -597,12 +854,13 @@ async function aiAttack(dirty, data) {
 
         let placing_planet_coord_index = -1;
         let placing_ship_coord_index = -1;
+        let placing_coord_index = -1;
         let found_planet_coord = false;
         let found_ship_coord = false;
         let room = false;
 
 
-        /** AI IS ATTACKING A PLAYER **/
+
         if (data.attacking_type === 'player') {
 
             //console.log("AI spawning monster on player");
@@ -743,6 +1001,8 @@ async function aiAttack(dirty, data) {
 
 exports.aiAttack = aiAttack;
 
+*/
+
 
 // Higher leve, more generic function than aiAttack. This is mean to see if we start retaliating against something
 async function aiRetaliate(dirty, ai_index, attacking_type, attacking_id) {
@@ -790,7 +1050,7 @@ async function attachShipEngines(dirty, ship_index) {
 
     try {
 
-        console.time("attachShipEngines");
+        //console.time("attachShipEngines");
 
         let engine_object_type_ids = [];
         for(let i = 0; i < dirty.object_types.length; i++) {
@@ -829,9 +1089,9 @@ async function attachShipEngines(dirty, ship_index) {
         dirty.objects[ship_index].engine_indexes = engine_indexes;
         dirty.objects[ship_index].current_engine_power = total_engine_power;
 
-        console.log("Set current_engine_power to: " + dirty.objects[ship_index].current_engine_power);
+        //console.log("Set current_engine_power to: " + dirty.objects[ship_index].current_engine_power);
 
-        console.timeEnd("attachShipEngines");
+        //console.timeEnd("attachShipEngines");
 
     } catch (error) {
         log(chalk.red("Error in world.attachShipEngines: " + error));
@@ -1504,8 +1764,8 @@ async function createPlanetCoord(socket, dirty, data) {
  * @param {Object} data 
  * @param {number=} data.monster_index
  * @param {number=} data.object_index
+ * @param {number=} data.planet_index
  * @param {number=} data.player_index
-
  */
 async function getAIProtector(dirty, damage_amount, coord, attacking_type, data) {
 
@@ -1563,6 +1823,33 @@ async function getAIProtector(dirty, damage_amount, coord, attacking_type, data)
     
     
             }
+
+        } else if(typeof data.planet_index !== 'undefined') {
+
+            if(!dirty.planets[data.planet_index].ai_id) {
+                return -1;
+            }
+
+            ai_index = await main.getObjectIndex(dirty.planets[data.planet_index].ai_id);
+
+            if(ai_index === -1) {
+                return -1;
+            }
+
+            // Now we just need to make sure there's a rule that matches our relationship to the AI
+            let rules = dirty.rules.filter(rule => rule.object_id === dirty.objects[ai_index].id);
+
+            // Plain for since we want to await in here for the potential trues
+            for (let i = 0; i < rules.length; i++) {
+    
+                if (rules[i].rule === 'protect_creator_property') {
+                    is_protected = true;
+                }
+    
+    
+            }
+
+
         } else if (typeof data.player_index !== 'undefined') {
     
 
@@ -4141,7 +4428,7 @@ async function setPlayerMoveDelay(socket, dirty, player_index) {
 
                             
 
-                            console.log("Ship engines changed move delay to: " + socket.move_delay);
+                            //console.log("Ship engines changed move delay to: " + socket.move_delay);
                         } else {
                             if(!dirty.object_types[ship_type_index].needs_engines) {
                                 console.log("Ship does not require engines");
@@ -4525,7 +4812,15 @@ async function spawnMonster(dirty, monster_type_id, data) {
         let monster_type_index = main.getMonsterTypeIndex(monster_type_id);
 
         if (coord_index === -1 || monster_type_index === -1) {
-            log(chalk.yellow("Could not spawn  monster. "));
+
+            if(coord_index === -1) {
+                log(chalk.yellow("Could not spawn monster - did not find coord"));
+            }
+
+            if(monster_type_index === -1) {
+                log(chalk.yellow("Could not spawn monster - did not find monster type id: " + monster_type_id));
+            }
+            
             return false;
         }
 

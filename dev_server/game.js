@@ -1785,7 +1785,7 @@ const world = require('./world.js');
 
             if(new_player_hp <= 0) {
                 console.log("Calling killPlayer");
-                game.killPlayer(dirty, data.player_index);
+                killPlayer(dirty, data.player_index);
             } else {
                 dirty.players[data.player_index].current_hp = new_player_hp;
                 dirty.players[data.player_index].has_change = true;
@@ -2677,7 +2677,7 @@ const world = require('./world.js');
                     console.log("Inventory item has object_id - can only move one (and there should only be one)");
 
                     // We need to see if there is an AI that would block this object from being placed there
-                    log(chalk.cyan("Need to check to see if an AI rule might prevent this"));
+                    //log(chalk.cyan("Need to check to see if an AI rule might prevent this"));
                     let ai_index = -1;
                     if(scope === 'planet') {
                         let planet_index = await planet.getIndex(dirty, { 'planet_id': temp_coord.planet_id, 'source': 'game.drop' });
@@ -3330,11 +3330,19 @@ const world = require('./world.js');
 
                 if(object_index === -1) {
                     // TODO tell the client to remove the object
+                    log(chalk.yellow("Object doesn't exist"));
+                    return false;
+                }
+
+                let object_type_index = main.getObjectTypeIndex(dirty.objects[object_index].object_type_id);
+                if(object_type_index === -1) {
+                    log(chalk.yellow("Could not get object type"));
                     return false;
                 }
 
                 // Scenario 1: The object has a coord id, but multiple coords have this object id
                 if(dirty.objects[object_index].coord_id) {
+                    console.log("Object has a coord id");
 
                     let matching_coord_index = await main.getCoordIndex({ 'coord_id': dirty.objects[object_index].coord_id });
 
@@ -3351,6 +3359,27 @@ const world = require('./world.js');
                         }
                     }
 
+                } else if(main.isFalse(dirty.objects[object_index].coord_id) && main.isFalse(dirty.objects[object_index].ship_coord_id) && main.isFalse(dirty.objects[object_index].planet_coord_id)) {
+
+                    console.log("Object has no type of coord");
+                    // The object is nowhere. Lets see if it's a normal ship, and if so, remove it from galaxy coords
+                    // We want to be very specific to start so there aren't unintended consequences
+                    if(dirty.object_types[object_type_index].is_ship && !dirty.object_types[object_type_index].is_dockable) {
+                        console.log("Object is a ship that is not dockable");
+
+                        // See if the player that owns this ship is connected
+
+                        for(let i = 0; i < dirty.coords.length; i++) {
+                            if(dirty.coords[i] && dirty.coords[i].object_id === dirty.objects[object_index].id) {
+                                log(chalk.red("Found a coords where the object_id (a ship) wasn't updated! " + dirty.coords[i].tile_x + "," + dirty.coords[i].tile_y));
+                                await main.updateCoordGeneric(socket, { 'coord_index': i, 'object_id': false });
+                            }
+                        }
+                    }
+                    
+
+                } else {
+                    console.log("Object did not match any of our fixing criteria");
                 }
 
 
@@ -3365,6 +3394,68 @@ const world = require('./world.js');
     } 
 
     exports.fix = fix;
+
+    async function fixAll(dirty) {
+        try {
+            console.time("fixAll");
+
+            // Lets focus on logged out players to start
+            for(let i = 0; i < dirty.players.length; i++) {
+
+                if(dirty.players[i] && main.isFalse(dirty.players[i].coord_id) && main.isFalse(dirty.players[i].planet_coord_id) && main.isFalse(dirty.players[i].ship_coord_id)) {
+                    //console.log("Player id: " + dirty.players[i].id + " looks to be logged out (not on any coord)");
+
+
+                    let non_dockable_ship_object_type_ids = [];
+
+                    for(let object_type of dirty.object_types) {
+                        if(object_type.is_ship && !object_type.is_dockable) {
+                            //console.log("Pushed non dockable ship type");
+                            non_dockable_ship_object_type_ids.push(object_type.id);
+                        }
+                    }
+
+                    let ship_ids = [];
+
+                    for(let o = 0; o < dirty.objects.length; o++) {
+
+
+                        if(dirty.objects[o] && dirty.objects[o].player_id === dirty.players[i].id && 
+                            non_dockable_ship_object_type_ids.indexOf(dirty.objects[o].object_type_id) !== -1) {
+
+
+                                //console.log("Pushed ship id: " + dirty.objects[o].id);
+                                ship_ids.push(dirty.objects[o].id);
+
+                        }
+                    }
+
+
+                    if(ship_ids.length > 0) {
+                        //console.log("Player had ships");
+
+                        for(let c = 0; c < dirty.coords.length; c++) {
+                            if(dirty.coords[c] && dirty.coords[c].object_id && ship_ids.indexOf(dirty.coords[c].object_id) !== -1) {
+                                log(chalk.red("In fixAll Found a coords where the object_id (a ship) wasn't updated! " + dirty.coords[c].tile_x + "," + dirty.coords[c].tile_y));
+                                await main.updateCoordGeneric(socket, { 'coord_index': c, 'object_id': false });
+
+                            }
+                        }
+                    }
+                }
+            }
+
+            console.timeEnd("fixAll");
+
+
+
+        } catch(error) {
+            log(chalk.red("Error in game.fixAll: " + error));
+            console.error(error);
+        }
+    }
+
+    exports.fixAll = fixAll;
 
 
     function getFloorTypes() {
@@ -5123,7 +5214,7 @@ const world = require('./world.js');
 
                     if(dirty.object_types[object_type_index].spawns_object_type_on_create) {
                         console.log("object type spawns something when created!");
-                        await game_object.spawn(dirty, new_object_index, 319);
+                        await game_object.spawn(dirty, new_object_index);
 
                     }
 
@@ -9448,7 +9539,7 @@ const world = require('./world.js');
 
             // see if there is an AI that would block the floor replacing
             // We need to see if there is an AI that would block this object from being placed there
-            log(chalk.cyan("Need to check to see if an AI rule might prevent this"));
+            //log(chalk.cyan("Need to check to see if an AI rule might prevent this"));
             let ai_index = -1;
             if(scope === 'planet') {
                 let planet_index = await planet.getIndex(dirty, { 'planet_id': temp_coord.planet_id, 'source': 'game.replaceFloor' });
@@ -9975,12 +10066,13 @@ const world = require('./world.js');
 
             log(chalk.green("Player is switching bodies"));
 
-            let player_index = await main.getPlayerIndex({'player_id':socket.player_id});
-
-            if(player_index === -1) {
-                log(chalk.yellow("Could not get player in game.switchBody"));
+            if(typeof socket.player_index === "undefined") {
+                log(chalk.yellow("Socket doesn't have player - can't switch bodies"));
                 return false;
             }
+
+            let player_index = socket.player_index;
+
 
             let object_index = await main.getObjectIndex(parseInt(data.object_id));
             let old_body_index = await main.getObjectIndex(dirty.players[socket.player_index].body_id);
@@ -10040,6 +10132,14 @@ const world = require('./world.js');
 
             // Move the player to the new body
             dirty.players[player_index].body_id = dirty.objects[object_index].id;
+
+            // Have the old body store the current HP
+            dirty.objects[old_body_index].current_hp = dirty.players[player_index].current_hp;
+            dirty.objects[old_body_index].has_change = true;
+        
+            // Switch the player to whatever HP the new body has
+            dirty.players[player_index].current_hp = dirty.objects[object_index].current_hp;
+            
             dirty.players[player_index].has_change = true;
 
             // switch the coord that the player is on

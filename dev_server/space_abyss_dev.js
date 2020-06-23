@@ -1261,7 +1261,7 @@ io.sockets.on('connection', function (socket) {
 
     // The player is assembling something (currently just in construction table
     socket.on('assemble_data', async function (data) {
-        console.log("Player is trying to assemble something!");
+        //console.log("Player is trying to assemble something!");
 
         await game.assemble(socket, dirty, data);
     });
@@ -1436,6 +1436,7 @@ io.sockets.on('connection', function (socket) {
             }
         } catch(error) {
             log(chalk.red("Error in attack_data: " + error));
+            console.error(error);
         }
 
     });
@@ -4417,7 +4418,7 @@ async function getObjectIndex(object_id) {
                     if(dirty.object_types[object_type_index].is_ship) {
 
 
-                        log(chalk.cyan("Loading ship coords for object id: " + object.id));
+                        //log(chalk.cyan("Loading ship coords for object id: " + object.id));
 
                         await getShipCoords(object.id);
                         await world.attachShipEngines(dirty, object_index);
@@ -5495,7 +5496,22 @@ async function writeDirty(show_output = false) {
     });
 
 
+    // This is following the new way
+    for(let i = 0; i < dirty.inventory_items.length; i++) {
+        if(dirty.inventory_items[i] && dirty.inventory_items[i].has_change) {
+            //console.log("Inventory item id: " + dirty.inventory_items[i].id + " new amount: " + dirty.inventory_items[i].amount);
+            let sql = "UPDATE inventory_items SET amount = ? WHERE id = ?";
+            let inserts = [dirty.inventory_items[i].amount, dirty.inventory_items[i].id];
+            pool.query(sql, inserts, function(err, result) {
+                if(err) throw err;
+            });
 
+            dirty.inventory_items[i].has_change = false;
+        }
+    }
+
+    /*
+    // Old way
     dirty.inventory_items.forEach(function(inventory_item, i) {
         if(inventory_item.has_change) {
             //console.log("Inventory item id: " + inventory_item.id + " new amount: " + inventory_item.amount);
@@ -5509,6 +5525,7 @@ async function writeDirty(show_output = false) {
 
         }
     });
+    */
 
     dirty.monsters.forEach(function(writing_monster, i) {
         try {
@@ -5912,6 +5929,16 @@ async function tickDecay(dirty) {
     }
 }
 
+async function tickFixAll(dirty) {
+    try {
+        await game.fixAll(dirty);
+    } catch(error) {
+        log(chalk.red("Error calling game.fixAll: " + error));
+        console.err(error);
+    }
+
+}
+
 async function tickFloors(dirty) {
     try {
         await game.tickFloors(dirty);
@@ -6101,10 +6128,10 @@ async function tickResearches(dirty) {
 }
 
 async function tickSpawners(dirty) {
-    let hrstart = new process.hrtime();
+    //let hrstart = new process.hrtime();
     await game.tickSpawners(dirty);
-    let hrend = process.hrtime(hrstart);
-    console.info('Execution time game.tickSpawners (hr): %ds %dms', hrend[0], hrend[1] / 1000000);
+    //let hrend = process.hrtime(hrstart);
+    //console.info('Execution time game.tickSpawners (hr): %ds %dms', hrend[0], hrend[1] / 1000000);
 }
 
 async function tickSalvaging(dirty) {
@@ -6193,6 +6220,7 @@ setInterval(tickSpawners, 600000, dirty);
 
 
 // 1 hour
+setInterval(tickFixAll, 3600000, dirty);
 setInterval(tickNpcSkills, 3600000);
 
 // 2 hours

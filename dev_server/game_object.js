@@ -887,11 +887,11 @@ async function sendInfo(socket, room, dirty, object_index, source = false) {
 
 exports.sendInfo = sendInfo;
 
-async function spawn(dirty, object_index, debug_object_type_id) {
+async function spawn(dirty, object_index, debug_object_type_id = 0) {
 
     try {
 
-        console.log("In game.spawn");
+        //console.log("In game.spawn");
         let object_type_index = main.getObjectTypeIndex(dirty.objects[object_index].object_type_id);
 
         // Grab a random spawn linkerc

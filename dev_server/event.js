@@ -591,7 +591,7 @@ async function spawn(dirty, event_index, data) {
 
         }
 
-        console.log("Inserted spawned event");
+        //console.log("Inserted spawned event");
 
         event_linkers.forEach(await async function(event_linker) {
 

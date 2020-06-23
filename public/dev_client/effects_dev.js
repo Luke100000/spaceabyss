@@ -24,7 +24,7 @@ function addEffect(data) {
     let scene_game = game.scene.getScene('sceneGame');
 
 
-    if(data.damage_types.length <= 0) {
+    if(!data.damage_types || (data.damage_types && data.damage_types.length <= 0)) {
         console.log("%c Trying to add an effect, but no damage types: ", log_warning);
         console.log(data);
         console.trace();

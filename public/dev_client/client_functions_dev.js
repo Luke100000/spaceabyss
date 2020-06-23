@@ -2561,6 +2561,7 @@ function generateAirlockDisplay() {
     let on_ship_is_dockable = false;
 
     if (client_ship_index !== -1 && ship_coord_index !== -1 && ship_coords[ship_coord_index].ship_id === objects[client_ship_index].id) {
+        console.log("We are on our ship");
         $('#launch').append('<button class="button is-success" id="viewchange" newview="galaxy"><i class="fad fa-stars"></i> Back To Galaxy</button>');
 
         // If we are just on our own ship, and it's not a dockable ship, the only option is to head back to the galaxy view
@@ -2571,8 +2572,11 @@ function generateAirlockDisplay() {
         }
 
     } else if (current_view === "ship") {
+        console.log("Doing launch option");
 
         $('#launch').append('<button class="button is-success" id="viewchange" newview="galaxy"><i class="fad fa-rocket"></i> Launch With Current Ship</button>');
+    } else {
+        console.log("%c Didn't draw back to galaxy OR launch buttons");
     }
 
     if(on_ship_type_index !== -1 && object_types[on_ship_type_index].is_dockable) {
@@ -2679,8 +2683,8 @@ function generateAirlockDisplay() {
 function generateSpaceportDisplay() {
 
 
-    // Don't generate this if we are in the galaxy view
-    if (current_view === 'galaxy') {
+    // Don't generate this if we are in the galaxy view or ship view
+    if (current_view === 'galaxy' || current_view === 'ship') {
         return false;
     }
 
@@ -2696,6 +2700,7 @@ function generateSpaceportDisplay() {
         let html_string = "";
 
 
+        console.log("Emptied launch in generateSpaceportDisplay");
         $('#launch').empty();
 
         html_string += "<div class='white-text'>";
@@ -2736,7 +2741,7 @@ function generateSpaceportDisplay() {
 
         $('#launch').append(html_string);
     } else {
-
+        console.log("Emptied launch in generateSpaceportDisplay");
         $('#launch').empty();
     }
 }
@@ -3555,8 +3560,20 @@ function generateAiManagementDisplay(object_index = -1) {
 function generateAssemblyListItem(object_type, object_assembly_linkers, assembling_object = false, can_assemble = true, failure_reason = false) {
 
 
+    let manufacturing_level = 1 + Math.floor(difficult_level_modifier * Math.sqrt(players[client_player_index].manufacturing_skill_points));
+
     let html_string = "";
-    html_string += "<table class='assemble'><tr><td><div class='center'><strong>" + object_type.name + "</strong><br>";
+    html_string += "<table class='assemble'><tr><td><div class='center'><strong>" + object_type.name + "</strong>";
+
+    if(object_type.complexity > manufacturing_level + 10) {
+        html_string += " <span class='tag is-danger' style='padding:2px; line-height:1; height: 1.4em;'>Too Complex</span>";
+    } else if(object_type.complexity > manufacturing_level) {
+        html_string += " <span class='tag is-warning' style='padding:2px; line-height:1; height: 1.4em;'>Hard</span>";
+    } else {
+        html_string += " <span class='tag is-success' style='padding:2px; line-height:1; height: 1.4em;'>Easy</span>";
+    }
+    
+    html_string += "<br>";
     html_string += "<img src='https://space.alphacoders.com/" + urlName(object_type.name) + ".png'>";
 
     // Show what is required to assemble it
@@ -3572,6 +3589,10 @@ function generateAssemblyListItem(object_type, object_assembly_linkers, assembli
             if (required_object_type_index !== -1) {
                 html_string += object_types[required_object_type_index].name + " <img style='width:16px; height:16px;' src='https://space.alphacoders.com/" +
                     urlName(object_types[required_object_type_index].name) + ".png'>";
+
+                    
+
+                
             } else {
                 html_string += "" + assembly_linker.object_type_id;
             }
@@ -6301,8 +6322,43 @@ function movePlayerFlow(player_index, destination_coord_type, destination_coord,
 
     if (players[player_index].sprite) {
 
+
+
+        /***************** BLOCKADE RUNNER ******************/
+        if (players[player_index].sprite.texture.key === 'player-blockade-runner') {
+
+            // LEFT !
+            if (players[player_index].destination_x < players[player_index].sprite.x) {
+
+                if (players[player_index].sprite.anims.getCurrentKey() !== 'player-blockade-runner-left-animation') {
+                    players[player_index].sprite.anims.play('player-blockade-runner-left-animation');
+                }
+
+            }
+            // RIGHT!
+            else if (players[player_index].destination_x > players[player_index].sprite.x) {
+                if (players[player_index].sprite.anims.getCurrentKey() !== 'player-blockade-runner-right-animation') {
+                    players[player_index].sprite.anims.play('player-blockade-runner-right-animation');
+                }
+
+
+            }
+            // UP!
+            else if (players[player_index].destination_y < players[player_index].sprite.y) {
+                if (players[player_index].sprite.anims.getCurrentKey() !== 'player-blockade-runner-up-animation') {
+                    players[player_index].sprite.anims.play('player-blockade-runner-up-animation');
+                }
+            }
+            // DOWN!
+            else if (players[player_index].destination_y > players[player_index].sprite.y) {
+                if (players[player_index].sprite.anims.getCurrentKey() !== 'player-blockade-runner-down-animation') {
+                    players[player_index].sprite.anims.play('player-blockade-runner-down-animation');
+                }
+            }
+        }
+
         /***************** CARGO SHIP ******************/
-        if (players[player_index].sprite.texture.key === 'player-cargo-ship') {
+        else if (players[player_index].sprite.texture.key === 'player-cargo-ship') {
 
             // LEFT !
             if (players[player_index].destination_x < players[player_index].sprite.x) {
@@ -6492,6 +6548,40 @@ function movePlayerFlow(player_index, destination_coord_type, destination_coord,
                 }
             }
         }
+
+        /************ LANCER *******************/
+        else if (players[player_index].sprite.texture.key === 'player-lancer') {
+
+            // LEFT !
+            if (players[player_index].destination_x < players[player_index].sprite.x) {
+
+                if (players[player_index].sprite.anims.getCurrentKey() !== 'player-lancer-left-animation') {
+                    players[player_index].sprite.anims.play('player-lancer-left-animation');
+                }
+
+            }
+            // RIGHT!
+            else if (players[player_index].destination_x > players[player_index].sprite.x) {
+                if (players[player_index].sprite.anims.getCurrentKey() !== 'player-lancer-right-animation') {
+                    players[player_index].sprite.anims.play('player-lancer-right-animation');
+                }
+
+
+            }
+            // UP!
+            else if (players[player_index].destination_y < players[player_index].sprite.y) {
+                if (players[player_index].sprite.anims.getCurrentKey() !== 'player-lancer-up-animation') {
+                    players[player_index].sprite.anims.play('player-lancer-up-animation');
+                }
+            }
+            // DOWN!
+            else if (players[player_index].destination_y > players[player_index].sprite.y) {
+                if (players[player_index].sprite.anims.getCurrentKey() !== 'player-lancer-down-animation') {
+                    players[player_index].sprite.anims.play('player-lancer-down-animation');
+                }
+            }
+        }
+        
         /************ MINING SHIP *******************/
         else if (players[player_index].sprite.texture.key === 'player-mining-ship') {
 
@@ -10086,6 +10176,7 @@ function updatePlayerClient(data) {
 
 
             if((coord_index !== -1 && ship_coords[coord_index].object_type_id === 266) || (previous_coord_index !== -1 && ship_coords[previous_coord_index].object_type_id === 266)) {
+                console.log("Calling generateAirlockDisplay 1");
                 generateAirlockDisplay();
             }
 

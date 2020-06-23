@@ -826,6 +826,8 @@ include('config.php');
                 { frameWidth: 64, frameHeight: 64, endFrame: 36 });
 
             // Ships
+            this.load.spritesheet('player-blockade-runner', 'https://space.alphacoders.com/blockade-runner-animated.png',
+                { 'frameWidth': 64, 'frameHeight': 64, endFrame: 16 });
 
             this.load.spritesheet('player-shuttle', 'https://space.alphacoders.com/shuttle-animated.png',
                 { 'frameWidth': 64, 'frameHeight': 64, endFrame: 16 });
@@ -838,6 +840,9 @@ include('config.php');
 
             this.load.spritesheet('player-fighter', 'https://space.alphacoders.com/fighter-animated.png',
             { 'frameWidth': 64, 'frameHeight': 64, endFrame: 16 });
+
+            this.load.spritesheet('player-lancer', 'https://space.alphacoders.com/lancer-animated.png',
+                { 'frameWidth': 64, 'frameHeight': 64, endFrame: 16 });
 
             this.load.spritesheet('player-mining-ship', 'https://space.alphacoders.com/mining-ship-animated.png',
                 { 'frameWidth': 64, 'frameHeight': 64, endFrame: 16 });
@@ -859,6 +864,8 @@ include('config.php');
                 { frameWidth: 64, frameHeight: 64, endFrame: 2 });
             this.load.spritesheet('ai-forge', 'https://space.alphacoders.com/ai-forge.png',
                 { frameWidth: 64, frameHeight: 64, endFrame: 12 });
+            this.load.spritesheet('ai-space-construct', 'https://space.alphacoders.com/ai-space-construct.png',
+                { frameWidth: 64, frameHeight: 64, endFrame: 2 });
             this.load.spritesheet('ananke', 'https://space.alphacoders.com/ananke.png',
                 { frameWidth: 64, frameHeight: 64, endFrame: 3 });
             this.load.spritesheet('bird', 'https://space.alphacoders.com/bird.png',
@@ -1096,7 +1103,45 @@ include('config.php');
 
             /*********** PLAYER ANIMATIONS end is total frame count - 1 (starts at 0)  **************/
 
+            // BLOCKADE RUNNER
+            let player_blockade_runner_left_config = {
+                key: 'player-blockade-runner-left-animation',
+                frames: this.anims.generateFrameNumbers('player-blockade-runner', { start: 0, end: 3, first: 3 }),
+                frameRate: 4,
+                repeat: -1
+            };
 
+            this.anims.create(player_blockade_runner_left_config);
+
+            let player_blockade_runner_right_config = {
+                key: 'player-blockade-runner-right-animation',
+                frames: this.anims.generateFrameNumbers('player-blockade-runner', { start: 4, end: 7, first: 7 }),
+                frameRate: 4,
+                repeat: -1
+            };
+
+            this.anims.create(player_blockade_runner_right_config);
+
+            let player_blockade_runner_up_config = {
+                key: 'player-blockade-runner-up-animation',
+                frames: this.anims.generateFrameNumbers('player-blockade-runner', { start: 8, end: 11, first: 11 }),
+                frameRate: 4,
+                repeat: -1
+            };
+
+            this.anims.create(player_blockade_runner_up_config);
+
+            let player_blockade_runner_down_config = {
+                key: 'player-blockade-runner-down-animation',
+                frames: this.anims.generateFrameNumbers('player-blockade-runner', { start: 12, end: 15, first: 15 }),
+                frameRate: 4,
+                repeat: -1
+            };
+
+            this.anims.create(player_blockade_runner_down_config);
+
+
+            // CARGO SHIP
             let player_cargo_ship_left_config = {
                 key: 'player-cargo-ship-left-animation',
                 frames: this.anims.generateFrameNumbers('player-cargo-ship', { start: 0, end: 3, first: 3 }),
@@ -1347,6 +1392,43 @@ include('config.php');
             this.anims.create(player_galaxy_down_config);
 
 
+            // LANCER
+            let player_lancer_left_config = {
+                key: 'player-lancer-left-animation',
+                frames: this.anims.generateFrameNumbers('player-lancer', { start: 0, end: 3, first: 3 }),
+                frameRate: 4,
+                repeat: -1
+            };
+
+            this.anims.create(player_lancer_left_config);
+
+            let player_lancer_right_config = {
+                key: 'player-lancer-right-animation',
+                frames: this.anims.generateFrameNumbers('player-lancer', { start: 4, end: 7, first: 7 }),
+                frameRate: 4,
+                repeat: -1
+            };
+
+            this.anims.create(player_lancer_right_config);
+
+            let player_lancer_up_config = {
+                key: 'player-lancer-up-animation',
+                frames: this.anims.generateFrameNumbers('player-lancer', { start: 8, end: 11, first: 11 }),
+                frameRate: 4,
+                repeat: -1
+            };
+
+            this.anims.create(player_lancer_up_config);
+
+            let player_lancer_down_config = {
+                key: 'player-lancer-down-animation',
+                frames: this.anims.generateFrameNumbers('player-lancer', { start: 12, end: 15, first: 15 }),
+                frameRate: 4,
+                repeat: -1
+            };
+
+            this.anims.create(player_lancer_down_config);
+
             // PLAYER MINING SHIP
 
             let player_mining_ship_left_config = {
@@ -1586,6 +1668,14 @@ include('config.php');
                 repeat: -1
             };
             this.anims.create(ai_forge_config);
+
+            let ai_space_construct_config = {
+                key: 'ai-space-construct-animation',
+                frames: this.anims.generateFrameNumbers('ai-space-construct', { start: 0, end: 3, first: 3 }),
+                frameRate: 2,
+                repeat: -1
+            };
+            this.anims.create(ai_space_construct_config);
 
             let ananke_config = {
                 key: 'ananke-animation',

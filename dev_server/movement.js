@@ -2946,7 +2946,7 @@ const world = require('./world.js');
                 }
 
             } else {
-                log(chalk.yellow("TRYING THIS SHIT!"));
+                
                 await switchToShip(socket, dirty);
                 await switchToGalaxy(socket, dirty);
             }
@@ -3001,10 +3001,15 @@ const world = require('./world.js');
     async function switchToShip(socket, dirty) {
         try {
 
-            let player_index = await main.getPlayerIndex({'player_id':socket.player_id});
+
+            if(typeof socket.player_index === "undefined") {
+                log(chalk.yellow("Socket doesn't have player index yet"));
+                return false;
+            }
+            let player_index = socket.player_index;
             let ship_index = await main.getObjectIndex(dirty.players[player_index].ship_id);
 
-            console.log("socket.player_id: " + socket.player_id + " player_index: " + player_index);
+            console.log("socket.player_index: " + player_index);
             console.log("player's ship_id: " + dirty.players[player_index].ship_id + " Got ship_index as: " + ship_index);
 
             if(ship_index === -1) {
@@ -3067,6 +3072,12 @@ const world = require('./world.js');
 
             if(ship_coord_index !== -1) {
 
+                if(dirty.ship_coords[ship_coord_index].ship_id === 2) {
+                    log(chalk.error("DON'T DO THIS!!!! NOT SHIP 2222!!!"));
+                    console.trace("trace");
+                    return false;
+                }
+
                 // get the galaxy coord that the player was on
                 let coord_index = dirty.coords.findIndex(function(obj) { return obj && obj.player_id === dirty.players[player_index].coord_id; });
 
@@ -3078,6 +3089,8 @@ const world = require('./world.js');
                 await main.updateCoordGeneric(socket, { 'ship_coord_index': ship_coord_index, 'player_id': socket.player_id });
 
                 socket.map_needs_cleared = true;
+
+
 
 
                 dirty.players[player_index].ship_coord_id = dirty.ship_coords[ship_coord_index].id;

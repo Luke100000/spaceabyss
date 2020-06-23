@@ -2,28 +2,63 @@
 
 DOING NOW:
 
+    Should be coded. Now lets test!
+        Test AIs on ships, and AIs protecting planets again
+            AIs protecting planets isn't really coded. Check for object v object AIs for ships, and see if that has code/structure
+
+    
+
+    
+    PLAYERS ARE GETTING PUT ON SHIP_ID 2!!!!!!
+    
 
 
-
-    Need to make sure Gabriel's Space Station has engine and weapon mounts.
-
-            Gabriel's Space Station disappeared when he logged out - things that can be docked at
-                need to stay in the game
-
-
-    Once I'm done with all this I have to test:
-        1. Pods moving
-        2. Things moving with all, part, 0 engines
 
     Exodium Knife - requires quick matter knife research
 
-    Thiol Extractor image
+
+    The manufacturing body and augment being behind such a high complexity level is annoying.
+        1. significantly lower the complexity of AI Fragment (Say to Exodium - 12 or 14 I think)
+        2. Add another layer - AI Shard, at AI Fragement's previous complexity 18
+        3. Have AI's require AI Shards instead of AI Fragments
+        4. Increase AI Complexity to 22
+
+        LIKE!!!
+        Alternatively, leave AI Fragments as they are, increase the complexity of AI, and have manufacturing require something else
+            Blueprint computer made from AI Dust and Power Cells
+
+            Manufacturing Computer
+            Manufacturing Core
+            Manufacturing processer
+            Manufacturing Chip
+            Blueprint Computer
+            Blueprint Chip
+            Neural Blueprint
+            Blueprint Segment
+            Data Chip
+            Neural Link
+            Neural Chip
+
+            Hacking
+                Hacking Core
+                Hacking Computer
+                Hacking Processor
+
+
+            Laser
+                Laser Core
+                Laser Computer
+                Laser Processor
 
     Octopus body and water movement
         I THINK the easiest way to add and apply it is.... an object type property O_o
 
 
-    Ship tutorial
+    Gabe had the idea of a temporary manufacturing increase via a shot or something that would then have a negative side effect afterward
+        Think addiction/brain burn afterward. Would be a way of stimming up manufacturing like we stim up attack and defense, but for manufacturing.
+
+
+    Mess with shaders for the player underwater look
 
     
     If we can't place a player in the galaxy, try the coords around the player instead of random
