@@ -5984,10 +5984,10 @@ async function tickGrowths(dirty) {
 
 async function tickGalaxyObjects(dirty) {
     try {
-        let hrstart = new process.hrtime();
+        //let hrstart = new process.hrtime();
         await movement.moveGalaxyObjects(dirty);
-        let hrend = process.hrtime(hrstart);
-        console.info('Execution time movement.moveGalaxyObjects (hr): %ds %dms', hrend[0], hrend[1] / 1000000);
+        //let hrend = process.hrtime(hrstart);
+        //console.info('Execution time movement.moveGalaxyObjects (hr): %ds %dms', hrend[0], hrend[1] / 1000000);
     } catch(error) {
         log(chalk.red("Error in tickGalaxyObjects: " + error));
         console.error(error);

@@ -86,6 +86,83 @@ async function calculateDefense(dirty, player_index, damage_type = false) {
 exports.calculateDefense = calculateDefense;
 
 
+async function calculateMovementModifier(socket, dirty, scope, coord_index) {
+
+    try {
+        
+        
+        if(scope === 'ship' || scope === 'planet') {
+
+            let previous_socket_movement_modifier = socket.movement_modifier;
+
+            // Get the floor type of the tile we moved to, and put in a move modifier for the socket on the next
+            // move if it's applicable
+            let floor_type_index = -1;
+            if(scope === 'planet') {
+                floor_type_index = main.getFloorTypeIndex(dirty.planet_coords[coord_index].floor_type_id);
+            } else if(scope === 'ship') {
+                floor_type_index = main.getFloorTypeIndex(dirty.ship_coords[coord_index].floor_type_id);
+            }
+            
+
+            if(floor_type_index !== -1 && dirty.floor_types[floor_type_index].movement_modifier) {
+
+                socket.movement_modifier = dirty.floor_types[floor_type_index].movement_modifier;
+
+            }
+
+            //console.time("land/fluid_check");
+            let player_body_index = await main.getObjectIndex(dirty.players[socket.player_index].body_id);
+            if(player_body_index !== -1) {
+                let player_body_type_index = main.getObjectTypeIndex(dirty.objects[player_body_index].object_type_id);
+                if(player_body_type_index !== -1) {
+                    if(player_body_type_index !== -1 && floor_type_index !== -1 ) {
+
+                        if(dirty.object_types[player_body_type_index].land_movement_modifier !== 1 && dirty.floor_types[floor_type_index].movement_type === 'land') {
+                            socket.movement_modifier = socket.movement_modifier * dirty.object_types[player_body_type_index].land_movement_modifier;
+                            //console.log("body land movement modifier changed socket.movement_modifier to: " + socket.movement_modifier);
+                        }
+
+                        
+                        if(dirty.object_types[player_body_type_index].fluid_movement_modifier !== 1 && dirty.floor_types[floor_type_index].movement_type === 'fluid') {
+                            socket.movement_modifier = socket.movement_modifier * dirty.object_types[player_body_type_index].fluid_movement_modifier;
+                            //console.log("body land movement modifier changed socket.movement_modifier to: " + socket.movement_modifier);
+                        }
+
+                        
+                        if(dirty.object_types[player_body_type_index].air_movement_modifier !== 1 && dirty.floor_types[floor_type_index].movement_type === 'air') {
+                            socket.movement_modifier = socket.movement_modifier * dirty.object_types[player_body_type_index].air_movement_modifier;
+                            //console.log("body land movement modifier changed socket.movement_modifier to: " + socket.movement_modifier);
+                        }
+
+                    }
+                }
+            }
+            
+            
+
+            //console.timeEnd("land/fluid_check");
+
+            if(socket.movement_modifier !== previous_socket_movement_modifier) {
+                //console.log("Reset socket move count: " + socket.movement_modifier + " !== " + previous_socket_movement_modifier);
+                socket.move_count = 1;
+                socket.move_totals = 0;
+            }
+
+        } else {
+            //console.log("Galaxy set socket move modifer to 1");
+            socket.movement_modifier = 1;
+        }
+
+    } catch(error) {
+        log(chalk.red("Error in player.calculateMovementModifier: " + error));
+        console.error(error);
+    }
+}
+
+exports.calculateMovementModifier = calculateMovementModifier;
+
+
 /**
  * 
  * @param {Object} socket 
@@ -498,6 +575,7 @@ exports.sendShips = sendShips;
 
 module.exports = {
     calculateDefense,
+    calculateMovementModifier,
     claimShip,
     sendInfo,
     sendShips,

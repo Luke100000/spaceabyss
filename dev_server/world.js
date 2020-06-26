@@ -1521,10 +1521,21 @@ async function connectLevel(socket, dirty, data) {
 
         let size_underground = dirty.planet_types[data.planet_type_index].size_underground;
 
-        let underground_offset = 0;
-        if (dirty.planet_types[data.planet_type_index].size > dirty.planet_types[data.planet_type_index].size_underground) {
-            underground_offset = (dirty.planet_types[data.planet_type_index].size - dirty.planet_types[data.planet_type_index].size_underground) / 2;
+        let level_x_size = dirty.planet_types[data.planet_type_index].x_size_above;
+        let level_y_size = dirty.planet_types[data.planet_type_index].y_size_above;
+        let starting_x_offset = 0;
+        let starting_y_offset = 0;
 
+        if (data.connecting_level < 0) {
+            level_x_size = dirty.planet_types[data.planet_type_index].x_size_under;
+            level_y_size = dirty.planet_types[data.planet_type_index].y_size_under;
+
+            if (dirty.planet_types[data.planet_type_index].x_size_above > dirty.planet_types[data.planet_type_index].x_size_under) {
+                starting_x_offset = (dirty.planet_types[data.planet_type_index].x_size_above - dirty.planet_types[data.planet_type_index].x_size_under) / 2;
+            }
+            if (dirty.planet_types[data.planet_type_index].y_size_above > dirty.planet_types[data.planet_type_index].y_size_under) {
+                starting_y_offset = (dirty.planet_types[data.planet_type_index].y_size_above - dirty.planet_types[data.planet_type_index].y_size_under) / 2;
+            }
         }
 
 
@@ -1532,14 +1543,14 @@ async function connectLevel(socket, dirty, data) {
 
         // So the grid is going to be the base size. We will have to translate the actual planet coords
         // back and forth due to the offset
-        let grid = new PF.Grid(size_underground, size_underground);
+        let grid = new PF.Grid(level_x_size, level_y_size);
 
 
         // First step is to find a non-walled coord
         // and then make sure it can go to any other non walled coord
         let base_coord_index = -1;
-        for (let x = underground_offset; x < size_underground + underground_offset; x++) {
-            for (let y = underground_offset; y < size_underground + underground_offset; y++) {
+        for (let x = starting_x_offset; x < level_x_size + starting_x_offset; x++) {
+            for (let y = starting_y_offset; y < level_y_size + starting_y_offset; y++) {
 
                 let planet_coord_index = await main.getPlanetCoordIndex({
                     'planet_id': dirty.planets[data.planet_index].id,
@@ -1556,7 +1567,7 @@ async function connectLevel(socket, dirty, data) {
                 //grid.setWalkableAt(x, y, true);
 
                 if (dirty.planet_coords[planet_coord_index].object_type_id === dirty.planet_types[data.planet_type_index].wall_object_type_id) {
-                    grid.setWeightAt(x - underground_offset, y - underground_offset, 10);
+                    grid.setWeightAt(x - starting_x_offset, y - starting_y_offset, 10);
                 }
 
 
@@ -1571,8 +1582,8 @@ async function connectLevel(socket, dirty, data) {
         let grid_backup = grid;
 
 
-        for (let x = underground_offset; x < size_underground + underground_offset; x++) {
-            for (let y = underground_offset; y < size_underground + underground_offset; y++) {
+        for (let x = starting_x_offset; x < level_x_size + starting_x_offset; x++) {
+            for (let y = starting_y_offset; y < level_y_size + starting_y_offset; y++) {
 
                 let planet_coord_index = await main.getPlanetCoordIndex({
                     'planet_id': dirty.planets[data.planet_index].id,
@@ -1586,8 +1597,8 @@ async function connectLevel(socket, dirty, data) {
 
                     //console.log("Need to find path to " + dirty.planet_coords[planet_coord_index].tile_x + ", " + dirty.planet_coords[planet_coord_index].tile_y);
 
-                    let path = finder.findPath(dirty.planet_coords[base_coord_index].tile_x - underground_offset, dirty.planet_coords[base_coord_index].tile_y - underground_offset,
-                        dirty.planet_coords[planet_coord_index].tile_x - underground_offset, dirty.planet_coords[planet_coord_index].tile_y - underground_offset, grid);
+                    let path = finder.findPath(dirty.planet_coords[base_coord_index].tile_x - starting_x_offset, dirty.planet_coords[base_coord_index].tile_y - starting_y_offset,
+                        dirty.planet_coords[planet_coord_index].tile_x - starting_x_offset, dirty.planet_coords[planet_coord_index].tile_y - starting_y_offset, grid);
 
                     //console.log(path);
 
@@ -1602,11 +1613,11 @@ async function connectLevel(socket, dirty, data) {
 
                         let path_coord_index = await main.getPlanetCoordIndex({
                             'planet_id': dirty.planets[data.planet_index].id,
-                            'planet_level': data.connecting_level, 'tile_x': path_x + underground_offset, 'tile_y': path_y + underground_offset
+                            'planet_level': data.connecting_level, 'tile_x': path_x + starting_x_offset, 'tile_y': path_y + starting_y_offset
                         });
 
                         if (dirty.planet_coords[path_coord_index].object_type_id === dirty.planet_types[data.planet_type_index].wall_object_type_id) {
-                            //console.log("Removing wall at tile_x/y: " + path_x + "/" + path_y);
+                            console.log("Removing wall at tile_x/y: " + path_x + "/" + path_y);
                             dirty.planet_coords[path_coord_index].object_type_id = false;
                             dirty.planet_coords[path_coord_index].has_change = true;
 
@@ -2177,7 +2188,8 @@ async function generatePlanet(socket, dirty, planet_index, planet_type_index) {
                 let possible_hole_coords = dirty.planet_coords.filter(planet_coord =>
                     planet_coord.planet_id === dirty.planets[planet_index].id &&
                     planet_coord.level === level_above && !planet_coord.npc_id && !planet_coord.spawns_monster_type_id &&
-                    planet_coord.floor_type_id !== 26 && planet_coord.floor_type_id !== 11 && !planet_coord.object_id &&
+                    planet_coord.floor_type_id !== 26 && planet_coord.floor_type_id !== 11 && planet_coord.floor_type_id !== 44 && 
+                    !planet_coord.object_id &&
                     planet_coord.tile_x < dirty.planet_types[planet_type_index].x_size_under + underground_x_offset &&
                     planet_coord.tile_y < dirty.planet_types[planet_type_index].y_size_under + underground_y_offset &&
                     planet_coord.tile_x > underground_x_offset &&

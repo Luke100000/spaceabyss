@@ -822,6 +822,9 @@ include('config.php');
             this.load.spritesheet('player-mlm', 'https://space.alphacoders.com/player-mlm-animated.png',
                 { frameWidth: 64, frameHeight: 64, endFrame: 36 });
 
+            this.load.spritesheet('player-octopus', 'https://space.alphacoders.com/player-octopus-body-animated.png',
+                { frameWidth: 64, frameHeight: 60, endFrame: 30 });
+
             this.load.spritesheet('player-ruel', 'https://space.alphacoders.com/ruel-body-animated.png',
                 { frameWidth: 64, frameHeight: 64, endFrame: 36 });
 
@@ -1512,6 +1515,52 @@ include('config.php');
                 repeat: -1
             };
             this.anims.create(player_mlm_down_config);
+
+
+            // PLAYER OCTOPUS
+
+            let player_octopus_idle_config = {
+                key: 'player-octopus-idle-animation',
+                frames: this.anims.generateFrameNumbers('player-octopus', { start: 0, end: 5, first: 5 }),
+                frameRate: 4,
+                repeat: -1
+            };
+            this.anims.create(player_octopus_idle_config);
+
+
+            let player_octopus_left_config = {
+                key: 'player-octopus-left-animation',
+                frames: this.anims.generateFrameNumbers('player-octopus', { start: 6, end: 11, first: 11 }),
+                frameRate: 4,
+                repeat: -1
+            };
+
+            this.anims.create(player_octopus_left_config);
+
+            let player_octopus_right_config = {
+                key: 'player-octopus-right-animation',
+                frames: this.anims.generateFrameNumbers('player-octopus', { start: 12, end: 17, first: 17 }),
+                frameRate: 4,
+                repeat: -1
+            };
+            this.anims.create(player_octopus_right_config);
+
+            let player_octopus_up_config = {
+                key: 'player-octopus-up-animation',
+                frames: this.anims.generateFrameNumbers('player-octopus', { start: 18, end: 23, first: 23 }),
+                frameRate: 4,
+                repeat: -1
+            };
+
+            this.anims.create(player_octopus_up_config);
+
+            let player_octopus_down_config = {
+                key: 'player-octopus-down-animation',
+                frames: this.anims.generateFrameNumbers('player-octopus', { start: 24, end: 29, first: 29 }),
+                frameRate: 4,
+                repeat: -1
+            };
+            this.anims.create(player_octopus_down_config);
 
 
             // PLAYER POD
@@ -2342,11 +2391,12 @@ include('config.php');
                     // we need to get the floor type of the coord we are moving to
                     let movement_modifier = false;
                     let floor_modifier = 1;
+                    let floor_type_index = -1;
                     if(players[i].destination_coord_id) {
                         if(current_view === 'planet') {
                             let coord_index = planet_coords.findIndex(function(obj) { return obj && obj.id === players[i].destination_coord_id; });
                             if(coord_index !== -1) {
-                                let floor_type_index = floor_types.findIndex(function(obj) { return obj && obj.id === planet_coords[coord_index].floor_type_id; });
+                                floor_type_index = floor_types.findIndex(function(obj) { return obj && obj.id === planet_coords[coord_index].floor_type_id; });
 
                                 if(floor_type_index !== -1 && floor_types[floor_type_index].movement_modifier) {
 
@@ -2357,7 +2407,7 @@ include('config.php');
                         } else if(current_view === 'ship') {
                             let ship_coord_index = ship_coords.findIndex(function(obj) { return obj && obj.id === players[i].destination_coord_id; });
                             if(ship_coord_index !== -1) {
-                                let floor_type_index = floor_types.findIndex(function(obj) { return obj && obj.id === ship_coords[ship_coord_index].floor_type_id; });
+                                floor_type_index = floor_types.findIndex(function(obj) { return obj && obj.id === ship_coords[ship_coord_index].floor_type_id; });
 
                                 if(floor_type_index !== -1 && floor_types[floor_type_index].movement_modifier) {
 
@@ -2368,7 +2418,7 @@ include('config.php');
                         } else if(current_view === 'galaxy') {
                             let coord_index = coords.findIndex(function(obj) { return obj && obj.id === players[i].destination_coord_id; });
                             if(coord_index !== -1) {
-                                let floor_type_index = floor_types.findIndex(function(obj) { return obj && obj.id === coords[coord_index].floor_type_id; });
+                                floor_type_index = floor_types.findIndex(function(obj) { return obj && obj.id === coords[coord_index].floor_type_id; });
 
                                 if(floor_type_index !== -1 && floor_types[floor_type_index].movement_modifier) {
 
@@ -2380,12 +2430,44 @@ include('config.php');
                     }
 
 
+                    // See if the body the player has is going to change things
+                    if(floor_type_index !== -1 && current_view !== 'galaxy') {
+                        let player_body_index = getObjectIndex(players[i].body_id);
+                        if(player_body_index !== -1) {
+                            let player_body_type_index = getObjectTypeIndex(objects[player_body_index].object_type_id);
+                            if(player_body_type_index !== -1) {
+                                
+                                if(object_types[player_body_type_index].land_movement_modifier !== 1 && floor_types[floor_type_index].movement_type === 'land') {
+                                    floor_modifier = floor_modifier * object_types[player_body_type_index].land_movement_modifier;
+                                    console.log("body land movement modifier changed floor_modifier to: " + floor_modifier);
+                                }
+
+                                
+                                if(object_types[player_body_type_index].fluid_movement_modifier !== 1 && floor_types[floor_type_index].movement_type === 'fluid') {
+                                    floor_modifier = floor_modifier * object_types[player_body_type_index].fluid_movement_modifier;
+                                    console.log("body land movement modifier changed socket.movement_modifier to: " + floor_modifier);
+                                }
+
+                                
+                                if(object_types[player_body_type_index].air_movement_modifier !== 1 && floor_types[floor_type_index].movement_type === 'air') {
+                                    floor_modifier = floor_modifier * object_types[player_body_type_index].air_movement_modifier;
+                                    console.log("body land movement modifier changed socket.movement_modifier to: " + floor_modifier);
+                                }
+
+
+                                
+                            }
+                        }
+
+                    }
+
+
                     // E.g. Default speed is 500 ms. 1/2 a second.
                     // tile_width / 1000ms / move_delay * floor_modifier
                     // OLD E.g. 1000 / 500 * 1 = 2 (default) or 1000/500 * .5 = 1 (water)
                     //let player_move_speed = 64 * ( 1000 / players[i].current_move_delay * floor_modifier) / 60;
-                    // Trying /61 instead of /60 to maybe get a few less instances of the player moving too fast.
-                    let player_move_speed = 64 * ( 1000 / players[i].current_move_delay * floor_modifier) / 62;
+                    // Trying /64 instead of /60 to maybe get a few less instances of the player moving too fast.
+                    let player_move_speed = 64 * ( 1000 / players[i].current_move_delay * floor_modifier) / 64;
                     //let player_move_speed = 1000 / players[i].current_move_delay * floor_modifier;
 
                     if(player_move_speed === 0) {

@@ -19,6 +19,9 @@
     dirty.planet_coords[planet_id] = []; //?
 
 
+I really just don't know if I want an Exodium knife... I feel like I want to get to cooler things than.... knives of everything
+    Exodium Knife - requires quick matter knife research
+
 
     See if we can make the right side of space abyss scroll so the left side doesn't move around
 
@@ -27,6 +30,9 @@
 
     
     have the health page send a warning email if the levels of certain things are too low
+
+    
+    PLAYERS ARE GETTING PUT ON SHIP_ID 2!!!!!!
 
 
 ************************ UNSORTED IDEAS *****************************:
@@ -1300,6 +1306,9 @@ Solar panel tile that heals machines
 
 Jovian/Jupiter type of planet. Would want a couple of moons close to it too. Could have a unique body type for that
     as well
+
+
+could make AI energy tick faster with more cores. (game.tickAI)
 
 Planet type that is a set of islands. Would need a flying body to go around (or portals)
 

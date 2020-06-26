@@ -878,7 +878,10 @@ function createPlayerSprite(player_index) {
             return false;
         }
 
-        if (objects[ship_index].object_type_id === 238) {
+        if(objects[ship_index].object_type_id === 313) {
+            new_texture_key = 'player-blockade-runner';
+            new_texture_animation_key = 'player-blockade-runner-down-animation';
+        } else if (objects[ship_index].object_type_id === 238) {
             new_texture_key = 'player-cargo-ship';
             new_texture_animation_key = 'player-cargo-ship-down-animation';
             //new_movement_display = 'rotate';
@@ -891,6 +894,9 @@ function createPlayerSprite(player_index) {
             new_texture_key = 'player-cutter';
             new_texture_animation_key = 'player-cutter-down-animation';
             //new_movement_display = 'rotate';
+        } else if(objects[ship_index].object_type_id === 296) {
+            new_texture_key = 'player-lancer';
+            new_texture_animation_key = 'player-lancer-down-animation';
         } else if (objects[ship_index].object_type_id === 239) {
             new_texture_key = 'player-mining-ship';
             new_texture_animation_key = 'player-mining-ship-down-animation';
@@ -957,21 +963,31 @@ function createPlayerSprite(player_index) {
                 return false;
             }
 
+            // HUMAN
             if (objects[body_index].object_type_id === 110) {
                 new_texture_key = 'player-human';
                 new_texture_animation_key = 'player-human-idle-animation';
                 new_sprite_y_offset = -6;
             }
-            if (objects[body_index].object_type_id === 142) {
-                new_texture_key = 'player-ruel';
-                new_texture_animation_key = 'player-ruel-idle-animation';
-            }
+            // MLM
             else if (objects[body_index].object_type_id === 108) {
                 new_texture_key = 'player-mlm';
                 new_texture_animation_key = 'player-mlm-idle-animation';
-            } else {
+            } 
+            // OCTOPUS
+            else if (objects[body_index].object_type_id === 344) {
+                new_texture_key = 'player-octopus';
+                new_texture_animation_key = 'player-octopus-idle-animation';
+            } 
+            // RUEL
+            else if (objects[body_index].object_type_id === 142) {
+                new_texture_key = 'player-ruel';
+                new_texture_animation_key = 'player-ruel-idle-animation';
+            }
+            // DEFAULT!
+            else {
                 console.log("%c Using Default Body Display to draw player " + players[player_index].id, log_warning);
-                // DEFAULT!
+
                 new_texture_key = 'player-human';
                 new_texture_animation_key = 'player-human-idle-animation';
                 new_sprite_y_offset = -6;
@@ -1147,6 +1163,8 @@ function displayClickObject(object_id) {
 
     if(object_types[object_type_index].max_energy_storage) {
         $('#coord_data').append("Energy: " + objects[object_index].energy + "/" + object_types[object_type_index].max_energy_storage + "<br>");
+    } else if(objects[object_index].energy) {
+        $('#coord_data').append("Energy: " + objects[object_index].energy + "<br>");
     }
 
 
@@ -6647,6 +6665,39 @@ function movePlayerFlow(player_index, destination_coord_type, destination_coord,
                 }
             }
         }
+
+        /********** OCTOPUS *************/
+        else if (players[player_index].sprite.texture.key === 'player-octopus') {
+
+            // LEFT !
+            if (players[player_index].destination_x < players[player_index].sprite.x) {
+
+                if (players[player_index].sprite.anims.getCurrentKey() !== 'player-octopus-left-animation') {
+                    players[player_index].sprite.anims.play('player-octopus-left-animation');
+                }
+
+            }
+            // RIGHT!
+            else if (players[player_index].destination_x > players[player_index].sprite.x) {
+                if (players[player_index].sprite.anims.getCurrentKey() !== 'player-octopus-right-animation') {
+                    players[player_index].sprite.anims.play('player-octopus-right-animation');
+                }
+
+            }
+            // UP!
+            else if (players[player_index].destination_y < players[player_index].sprite.y) {
+                if (players[player_index].sprite.anims.getCurrentKey() !== 'player-octopus-up-animation') {
+                    players[player_index].sprite.anims.play('player-octopus-up-animation');
+                }
+            }
+            // DOWN!
+            else if (players[player_index].destination_y > players[player_index].sprite.y) {
+                if (players[player_index].sprite.anims.getCurrentKey() !== 'player-octopus-down-animation') {
+                    players[player_index].sprite.anims.play('player-octopus-down-animation');
+                }
+            }
+        }
+
         /***************************** RUEL *******************************/
         else if (players[player_index].sprite.texture.key === 'player-ruel') {
 
@@ -9152,17 +9203,17 @@ function showClickMenuObject(coord) {
             // It's our object, we can do whatever we want with it!
             if (objects[object_index].player_id && objects[object_index].player_id === client_player_id) {
 
-                $('#click_menu').append("<br><button id='attack_" + coord.object_id + "' object_id='" + coord.object_id +
+                $('#click_menu').append("<br><button id='attack_" + objects[object_index].id + "' object_id='" + objects[object_index].id +
                     "' class='button is-warning is-small' source='object_type_can_be_attacked'>Attack " +
                     object_types[object_type_index].name + "</button>");
 
-                $('#click_menu').append("<br><button id='destroy_" + coord.object_id + "' object_id='" + coord.object_id +
+                $('#click_menu').append("<br><button id='destroy_" + objects[object_index].id + "' object_id='" + objects[object_index].id +
                     "' class='button is-danger is-small is-pulled-right' source='object_type_can_be_attacked'>Destroy " +
                     object_types[object_type_index].name + "</button>");
             }
             // Just an attack option
             else {
-                $('#click_menu').append("<br><button id='attack_" + coord.object_id + "' object_id='" + coord.object_id +
+                $('#click_menu').append("<br><button id='attack_" + objects[object_index].id + "' object_id='" + objects[object_index].id +
                     "' class='button is-warning is-small' source='object_type_can_be_attacked'>Attack " +
                     object_types[object_type_index].name + "</button><br>");
             }

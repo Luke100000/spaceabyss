@@ -226,6 +226,7 @@ const world = require('./world.js');
             if(socket.movement_modifier) {
 
                 movement_delay = movement_delay / socket.movement_modifier;
+                //console.log("Socket has movement modifier: " + socket.movement_modifier + ". Changed movement delay to: " + movement_delay);
             }
 
 
@@ -508,7 +509,7 @@ const world = require('./world.js');
 
             if(previous_coord_index === -1) {
                 log(chalk.yellow("Unable to find coord player was previously on in movement.moveGalaxy"));
-                return;
+                return false;
             }
 
             // Make sure the coords are close enough
@@ -766,6 +767,8 @@ const world = require('./world.js');
                 dirty.objects[player_ship_index].has_change = true;
                 await game_object.sendInfo(socket, "galaxy", dirty, player_ship_index, 'movement.moveGalaxy');
 
+                await player.calculateMovementModifier(socket, dirty, 'galaxy', coord_index);
+
                 return;
             }
 
@@ -846,7 +849,7 @@ const world = require('./world.js');
             }
 
 
-
+            await player.calculateMovementModifier(socket, dirty, 'galaxy', coord_index);
 
 
 
@@ -1458,23 +1461,7 @@ const world = require('./world.js');
 
                 }
 
-                // Get the floor type of the tile we moved to, and put in a move modifier for the socket on the next
-                // move if it's applicable
-                let floor_type_index = main.getFloorTypeIndex(dirty.planet_coords[planet_coord_index].floor_type_id);
-
-                if(floor_type_index !== -1 && dirty.floor_types[floor_type_index].movement_modifier) {
-
-                    if(dirty.floor_types[floor_type_index].movement_modifier !== socket.movement_modifier) {
-                        //console.log("Reset player move_count/totals. Floor movement modifier: " + dirty.floor_types[floor_type_index].movement_modifier +
-                        //    " socket movement modifier: " + socket.movement_modifier);
-                        socket.move_count = 1;
-                        socket.move_totals = 0;
-                        socket.movement_modifier = dirty.floor_types[floor_type_index].movement_modifier;
-                    }
-
-                }
-
-
+                await player.calculateMovementModifier(socket, dirty, 'planet', planet_coord_index);
 
                 //await map.updateMap(socket, dirty);
 
@@ -1483,6 +1470,7 @@ const world = require('./world.js');
 
         } catch(error) {
             log(chalk.red("Error in movement.movePlanet: " + error));
+            console.error(error);
         }
     }
 
@@ -2248,6 +2236,8 @@ const world = require('./world.js');
 
 
                 }
+
+                await player.calculateMovementModifier(socket, dirty, 'ship', ship_coord_index);
             }
 
 
@@ -2921,7 +2911,7 @@ const world = require('./world.js');
                 }
                 // Just back to the galaxy view from our ship (not docked on anything)
                 else {
-                    console.log("PLAIN LAUNCH!");
+                    //console.log("PLAIN LAUNCH!");
                     
                     dirty.players[player_index].on_ship_id = false;
                     dirty.players[player_index].previous_ship_coord_id = dirty.players[player_index].ship_coord_id;

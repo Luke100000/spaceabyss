@@ -3525,7 +3525,7 @@ const world = require('./world.js');
                     damaged_coord_index = being_repaired_coord_index;
                 } else {
                     damaged_coord_index = dirty.ship_coords.findIndex(function(obj) { return obj &&
-                        obj.ship_id === dirty.objects[ship_index].id && (ship_coord.object_type_id === 216 || ship_coord.floor_type_id === 23); });
+                        obj.ship_id === dirty.objects[ship_index].id && (obj.object_type_id === 216 || obj.floor_type_id === 23); });
                 }
 
                 if(damaged_coord_index === -1) {
@@ -3601,7 +3601,8 @@ const world = require('./world.js');
 
 
         } catch(error) {
-            log(chalk.red("Error in battle.generateShipDamagedTile: " + error));
+            log(chalk.red("Error in game.generateShipDamagedTile: " + error));
+            console.error(error);
         }
     }
 
@@ -3970,7 +3971,7 @@ const world = require('./world.js');
             for(let equipment_linker of dirty.equipment_linkers) {
                 if(equipment_linker) {
                     if(equipment_linker.body_id === dirty.objects[body_index].id) {
-                        await game.unequip(player_socket, dirty, equipment_linker.id);
+                        await unequip(player_socket, dirty, equipment_linker.id);
                     }
                 }
 
@@ -4618,7 +4619,7 @@ const world = require('./world.js');
                 }
 
 
-                game.destroyPlanet(socket, dirty, { 'planet_index': planet_index });
+                destroyPlanet(socket, dirty, { 'planet_index': planet_index });
             } else if(data.message.includes("/generateplanet ")) {
                 console.log("Was generate planet message");
                 let split = data.message.split(" ");
@@ -5882,7 +5883,7 @@ const world = require('./world.js');
                 return false;
             }
 
-            console.log("Processing salvaging");
+            //console.log("Processing salvaging");
 
             // Later we will possibly be deleting all active salvagings with the indexes, so we need them separated
             let object_index = dirty.active_salvagings[i].object_index;
@@ -6906,6 +6907,7 @@ const world = require('./world.js');
 
     // So the goal is that we can support the AI to make it stronger by building
     // AI energy storage units and more cores
+    // Totally not super obvious - but we tick the AI's energy up slowly up to the max energy provided by batteries
     async function tickAI(dirty) {
 
         // to start with just load the AIs that are in memory already
@@ -6934,9 +6936,9 @@ const world = require('./world.js');
             }
 
 
-            //console.log("Found " + ai_battery_count + " ai batteries for this AI");
+            //console.log("Found " + ai_battery_count + " ai batteries for AI id: " + ai.id);
 
-            // 200 for each battery, and 200 default
+            // 20000 for each battery, and 200 default
             let ai_max_energy = (20000 * ai_battery_count) + 200;
 
             if(ai.energy < ai_max_energy) {

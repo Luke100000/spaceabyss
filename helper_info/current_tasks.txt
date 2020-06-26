@@ -2,56 +2,24 @@
 
 DOING NOW:
 
-    Should be coded. Now lets test!
-        Test AIs on ships, and AIs protecting planets again
-            AIs protecting planets isn't really coded. Check for object v object AIs for ships, and see if that has code/structure
-
-    
-
-    
-    PLAYERS ARE GETTING PUT ON SHIP_ID 2!!!!!!
-    
 
 
 
-    Exodium Knife - requires quick matter knife research
+    reinforced human body should be strong to hacking (+2 defense?)
+    machine body should be weak to hacking (-2 or -3)
 
 
-    The manufacturing body and augment being behind such a high complexity level is annoying.
-        1. significantly lower the complexity of AI Fragment (Say to Exodium - 12 or 14 I think)
-        2. Add another layer - AI Shard, at AI Fragement's previous complexity 18
-        3. Have AI's require AI Shards instead of AI Fragments
-        4. Increase AI Complexity to 22
-
-        LIKE!!!
-        Alternatively, leave AI Fragments as they are, increase the complexity of AI, and have manufacturing require something else
-            Blueprint computer made from AI Dust and Power Cells
-
-            Manufacturing Computer
-            Manufacturing Core
-            Manufacturing processer
-            Manufacturing Chip
-            Blueprint Computer
-            Blueprint Chip
-            Neural Blueprint
-            Blueprint Segment
-            Data Chip
-            Neural Link
-            Neural Chip
-
-            Hacking
-                Hacking Core
-                Hacking Computer
-                Hacking Processor
 
 
-            Laser
-                Laser Core
-                Laser Computer
-                Laser Processor
 
-    Octopus body and water movement
-        I THINK the easiest way to add and apply it is.... an object type property O_o
+
+
+    Manufacturing Core
+    Hacking Core
+    Laser Core
+
+
+
 
 
     Gabe had the idea of a temporary manufacturing increase via a shot or something that would then have a negative side effect afterward
@@ -155,6 +123,42 @@ NEED TO DRAW
 
 
 ART TASKS
+
+Modifications from previous batches
+
+Ocotopus body animations were for:
+    idle
+    walk left
+    walk right
+    walk up
+    walk down
+
+    Doesn't look like I have the idle. I know originally all the animations were idle. Do you happen to have the forward facing idle?
+    Example of a full player spritesheet: https://space.alphacoders.com/galaxy-body-animated.png
+
+
+stabbing gloves/shank gloves
+
+sea urchin animation
+
+bionic crab animation
+
+urchin spike
+
+manufacturing body design
+
+reinforced human body design
+
+
+augmentation station
+
+jellyfish design
+    based on the Halitrephes Maasi Jelly https://twitter.com/wonderofscience/status/1272533066498617349
+
+
+
+
+
 
 
 life herb seedling

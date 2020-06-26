@@ -1,3 +1,29 @@
+## [0.1.20] - 2020-06-26
+
+### Added
+- Manufacturing Core, Laser Core, Hacking Core
+- Decay rate to AI Space Constructs
+- Floor types have an additional property - movement type. This can be land,fluid, or air. Different player bodies will get different movement 
+bonuses/penalties based on the type of floor tile they are walking on. This lets the Octopus body be fast in the water, and slow on land.
+- Exodium Asteroid
+
+### Fixed 
+- A bug with repairing damaged tiles on ships
+- Connecting levels on planet genaration (was using the old single underground offset instead of the new separate x,y underground offset)
+
+
+### Changed
+- Removed the Advanced Forge while I continue to get closer to working on the type of functionality it's supposed to provide
+- Increased AI complexity from 20 to 22
+- Increased complexity of Power Cell from 1 to 10
+- Increased Defense Drone complexity from 5 to 10
+- Manufacturing Bodies, Manufacturing Augments now require Manufacturing Cores instead of AI Fragments
+- Removed energy storage from AI batteries, and increased their complexity from 1 to 10
+- Increased complexity of AI core from 1 to 20
+- Increased decay rate of AI Edifice and AI Daemon
+- Now show the energy of an AI directly on it
+- Once the update is pushed, I'll be re-generating the Water planet type. Still no monsters on it, but they are coming!
+
 ## [0.1.19] - 2020-06-23
 
 
