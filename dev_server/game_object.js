@@ -972,6 +972,39 @@ async function spawn(dirty, object_index, debug_object_type_id = 0) {
 exports.spawn = spawn;
 
 
+
+async function updateType(dirty, object_type_id) {
+    try {
+
+        console.log("In game_object.updateType");
+
+        let object_type_index = main.getObjectTypeIndex(object_type_id);
+
+        if(object_type_index === -1 || !dirty.object_types[object_type_index].object_type_id !== 351) {
+            log(chalk.yellow("Couldn't find object type - or it wasn't The Great Nomad"));
+            return false;
+        }
+
+        // I suppose at this point we can just go through the ship linkers
+        for(let i = 0; i < dirty.ship_linkers.length; i++) {
+            if(dirty.ship_linkers[i] && dirty.ship_linkers[i].ship_type_id === dirty.object_types[object_type_index].id) {
+
+            }
+        }
+
+
+
+
+
+    } catch(error) {
+        log(chalk.red("Error in game_object.updateType: " + error));
+        console.error(error);
+    }
+}
+
+exports.updateType = updateType;
+
+
 module.exports = {
     calculateDefense,
     canPlace,
@@ -979,6 +1012,7 @@ module.exports = {
     deleteObject,
     getCoordAndRoom,
     sendInfo,
-    spawn
+    spawn,
+    updateType
 }
 

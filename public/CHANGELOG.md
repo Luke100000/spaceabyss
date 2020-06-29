@@ -1,3 +1,10 @@
+## [0.1.21] - 2020-06-29
+
+
+### Fixed
+- Being brought back to a planet if you previously logged out or were disconnected on a planet, and then logged out/disconnected on a ship
+
+
 ## [0.1.20] - 2020-06-26
 
 ### Added

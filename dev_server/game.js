@@ -5253,6 +5253,13 @@ const world = require('./world.js');
             } else if(data.message.includes("/tickEvents")) {
                 await event.tickSpawning(dirty);
                 await event.tickSpawnedEvents(dirty);
+            } else if(data.message.includes("/updateshiptype ")) {
+                console.log("Was spawn object message");
+                let split = data.message.split(" ");
+
+                let object_type_id = split[1];
+                await game_object.updateType(dirty, object_type_id);
+
             }
         } catch(error) {
             log(chalk.red("Error in game.processAdminChatMessage: " + error));

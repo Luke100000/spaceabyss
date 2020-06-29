@@ -3916,6 +3916,7 @@ async function disconnectPlayer(socket) {
             }
 
             dirty.players[player_index].previous_ship_coord_id = dirty.players[player_index].ship_coord_id;
+            dirty.players[player_index].previous_planet_coord_id = false;
             dirty.players[player_index].ship_coord_id = false;
             dirty.players[player_index].has_change = true;
 

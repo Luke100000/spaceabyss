@@ -21,6 +21,7 @@ game.processAdminChatMessage
 /spawnobject AMOUNT OBJECT_TYPE_NAME
 /tickEvents
 /tickspawners
+/updateshiptype OBJECT_TYPE_ID
 
 
 
