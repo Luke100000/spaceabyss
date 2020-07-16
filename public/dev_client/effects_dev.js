@@ -170,7 +170,7 @@ function addEffect(data) {
             new_texture_animation_key = 'piercing-effect-animation';
             data.x += 32;
             data.y += 32;
-        } else if(data.damage_types[i] === 'poison') {
+        } else if(data.damage_types[i] === 'poison' || data.damage_types[i] === 'corrosive') {
             new_texture_key = 'poison-effect';
             new_texture_animation_key = 'poison-effect-animation';
             data.x += 32;

@@ -250,15 +250,16 @@ PLAYER WEAPONS
 
 FREE
     TIER 1 - Territe, Batteries, Chitin
-        TIER 2 - Refined Territe, Batteries, Keratin, AI Fragments, Parasites
-            TIER 3 - Exodium, Power cells, Living Wood, Silk, Thiol
+        TIER 2 - Refine Territe, Batteries, Keratin, AI Fragments, Parasites
+            TIER 3 - Exodium, Power Cells, Living Wood, Silk, Thiol
                 TIER 4 - Refined Exodium, Power Cells,
                     TIER 5 - Diamond
-                        TIER 6 - Spun Diamond
+                        TIER 6 - Spun Diamond, Diamond Battery
                             TIER 7 - HyperDiamond
                                 TIER 8 - Crystal
-                                    TIER 9 Hypercrystal
-                                        TIER 10 - Crystadmantium (Crystonium), Antimatter
+                                    TIER 9 Hypercrystal, Crystal Battery
+                                        TIER 10 - Crystadmantium (Crystonium), Antimatter, Quantum Battery
+
 
 
 
@@ -326,14 +327,12 @@ No Equip (Fists - Melee)
 PIERCING
     Stabbing gloves. Requires parts from spiked enemy + exodium. Could be from an urchin type monster
 
-
-
         Mimetic Arm
 
 
         Bolt Thrower *RANGE*
 
-            Gatlin Gun
+            Gatling Gun
 
             Railgun *RANGE*
 
@@ -347,12 +346,6 @@ PLASMA
 
 RADIATION
             Prion Gloves
-
-
-
-
-
-
 
 
 
@@ -514,7 +507,27 @@ Salve:
     Positive Effects: +5 HP
     Addiction Chance: 0%
 
-Smash. Drug
+
+Drugs and Pills
+    Blue
+    Green ( -attack +++hp )
+    Purple 
+    Red ( ++attack, -hp, -defense)
+
+Smash, crash, drop, exile, frentix, mindflood, X-Instinct, Sooth, rage, rampage, buster, blitz
+
+Stuff that comes from moss - M-Red, M-Green
+    CHEMICAL MOSS PROTECTION CMP
+    MOSS CHEMICAL PROTECTION MCHP
+
+    MOSS CHEMICAL ATTACK MCAT
+     M Attack
+     M Defense
+     M HP
+
+
+
+
 
 Tea
 
@@ -597,11 +610,11 @@ FREE
             TIER 3 - Exodium, Power cells, Living Wood, Silk, Thiol
                 TIER 4 - Refined Exodium, Power Cells,
                     TIER 5 - Diamond
-                        TIER 6 - Spun Diamond
+                        TIER 6 - Spun Diamond, Diamond Battery
                             TIER 7 - HyperDiamond
                                 TIER 8 - Crystal
-                                    TIER 9 Hypercrystal
-                                        TIER 10 - Crystadmantium (Crystonium), Antimatter
+                                    TIER 9 Hypercrystal, Crystal Battery
+                                        TIER 10 - Crystadmantium (Crystonium), Antimatter, Quantum Battery
 
 
 Pod (DRAWN)

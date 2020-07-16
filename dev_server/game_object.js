@@ -798,6 +798,169 @@ async function getCoordAndRoom(dirty, object_index) {
 
 exports.getCoordAndRoom = getCoordAndRoom;
 
+
+
+async function removeFromCoord(dirty, object_index) {
+
+    try {
+
+        console.log("In game_object.removeFromCoord");
+        console.time("removeFromCoord");
+
+        let has_display_linkers = false;
+        let display_linkers = [];
+
+        for(let i = 0; i < dirty.object_type_display_linkers.length; i++) {
+            if(dirty.object_type_display_linkers[i] && dirty.object_type_display_linkers[i].object_type_id === dirty.objects[object_index].object_type_id) {
+
+                has_display_linkers = true;
+                display_linkers.push(dirty.object_type_display_linkers[i]);
+            }
+        }
+
+        if(!has_display_linkers) {
+            console.log("No display linkers. Simple remove");
+            if(dirty.objects[object_index].coord_id) {
+                let object_coord_index = await main.getCoordIndex({'coord_id': dirty.objects[object_index].coord_id});
+                if(object_coord_index !== -1) {
+                    main.updateCoordGeneric(false, { 'coord_index': object_coord_index, 'object_id': false });
+
+                    dirty.objects[object_index].coord_id = false;
+                    dirty.objects[object_index].has_change = true;
+                }
+
+                
+                
+            } else if(dirty.objects[object_index].ship_coord_id) {
+                let object_coord_index = await main.getShipCoordIndex({'ship_coord_id': dirty.objects[object_index].ship_coord_id});
+                if(object_coord_index !== -1) {
+                    main.updateCoordGeneric(false, { 'ship_coord_index': object_coord_index, 'object_id': false });
+
+                    dirty.objects[object_index].ship_coord_id = false;
+                    dirty.objects[object_index].has_change = true;
+                }
+            } else if(dirty.objects[object_index].planet_coord_id) {
+                let object_coord_index = await main.getPlanetCoordIndex({'planet_coord_id': dirty.objects[object_index].planet_coord_id});
+                if(object_coord_index !== -1) {
+                    main.updateCoordGeneric(false, { 'planet_coord_index': object_coord_index, 'object_id': false });
+
+                    dirty.objects[object_index].planet_coord_id = false;
+                    dirty.objects[object_index].has_change = true;
+                }
+            }
+            
+        } else {
+            console.log("Has display linkers. Removing from all");
+
+            let origin_tile_x = -1;
+            let origin_tile_y = -1;
+            let origin_coord_index = -1;
+            let scope = '';
+
+            if(dirty.objects[object_index].coord_id) {
+                origin_coord_index  = await main.getCoordIndex({ 'coord_id': dirty.objects[object_index].coord_id });
+
+                if(origin_coord_index === -1) {
+                    log(chalk.yellow("Could not find origin galaxy coord for the object"));
+                    return false;
+                }
+
+                origin_tile_x = dirty.coords[origin_coord_index].tile_x;
+                origin_tile_y = dirty.coords[origin_coord_index].tile_y;
+                scope = 'galaxy';
+            } else if(dirty.objects[object_index].ship_coord_id) {
+                origin_coord_index  = await main.getShipCoordIndex({ 'ship_coord_id': dirty.objects[object_index].ship_coord_id });
+
+                if(origin_coord_index === -1) {
+                    log(chalk.yellow("Could not find origin ship coord for the object"));
+                    return false;
+                }
+
+                origin_tile_x = dirty.ship_coords[origin_coord_index].tile_x;
+                origin_tile_y = dirty.ship_coords[origin_coord_index].tile_y;
+                scope = 'ship';
+            } else if(dirty.objects[object_index].planet_coord_id) {
+                origin_coord_index  = await main.getPlanetCoordIndex({ 'planet_coord_id': dirty.objects[object_index].planet_coord_id });
+
+                if(origin_coord_index === -1) {
+                    log(chalk.yellow("Could not find origin planet coord for the object"));
+                    return false;
+                }
+
+                origin_tile_x = dirty.planet_coords[origin_coord_index].tile_x;
+                origin_tile_y = dirty.planet_coords[origin_coord_index].tile_y;
+                scope = 'planet';
+            }
+
+            for(let i = 0; i < display_linkers.length; i++) {
+
+                let linker_tile_x = display_linkers[i].position_x + origin_tile_x;
+                let linker_tile_y = display_linkers[i].position_y + origin_tile_y;
+
+                let update_data = {};
+                update_data.object_id = false;
+                update_data.belongs_to_object_id = false;
+                let valid_update = true;
+
+                if(scope === 'galaxy') {
+                    let update_coord_index = await main.getCoordIndex({ 'tile_x': linker_tile_x, 'tile_y': linker_tile_y });
+                    if(update_coord_index !== -1) {
+                        update_data.coord_index = update_coord_index;
+                    } else {
+                        valid_update = false;
+                    }
+                    
+                } else if(scope === 'ship') {
+                    let update_coord_index = await main.getShipCoordIndex({ 'ship_id': dirty.ship_coords[origin_coord_index].ship_id, 
+                    'level': dirty.ship_coords[origin_coord_index].level, 'tile_x': linker_tile_x, 'tile_y': linker_tile_y });
+                    if(update_coord_index !== -1) {
+                        update_data.ship_coord_index = update_coord_index;
+                    } else {
+                        valid_update = false;
+                    }
+                    
+                } else if(scope === 'planet') {
+                    let update_coord_index = await main.getPlanetCoordIndex({ 'planet_id': dirty.planet_coords[origin_coord_index].planet_id, 
+                    'planet_level': dirty.planet_coords[origin_coord_index].level, 'tile_x': linker_tile_x, 'tile_y': linker_tile_y });
+
+                    if(update_coord_index !== -1) {
+                        update_data.planet_coord_index = update_coord_index;
+                    } else {
+                        valid_update = false;
+                    }
+                }
+
+                if(valid_update) {
+                    await main.updateCoordGeneric(false, update_data);
+                }
+
+
+            }
+
+            if(scope === 'galaxy') {
+                dirty.objects[object_index].coord_id = false;
+                dirty.objects[object_index].has_change = true;
+            } else if(scope === 'ship') {
+                dirty.objects[object_index].ship_coord_id = false;
+                dirty.objects[object_index].has_change = true;
+            } else if(scope === 'planet') {
+                dirty.objects[object_index].planet_coord_id = false;
+                dirty.objects[object_index].has_change = true;
+            }
+
+        }
+
+        console.timeEnd("removeFromCoord");
+
+    } catch(error) {
+        log(chalk.red("Error in game_object.removeFromCoord: " + error));
+        console.error(error);
+    }
+
+}
+
+exports.removeFromCoord = removeFromCoord;
+
 async function sendInfo(socket, room, dirty, object_index, source = false) {
 
     try {
@@ -976,25 +1139,88 @@ exports.spawn = spawn;
 async function updateType(dirty, object_type_id) {
     try {
 
-        console.log("In game_object.updateType");
+        console.log("In game_object.updateType. Updating object type id: " + object_type_id);
 
         let object_type_index = main.getObjectTypeIndex(object_type_id);
 
-        if(object_type_index === -1 || !dirty.object_types[object_type_index].object_type_id !== 351) {
-            log(chalk.yellow("Couldn't find object type - or it wasn't The Great Nomad"));
+        if(object_type_index === -1) {
+            log(chalk.yellow("Couldn't find object type id: " + object_type_id));
+            return false;
+
+        }
+
+        if(dirty.object_types[object_type_index].id !== 351) {
+            log(chalk.yellow("Object Type was not The Great Nomad: " + object_type_id));
             return false;
         }
 
-        // I suppose at this point we can just go through the ship linkers
-        for(let i = 0; i < dirty.ship_linkers.length; i++) {
-            if(dirty.ship_linkers[i] && dirty.ship_linkers[i].ship_type_id === dirty.object_types[object_type_index].id) {
 
+        for(let s = 0; s < dirty.objects.length; s++) {
+
+            if(dirty.objects[s]) {
+
+                if(dirty.objects[s].id > 86422) {
+                    console.log("Checking object id: " + dirty.objects[s].id + " object_type_id: " + dirty.objects[s].object_type_id);
+                }
+                
+                if(dirty.objects[s].object_type_id === dirty.object_types[object_type_index].id) {
+                    console.log("Ship id: " + dirty.objects[s].id + " is the ship type we are updating");
+    
+                    // I suppose at this point we can just go through the ship linkers
+                    for(let i = 0; i < dirty.ship_linkers.length; i++) {
+                        if(dirty.ship_linkers[i] && dirty.ship_linkers[i].ship_type_id === dirty.object_types[object_type_index].id) {
+                            
+                            // get the ship coord that would match this ship linker
+                            let ship_coord_index = await main.getShipCoordIndex({ 'ship_id': dirty.objects[s].id, 'level': dirty.ship_linkers[i].level,
+                            'tile_x': dirty.ship_linkers[i].position_x, 'tile_y': dirty.ship_linkers[i].position_y });
+    
+                            if(ship_coord_index === -1) {
+                                console.log("Would need to create a new coord for ship at tile_x,y: " + dirty.ship_linkers[i].position_x + "," + dirty.ship_linkers[i].position_y);
+    
+                                await world.createShipCoord(dirty, s, dirty.ship_linkers[i]);
+                            } else {
+                                console.log("See if we need to update tile_x,y: " + dirty.ship_linkers[i].position_x + "," + dirty.ship_linkers[i].position_y);
+    
+                                // object_type_id
+                                if(helper.notFalse(dirty.ship_linkers[i].object_type_id) && dirty.ship_coords[ship_coord_index].object_type_id !== dirty.ship_linkers[i].object_type_id) {
+                                    console.log("Need to update object type id");
+                                }
+                                
+    
+                                // floor_type_id
+                                if(helper.notFalse(dirty.ship_linkers[i].floor_type_id) && dirty.ship_coords[ship_coord_index].floor_type_id !== dirty.ship_linkers[i].floor_type_id) {
+                                    console.log("Need to update floor type id");
+                                }
+    
+                                // spawns_monster_type_id
+                                if(helper.notFalse(dirty.ship_linkers[i].spawns_monster_type_id) && dirty.ship_coords[ship_coord_index].spawns_monster_type_id !== dirty.ship_linkers[i].spawns_monster_type_id) {
+                                    console.log("Need to update spawns_monster_type_id");
+                                }
+    
+                                // is_weapon_hardpoint
+                                if(helper.notFalse(dirty.ship_linkers[i].is_weapon_hardpoint) && dirty.ship_coords[ship_coord_index].is_weapon_hardpoint !== dirty.ship_linkers[i].is_weapon_hardpoint) {
+                                    console.log("Need to update is_weapon_hardpoint");
+                                }
+    
+    
+                                // is_engine_hardpoint
+                                if(helper.notFalse(dirty.ship_linkers[i].is_engine_hardpoint) && dirty.ship_coords[ship_coord_index].is_engine_hardpoint !== dirty.ship_linkers[i].is_engine_hardpoint) {
+                                    console.log("Need to update is_engine_hardpoint");
+                                }
+    
+                            }
+                        }
+                    }
+    
+                }
             }
+
+            
+
         }
 
 
-
-
+    
 
     } catch(error) {
         log(chalk.red("Error in game_object.updateType: " + error));
@@ -1011,6 +1237,7 @@ module.exports = {
     damage,
     deleteObject,
     getCoordAndRoom,
+    removeFromCoord,
     sendInfo,
     spawn,
     updateType

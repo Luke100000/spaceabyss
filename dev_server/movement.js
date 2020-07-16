@@ -106,7 +106,7 @@ const world = require('./world.js');
 
             // we need to find a ship coord to place the player on
             let ship_coord_index = dirty.ship_coords.findIndex(function(obj) {
-                return obj && obj.ship_id === dirty.objects[object_index].id && !obj.object_type_id && !obj.object_id && !obj.player_id; });
+                return obj && obj.ship_id === dirty.objects[object_index].id && !obj.object_type_id && !obj.object_id && !obj.player_id && !obj.monster_id; });
 
 
             if(ship_coord_index === -1) {

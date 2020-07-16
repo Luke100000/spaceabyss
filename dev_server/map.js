@@ -286,6 +286,20 @@ const world = require('./world.js');
 
                 //console.log("Sending ship coord id: " + dirty.ship_coords[i]);
                 socket.emit('ship_coord_info', { 'ship_coord': dirty.ship_coords[i] });
+
+                
+                if(dirty.ship_coords[i].monster_id) {
+                    await world.sendMonsterInfo(socket, false, dirty, { 'monster_id': dirty.ship_coords[i].monster_id });
+                    await world.checkMonsterBattleConditions(dirty, dirty.ship_coords[i].monster_id, 'player', socket.player_id, socket);
+                }
+
+                if(dirty.ship_coords[i].object_id) {
+                    await world.checkObjectBattleConditions(socket, dirty, dirty.ship_coords[i].object_id, 'player', socket.player_id);
+                }
+
+                if(dirty.ship_coords[i].player_id) {
+                    await player.sendInfo(socket, false, dirty, dirty.ship_coords[i].player_id);
+                }
             }
         }
 

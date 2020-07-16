@@ -819,18 +819,25 @@ include('config.php');
             this.load.spritesheet('player-human', 'https://space.alphacoders.com/player-human-animated.png',
                 { frameWidth: 64, frameHeight: 70, endFrame: 26 });
 
+                
+            this.load.spritesheet('player-manufacturing', 'https://space.alphacoders.com/manufacturing-body-animated.png',
+                { frameWidth: 64, frameHeight: 64, endFrame: 28 });
+
             this.load.spritesheet('player-mlm', 'https://space.alphacoders.com/player-mlm-animated.png',
                 { frameWidth: 64, frameHeight: 64, endFrame: 36 });
 
             this.load.spritesheet('player-octopus', 'https://space.alphacoders.com/player-octopus-body-animated.png',
-                { frameWidth: 64, frameHeight: 60, endFrame: 30 });
+                { frameWidth: 64, frameHeight: 64, endFrame: 30 });
+
+            this.load.spritesheet('player-reinforced-human', 'https://space.alphacoders.com/reinforced-human-body-animated.png',
+                { frameWidth: 64, frameHeight: 64, endFrame: 28 });
 
             this.load.spritesheet('player-ruel', 'https://space.alphacoders.com/ruel-body-animated.png',
                 { frameWidth: 64, frameHeight: 64, endFrame: 36 });
 
             // Ships
             this.load.spritesheet('player-blockade-runner', 'https://space.alphacoders.com/blockade-runner-animated.png',
-                { 'frameWidth': 64, 'frameHeight': 64, endFrame: 16 });
+                { 'frameWidth': 64, 'frameHeight': 64, endFrame: 12 });
 
             this.load.spritesheet('player-shuttle', 'https://space.alphacoders.com/shuttle-animated.png',
                 { 'frameWidth': 64, 'frameHeight': 64, endFrame: 16 });
@@ -845,7 +852,7 @@ include('config.php');
             { 'frameWidth': 64, 'frameHeight': 64, endFrame: 16 });
 
             this.load.spritesheet('player-lancer', 'https://space.alphacoders.com/lancer-animated.png',
-                { 'frameWidth': 64, 'frameHeight': 64, endFrame: 16 });
+                { 'frameWidth': 64, 'frameHeight': 64, endFrame: 12 });
 
             this.load.spritesheet('player-mining-ship', 'https://space.alphacoders.com/mining-ship-animated.png',
                 { 'frameWidth': 64, 'frameHeight': 64, endFrame: 16 });
@@ -1109,7 +1116,7 @@ include('config.php');
             // BLOCKADE RUNNER
             let player_blockade_runner_left_config = {
                 key: 'player-blockade-runner-left-animation',
-                frames: this.anims.generateFrameNumbers('player-blockade-runner', { start: 0, end: 3, first: 3 }),
+                frames: this.anims.generateFrameNumbers('player-blockade-runner', { start: 0, end: 2, first: 2 }),
                 frameRate: 4,
                 repeat: -1
             };
@@ -1118,7 +1125,7 @@ include('config.php');
 
             let player_blockade_runner_right_config = {
                 key: 'player-blockade-runner-right-animation',
-                frames: this.anims.generateFrameNumbers('player-blockade-runner', { start: 4, end: 7, first: 7 }),
+                frames: this.anims.generateFrameNumbers('player-blockade-runner', { start: 3, end: 5, first: 5 }),
                 frameRate: 4,
                 repeat: -1
             };
@@ -1127,7 +1134,7 @@ include('config.php');
 
             let player_blockade_runner_up_config = {
                 key: 'player-blockade-runner-up-animation',
-                frames: this.anims.generateFrameNumbers('player-blockade-runner', { start: 8, end: 11, first: 11 }),
+                frames: this.anims.generateFrameNumbers('player-blockade-runner', { start: 6, end: 8, first: 8 }),
                 frameRate: 4,
                 repeat: -1
             };
@@ -1136,7 +1143,7 @@ include('config.php');
 
             let player_blockade_runner_down_config = {
                 key: 'player-blockade-runner-down-animation',
-                frames: this.anims.generateFrameNumbers('player-blockade-runner', { start: 12, end: 15, first: 15 }),
+                frames: this.anims.generateFrameNumbers('player-blockade-runner', { start: 9, end: 11, first: 11 }),
                 frameRate: 4,
                 repeat: -1
             };
@@ -1398,7 +1405,7 @@ include('config.php');
             // LANCER
             let player_lancer_left_config = {
                 key: 'player-lancer-left-animation',
-                frames: this.anims.generateFrameNumbers('player-lancer', { start: 0, end: 3, first: 3 }),
+                frames: this.anims.generateFrameNumbers('player-lancer', { start: 0, end: 2, first: 2 }),
                 frameRate: 4,
                 repeat: -1
             };
@@ -1407,7 +1414,7 @@ include('config.php');
 
             let player_lancer_right_config = {
                 key: 'player-lancer-right-animation',
-                frames: this.anims.generateFrameNumbers('player-lancer', { start: 4, end: 7, first: 7 }),
+                frames: this.anims.generateFrameNumbers('player-lancer', { start: 3, end: 5, first: 5 }),
                 frameRate: 4,
                 repeat: -1
             };
@@ -1416,7 +1423,7 @@ include('config.php');
 
             let player_lancer_up_config = {
                 key: 'player-lancer-up-animation',
-                frames: this.anims.generateFrameNumbers('player-lancer', { start: 8, end: 11, first: 11 }),
+                frames: this.anims.generateFrameNumbers('player-lancer', { start: 6, end: 8, first: 8 }),
                 frameRate: 4,
                 repeat: -1
             };
@@ -1425,7 +1432,7 @@ include('config.php');
 
             let player_lancer_down_config = {
                 key: 'player-lancer-down-animation',
-                frames: this.anims.generateFrameNumbers('player-lancer', { start: 12, end: 15, first: 15 }),
+                frames: this.anims.generateFrameNumbers('player-lancer', { start: 9, end: 11, first: 11 }),
                 frameRate: 4,
                 repeat: -1
             };
@@ -1469,6 +1476,57 @@ include('config.php');
             };
 
             this.anims.create(player_mining_ship_down_config);
+
+
+
+            // PLAYER MANUFACTURING
+
+            let player_manufacturing_idle_config = {
+                key: 'player-manufacturing-idle-animation',
+                frames: this.anims.generateFrameNumbers('player-manufacturing', { start: 0, end: 3, first: 3 }),
+                frameRate: 4,
+                repeat: -1
+            };
+            this.anims.create(player_manufacturing_idle_config);
+
+
+            let player_manufacturing_left_config = {
+                key: 'player-manufacturing-left-animation',
+                frames: this.anims.generateFrameNumbers('player-manufacturing', { start: 4, end: 9, first: 9 }),
+                frameRate: 4,
+                repeat: -1
+            };
+
+            this.anims.create(player_manufacturing_left_config);
+
+            let player_manufacturing_right_config = {
+                key: 'player-manufacturing-right-animation',
+                frames: this.anims.generateFrameNumbers('player-manufacturing', { start: 10, end: 15, first: 15 }),
+                frameRate: 4,
+                repeat: -1
+            };
+            this.anims.create(player_manufacturing_right_config);
+
+            let player_manufacturing_up_config = {
+                key: 'player-manufacturing-up-animation',
+                frames: this.anims.generateFrameNumbers('player-manufacturing', { start: 16, end: 21, first: 21 }),
+                frameRate: 4,
+                repeat: -1
+            };
+
+            this.anims.create(player_manufacturing_up_config);
+
+            let player_manufacturing_down_config = {
+                key: 'player-manufacturing-down-animation',
+                frames: this.anims.generateFrameNumbers('player-manufacturing', { start: 22, end: 27, first: 27 }),
+                frameRate: 4,
+                repeat: -1
+            };
+            this.anims.create(player_manufacturing_down_config);
+
+
+
+
 
 
             // PLAYER MLM
@@ -1573,6 +1631,55 @@ include('config.php');
             };
             this.anims.create(player_pod_config);
 
+
+
+            // PLAYER REINFORCED HUMAN
+            let player_reinforced_human_idle_config = {
+                key: 'player-reinforced-human-idle-animation',
+                frames: this.anims.generateFrameNumbers('player-reinforced-human', { start: 0, end: 3, first: 3 }),
+                frameRate: 4,
+                repeat: -1
+            };
+            this.anims.create(player_reinforced_human_idle_config);
+
+
+            let player_reinforced_human_left_config = {
+                key: 'player-reinforced-human-left-animation',
+                frames: this.anims.generateFrameNumbers('player-reinforced-human', { start: 4, end: 9, first: 9 }),
+                frameRate: 4,
+                repeat: -1
+            };
+
+            this.anims.create(player_reinforced_human_left_config);
+
+            let player_reinforced_human_right_config = {
+                key: 'player-reinforced-human-right-animation',
+                frames: this.anims.generateFrameNumbers('player-reinforced-human', { start: 10, end: 15, first: 15 }),
+                frameRate: 4,
+                repeat: -1
+            };
+            this.anims.create(player_reinforced_human_right_config);
+
+            let player_reinforced_human_up_config = {
+                key: 'player-reinforced-human-up-animation',
+                frames: this.anims.generateFrameNumbers('player-reinforced-human', { start: 16, end: 21, first: 21 }),
+                frameRate: 4,
+                repeat: -1
+            };
+
+            this.anims.create(player_reinforced_human_up_config);
+
+            let player_reinforced_human_down_config = {
+                key: 'player-reinforced-human-down-animation',
+                frames: this.anims.generateFrameNumbers('player-reinforced-human', { start: 22, end: 27, first: 27 }),
+                frameRate: 4,
+                repeat: -1
+            };
+            this.anims.create(player_reinforced_human_down_config);
+
+
+            // PLAYER ROYAL CRUISER
+
             let player_royal_cruiser_config = {
                 key: 'player-royal_cruiser-animation',
                 frames: this.anims.generateFrameNumbers('player-royal-cruiser', { start: 0, end: 0, first: 0 }),
@@ -1580,6 +1687,13 @@ include('config.php');
                 repeat: -1
             };
             this.anims.create(player_royal_cruiser_config);
+
+
+
+          
+
+
+            // PLAYER RUEL
 
             let player_ruel_idle_config = {
                 key: 'player-ruel-idle-animation',
@@ -1625,6 +1739,7 @@ include('config.php');
             this.anims.create(player_ruel_down_config);
             
             
+            // PLAYER SHUTTLE
 
             let player_shuttle_left_config = {
                 key: 'player-shuttle-left-animation',
@@ -2359,13 +2474,26 @@ include('config.php');
                     if(players[i].frames_to_idle <= 0) {
                         if(players[i].sprite.texture.key === 'player-galaxy') {
                             players[i].sprite.anims.play('player-galaxy-idle-animation');
-                        } else if(players[i].sprite.texture.key === 'player-human') {
+                        } 
+                        else if(players[i].sprite.texture.key === 'player-human') {
                             //console.log("Switching back to idle");
                             players[i].sprite.anims.play('player-human-idle-animation');
-                        } else if(players[i].sprite.texture.key === 'player-mlm') {
+                        } 
+                        else if(players[i].sprite.texture.key === 'player-manufacturing') {
+                            players[i].sprite.anims.play('player-manufacturing-idle-animation');
+                        } 
+                        else if(players[i].sprite.texture.key === 'player-mlm') {
                             //console.log("Switching back to idle");
                             players[i].sprite.anims.play('player-mlm-idle-animation');
-                        } else if(players[i].sprite.texture.key === 'player-ruel') {
+                        } 
+                        else if(players[i].sprite.texture.key === 'player-octopus') {
+                            //console.log("Switching back to idle");
+                            players[i].sprite.anims.play('player-octopus-idle-animation');
+                        } 
+                        else if(players[i].sprite.texture.key === 'player-reinforced-human') {
+                            players[i].sprite.anims.play('player-reinforced-human-idle-animation');
+                        }
+                        else if(players[i].sprite.texture.key === 'player-ruel') {
                             players[i].sprite.anims.play('player-ruel-idle-animation');
                         }
                     }
@@ -2439,19 +2567,19 @@ include('config.php');
                                 
                                 if(object_types[player_body_type_index].land_movement_modifier !== 1 && floor_types[floor_type_index].movement_type === 'land') {
                                     floor_modifier = floor_modifier * object_types[player_body_type_index].land_movement_modifier;
-                                    console.log("body land movement modifier changed floor_modifier to: " + floor_modifier);
+                                    //console.log("body land movement modifier changed floor_modifier to: " + floor_modifier);
                                 }
 
                                 
                                 if(object_types[player_body_type_index].fluid_movement_modifier !== 1 && floor_types[floor_type_index].movement_type === 'fluid') {
                                     floor_modifier = floor_modifier * object_types[player_body_type_index].fluid_movement_modifier;
-                                    console.log("body land movement modifier changed socket.movement_modifier to: " + floor_modifier);
+                                    //console.log("body fluid movement modifier changed socket.movement_modifier to: " + floor_modifier);
                                 }
 
                                 
                                 if(object_types[player_body_type_index].air_movement_modifier !== 1 && floor_types[floor_type_index].movement_type === 'air') {
                                     floor_modifier = floor_modifier * object_types[player_body_type_index].air_movement_modifier;
-                                    console.log("body land movement modifier changed socket.movement_modifier to: " + floor_modifier);
+                                    //console.log("body air movement modifier changed socket.movement_modifier to: " + floor_modifier);
                                 }
 
 
@@ -2468,6 +2596,12 @@ include('config.php');
                     //let player_move_speed = 64 * ( 1000 / players[i].current_move_delay * floor_modifier) / 60;
                     // Trying /64 instead of /60 to maybe get a few less instances of the player moving too fast.
                     let player_move_speed = 64 * ( 1000 / players[i].current_move_delay * floor_modifier) / 64;
+
+                    // lets round it now
+                    player_move_speed = +(player_move_speed.toFixed(2));
+
+                
+                    //console.log("Player move speed: " + player_move_speed);
                     //let player_move_speed = 1000 / players[i].current_move_delay * floor_modifier;
 
                     if(player_move_speed === 0) {

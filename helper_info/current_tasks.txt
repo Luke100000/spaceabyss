@@ -3,19 +3,16 @@
 DOING NOW:
 
 
+    Add in some effects for moss, and then push it!
+
+
     great ship (the great nomad!)
+        need warning before 
+        world.tickNomad
     derelict ships spawning in the galaxy for salvage, bug hunting opportunities
         Needs to be salvagable, dockable
-        Either need a bunch of different types, or a random/rarity based event linker, or integrate into the salvaging system somehow
 
 
-
-
-    Have these built in the new Augmentation Station I'm having developed
-    Manufacturing Core
-    Hacking Core
-    Laser Core
-    
 
     Ok. Thank you :slight_smile: So the flow is something like:
     Doing stuff on the machine planet > head back to your space station, dock at it > sign out?
@@ -123,40 +120,45 @@ NEED TO DRAW
 
 ART TASKS
 
-Modifications from previous batches
 
-Ocotopus body animations were for:
-    idle
-    walk left
-    walk right
-    walk up
-    walk down
+city floor tileset
 
-    Doesn't look like I have the idle. I know originally all the animations were idle. Do you happen to have the forward facing idle?
-    Example of a full player spritesheet: https://space.alphacoders.com/galaxy-body-animated.png
+gang members
 
+construction worker (gemquery -> corporation world)
 
-stabbing gloves/shank gloves
+moss
 
-sea urchin animation
+moss garden
 
-bionic crab animation
+moss deposit
 
-urchin spike
+Asteroid Ship
 
-manufacturing body design
+Zuran Cruiser Wreck
+    https://images.gemquery.com/255/content_2554351.jpg
 
-reinforced human body design
+    Spawns a Widden Monster
+
+    Also spawns bugs https://images.gemquery.com/240/content_2402471.png
 
 
-augmentation station
+Star Explorer Wreck
+    https://images.gemquery.com/255/content_2554352.jpg
 
-jellyfish design
-    based on the Halitrephes Maasi Jelly https://twitter.com/wonderofscience/status/1272533066498617349
+Derelict ship 3x (just salvage)
+    Some small like 24x24 - asteroid size
+    https://www.artstation.com/artwork/mNLa9
 
 
+Some larger, 32x32 so the player can dock at them
+    2x
+
+Thiol Drive
+Broken Thiol Drive
 
 
+The Great Ship
 
 
 

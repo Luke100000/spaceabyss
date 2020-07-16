@@ -1284,14 +1284,20 @@ async function checkMonsterBattleConditions(dirty, monster_id, checking_type, ch
         if (checking_type === 'player') {
             let player_index = await main.getPlayerIndex({ 'player_id': checking_id });
             if (player_index !== -1) {
-                let player_coord_index = await main.getPlanetCoordIndex(
-                    { 'planet_coord_id': dirty.players[player_index].planet_coord_id });
 
-                if (player_coord_index !== -1) {
-                    if (dirty.planet_coords[player_coord_index].floor_type_id === 11) {
-                        can_attack = false;
+
+                if(dirty.monsters[monster_index].planet_coord_id) {
+                    let player_coord_index = await main.getPlanetCoordIndex(
+                        { 'planet_coord_id': dirty.players[player_index].planet_coord_id });
+    
+                    if (player_coord_index !== -1) {
+                        if (dirty.planet_coords[player_coord_index].floor_type_id === 11) {
+                            can_attack = false;
+                        }
                     }
-                }
+                } 
+
+               
             }
         }
 
@@ -1762,6 +1768,75 @@ async function createPlanetCoord(socket, dirty, data) {
         console.error(error);
     }
 }
+
+
+async function createShipCoord(dirty, ship_index, linker) {
+
+    try {
+        let sql = "";
+        let inserts = [];
+
+        let linker_object_type_index = -1;
+        if (linker.object_type_id) {
+            linker_object_type_index = main.getObjectTypeIndex(linker.object_type_id);
+
+        }
+
+
+        if (linker.spawns_monster_type_id) {
+            sql = "INSERT INTO ship_coords(ship_id, tile_x, tile_y, level, object_type_id, floor_type_id, " +
+                "is_engine_hardpoint, is_weapon_hardpoint, spawns_monster_type_id) VALUES(?,?,?,?,?,?,?,?,?)";
+            inserts = [dirty.objects[ship_index].id, linker.position_x, linker.position_y, linker.level, linker.object_type_id, linker.floor_type_id,
+            linker.is_engine_hardpoint, linker.is_weapon_hardpoint, linker.spawns_monster_type_id];
+
+        } else {
+
+            sql = "INSERT INTO ship_coords(ship_id, tile_x, tile_y, level, object_type_id, floor_type_id, is_engine_hardpoint, is_weapon_hardpoint) VALUES(?,?,?,?,?,?,?,?)";
+            inserts = [dirty.objects[ship_index].id, linker.position_x, linker.position_y, linker.level, linker.object_type_id, linker.floor_type_id, linker.is_engine_hardpoint, linker.is_weapon_hardpoint];
+
+
+        }
+
+
+        let [result] = await (pool.query(sql, inserts));
+
+        // Get the ID of the inserted ship coord
+        let new_ship_coord_id = result.insertId;
+        let new_ship_coord_index = await main.getShipCoordIndex({ 'ship_coord_id': new_ship_coord_id });
+
+        // We have a monster that we need to create, and add to the ship coord
+        if (linker.spawns_monster_type_id || linker.monster_type_id) {
+            let spawn_data = {};
+            let spawned_monster_type_id = 0;
+            spawn_data.ship_coord_index = new_ship_coord_index;
+
+            if (linker.spawns_monster_type_id) {
+                spawned_monster_type_id = linker.spawns_monster_type_id;
+            } else if (linker.monster_type_id) {
+                spawned_monster_type_id = linker.monster_type_id;
+            }
+
+
+            await spawnMonster(dirty, spawned_monster_type_id, spawn_data);
+        }
+
+        if (linker_object_type_index !== -1 && dirty.object_types[linker_object_type_index].assembled_as_object) {
+
+            // Gotta spawn an object!
+            let new_object_id = await insertObjectType(socket, dirty, { 'object_type_id': dirty.object_types[linker_object_type_index].id });
+            let new_object_index = await main.getObjectIndex(new_object_id);
+
+
+            await main.placeObject(socket, dirty, { 'object_index': new_object_index, 'ship_coord_index': new_ship_coord_index, 'reason': 'generate_ship' });
+        }
+    } catch(error) {
+        log(chalk.red("Error in world.createShipCoord:" + error));
+        console.error(error);
+    }
+
+}
+
+exports.createShipCoord = createShipCoord;
 
 
 
@@ -2501,6 +2576,7 @@ function cellSimulationStep(old_map, x_size, y_size, starting_x_offset, starting
     }
 }
 
+
 async function generateShip(dirty, ship_index) {
     try {
 
@@ -2509,63 +2585,7 @@ async function generateShip(dirty, ship_index) {
 
         for (let linker of ship_linkers) {
 
-            let sql = "";
-            let inserts = [];
-
-            let linker_object_type_index = -1;
-            if (linker.object_type_id) {
-                linker_object_type_index = main.getObjectTypeIndex(linker.object_type_id);
-
-            }
-
-
-            if (linker.spawns_monster_type_id) {
-                sql = "INSERT INTO ship_coords(ship_id, tile_x, tile_y, level, object_type_id, floor_type_id, " +
-                    "is_engine_hardpoint, is_weapon_hardpoint, spawns_monster_type_id) VALUES(?,?,?,?,?,?,?,?,?)";
-                inserts = [dirty.objects[ship_index].id, linker.position_x, linker.position_y, linker.level, linker.object_type_id, linker.floor_type_id,
-                linker.is_engine_hardpoint, linker.is_weapon_hardpoint, linker.spawns_monster_type_id];
-
-            } else {
-
-                sql = "INSERT INTO ship_coords(ship_id, tile_x, tile_y, level, object_type_id, floor_type_id, is_engine_hardpoint, is_weapon_hardpoint) VALUES(?,?,?,?,?,?,?,?)";
-                inserts = [dirty.objects[ship_index].id, linker.position_x, linker.position_y, linker.level, linker.object_type_id, linker.floor_type_id, linker.is_engine_hardpoint, linker.is_weapon_hardpoint];
-
-
-            }
-
-
-            let [result] = await (pool.query(sql, inserts));
-
-            // Get the ID of the inserted ship coord
-            let new_ship_coord_id = result.insertId;
-            let new_ship_coord_index = await main.getShipCoordIndex({ 'ship_coord_id': new_ship_coord_id });
-
-            // We have a monster that we need to create, and add to the ship coord
-            if (linker.spawns_monster_type_id || linker.monster_type_id) {
-                let spawn_data = {};
-                let spawned_monster_type_id = 0;
-                spawn_data.ship_coord_index = new_ship_coord_index;
-
-                if (linker.spawns_monster_type_id) {
-                    spawned_monster_type_id = linker.spawns_monster_type_id;
-                } else if (linker.monster_type_id) {
-                    spawned_monster_type_id = linker.monster_type_id;
-                }
-
-
-                await spawnMonster(dirty, spawned_monster_type_id, spawn_data);
-            }
-
-            if (linker_object_type_index !== -1 && dirty.object_types[linker_object_type_index].assembled_as_object) {
-
-                // Gotta spawn an object!
-                let new_object_id = await insertObjectType(socket, dirty, { 'object_type_id': dirty.object_types[linker_object_type_index].id });
-                let new_object_index = await main.getObjectIndex(new_object_id);
-
-
-                await main.placeObject(socket, dirty, { 'object_index': new_object_index, 'ship_coord_index': new_ship_coord_index, 'reason': 'generate_ship' });
-            }
-
+            await createShipCoord(dirty, ship_index, linker);
 
         }
     } catch (error) {
@@ -5065,6 +5085,57 @@ async function submitBid(socket, dirty, data) {
 }
 
 exports.submitBid = submitBid;
+
+
+async function tickNomad(dirty) {
+
+     try {
+
+        return false;
+
+        console.log("In world.tickNomad");
+
+        let nomad_index = await main.getObjectIndex(86424);
+
+        if(nomad_index === -1) {
+            log(chalk.yellow("Could not find The Great Nomad"));
+            return false;
+        }
+
+
+        // Remove it from the coord
+        if(dirty.objects[nomad_index].coord_id) {
+
+            console.log("Removing The Great Nomad From coord id: " + dirty.objects[nomad_index].coord_id);
+
+            game_object.removeFromCoord(dirty, nomad_index);
+
+            
+            
+
+        } 
+        // Try to add it to a random galaxy coord
+        else {
+
+            // testing on the same coord each time
+            let coord_index = await main.getCoordIndex({ 'tile_x': 4, 'tile_y': 14 });
+
+            if(game_object.canPlace(dirty, 'galaxy', dirty.coords[coord_index], { 'object_index': nomad_index })) {
+                await main.placeObject(false, dirty, { 'object_index': nomad_index, 'coord_index': coord_index });
+            }
+
+        }
+
+
+
+     } catch(error) {
+         log(chalk.red("Error in world.tickNomad: " + error));
+         console.error(error);
+     }
+
+}
+
+exports.tickNomad = tickNomad;
 
 
 // Waiting drops will either have an object_index, or an object_type_id. Waiting drops will also either have a planet_coord_index, or a ship_coord_index

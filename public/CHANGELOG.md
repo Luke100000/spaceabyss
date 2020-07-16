@@ -1,4 +1,33 @@
+## [0.1.22] - 2020-07-16
+
+
+### Added
+- Wrecks and other salvagable material can spawn in the galaxy.
+- Augmentation Station
+- Stabbing Gloves, Urchins, Urchin Spines, Bionic Crabs
+- Manufacturing Body sprite - ability to manufacture - and benefits
+- Reinforced Human Body sprite - ability to manufacture - and benefits
+
+
+### Fixed
+- Various bugs with monsters on ships
+- Octopus body sprite
+- Asteroid ships weren't spawning in the galaxy
+
+
+### Changed
+- Most monsters had HP that was 10x Exp. I've decreased the base monster HP to 5x Exp. This means existing monsters will have LONG HP bars.
+- Changed part of Reinforced Human Body assembly requirements from 5 AI Fragments to 1 AI Fragment
+- The various cores associated with augmentation are now built in an Augmentation Station instead of the Forge
+- Augments are built in the Augmentation Station
+- Machine planet has been regenerated
+
 ## [0.1.21] - 2020-06-29
+
+
+### Added
+- Ability to update ship types when there are changes. This is currently mostly focused on adding ship coords, and changing the object/floor/monster spawn on a coord. 
+Would need added funtionality to remove previous coords, or remove an object type without changing it. Test before doing more than adding ship coords.
 
 
 ### Fixed

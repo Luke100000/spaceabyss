@@ -6087,6 +6087,15 @@ async function tickNextMoves(dirty) {
     }
 }
 
+async function tickNomad(dirty) {
+    try {
+        await world.tickNomad(dirty);
+    } catch(error) {
+        log(chalk.red("Error calling world.tickNomad: " + error));
+    }
+}
+
+
 async function tickNpcSkills() {
     try {
         await npc.tickNpcSkills(dirty);
@@ -6196,6 +6205,8 @@ setInterval(writeDirty, 20000);
 // 30 seconds
 setInterval(tickResearches, 30000, dirty);
 setInterval(tickMonsterDecay, 30000, dirty);
+// Testing at 30s. Should be more like 1 day with a 15% chance
+//setInterval(tickNomad, 30000, dirty);
 
 
 // 60 seconds
