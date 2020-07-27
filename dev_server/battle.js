@@ -1,3 +1,4 @@
+//@ts-check
 var io_handler = require('./io.js');
 var io = io_handler.io;
 var database = require('./database.js');
@@ -232,7 +233,7 @@ const world = require('./world.js');
                         // Ship Laser - see if we have energy for it
                         if(attacking_ship_coord.object_type_id === 221) {
 
-                            let attacking_object_index = await main.getObjectIndex(attacking_ship_coord.object_id);
+                            let attacking_object_index = await game_object.getIndex(dirty, attacking_ship_coord.object_id);
 
                             let found_energy_source = false;
 
@@ -243,7 +244,7 @@ const world = require('./world.js');
                                 for(let ship_coord of storage_ship_coords) {
 
                                     if(!found_energy_source) {
-                                        let coord_object_index = await main.getObjectIndex(ship_coord.object_id);
+                                        let coord_object_index = await game_object.getIndex(dirty, ship_coord.object_id);
                                         if(coord_object_index !== -1 && dirty.objects[coord_object_index].energy > 2 ) {
 
                                             console.log("Found energy source for ship laser attack");
@@ -424,6 +425,7 @@ const world = require('./world.js');
                             }
 
                             if(need_to_add_type) {
+                                console.log("Pushing damage type: " + dirty.object_types[object_type_index].equip_skill);
                                 damage_types.push(dirty.object_types[object_type_index].equip_skill);
                             }
 
@@ -702,7 +704,7 @@ const world = require('./world.js');
 
     async function calculateShipDefense(object_id) {
         try {
-            let object_index = await main.getObjectIndex(object_id);
+            let object_index = await game_object.getIndex(dirty, object_id);
 
             if(object_index === -1) {
                 return 1;
@@ -837,7 +839,7 @@ const world = require('./world.js');
                     return;
                 }
 
-                await game.damagePlayer(dirty, { 'player_index': being_damaged_player_index,
+                await player.damage(dirty, { 'player_index': being_damaged_player_index,
                     'damage_amount': data.damage_amount, 'damage_types': [ data.damage_type ] });
             }
 
@@ -947,7 +949,7 @@ const world = require('./world.js');
 
 
             let monster_index = await main.getMonsterIndex(battle_linker.attacking_id);
-            let object_index = await main.getObjectIndex(battle_linker.being_attacked_id);
+            let object_index = await game_object.getIndex(dirty, battle_linker.being_attacked_id);
 
             if(monster_index === -1) {
                 log(chalk.yellow("Could not find monster id: " + battle_linker.attacking_id + ". monster_index: " + monster_index));
@@ -1189,7 +1191,7 @@ const world = require('./world.js');
             }
 
 
-            await game.damagePlayer(dirty, { 'player_index': player_index, 'damage_amount': damage_amount,
+            await player.damage(dirty, { 'player_index': player_index, 'damage_amount': damage_amount,
                 'battle_linker': battle_linker, 'damage_types': [monster_attack.damage_type],
                 'calculating_range': calculating_range, 'flavor_text': flavor_text });
 
@@ -1346,7 +1348,7 @@ const world = require('./world.js');
                 return false;
             }
 
-            let object_index = await main.getObjectIndex(battle_linker.being_attacked_id);
+            let object_index = await game_object.getIndex(dirty, battle_linker.being_attacked_id);
 
             if(object_index === -1) {
                 log(chalk.yellow("Could not find object id: " + battle_linker.being_attacked_id));
@@ -1515,7 +1517,7 @@ const world = require('./world.js');
             let new_player_hp = dirty.players[player_index].current_hp - damage_amount;
 
             if(new_player_hp <= 0) {
-                await game.killPlayer(dirty, player_index);
+                await player.kill(dirty, player_index);
 
             } else {
 
@@ -1549,8 +1551,8 @@ const world = require('./world.js');
             let defending_object_index = -1;
 
             if(battle_linker) {
-                attacking_object_index = await main.getObjectIndex(battle_linker.attacking_id);
-                defending_object_index = await main.getObjectIndex(battle_linker.being_attacked_id);
+                attacking_object_index = await game_object.getIndex(dirty, battle_linker.attacking_id);
+                defending_object_index = await game_object.getIndex(dirty, battle_linker.being_attacked_id);
             } else if(typeof data.attacking_object_index !== 'undefined' && typeof data.defending_object_index !== 'undefined') {
                 attacking_object_index = data.attacking_object_index;
                 defending_object_index = data.defending_object_index;
@@ -1689,7 +1691,7 @@ const world = require('./world.js');
                 dirty.objects[attacking_object_index].id !== defending_object_info.coord.watched_by_object_id) {
                 console.log("Coord is watched");
 
-                let watching_object_index = await main.getObjectIndex(defending_object_info.coord.watched_by_object_id);
+                let watching_object_index = await game_object.getIndex(dirty, defending_object_info.coord.watched_by_object_id);
                 if(watching_object_index !== -1 && dirty.objects[watching_object_index].energy > damage_amount) {
                     log(chalk.green("Watcher is helping out!"));
                     dirty.objects[watching_object_index].energy -= damage_amount;
@@ -1729,7 +1731,7 @@ const world = require('./world.js');
             let defending_planet_index = -1;
 
             if(battle_linker) {
-                attacking_object_index = await main.getObjectIndex(battle_linker.attacking_id);
+                attacking_object_index = await game_object.getIndex(dirty, battle_linker.attacking_id);
                 defending_planet_index = await planet.getIndex(dirty, { 'planet_id': battle_linker.being_attacked_id });
             } else if(typeof data.attacking_object_index !== 'undefined' && typeof data.defending_object_index !== 'undefined') {
                 console.log("In objectAttackPlanet without a battle linker");
@@ -1889,7 +1891,7 @@ const world = require('./world.js');
                 dirty.objects[attacking_object_index].id !== defending_object_info.coord.watched_by_object_id) {
                 console.log("Coord is watched");
 
-                let watching_object_index = await main.getObjectIndex(defending_object_info.coord.watched_by_object_id);
+                let watching_object_index = await game_object.getIndex(dirty, defending_object_info.coord.watched_by_object_id);
                 if(watching_object_index !== -1 && dirty.objects[watching_object_index].energy > damage_amount) {
                     log(chalk.green("Watcher is helping out!"));
                     dirty.objects[watching_object_index].energy -= damage_amount;
@@ -1937,7 +1939,7 @@ const world = require('./world.js');
 
             let object_index = -1;
             if(battle_linker) {
-                object_index = await main.getObjectIndex(battle_linker.attacking_id);
+                object_index = await game_object.getIndex(dirty, battle_linker.attacking_id);
             } else if(typeof data.object_index !== 'undefined') {
                 object_index = data.object_index;
             }
@@ -2044,7 +2046,7 @@ const world = require('./world.js');
             }
 
 
-            await game.damagePlayer(dirty, { 'player_index': player_index, 'damage_amount': damage_amount,
+            await lpayer.damage(dirty, { 'player_index': player_index, 'damage_amount': damage_amount,
                 'damage_types': object_attack_profile.damage_types,
                 'battle_linker': battle_linker, 'calculating_range': calculating_range });
 
@@ -2096,7 +2098,7 @@ const world = require('./world.js');
                 return false;
             }
 
-            let player_body_index = await main.getObjectIndex(dirty.players[player_index].body_id);
+            let player_body_index = await game_object.getIndex(dirty, dirty.players[player_index].body_id);
 
             if(player_body_index === -1) {
                 log(chalk.yellow("Unable to find player's body"));
@@ -2137,7 +2139,7 @@ const world = require('./world.js');
                 return false;
             }
 
-            console.log("Attack: " + attack + " defense: " + defense);
+            //console.log("Attack: " + attack + " defense: " + defense);
 
             let damage_amount = attack - defense;
 
@@ -2281,7 +2283,7 @@ const world = require('./world.js');
                 return false;
             }
 
-            let player_body_index = await main.getObjectIndex(dirty.players[player_index].body_id);
+            let player_body_index = await game_object.getIndex(dirty, dirty.players[player_index].body_id);
 
             if(player_body_index === -1) {
                 log(chalk.yellow("Unable to find player's body"));
@@ -2386,7 +2388,7 @@ const world = require('./world.js');
                 return;
             }
 
-            let object_index = await main.getObjectIndex(battle_linker.being_attacked_id);
+            let object_index = await game_object.getIndex(dirty, battle_linker.being_attacked_id);
             let player_index = await main.getPlayerIndex({ 'player_id':battle_linker.attacking_id});
 
             if(object_index === -1) {
@@ -2410,7 +2412,7 @@ const world = require('./world.js');
                 return false;
             }
 
-            let player_body_index = await main.getObjectIndex(dirty.players[player_index].body_id);
+            let player_body_index = await game_object.getIndex(dirty, dirty.players[player_index].body_id);
 
             if(player_body_index === -1) {
                 log(chalk.yellow("Unable to find player's body"));
@@ -2520,7 +2522,7 @@ const world = require('./world.js');
                 return false;
             }
 
-            let attacking_player_body_index = await main.getObjectIndex(dirty.players[attacking_player_index].body_id);
+            let attacking_player_body_index = await game_object.getIndex(dirty, dirty.players[attacking_player_index].body_id);
 
             if(attacking_player_body_index === -1) {
                 log(chalk.yellow("Unable to find attacking player's body"));
@@ -2584,7 +2586,7 @@ const world = require('./world.js');
             }
             // Adding in code for a spacelane beacon to help out
             else if(defending_player_info.room === 'galaxy' && defending_player_info.coord.watched_by_object_id) {
-                let watching_object_index = await main.getObjectIndex(defending_player_info.coord.watched_by_object_id);
+                let watching_object_index = await game_object.getIndex(dirty, defending_player_info.coord.watched_by_object_id);
                 if(watching_object_index !== -1 && dirty.objects[watching_object_index].energy > damage_amount) {
                     log(chalk.green("Watcher is helping out!"));
 
@@ -2600,7 +2602,7 @@ const world = require('./world.js');
             }
 
 
-            await game.damagePlayer(dirty, { 'player_index': defending_player_index, 'damage_amount': damage_amount,
+            await player.damage(dirty, { 'player_index': defending_player_index, 'damage_amount': damage_amount,
                 'battle_linker': battle_linker, 'calculating_range': calculating_range });
 
             // Update the attacker

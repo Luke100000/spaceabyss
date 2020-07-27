@@ -1,8 +1,20 @@
 HP / Attack / EXP Ratio
 
-100 / * 0.05 / * 0.1
-10 / .5 / 1
-e.g. 100 HP, 5 Attack, 10 Exp
+Base is:
+    Attack * 10 = HP
+    Attack * 2 = EXP
+10 / 1 / 2
+e.g. 100 HP, 10 Attack, 20 Exp
+e.g. 50 HP, 5 Attack, 10 Exp
+e.g. 125 HP, 12 Attack, 25 EXP
+e.g. 250 HP, 25 Attack, 50 EXP
+
+
+SPRITE SIZES:
+Standard Player is: 32x32
+A decent 'large object' size is 24x24 (asteroids)
+A decent size for producing/manufacturing objects is 26x26
+Small monster: 20x20 (process, rat, something else small), medium monster 22x22
 
 *****************************************
 ************ MATERIAL TREE ****************
@@ -142,6 +154,7 @@ AI Fragment:
 
 Potential Materials:
     Quickmatter ( We are having basic territe things turn into
+    Bubblecarbon
 
 
 *****************************************
@@ -309,6 +322,9 @@ GRAVITY
             Graviblaster
                 Microtearer
 
+
+            Gravity Whip ( 2 range - lashes out with gravity. Can impact single areas, and then crush with overwhelming gravity force.)
+                            normal whips pull towards you, this grabs you and then crushingly pulls you to the floor/ceiling
 LASER
         Laser Wire
         Laser Gun *RANGE*
@@ -364,21 +380,38 @@ STATION WEAPONS
 
 POSSIBLE WEAPONS
 
-
+3mm heavy micro rifle
+Antimatter tipped millimeter long nanomissles
+Chrysalis gun
+Electromagnetic coil gun
+Energy Disk
+Erasure Cannon
 Fusion Weapons
 Gravity weapons
 Liquid Hydrogen Weapons
 proton pack
-Chrysalis gun
-Erasure Cannon
 Pulse Pistol
 Pulse Rifle
 Gauss rifle
-Energy Disk
-Electromagnetic coil gun
 Plasma Pistol
 Plasma Rifle
 Pyrorifle
+particle beam phalanx
+pulse rifle
+phase-plasma pulse rifle
+Refrigerator later. Shoots a ball of something at someone, then collects the energy/heat 
+    around that and shoots off laser away from it
+Thunderbolter
+Effectors (influence people - kind of like organic mind hacking)
+Knife missiles
+line gun
+Selfmotivated effector sidearm
+Thudder
+Gravgun
+Monofilament warp
+Grid-fire impulsor
+ZPE flux-polarizers
+
 
 
 
@@ -509,10 +542,14 @@ Salve:
 
 
 Drugs and Pills
-    Blue
-    Green ( -attack +++hp )
-    Purple 
     Red ( ++attack, -hp, -defense)
+    Orange
+    Yellow
+    Blue ( ++manufacturing )
+    Green ( -attack +++hp )
+    Purple (Hacking) 
+    
+
 
 Smash, crash, drop, exile, frentix, mindflood, X-Instinct, Sooth, rage, rampage, buster, blitz
 
@@ -631,6 +668,10 @@ Pod (DRAWN)
 
 
 
+        Factory Ship (+ to manufacturing)
+                            Industry Platform (++ to manufacturing)
+
+
     Cargo Ship (DRAWN)
 
         Light freighter ( https://images.gemquery.com/254/content_2542324.jpg )
@@ -670,7 +711,9 @@ Pod (DRAWN)
                         Spun Diamond Silk Ship
 
 
+
     Science Vessel
+                        Sun Ship - can go undamaged into the sun area
                     Garden Ship
 
 

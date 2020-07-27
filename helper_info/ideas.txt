@@ -39,17 +39,6 @@ I really just don't know if I want an Exodium knife... I feel like I want to get
 
 
 
-So I have all these error messages - and they come then go really fast. Maybe I could have a generic help button that popped up 
-    the click menu, or another popup-ish window, and gave further explanation about the latest failure messages.
-    No ship floor space, gives a link to the tutorial, and briefly says that 'Bulk containers (picture) and ice containers (picture) 
-    can be used so the results of mining aren't just thrown all over the floor.
-
-
-Maybe turn Slime Berry Tree into Slerm Berry Tree - and make the berries into Slerm Berries, which maybe grow into
-    a different type of slerm if they are dropped on like a ship or corporation world.
-
-
-
 So we have a doctor NPC
     The goal: To let the player pay the NPC to perform a surgery on them
     Requirement 1. Player is standing on an auto doc owned by the npc
@@ -63,6 +52,165 @@ So we have a doctor NPC
 
 
 HACKING. THE VIEW I HAVEN'T MADE YET! Need a way to enter into virtual realm
+
+Advanced Forge image and functionality
+
+
+    Maggot burger made from maggots - maggot farms on corporation planets. maggot buckets.
+
+    mechanical ramen - 
+
+
+    great ship (the great nomad!)
+        need warning before 
+        world.tickNomad
+
+
+    Need to change move delay server side so players' can't switch to body/ship/body/ship to reset the move delay. Also, probably shouldn't have a 10 move 
+        wiggle window for really slow things like stations.
+
+
+    autopilot seems to be broken
+
+
+    I need a better way of sending an admin message to everyone about server updates
+    
+    Client is repeatedly moving too fast!
+        I should really try to fix this, make it not happen
+
+
+    Having multiple ships is not intuitive
+
+
+        Need to limit the # of things that can be stacked on a floor. Limit at 100 Territe/tile or so.
+
+
+    Not sure that cooking listens to complexity yet
+
+
+    I want to try and track failed logins, # of logins, etc to see if people are finding the game and leaving,
+        finding the game and failing to login, finding the game and then just.... dying?
+
+
+
+    admin /moveto ship is buggy!!!
+
+
+    Make those merchant spots do stuff!
+
+    I should do a pass on some of the basic things players get to do as well, and try making videos for some of
+        them on Youtube
+        Traps - I need to expand on this
+        Mining - I definitely want things like exodium and gold be to able to be mined from asteroids.
+            I either want asteroids to have a pre-determined composition, or I want to dynamically pull chances
+            for things based on the mining tools used, and the skill.
+
+            Have asteroids move slowly through space?
+                If an asteroid landed on a planet, would spawn a crashed meteorite or something I guess.
+
+    No 'set autopilot destination' option for large dockable ships. It would be good to see why that isn't showing up.
+        Same with switching to. I think it has to do with the belongs_to coords
+
+    If a ship is dockable, we want to run the sprite all the time
+
+
+    The ability to re-generate a single planet level
+
+    The ability to re-generate the floor of a single planet level
+
+    If we can't place a player in the galaxy, try the coords around the player instead of random
+        Search server for: 'Was not able to place player on planet or specific galaxy coord. Getting a random one'
+        Players can effectively force a warp
+
+
+NEED TO DRAW
+
+
+    Some slerm. Baby slerm, generic slerm
+
+    Glass of Life Water / Bulb of Life water?
+        Drew Kick Bulb. Could do the same with life water
+
+
+
+
+
+
+
+
+ART TASKS
+
+
+moss
+
+moss garden
+
+moss deposit
+
+Asteroid Ship
+
+Zuran Cruiser Wreck
+    https://images.gemquery.com/255/content_2554351.jpg
+
+    Spawns a Widden Monster
+
+    Also spawns bugs https://images.gemquery.com/240/content_2402471.png
+
+
+Star Explorer Wreck
+    https://images.gemquery.com/255/content_2554352.jpg
+
+Derelict ship 3x (just salvage)
+    Some small like 24x24 - asteroid size
+    https://www.artstation.com/artwork/mNLa9
+
+
+Some larger, 32x32 so the player can dock at them
+    2x
+
+Thiol Drive
+Broken Thiol Drive
+
+
+The Great Ship
+
+
+
+life herb seedling
+
+
+
+MONSTER PROGRESSION
+carnivorous plant egg
+carnivorous plant baby
+carnivorous plant
+man eater
+
+algae
+algae puffs
+algae 
+blue algae
+algae power cell
+
+
+
+water zealots. Must be blue
+
+
+random advertisement drones that show up here and there on corporation planets!!!! A little drone with a burger image on it, etc.
+    Holo advertisements
+    NEON!
+
+
+Low Priority:
+https://gemquery.com/admin/favorite-view/818
+Sandstone
+Sandstone deposit
+Sandstone floor
+Sandstone wall
+
+
+
 
 
 Need a moveObjectFlow or something for asteroids and such I suppose?
@@ -181,7 +329,7 @@ Mercenary/fighter type npc that levels up and goes after bounties
 Switching space battles to object attack object. Need to make sure that the ships's coord id is changed when the player
     moves their ship, and battle linkers in galaxy are added as object v object
 
-Energy shapes living in the north poloar magnetospher of the sun. From the book The Golden Age
+
 
 Neptunian guys in large ice armor to keep their super modified brains near absolute zero.
     It was neat how they communicated. With the extra brain speed/power they attach appendixes to everything. The word I has an appendix that contains
@@ -508,7 +656,7 @@ Could have body types that have different limitations. Maybe a body type that is
 
 
 
-
+Mess with shaders for the player underwater look
 
 
 
@@ -1334,7 +1482,486 @@ Heavy duty laser drill
 Subsurface nanobots
 Biotech plagues
 
-Orchid Mantis (moving flower)
+
+liquitube
+
+Tuborg beer
+
+The general idea of archaeology, paleontology - explorer role for players.
+    Salvaging random things from around different planets.
+
+
+Cynthian with shiny fur (Could have a Zuran like that)
+
+Mining engineer
+
+Eatee
+Kanten
+Cynthian
+Tymbrimi
+
+Arglebargle the IVth (It's just too funny)
+
+The idea of uplifing something via genetic manipulation. 
+    Could tie into the surgery skill I guess. In Sundiver, they are doing it with dolphins. 
+    Not sure if I would want it to be done with npcs or monsters. If monsters, could initially
+     use it to create something that is a source of food/buffs. Finding alien eggs on a wrecked 
+     p. Genetically modifying the egg towarsd food production/chemical production. Could have 
+     the aliens bugs -> aligne meat bugs that generate meat. Alien chmical bugs create a useful
+      stimulant. Would also lay eggs which you could take further down the path.
+
+
+Plasma bubbles
+
+Monster movement speed changing based on weather. Idea from the carinvorous plants that
+     move faster at night - camping stories.
+
+
+Plasma sphere displacer
+Displacers in general - Effectively warping something to somewhere else.
+
+Glowing skin
+Diamond plate floor see through
+
+The puff-creant was a small symbiont, half animal, half vegetable, which you paid to sit
+ on your shoiulder and cough up your nose every time you turned to it. The cought 
+ contained spores that could do any one of about thirty idfferent and interesting 
+ things to your perceptions and mood.
+
+ Flowing river of mercury
+
+ Superlifter
+
+ Slermtron
+ Garden penthous
+ Gain
+ Algae is more for fuel and food (energy for things!)
+ Moss is more for stat changes
+
+ Vat grown meat
+
+ xyster
+
+ Frozen Thiol in space
+
+ Comet cloud
+
+ Asteroid belt
+
+ Gangster-class rapid offensive unit
+
+Idiran
+
+Cold fusion (plant based - maybe on the Biogrove planet)
+Also on the Biogrove planet - something like mana - lifeblood or osmething. Rivers of it.
+
+Her hair was an artful tangle of massed black curls studded with tiny helium-filled 
+globes of gold, platinum,and emberald. Violet gown. Black gloved arms.
+
+Churt Lyne
+
+Nova-class Battlecruiser
+
+Maser filament (radiation I think)
+Fernblade
+
+Using a mushed up brain as reaction mass for thrust.
+
+Instead of storing poeople in hypersleepd chambres or something equivilent, store in a thin field, and position large gorups as static 'living art' Recreate a battle svene or something. SO COOL.
+
+Self repairer construct
+Zetetic
+Aggressive Hegemonizing Swarm Objects
+
+Tish
+Tishlin
+Asatiel
+Ois
+Seddun
+
+Gelfield suit
+Atomechanical nucleus
+Sisela
+Elencher
+Diamond filam
+Dajeil
+Plasma storms on the sun
+Rare chance to find new bodies in hypersleep chambers when exploring derelict ships
+Candy floss
+
+Ice and slerm milk - ice sleem (ice cream)
+
+Could have a place you go to after you die. A death bar, or death area.
+Conglomerate
+Gneiss
+Cola
+Blue juice
+Turbo
+Fizzy ____
+Land-crawler
+Battle-sat (battle satellites)
+Combate drone
+Drone swarm (monster?)
+
+Smart munitions. Handful of tiny missiles
+
+Need to add in a projectile type effect with an at designation optional effect
+    Could do it first with the corrupted battery packs
+
+
+Info guard (machine planet monster?)
+
+gatling gun arm
+
+Possibly warn players once before they get attacked by an AI
+Portals with a cost. The high up city on the slaver planet that has trash
+    fall down for the slaves to dig through.
+
+Voon scientist monster that spawns with a computer console.
+
+Stamp/smash
+Accela
+
+Cyberia
+Lain
+
+
+On machine worlds - maintenance drones
+
+Cluster ship/station that is a bunch of asteroids anchored together.
+
+Active molecule blocks
+
+Shedding cold mass irregularly like a black comet
+
+Biologic
+
+Molecular initiators
+Metahuman
+Corporate mercenary
+Gened-up
+Kcells
+Olyix
+Kandara
+Feriton
+Zangari
+Arkship
+Yuri
+Callum
+Alik
+Pattern sniffers
+Portals are quantum entangled. 
+Engine that is a quantum entangled portal
+One end dropped into the sun. Shoots out plasma at the other end.
+Quantum batteries.
+
+Atomic bonding generator. Bond enough air together and it acts as a shield.
+
+Electron cutter
+Metalloceramic
+
+Transparent skin with purple organs.
+
+Mind distributed between 5 bodies linked via quantum entanglement.
+
+Subsentient biologics
+
+Sleeper bugs
+
+Gamma-laser emitter
+
+Small magrail rifle
+
+Negative energy conductors (exotic matter, wormholes)
+
+Artificial organic AI brain. Would need feeding/nutrient tubes. Nerve conduits 
+Biomechanical womb
+
+Blue green threads of bioluminescent transport rails
+
+Flamethrower weapons. Combustion-plasma. Could do a whole body or amror that contains
+    gasses to incrase fire/flame damage
+
+Nanocomposite - tings like titanium being woven with other things at an atomic level
+
+Reactive metal liquid crystal (halo )
+
+Beings that live on high gravity planets that Jupiter, and need that level of gravity or 
+    else they disappear in a puff of gas. Loper, a Jovian body being so adapted to strong 
+    wind and high garvity that it is like nothing to the body. The ammonia, pleasant
+     like lavender. Lightning like some small pleasant sensory things.
+
+
+Could have machine world health tied to batteries. Merchant npc harvests energy from 
+    the sun and delivers it to machine world for a price. Macine world only accepts 
+    if HP is less than 100%.
+
+Goddess of photons (on Sun planet?)
+
+
+So over time the planets turn floors back into their natural state if nothing is done. Very slowly.
+
+More transition floors. Overgrown quick matter floor. When clearned up? Repaired? It turns back into quick matter floor. 
+    Event that requires quick matter floor.
+
+Acid body that doesn't mind the acid
+
+Deep water has slow and -1hp/tick
+    Body that doesn't mind that 
+
+Ship engine that runs on humans. More human batter type stuff.
+
+Archon
+
+Metal sarcophagi - could spawn monsters or treasure when interacted with
+
+Starleague
+
+Massive tree in space you can live on.
+
+Cybershield - could be an augment that provides hacking defense.
+
+Protein powder
+
+With a queued object system we could have an event that spawns a bunch of trash, and then something neat towards the end. Would have to 'dig through'
+    the trash to get the good stuff to appear.
+
+Large ice asteroid ship - Star Wars 
+
+Sinking sand (desert planet?)
+
+Gotta have a planet with lightning storms. Could have these on Jovian planets.
+
+Body type that has a decay rate
+
+EMP weapons
+
+Life blood on Biogrove planet. Green. 
+
+Lifeblood junkie
+
+Gatling gun arm
+Drones that shoot lasers
+
+World virus
+
+Acid stream (floor type on acid planets?)
+
+For machine bodies - repair kit. Circuit and battery.
+
+Nitro - Life Herb + Ai Dust
+Nitro EX - Burst + AI fragment
+
+Drug style - burst. Hyper concentraed life herbs. TO the point of making your body grow extra everything and die. Addiction!
+
+Life Salve - Life herb and life water.
+
+Med kit - Nano bonder and life herb
+
+Laser Axe
+Shock Glove
+
+Cyberware
+
+Synthanol
+
+Vine event on Biogrove that matches the dust storm idea.
+
+Wormring
+
+Crystal Egg
+
+Weapon - Vax - that surrounds and blocks all light from reaching a Planets
+
+
+Radiator beam - beams heat energy
+
+Water spaceship - octopus type bubbles of water?
+
+So far elite dangerous has been fun - just shooting stuff. I think I should let new players experience shooting in space a little. 
+    Even in pods. Mabye a type of drone that anything that shoot.
+
+Water with an appetite
+
+Could have a monster that comes up and attacks the crystal bees. Goes back down and turns the crystal honey into 
+    something cool. Caves of golden crystal honey stuff.
+
+Research space station that gives bonus to researching.
+
+Derelict research station for salvage opportunies
+
+Hammerhead class destroyer
+Assault chaingun
+Enforcer class
+Initializing domain indent chip
+
+Moss
+Rose Moss
+Starfish
+Slug strew - slug and moss
+
+Bioartificers
+
+Plentitude (Penitude?)
+Lacertine
+Husker attack swarm
+
+Test attacking a planet and watching it heal
+
+Really like shipbuild as a job. Npc job too. Could contract an NPC to do the build for you. Rating at low/medium/high risk depending on their skill. 
+    Ship building services. Ship builder -> finds merchant spot > offers services > builds ship, either fails or transfers to the player.
+    Could have a credit cost instead of a material cost for stuff like this. If it's really difficult, the NPC could ask more money after it kind of 'fails'
+    Would just be on the planet
+
+Exoletus
+Lecythus
+
+Sickly yellow sluge of eighter letter DNA yeaster breakign down things into fresh monomers that can be printed into something new
+
+Biologic initiator
+
+Creeper drone
+
+Metaviral spawn. Active molecular block that breaks mass down. Countered by artificially enhanced carbon bonds - ubercarbon
+
+Particle cannon
+
+Guassrifles pumping hyper velocity metallic hydrigen bullets
+
+Area of space where monsters spawn. Idea of super rust. Maybe on some types of planets - metal rusts way faster
+
+Maybe when mining deeper/more advanced stuff, there's a chance for mining up something nasty that hurts you. 
+    Mining up a rock bug!!!
+    Could have these bugs be attracted to stronger (higher level) mining beams. Or just use complexity to make them fail on weak beams.
+
+Autotroops - automated human-like combat drones
+
+An entire planet being so diseased that it's effectively quarantined. Could have that happen if a planet's health drops too low. Players could unit to block people from entering and spreading it around.
+
+Ants harvesting fungus. (Could tie into crystal honey - they create some sort of honey crystal structure)
+
+Fungus around tree roots that helps the tree gather more water and minerals.
+
+Hyperfiber
+
+
+
+Graviton beams
+
+Diamond scales over a skeleton of Hyperfiber
+
+Ship that accelerates so hard and fast that it kills you, pulverizing you a bit. But you have repair mechanisms that can remake you.
+
+Biological storm.
+
+Defenses that only activate if a certain attack threshold is reached. Idea of allowing some damage/taking, but nothing that appears a large threat
+
+Monsters that are mostly transparent
+
+I like the idea of salvaging something less. E.g. slavaging from some ship, and getting a lesser version. Idea of hyperfiber, but generating worse hyperfiber as a result
+
+Bioceramic machine mind with memories woven inside artificial neurons, full of redundancies
+
+Wun the remora on the great ship hull. Body full of regeneration/repair mechaisms. Army of tiny workrers. Can focus that effort towards actually improving her body. Evolving it.
+
+
+Alone from The Great Ship. Liquid body that tends to present itself as solid. Chameleon. Able to turn invisible. Able to compress into a super hot tiny speck. Hotter than a sun. Able to take matter from others around it and use that energy.
+
+Body powered by a quasar smaller than an atom. Enclosed in magnetic envelope
+
+SIngle speck of degenerated matter
+
+Worm with a white hot head used to bore through crystal
+
+Creatures that swim in giant fuel tanks
+
+Creatures made entirely of dark matter
+
+Cage of plasma and overalpping magnetic fields, creating a nearly invisible, seemingly unbreakable prison.
+
+Monster face with eye of lava flowing down.
+
+Machines that live and move through hot silicone
+
+Bioceramic
+
+More desert floor types with little broken ruin and sculpture bits in it. Dust storms have a chance of uncoring a treasure or something when they finish.
+
+Hot bodies being able to move through deep snow faster
+
+For machine worlds. Dendrites and short circuits as monsters
+
+Battery pack monster. Drops corrupted battery packs.
+
+Alien nector
+
+have corporation planets produce trash. Let people sell bundles of trash that poeople can salvage. Maybe a ship with a bonus to salvaging, that a player then lines with salvaging machines.
+
+Trash asteroid
+
+Shovelling cell protein from extraction pits
+Data minins
+
+Triumvirate (set of 3?)
+
+Fullerene nanotubes doped with atoms of beryllium and iron
+
+Construction diamond.
+
+Adam from evangelion
+
+Empress of Mars
+
+Miners armor
+
+Plyplastic 
+
+
+Passive deflector shield
+
+Floor types that react to players. CHance of spawning monsters when walked on. Chance of changing floor type. Etc.
+
+Glitched types of floor
+
+Nox
+
+Lower desert tiles that if stepped on, spawn a monster, or something else
+
+
+Desert that spawns random useful items
+
+Mutagens. Disassemblers
+
+Nebulars
+
+Block hole as a heart
+
+Stone roses
+
+Body upgrades that take a long time to mature/be useful. Singularity in people that takes time to settle/twist/compress
+
+Storing memories in the land around you
+
+Weeds with a chance of corrupting a crop around them
+
+Certain body types that effectively have built in portals.
+
+Reimbodiment
+
+BioCore
+
+Frostwatch cabin - cold sleep
+Plastrum
+Woven from ancient molecular templates in a biolibrary
+Water for hydrogen-fusion tanks.
+
+The palace of eternal dusk
+Swallowships - would be neat to have specialized ships that filled with water/ore/etc
+
+
+
+
+
 
 ***************** END UNSORTED IDEAS ************************************************************************
 

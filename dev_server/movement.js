@@ -50,7 +50,7 @@ const world = require('./world.js');
         try {
 
             let passed_rules = false;
-            let object_index = await main.getObjectIndex(object_id);
+            let object_index = await game_object.getIndex(dirty, object_id);
 
             let object_player_index = await main.getPlayerIndex({ 'player_id': dirty.objects[object_index].player_id });
             let socket_player_index = await main.getPlayerIndex({ 'player_id': socket.player_id });
@@ -97,7 +97,7 @@ const world = require('./world.js');
                 return false;
             }
 
-            let object_index = await main.getObjectIndex(object_id);
+            let object_index = await game_object.getIndex(dirty, object_id);
             if(object_index === -1) {
                 log(chalk.yellow("Could not find ship (object) we are docking with"));
                 return false;
@@ -152,7 +152,7 @@ const world = require('./world.js');
             map.updateMap(socket, dirty);
 
             // give the player's ship that they just used to enter the spaceport an attached to
-            let ship_index = await main.getObjectIndex(dirty.players[player_index].ship_id);
+            let ship_index = await game_object.getIndex(dirty, dirty.players[player_index].ship_id);
 
             // The ship is now docked at this other ship, make sure the player knows
             if(ship_index !== -1) {
@@ -489,7 +489,7 @@ const world = require('./world.js');
             }
 
 
-            let player_ship_index = await main.getObjectIndex(dirty.players[socket.player_index].ship_id);
+            let player_ship_index = await game_object.getIndex(dirty, dirty.players[socket.player_index].ship_id);
 
             if(player_ship_index === -1) {
                 log(chalk.yellow("Could not get the player's ship"));
@@ -544,7 +544,7 @@ const world = require('./world.js');
 
             // If there's an object - lets get some info about it
             if(dirty.coords[coord_index].object_id) {
-                object_index = await main.getObjectIndex(dirty.coords[coord_index].object_id);
+                object_index = await game_object.getIndex(dirty, dirty.coords[coord_index].object_id);
 
                 // The object that was there no longer exists
                 if(object_index === -1) {
@@ -557,7 +557,7 @@ const world = require('./world.js');
 
                 object_type_index = main.getObjectTypeIndex(dirty.objects[object_index].object_type_id);
             } else if(dirty.coords[coord_index].belongs_to_object_id) {
-                object_index = await main.getObjectIndex(dirty.coords[coord_index].belongs_to_object_id);
+                object_index = await game_object.getIndex(dirty, dirty.coords[coord_index].belongs_to_object_id);
 
                 // The object that was there no longer exists
                 if(object_index === -1) {
@@ -1917,7 +1917,7 @@ const world = require('./world.js');
                 return false;
             }
 
-            let ship_index = await main.getObjectIndex(dirty.ship_coords[ship_coord_index].ship_id);
+            let ship_index = await game_object.getIndex(dirty, dirty.ship_coords[ship_coord_index].ship_id);
 
             // Make sure the coords are close enough
             if( Math.abs(dirty.ship_coords[previous_ship_coord_index].tile_x - dirty.ship_coords[ship_coord_index].tile_x) > 1 ||
@@ -2206,7 +2206,7 @@ const world = require('./world.js');
 
 
                     // see if that player has built an AI
-                    let ai_index = await main.getObjectIndex(dirty.objects[ship_index].ai_id);
+                    let ai_index = await game_object.getIndex(dirty, dirty.objects[ship_index].ai_id);
 
                     if(ai_index !== -1) {
                         //console.log("There is an AI on this planet. AI id: " + dirty.objects[ai_index].id);
@@ -2257,13 +2257,13 @@ const world = require('./world.js');
 
     async function moveThroughPortal(socket, dirty, portal_id) {
         try {
-            let portal_index = await main.getObjectIndex(portal_id);
+            let portal_index = await game_object.getIndex(dirty, portal_id);
 
             if(portal_index === -1) {
                 return false;
             }
 
-            let attached_index = await main.getObjectIndex(dirty.objects[portal_index].attached_to_id);
+            let attached_index = await game_object.getIndex(dirty, dirty.objects[portal_index].attached_to_id);
 
             if(attached_index === -1) {
                 log(chalk.yellow("Portal is not attached to another portal"));
@@ -2517,7 +2517,7 @@ const world = require('./world.js');
 
 
             // give the player's ship that they just used to enter the spaceport an attached to
-            let ship_index = await main.getObjectIndex(dirty.players[player_index].ship_id);
+            let ship_index = await game_object.getIndex(dirty, dirty.players[player_index].ship_id);
 
             let send_refuel_message = false;
 
@@ -2694,7 +2694,7 @@ const world = require('./world.js');
                 let planet_coord_index = await main.getPlanetCoordIndex({ 'planet_coord_id': dirty.players[player_index].planet_coord_id });
 
                 let planet_index = await planet.getIndex(dirty, { 'planet_id': dirty.planet_coords[planet_coord_index].planet_id, 'source': 'movement.switchToGalaxy' });
-                let ship_index = await main.getObjectIndex(dirty.players[player_index].ship_id);
+                let ship_index = await game_object.getIndex(dirty, dirty.players[player_index].ship_id);
 
                 let ship_type_index = main.getObjectTypeIndex(dirty.objects[ship_index].object_type_id);
 
@@ -2778,14 +2778,14 @@ const world = require('./world.js');
                 }
 
                 // The ship we are on
-                let ship_index = await main.getObjectIndex(dirty.ship_coords[ship_coord_index].ship_id);
+                let ship_index = await game_object.getIndex(dirty, dirty.ship_coords[ship_coord_index].ship_id);
 
                 if(ship_index === -1) {
                     log(chalk.yellow("Could not find ship"));
                     return false;
                 }
 
-                let player_ship_index = await main.getObjectIndex(dirty.players[player_index].ship_id);
+                let player_ship_index = await game_object.getIndex(dirty, dirty.players[player_index].ship_id);
 
                 if(player_ship_index === -1) {
                     log(chalk.yellow("Could not find the ship the player is on"));
@@ -2968,7 +2968,7 @@ const world = require('./world.js');
 
             } else if(dirty.npcs[npc_index].ship_coord_id) {
                 let ship_coord_index = await main.getShipCoordIndex({ 'ship_coord_id': dirty.npcs[npc_index].ship_coord_id });
-                let ship_index = await main.getObjectIndex(dirty.ship_coords[ship_coord_index].ship_id);
+                let ship_index = await game_object.getIndex(dirty, dirty.ship_coords[ship_coord_index].ship_id);
                 coord_index = await main.getCoordIndex({ 'coord_id': dirty.objects[ship_index].coord_id });
             }
 
@@ -2997,7 +2997,7 @@ const world = require('./world.js');
                 return false;
             }
             let player_index = socket.player_index;
-            let ship_index = await main.getObjectIndex(dirty.players[player_index].ship_id);
+            let ship_index = await game_object.getIndex(dirty, dirty.players[player_index].ship_id);
 
             console.log("socket.player_index: " + player_index);
             console.log("player's ship_id: " + dirty.players[player_index].ship_id + " Got ship_index as: " + ship_index);
@@ -3354,7 +3354,7 @@ const world = require('./world.js');
                 // If we were on a ship that isn't our current ship, we'll be removed from that coord as well (in a case like being docked at a ship
                 // and then launching from it
                 let leaving_ship_coord_index = await main.getShipCoordIndex({ 'ship_coord_id': placing_thing.ship_coord_id });
-                let leaving_ship_index = await main.getObjectIndex(dirty.ship_coords[leaving_ship_coord_index].ship_id);
+                let leaving_ship_index = await game_object.getIndex(dirty, dirty.ship_coords[leaving_ship_coord_index].ship_id);
                 if(dirty.objects[leaving_ship_index].id !== placing_thing.ship_id) {
 
                     old_room = "ship_" + dirty.objects[leaving_ship_index].id;

@@ -1,3 +1,4 @@
+//@ts-check
 var io_handler = require('./io.js');
 var io = io_handler.io;
 var database = require('./database.js');
@@ -11,6 +12,7 @@ const game = require('./game.js');
 const game_object = require('./game_object.js');
 const helper = require('./helper.js');
 const main = require('./space_abyss' + process.env.FILE_SUFFIX + '.js');
+const monster = require('./monster.js');
 const planet = require('./planet.js');
 const player = require('./player.js');
 
@@ -135,7 +137,7 @@ async function addBattleLinker(socket, dirty, data) {
             // We can't attack anyone if we are a pod
             // Make sure the object isn't a pod
             console.log("Object is attacking. data.attacking_id: " + data.attacking_id);
-            let attacking_object_index = await main.getObjectIndex(data.attacking_id);
+            let attacking_object_index = await game_object.getIndex(dirty, data.attacking_id);
             if (attacking_object_index === -1) {
                 return false;
             }
@@ -185,7 +187,7 @@ async function addBattleLinker(socket, dirty, data) {
 
         } else if (data.being_attacked_type === 'object') {
             // Make sure the object isn't a pod
-            let being_attacked_object_index = await main.getObjectIndex(data.being_attacked_id);
+            let being_attacked_object_index = await game_object.getIndex(dirty, data.being_attacked_id);
             if (being_attacked_object_index === -1) {
                 return false;
             }
@@ -403,7 +405,7 @@ async function addRule(socket, dirty, data) {
         }
 
         // Make sure the socket player and the object player match
-        let object_index = await main.getObjectIndex(parseInt(data.object_id));
+        let object_index = await game_object.getIndex(dirty, parseInt(data.object_id));
 
         if (object_index === -1) {
             log(chalk.yellow("Object index not found"));
@@ -432,7 +434,7 @@ async function addRule(socket, dirty, data) {
             added_rule.has_change = false;
             dirty.rules.push(added_rule);
 
-            let object_index = await main.getObjectIndex(data.object_id);
+            let object_index = await game_object.getIndex(dirty, data.object_id);
             let object_info = await game_object.getCoordAndRoom(dirty, object_index);
 
             await sendRuleInfo(socket, object_info.room, dirty, added_rule.id);
@@ -558,7 +560,7 @@ async function aiAttack(dirty, data) {
 
     try {
 
-        let ai_index = await main.getObjectIndex(data.ai_id);
+        let ai_index = await game_object.getIndex(dirty, data.ai_id);
 
         if (ai_index === -1) {
             return false;
@@ -587,7 +589,7 @@ async function aiAttack(dirty, data) {
         if(data.attacking_type === 'player') {
             being_attacked_index = await main.getPlayerIndex({ 'player_id': data.attacking_id });
         } else if(data.attacking_type === 'object') {
-            being_attacked_index = await main.getObjectIndex(data.attacking_id);
+            being_attacked_index = await game_object.getIndex(dirty, data.attacking_id);
         } else if(data.attacking_type === 'monster') {
             being_attacked_index = await main.getMonsterIndex(data.attacking_id);
         }
@@ -666,7 +668,7 @@ async function aiAttack(dirty, data) {
 
                     if (checking_planet_coord_index !== -1) {
 
-                        let can_place_result = await main.canPlaceMonster('planet',
+                        let can_place_result = await monster.canPlace(dirty, 'planet',
                             dirty.planet_coords[checking_planet_coord_index],
                             { 'monster_type_id': spawn_monster_type_id });
 
@@ -691,7 +693,7 @@ async function aiAttack(dirty, data) {
 
                     if (checking_ship_coord_index !== -1) {
 
-                        let can_place_result = await main.canPlaceMonster('ship',
+                        let can_place_result = await monster.canPlace(dirty, 'ship',
                             dirty.ship_coords[checking_ship_coord_index],
                             { 'monster_type_id': spawn_monster_type_id });
 
@@ -713,7 +715,7 @@ async function aiAttack(dirty, data) {
 
                     if (checking_coord_index !== -1) {
 
-                        let can_place_result = await main.canPlaceMonster('galaxy',
+                        let can_place_result = await monster.canPlace(dirty, 'galaxy',
                             dirty.coords[checking_coord_index],
                             { 'monster_type_id': spawn_monster_type_id });
 
@@ -812,7 +814,7 @@ async function aiAttack(dirty, data) {
         log(chalk.green("In battle.aiAttack. Having AI Attack type: " + data.attacking_type + " id: " + data.attacking_id));
 
 
-        let ai_index = await main.getObjectIndex(data.ai_id);
+        let ai_index = await game_object.getIndex(dirty, data.ai_id);
 
         if (ai_index === -1) {
             return false;
@@ -1068,7 +1070,7 @@ async function attachShipEngines(dirty, ship_index) {
         for (let i = 0; i < dirty.ship_coords.length; i++) {
             if (dirty.ship_coords[i] && dirty.ship_coords[i].ship_id === dirty.objects[ship_index].id && engine_object_type_ids.indexOf(dirty.ship_coords[i].object_type_id) !== -1) {
 
-                let drive_index = await main.getObjectIndex(dirty.ship_coords[i].object_id);
+                let drive_index = await game_object.getIndex(dirty, dirty.ship_coords[i].object_id);
 
                 if (drive_index !== -1) {
 
@@ -1337,7 +1339,7 @@ exports.checkMonsterBattleConditions = checkMonsterBattleConditions;
 async function checkObjectBattleConditions(socket, dirty, object_id, checking_type, checking_id) {
     try {
 
-        let object_index = await main.getObjectIndex(object_id);
+        let object_index = await game_object.getIndex(dirty, object_id);
 
         if (object_index === -1) {
             return false;
@@ -1823,11 +1825,11 @@ async function createShipCoord(dirty, ship_index, linker) {
         if (linker_object_type_index !== -1 && dirty.object_types[linker_object_type_index].assembled_as_object) {
 
             // Gotta spawn an object!
-            let new_object_id = await insertObjectType(socket, dirty, { 'object_type_id': dirty.object_types[linker_object_type_index].id });
-            let new_object_index = await main.getObjectIndex(new_object_id);
+            let new_object_id = await insertObjectType(false, dirty, { 'object_type_id': dirty.object_types[linker_object_type_index].id });
+            let new_object_index = await game_object.getIndex(dirty, new_object_id);
 
 
-            await main.placeObject(socket, dirty, { 'object_index': new_object_index, 'ship_coord_index': new_ship_coord_index, 'reason': 'generate_ship' });
+            await main.placeObject(false, dirty, { 'object_index': new_object_index, 'ship_coord_index': new_ship_coord_index, 'reason': 'generate_ship' });
         }
     } catch(error) {
         log(chalk.red("Error in world.createShipCoord:" + error));
@@ -1846,12 +1848,13 @@ exports.createShipCoord = createShipCoord;
  * @param {Object} dirty 
  * @param {number} damage_amount
  * @param {Object} coord
- * @param {string} atatcking_type
+ * @param {string} attacking_type
  * @param {Object} data 
  * @param {number=} data.monster_index
  * @param {number=} data.object_index
  * @param {number=} data.planet_index
  * @param {number=} data.player_index
+ * @param {Boolean=} data.show_output
  */
 async function getAIProtector(dirty, damage_amount, coord, attacking_type, data) {
 
@@ -1870,19 +1873,19 @@ async function getAIProtector(dirty, damage_amount, coord, attacking_type, data)
     
             // Something like a ship that will directly have an ai_id
             if (dirty.objects[data.object_index].ai_id) {
-                ai_index = await main.getObjectIndex(dirty.objects[data.object_index].ai_id);
+                ai_index = await game_object.getIndex(dirty, dirty.objects[data.object_index].ai_id);
             } else {
     
                 // Check the room we are in, and if there's one, see if the rules apply to us
                 if (coord.planet_id) {
                     let planet_index = await planet.getIndex(dirty, { 'planet_id': coord.planet_id, 'source': 'world.getAIProtector' });
                     if (planet_index !== -1 && dirty.planets[planet_index].ai_id) {
-                        ai_index = await main.getObjectIndex(dirty.planets[planet_index].ai_id);
+                        ai_index = await game_object.getIndex(dirty, dirty.planets[planet_index].ai_id);
                     }
                 } else if (coord.ship_id) {
-                    let ship_index = await main.getObjectIndex(coord.ship_id);
+                    let ship_index = await game_object.getIndex(dirty, coord.ship_id);
                     if (ship_index !== -1 && dirty.objects[ship_index].ai_id) {
-                        ai_index = await main.getObjectIndex(dirty.objects[ship_index].ai_id);
+                        ai_index = await game_object.getIndex(dirty, dirty.objects[ship_index].ai_id);
                     }
                 }
     
@@ -1916,7 +1919,7 @@ async function getAIProtector(dirty, damage_amount, coord, attacking_type, data)
                 return -1;
             }
 
-            ai_index = await main.getObjectIndex(dirty.planets[data.planet_index].ai_id);
+            ai_index = await game_object.getIndex(dirty, dirty.planets[data.planet_index].ai_id);
 
             if(ai_index === -1) {
                 return -1;
@@ -1943,12 +1946,12 @@ async function getAIProtector(dirty, damage_amount, coord, attacking_type, data)
             if (coord.planet_id) {
                 let planet_index = await planet.getIndex(dirty, { 'planet_id': coord.planet_id, 'source': 'world.getAIProtector - data.player_index' });
                 if (planet_index !== -1 && dirty.planets[planet_index].ai_id) {
-                    ai_index = await main.getObjectIndex(dirty.planets[planet_index].ai_id);
+                    ai_index = await game_object.getIndex(dirty, dirty.planets[planet_index].ai_id);
                 }
             } else if (coord.ship_id) {
-                let ship_index = await main.getObjectIndex(coord.ship_id);
+                let ship_index = await game_object.getIndex(dirty, coord.ship_id);
                 if (ship_index !== -1 && dirty.objects[ship_index].ai_id) {
-                    ai_index = await main.getObjectIndex(dirty.objects[ship_index].ai_id);
+                    ai_index = await game_object.getIndex(dirty, dirty.objects[ship_index].ai_id);
                 }
             }
     
@@ -1985,7 +1988,7 @@ async function getAIProtector(dirty, damage_amount, coord, attacking_type, data)
     
     
         if (!is_protected) {
-            if (data.show_output && data.show_ouput === true) {
+            if (data.show_output && data.show_output === true) {
                 console.log("Not protected");
             }
             return -1;
@@ -2642,9 +2645,17 @@ async function getPlayerCoordAndRoom(dirty, player_index) {
 
 exports.getPlayerCoordAndRoom = getPlayerCoordAndRoom;
 
-// player_index   |   body_index   |   skill_type   |   scope
-// level_modifier
-// difficult_level_modifier - this is for difficult things. It makes leveling EASIER!
+
+/**
+ * @param {Object} dirty
+ * @param {Object} data
+ * @param {number} data.player_index
+ * @param {String} data.skill_type
+ * @param {number=} data.body_index
+ * @param {String=} data.scope
+ * @return {Promise<number>}
+ * 
+ */
 async function getPlayerLevel(dirty, data) {
 
     try {
@@ -2661,7 +2672,7 @@ async function getPlayerLevel(dirty, data) {
             if (data.body_index) {
                 body_index = data.body_index;
             } else {
-                body_index = await main.getObjectIndex(dirty.players[data.player_index].body_id);
+                body_index = await game_object.getIndex(dirty, dirty.players[data.player_index].body_id);
 
                 if (body_index === -1) {
                     log(chalk.yellow("Could not get a body for the player"));
@@ -2674,7 +2685,7 @@ async function getPlayerLevel(dirty, data) {
         }
 
         if (!data.scope || data.scope === 'galaxy') {
-            ship_index = await main.getObjectIndex(dirty.players[data.player_index].ship_id);
+            ship_index = await game_object.getIndex(dirty, dirty.players[data.player_index].ship_id);
 
             if (ship_index === -1) {
                 log(chalk.yellow("Could not get a ship for the player"));
@@ -2724,6 +2735,7 @@ async function getPlayerLevel(dirty, data) {
             level = 1 + Math.floor(global.level_modifier * Math.sqrt(dirty.players[data.player_index].laser_skill_points));
         }
         else if (data.skill_type === 'manufacturing') {
+
             level = 1 + Math.floor(global.difficult_level_modifier * Math.sqrt(dirty.players[data.player_index].manufacturing_skill_points));
 
             if (ship_type_index !== -1 && dirty.object_types[ship_type_index].manufacturing_modifier) {
@@ -2778,7 +2790,7 @@ async function getPlayerLevel(dirty, data) {
                     let equipped_object_type_index = -1;
 
                     if (dirty.equipment_linkers[i].object_id) {
-                        equipped_object_index = await main.getObjectIndex(dirty.equipment_linkers[i].object_id);
+                        equipped_object_index = await game_object.getIndex(dirty, dirty.equipment_linkers[i].object_id);
                         if (equipped_object_index !== -1) {
                             equipped_object_type_index = main.getObjectTypeIndex(dirty.objects[equipped_object_index].object_type_id);
                         }
@@ -2796,6 +2808,63 @@ async function getPlayerLevel(dirty, data) {
 
                 }
             }
+
+
+            // And eating linkers!
+            for(let i = 0; i < dirty.eating_linkers.length; i++) {
+                if(dirty.eating_linkers[i] && dirty.eating_linkers[i].body_id === dirty.objects[body_index].id) {
+                    let race_linker_index = main.getRaceEatingLinkerIndex({
+                        'race_id': dirty.object_types[body_type_index].race_id, 'object_type_id': dirty.eating_linkers[i].eating_object_type_id
+                    });
+
+                    if(dirty.race_eating_linkers[race_linker_index].manufacturing && data.skill_type === 'manufacturing') {
+                        //console.log("Eating increased player attack by: " + dirty.race_eating_linkers[race_linker_index].attack);
+                        level += dirty.race_eating_linkers[race_linker_index].manufacturing;
+                    }
+                }
+            }
+
+            // And addiction!
+            // and minuses for each addiction without a matching eating linker (addictions are held off while the player is still consuming them)
+            for(let i = 0; i < dirty.addiction_linkers.length; i++) {
+
+                if(dirty.addiction_linkers[i] && dirty.addiction_linkers[i].body_id === dirty.objects[body_index].id) {
+
+                    let still_eating = false;
+                    for(let j = 0; j < dirty.eating_linkers.length; j++) {
+                        if(dirty.eating_linkers[j] && dirty.eating_linkers[j].body_id === dirty.objects[body_index].id) {
+                            if(dirty.eating_linkers[j].eating_object_type_id === dirty.addiction_linkers[i].addicted_to_object_type_id) {
+                                still_eating = true;
+                            }
+                        }
+                    }
+
+
+                    if(!still_eating) {
+                        let race_linker_index = main.getRaceEatingLinkerIndex({
+                            'race_id': dirty.object_types[body_type_index].race_id, 'object_type_id': dirty.addiction_linkers[i].addicted_to_object_type_id
+                        });
+    
+                        if(dirty.race_eating_linkers[race_linker_index].manufacturing && data.skill_type === 'manufacturing') {
+                            console.log("Reduced player manufacturing due to addiction linker");
+                            level -= dirty.addition_linkers[i].addiction_level * dirty.race_eating_linkers[race_linker_index].manufacturing;
+                        }
+                    }
+
+                }
+
+              
+
+            }
+
+
+
+        }
+
+
+      
+        if(data.skill_type === 'manufacturing') {
+            console.log("Manufacturing level returned: " + level);
         }
 
 
@@ -2896,7 +2965,7 @@ async function increasePlayerSkill(socket, dirty, player_index, skill_types) {
     try {
 
         //console.log("In world.increasePlayerSkill. Skill types: ");
-        //console.log(skill_types);
+        console.log(skill_types);
 
         for (let i = 0; i < skill_types.length; i++) {
 
@@ -3145,7 +3214,7 @@ async function insertObjectType(socket, dirty, data) {
         //console.log("Did object insert. Got object_id: " + object_id);
 
         // we really should make sure that we add the object into dirty here I think
-        let object_index = await main.getObjectIndex(object_id);
+        let object_index = await game_object.getIndex(dirty, object_id);
 
         if (npc_id !== false) {
             dirty.objects[object_index].npc_id = npc_id;
@@ -3208,7 +3277,7 @@ async function manageElevatorLinkers(socket, dirty, object_id) {
 
         object_id = parseInt(object_id);
 
-        let object_index = await main.getObjectIndex(object_id);
+        let object_index = await game_object.getIndex(dirty, object_id);
 
         if (object_index === -1) {
             log(chalk.yellow("Invalid object sent into world.manageElevatorLinkers"));
@@ -3453,7 +3522,7 @@ async function objectFindTarget(dirty, object_index) {
                     // There's an object! See if we attack it!
                     // Currently we attack objects that are owned by a player, but not part of our faction, or us
                     if (temp_coord.object_id) {
-                        let checking_object_index = await main.getObjectIndex(temp_coord.object_id);
+                        let checking_object_index = await game_object.getIndex(dirty, temp_coord.object_id);
 
                         if (checking_object_index !== -1) {
 
@@ -4047,7 +4116,7 @@ async function sendNpcInfo(socket, room, dirty, npc_id) {
 
 
         if (dirty.npcs[npc_index].ship_id) {
-            let ship_index = await main.getObjectIndex(dirty.npcs[npc_index].ship_id);
+            let ship_index = await game_object.getIndex(dirty, dirty.npcs[npc_index].ship_id);
             if (ship_index !== -1) {
                 await sendObjectInfo(socket, room, dirty, ship_index, 'world.sendNpcInfo');
             }
@@ -4135,7 +4204,7 @@ async function sendPlayerAIs(socket, room, dirty, player_id) {
                 } else if (dirty.objects[a].ship_coord_id) {
                     let ship_coord_index = await main.getShipCoordIndex({ 'ship_coord_id': dirty.objects[a].ship_coord_id });
                     if (ship_coord_index !== -1) {
-                        let ship_index = await main.getObjectIndex(dirty.ship_coords[ship_coord_index].ship_id);
+                        let ship_index = await game_object.getIndex(dirty, dirty.ship_coords[ship_coord_index].ship_id);
                         await game_object.sendInfo(socket, room, dirty, ship_index, 'world.sendPlayerAIs');
                         await sendAreas(socket, room, dirty, { 'ship_id': dirty.ship_coords[ship_coord_index].ship_id });
                     }
@@ -4419,7 +4488,7 @@ async function setPlayerMoveDelay(socket, dirty, player_index) {
         if (dirty.players[player_index].planet_coord_id || dirty.players[player_index].ship_coord_id) {
             //console.log("Player is on planet or ship");
 
-            let body_index = await main.getObjectIndex(dirty.players[player_index].body_id);
+            let body_index = await game_object.getIndex(dirty, dirty.players[player_index].body_id);
 
             if (body_index !== -1) {
                 let body_type_index = main.getObjectTypeIndex(dirty.objects[body_index].object_type_id);
@@ -4439,7 +4508,7 @@ async function setPlayerMoveDelay(socket, dirty, player_index) {
 
         } else if (dirty.players[player_index].coord_id) {
 
-            let ship_index = await main.getObjectIndex(dirty.players[player_index].ship_id);
+            let ship_index = await game_object.getIndex(dirty, dirty.players[player_index].ship_id);
 
             if (ship_index !== -1) {
                 let ship_type_index = main.getObjectTypeIndex(dirty.objects[ship_index].object_type_id);
@@ -4598,7 +4667,7 @@ async function spawnAdjacent(dirty, data) {
                         { 'object_type_id': data.spawning_type_id });
                 } else if (data.spawning_type === 'monster') {
 
-                    can_place_result = await main.canPlaceMonster(data.scope,
+                    can_place_result = await monster.canPlace(dirty, data.scope,
                         possible_coord, { 'monster_type_id': data.spawning_type_id });
 
                 }
@@ -4636,7 +4705,7 @@ async function spawnAdjacent(dirty, data) {
             if (dirty.object_types[being_spawned_object_type_index].assembled_as_object) {
                 let insert_object_type_data = { 'object_type_id': dirty.object_types[being_spawned_object_type_index].id, 'source': 'world.spawnAdjacent' };
                 let new_object_id = await insertObjectType(false, dirty, insert_object_type_data);
-                let new_object_index = await main.getObjectIndex(new_object_id);
+                let new_object_index = await game_object.getIndex(dirty, new_object_id);
 
                 let place_object_data = { 'object_index': new_object_index };
                 if (data.scope === 'planet') {
@@ -4856,12 +4925,12 @@ async function spawnMonster(dirty, monster_type_id, data) {
             return false;
         }
 
-        let spawned_event_id = false;
+        let spawned_event_id = 0;
         if (data.spawned_event_id) {
             spawned_event_id = data.spawned_event_id;
         }
 
-        let can_place_monster_result = await main.canPlaceMonster(scope, placing_coord, { 'monster_type_id': monster_type_id });
+        let can_place_monster_result = await monster.canPlace(dirty, scope, placing_coord, { 'monster_type_id': monster_type_id });
 
         if (can_place_monster_result !== true) {
             return false;
@@ -4999,7 +5068,7 @@ async function shielded(dirty, damage_amount, object_index) {
         if (energy_storage_ship_coords.length > 0) {
             for (let energy_ship_coord of energy_storage_ship_coords) {
 
-                let coord_object_index = await main.getObjectIndex(energy_ship_coord.object_id);
+                let coord_object_index = await game_object.getIndex(dirty, energy_ship_coord.object_id);
 
                 if (coord_object_index !== -1 && dirty.objects[coord_object_index].energy >= damage_amount) {
 
@@ -5095,7 +5164,7 @@ async function tickNomad(dirty) {
 
         console.log("In world.tickNomad");
 
-        let nomad_index = await main.getObjectIndex(86424);
+        let nomad_index = await game_object.getIndex(dirty, 86424);
 
         if(nomad_index === -1) {
             log(chalk.yellow("Could not find The Great Nomad"));
@@ -5152,7 +5221,7 @@ async function tickWaitingDrops(dirty) {
                 console.log("Have waiting drop!");
                 console.log(dirty.waiting_drops[i]);
 
-                if(typeof dirty.waiting_drops[i].object_type_id !== 'undefined' && main.isFalse(dirty.waiting_drops[i].object_type_id)) {
+                if(typeof dirty.waiting_drops[i].object_type_id !== 'undefined' && helper.isFalse(dirty.waiting_drops[i].object_type_id)) {
                     log(chalk.yellow("INVALID WAITING LINKER!"));
                     delete dirty.waiting_drops[i];
 

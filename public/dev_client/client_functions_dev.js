@@ -3489,7 +3489,14 @@ function generateAddictionDisplay() {
             });
 
 
-            adding_string += "Addicted to " + object_types[object_type_index].name + " Tick " + addiction_linker.tick_count + "/" +
+            // Poison! We're going to change the text a little
+            if(object_types[object_type_index].id === 365) {
+                adding_string += "Poisoned"; 
+            } else {
+                adding_string += "Addicted to " + object_types[object_type_index].name ;
+            }
+
+            adding_string += " Tick " + addiction_linker.tick_count + "/" +
                 race_eating_linkers[race_eating_linker_index].addiction_tick_count;
 
 
@@ -5857,12 +5864,18 @@ function checkForClientMove(time, tile_x = false, tile_y = false) {
 
 
 var monster_sprites = [];
+monster_sprites.push({ 'key': 'algae-king', 'monster_type_id': 113, 'planet_type_id': 16, 'frame_width': 64, 'frame_height': 64, 'frame_count': 4, 'frame_rate': 8 });
 monster_sprites.push({ 'key': 'bionic-crab', 'monster_type_id': 105, 'planet_type_id': 34, 'frame_width': 64, 'frame_height': 64, 'frame_count': 9, 'frame_rate': 8 });
+monster_sprites.push({ 'key': 'jellyfish', 'monster_type_id': 108, 'planet_type_id': 34, 'frame_width': 64, 'frame_height': 64, 'frame_count': 8, 'frame_rate': 8 });
 monster_sprites.push({ 'key': 'sea-urchin', 'monster_type_id': 106, 'planet_type_id': 34, 'frame_width': 64, 'frame_height': 64, 'frame_count': 12, 'frame_rate': 8 });
 monster_sprites.push({ 'key': 'trae', 'planet_type_id': 29, 'frame_width': 104, 'frame_height': 104, 'frame_count': 10, 'frame_rate': 6 });
 monster_sprites.push({ 'key': 'trae-seedling', 'planet_type_id': 29, 'frame_width': 72, 'frame_height': 72, 'frame_count': 6, 'frame_rate': 8 });
 monster_sprites.push({ 'key': 'trae-sproutling', 'planet_type_id': 29, 'frame_width': 64, 'frame_height': 64, 'frame_count': 5, 'frame_rate': 8 });
 monster_sprites.push({ 'key': 'widden', 'monster_type_id': 42, 'ship_type_id': 352, 'frame_width': 64, 'frame_height': 64, 'frame_count': 3, 'frame_rate': 4 });
+monster_sprites.push({ 'key': 'construction-worker', 'monster_type_id': 112, 'planet_type_id': 30, 'frame_width': 64, 'frame_height': 64, 'frame_count': 1, 'frame_rate': 8 });
+monster_sprites.push({ 'key': 'gang-smasher', 'monster_type_id': 111, 'planet_type_id': 30, 'frame_width': 64, 'frame_height': 64, 'frame_count': 1, 'frame_rate': 8 });
+monster_sprites.push({ 'key': 'gang-gunner', 'monster_type_id': 110, 'planet_type_id': 30, 'frame_width': 64, 'frame_height': 64, 'frame_count': 1, 'frame_rate': 8 });
+monster_sprites.push({ 'key': 'gang-boss', 'monster_type_id': 109, 'planet_type_id': 30, 'frame_width': 64, 'frame_height': 78, 'frame_count': 1, 'frame_rate': 8 });
 
 
 // Not sure how to do it more efficiently than just calculate the new and old level for... every skill!
@@ -6888,6 +6901,8 @@ function movePlayerFlow(player_index, destination_coord_type, destination_coord,
 }
 
 function movePlayerInstant(player_index, x, y) {
+
+    console.log("in movePlayerInstant");
 
     players[player_index].destination_x = false;
     players[player_index].destination_y = false;
@@ -7986,6 +8001,10 @@ function setPlayerMoveDelay(player_index) {
         if(object_types[ship_type_index].needs_engines && typeof objects[ship_index].current_engine_power !== 'undefined') {
 
             let ship_move_delay = object_types[ship_type_index].move_delay * ( object_types[ship_type_index].engine_power_required / objects[ship_index].current_engine_power);
+            // Ships can't go faster than their max speed
+            if(ship_move_delay < object_types[ship_type_index].move_delay) {
+                ship_move_delay = object_types[ship_type_index].move_delay;
+            }
 
             if(!isNaN(ship_move_delay)) {
                 players[player_index].current_move_delay = ship_move_delay;

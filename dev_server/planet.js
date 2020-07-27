@@ -147,7 +147,7 @@ async function sendInfo(socket, room, dirty, data) {
         // see if there is an AI on this planet
         if(dirty.planets[data.planet_index].ai_id) {
             //console.log("Calling sendObjectInfo from planet.sendInfo");
-            let ai_index = await main.getObjectIndex(dirty.planets[data.planet_index].ai_id);
+            let ai_index = await game_object.getIndex(dirty, dirty.planets[data.planet_index].ai_id);
 
             if(ai_index !== -1) {
                 await game_object.sendInfo(socket, room, dirty, ai_index);

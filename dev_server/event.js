@@ -166,6 +166,9 @@ async function deleteSpawnedEvent(dirty, spawned_event_index) {
  * @param {number} event_index
  * @param {Object} data
  * @param {string=} data.scope
+ * @param {number=} data.planet_coord_index
+ * @param {number=} data.ship_coord_index
+ * @param {number=} data.coord_index
  * @returns {Promise<boolean>}
  */
 async function spawn(dirty, event_index, data) {
@@ -194,7 +197,7 @@ async function spawn(dirty, event_index, data) {
 
         let event_linkers = dirty.event_linkers.filter(event_linker => event_linker.event_id === dirty.events[event_index].id);
         if(event_linkers.length === 0) {
-            log(chalk.yellow("No linkers associated with this event"));
+            log(chalk.yellow("No linkers associated with event id: " + dirty.events[event_index].id));
             return false;
         }
 
@@ -420,16 +423,22 @@ async function spawn(dirty, event_index, data) {
             if(event_scope === 'planet') {
                 let planet_coord_data = { 'planet_id': dirty.planets[planet_index].id,
                     'planet_level': tile_level, 'tile_x': tile_x, 'tile_y': tile_y };
+                    
+                // I think this is OK here - but it doesn't make multi level events suddenly work
+                if(tile_level > 0) {
+                    planet_coord_data.can_insert = true;
+                }
 
                 if(debug_event_ids.indexOf(dirty.events[event_index].id) !== -1) {
-                    console.log("Data going into getPlanetCoordIndex:");
-                    console.log(planet_coord_data);
+                    //console.log("Data going into getPlanetCoordIndex:");
+                    //console.log(planet_coord_data);
                 }
 
                 checking_coord_index = await main.getPlanetCoordIndex(planet_coord_data);
 
                 if(checking_coord_index === -1) {
                     log(chalk.yellow("Could not find the coord we are checking"));
+                    console.log(planet_coord_data);
                     return false;
                 }
             } else if(event_scope === 'ship') {
@@ -499,10 +508,10 @@ async function spawn(dirty, event_index, data) {
 
 
             let can_place_floor_result = false;
-            if(event_linker.floor_type_id) {
+            if(helper.notFalse(event_linker.floor_type_id)) {
 
                 if(debug_event_ids.indexOf(dirty.events[event_index].id) !== -1) {
-                    console.log("Event linker has a floor_type_id");
+                    console.log("Event linker has a floor_type_id: " + event_linker.floor_type_id);
                 }
 
                 can_place_floor_result = await main.canPlaceFloor({ 'scope': event_scope, 'coord': checking_coord,
@@ -531,8 +540,13 @@ async function spawn(dirty, event_index, data) {
 
             let can_place_monster_result = false;
             if(event_linker.monster_type_id) {
-                can_place_monster_result = await main.canPlaceMonster(event_scope,checking_coord,
-                    { 'monster_type_id': event_linker.monster_type_id });
+
+                let place_monster_data = { 'monster_type_id': event_linker.monster_type_id };
+                if(event_linker.floor_type_id) {
+                    place_monster_data.event_provides_floor = true;
+                }
+
+                can_place_monster_result = await monster.canPlace(dirty, event_scope,checking_coord, place_monster_data);
 
             }
 
@@ -634,7 +648,7 @@ async function spawn(dirty, event_index, data) {
                         return false;
                     }
 
-                    let new_object_index = await main.getObjectIndex(new_object_id);
+                    let new_object_index = await game_object.getIndex(dirty, new_object_id);
 
                     if(new_object_index === -1) {
                         log(chalk.yellow("Was unable to get object index from object id: " + new_object_id + " in event.spawn"));
@@ -747,7 +761,7 @@ async function spawn(dirty, event_index, data) {
                     console.log("Spawning event has a hp effect at this location");
 
                     if(linker_coord.object_id) {
-                        let object_index = await main.getObjectIndex(linker_coord.object_id);
+                        let object_index = await game_object.getIndex(dirty, linker_coord.object_id);
 
                         // We found the object here and it's not from our event
                         if(object_index !== -1 && dirty.objects[object_index].spawned_event_id !== spawned_event_id) {
@@ -849,7 +863,7 @@ async function tickSpawning(dirty) {
             if(dirty.planets[i]) {
 
                 if(dirty.planets[i].planet_type_id === debug_planet_type_id) {
-                    log(chalk.cyan("Spawning events for planet id: " + dirty.planet[i].id + " planet_type_id: " + dirty.planets[i].planet_type_id));
+                    log(chalk.cyan("Spawning events for planet id: " + dirty.planets[i].id + " planet_type_id: " + dirty.planets[i].planet_type_id));
                 }
 
                 // rarity roll for every planet
@@ -936,6 +950,7 @@ async function tickSpawning(dirty) {
 
 module.exports = {
 
+    deleteSpawnedEvent,
     spawn,
     tickSpawnedEvents,
     tickSpawning

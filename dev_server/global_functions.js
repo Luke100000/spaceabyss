@@ -1,205 +1,6 @@
+// TODO THIS IS A STUPID WAY OF DOING THINGS!!! REMOVE EVERYTHING FROM HERE
+
 // Functions in here use a variety of depedancies that conflict in the order they are loaded
-
-// For now just make sure the player can't eat multiple of the same thing at once
-// TODO maybe let the tick count of each object type stack (just in tick count, so longer ) up to x5 of it's normal tick count
-// data:    inventory_item_id   |   npc_index
-async function eat(socket, dirty, database_queue, data) {
-
-    try {
-
-        if(socket !== false && !socket.player_id) {
-            console.log("Invalid player data sent in");
-            return false;
-        }
-
-        let npc_index = -1;
-        if(typeof data.npc_index !== 'undefined') {
-            npc_index = data.npc_index;
-        }
-
-
-
-
-        let inventory_item_id = parseInt(data.inventory_item_id);
-        let inventory_item_index = dirty.inventory_items.findIndex(function(obj) {
-            return obj && obj.id === inventory_item_id; });
-        let inventory_item_object_type_index = dirty.object_types.findIndex(function(obj) {
-            return obj && obj.id === dirty.inventory_items[inventory_item_index].object_type_id; });
-
-
-        let player_body_index = -1;
-        let player_body_object_type_index = -1;
-
-        if(socket) {
-            player_body_index = await getObjectIndex(dirty.players[socket.player_index].body_id);
-            player_body_object_type_index = dirty.object_types.findIndex(function(obj) {
-                return obj && obj.id === dirty.objects[player_body_index].object_type_id; });
-        }
-
-
-        let race_eating_linker_index = -1;
-        if(socket) {
-            race_eating_linker_index = dirty.race_eating_linkers.findIndex(function(obj) { return obj &&
-                obj.race_id === dirty.object_types[player_body_object_type_index].race_id &&
-                obj.object_type_id ===  dirty.object_types[inventory_item_object_type_index].id;
-            });
-        } else {
-            race_eating_linker_index = dirty.race_eating_linkers.findIndex(function(obj) { return obj &&
-                obj.race_id === 13 &&
-                obj.object_type_id ===  dirty.object_types[inventory_item_object_type_index].id;
-            });
-        }
-
-        if(race_eating_linker_index === -1) {
-            console.log("Didn't find a race eating linker");
-            return false;
-        }
-
-        // make sure this type of thing isn't already being eaten
-        let existing_eating_index = -1;
-        if(socket) {
-            existing_eating_index = dirty.eating_linkers.findIndex(function(obj) {
-                return obj && obj.body_id === dirty.objects[player_body_index].id
-                    && obj.eating_object_type_id === dirty.object_types[inventory_item_object_type_index].id; });
-        } else {
-            existing_eating_index = dirty.eating_linkers.findIndex(function(obj) {
-                return obj && obj.npc_id === dirty.npcs[npc_index].id
-                    && obj.eating_object_type_id === dirty.object_types[inventory_item_object_type_index].id; });
-        }
-
-
-        if(existing_eating_index !== -1) {
-
-            if(socket) {
-                socket.emit('chat', { 'message': 'You can only eat one of something at a time', 'scope': 'system' });
-            }
-
-            return false;
-        }
-
-        // return false if we already have an entry in the database queue
-        let database_queue_index = -1;
-
-        if(socket) {
-            database_queue_index = database_queue.findIndex(function(obj) { return obj &&
-                obj.player_id === socket.player_id && obj.eating_object_type_id === dirty.object_types[inventory_item_object_type_index].id });
-        } else {
-            database_queue_index = database_queue.findIndex(function(obj) { return obj &&
-                obj.npc_id === dirty.npcs[npc_index].id && obj.eating_object_type_id === dirty.object_types[inventory_item_object_type_index].id });
-        }
-
-
-        if(database_queue_index !== -1) {
-            console.log("MySQL is slow. Eating");
-            if(socket) {
-                socket.emit('chat', { 'message': 'You can only eat one of something at a time', 'scope': 'system' });
-            }
-
-            return false;
-        }
-
-        let remove_inventory_data = { 'inventory_item_id': dirty.inventory_items[inventory_item_index].id, 'amount': 1};
-        inventory.removeFromInventory(socket, dirty, remove_inventory_data);
-
-
-
-        // add an entry to the database queue
-        if(socket) {
-            database_queue_index = database_queue.push({'player_id': socket.player_id, 'eating_object_type_id': dirty.object_types[inventory_item_object_type_index].id}) - 1;
-        } else {
-            database_queue_index = database_queue.push({'npc_id': dirty.npcs[npc_index].id, 'eating_object_type_id': dirty.object_types[inventory_item_object_type_index].id}) - 1;
-        }
-
-        // Lets insert this guy!
-        let sql = "";
-        let inserts = [];
-
-        if(socket) {
-            sql = "INSERT INTO eating_linkers(player_id, body_id, eating_object_type_id, ticks_completed)VALUES(?, ?, ?, 0)";
-            inserts = [socket.player_id, dirty.objects[player_body_index].id, dirty.object_types[inventory_item_object_type_index].id];
-        } else {
-            sql = "INSERT INTO eating_linkers(npc_id, eating_object_type_id, ticks_completed)VALUES(?, ?, 0)"
-            inserts = [dirty.npcs[npc_index].id, dirty.object_types[inventory_item_object_type_index].id]
-        }
-
-        let [result] = await (pool.query(sql, inserts));
-        let insert_id = result.insertId;
-        //console.log("Got insert id as: " + result.insertId);
-
-        eating_linker_index = await getEatingLinkerIndex({ 'id': insert_id});
-
-        //console.log("New eating linker eating_object_type_id: " + dirty.eating_linkers[eating_linker_index].eating_object_type_id);
-
-        // and remove it from the database queue
-        //database_queue_index = database_queue.findIndex(function(obj) { return obj &&
-        //    obj.player_id === socket.player_id && obj.eating_object_type_id === dirty.object_types[inventory_item_object_type_index].id });
-
-        if(database_queue_index !== -1) {
-            delete database_queue[database_queue_index];
-        }
-
-        if(eating_linker_index !== -1 && socket) {
-            socket.emit('eating_linker_info', { 'eating_linker': dirty.eating_linkers[eating_linker_index]});
-        }
-
-        // see if the player or npc gets addicted
-        // TODO support for npcs and addiction
-        if(socket && dirty.race_eating_linkers[race_eating_linker_index].addiction_chance) {
-            let rand_result = helper.getRandomIntInclusive(1,100);
-
-            if(rand_result <= dirty.race_eating_linkers[race_eating_linker_index].addiction_chance) {
-                // PLAYER IS ADDICTED
-                log(chalk.cyan("ADDICTION HAS HAPPENED!"));
-                // see if there's an existing addiction linker
-                let addiction_linker_index = dirty.addiction_linkers.findIndex(function(obj) { return obj &&
-                    obj.addicted_body_id === dirty.objects[player_body_index].id &&
-                    obj.addicted_to_object_type_id === dirty.object_types[inventory_item_object_type_index].id; })
-
-                // Add it
-                if(addiction_linker_index === -1) {
-                    // we can create the faction
-                    let sql = "INSERT INTO addiction_linkers(addicted_to_object_type_id, addicted_body_id, addiction_level) VALUES(?,?,?)";
-                    let inserts = [dirty.object_types[inventory_item_object_type_index].id, dirty.objects[player_body_index].id, 1];
-
-                    let [result] = await (pool.query(sql, inserts));
-
-                    let new_id = result.insertId;
-
-                    console.log("Inserted new addiction linker id: " + new_id);
-
-                    let [rows, fields] = await (pool.query("SELECT * FROM addiction_linkers WHERE id = ?", [new_id]));
-                    if(rows[0]) {
-
-                        let new_addiction_linker_index = dirty.addiction_linkers.push(rows[0]) - 1;
-
-                        socket.emit('addiction_linker_info', { 'addiction_linker': dirty.addiction_linkers[new_addiction_linker_index] });
-
-                    }
-
-                }
-                // Increase it
-                else {
-                    console.log("Increasing addiction level");
-                    dirty.addiction_linkers[addiction_linker_index].addiction_level++;
-                    dirty.addiction_linkers[addiction_linker_index].has_change = true;
-                }
-
-                // let the player know they are addicted
-                socket.emit('addiction_linker_info', { 'addiction_linker': dirty.addiction_linkers[addiction_linker_index] });
-            }
-        }
-
-
-
-    } catch(error) {
-        log(chalk.red("Error in global_functions.eat: " + error));
-        console.error(error);
-    }
-
-
-}
-module.exports.eat = eat;
-
 
 
 //   (object_id   OR   object_index)   |   coord_index   |   planet_coord_index   |   ship_coord_index   |   reason (optional)
@@ -227,7 +28,7 @@ async function placeObject(socket, dirty, data) {
         if(typeof data.object_index !== 'undefined') {
             object_index = data.object_index;
         } else if(data.object_id) {
-            object_index = await getObjectIndex(data.object_id);
+            object_index = await game_object.getIndex(dirty, data.object_id);
         }
 
         if(object_index === -1) {
@@ -355,7 +156,7 @@ async function placeObject(socket, dirty, data) {
                 }
 
                 let new_object_id = await world.insertObjectType(socket, dirty, inserting_object_type_data);
-                let new_object_index = await getObjectIndex(new_object_id);
+                let new_object_index = await game_object.getIndex(dirty, new_object_id);
                 await updateCoordGeneric(socket, { 'planet_coord_index': below_coord_index, 'object_index': new_object_index });
             }
 
@@ -441,7 +242,7 @@ async function placeObject(socket, dirty, data) {
             }
 
             let new_object_id = await world.insertObjectType(socket, dirty, inserting_object_type_data);
-            let new_object_index = await getObjectIndex(new_object_id);
+            let new_object_index = await game_object.getIndex(dirty, new_object_id);
             await updateCoordGeneric(socket, { 'planet_coord_index': above_coord_index, 'object_index': new_object_index });
 
 

@@ -6,6 +6,7 @@ const { Worker, isMainThread, parentPort } = require('worker_threads');
 const chalk = require('chalk');
 const log = console.log;
 
+const game = require('./game.js');
 const game_object = require('./game_object.js');
 const helper = require('./helper.js');
 const inventory = require('./inventory.js');
@@ -80,7 +81,7 @@ const world = require('./world.js');
                                     let insert_object_type_data = { 'object_type_id': 262,
                                         'npc_id': dirty.npcs[npc_index].id };
                                     let new_object_id = await world.insertObjectType(false, dirty, insert_object_type_data);
-                                    let new_object_index = await main.getObjectIndex(new_object_id);
+                                    let new_object_index = await game_object.getIndex(dirty, new_object_id);
 
                                     await main.placeObject(false, dirty, { 'object_index': new_object_index,
                                         'planet_coord_index': planet_coord_index });
@@ -379,7 +380,7 @@ const world = require('./world.js');
             let object_type_index = -1;
 
             if(dirty.planet_coords[coord_index].object_id) {
-                object_index = await main.getObjectIndex(dirty.planet_coords[coord_index].object_id);
+                object_index = await game_object.getIndex(dirty, dirty.planet_coords[coord_index].object_id);
                 object_type_index = main.getObjectTypeIndex(dirty.objects[object_index].object_type_id);
             } else if(dirty.planet_coords[coord_index].object_type_id) {
                 object_type_index = main.getObjectTypeIndex(dirty.planet_coords[coord_index].object_type_id);
@@ -467,7 +468,7 @@ const world = require('./world.js');
 
                         if(eating_linker_index !== -1) {
                             log(chalk.green("Npc has something they can eat!"));
-                            main.eat(false, dirty, database_queue, { 'npc_index': npc_index, 'inventory_item_id': dirty.inventory_items[i].id });
+                            game.eat(false, dirty, database_queue, { 'npc_index': npc_index, 'inventory_item_id': dirty.inventory_items[i].id });
 
                             // and we can remove the task
                             dirty.npc_tasks.splice(task_index, 1);
@@ -1121,7 +1122,7 @@ const world = require('./world.js');
 
                 console.log("Creating a ship for npc id: " + dirty.npcs[npc_index].id);
                 let new_ship_id = await world.insertObjectType(false, dirty, { 'object_type_id': 260, 'npc_id': dirty.npcs[npc_index].id });
-                let new_ship_index = await main.getObjectIndex(new_ship_id);
+                let new_ship_index = await game_object.getIndex(dirty, new_ship_id);
                 dirty.npcs[npc_index].ship_id = new_ship_id;
                 dirty.npcs[npc_index].has_change = true;
 
@@ -1322,7 +1323,7 @@ const world = require('./world.js');
 
                                             if (other_coord_index) {
                                                 if (dirty.planet_coords[other_coord_index].object_type_id === 69) {
-                                                    let object_index = await main.getObjectIndex(dirty.planet_coords[other_coord_index].object_id);
+                                                    let object_index = await game_object.getIndex(dirty, dirty.planet_coords[other_coord_index].object_id);
                                                     if (object_index !== -1 && dirty.objects[object_index].has_spawned_object) {
                                                         harvesting_coord_index = other_coord_index;
                                                     }
@@ -1355,7 +1356,7 @@ const world = require('./world.js');
                                     let closest_distance = 100;
 
                                     for (let coord of algae_pad_coords) {
-                                        let coord_object = await main.getObjectIndex(coord.object_id);
+                                        let coord_object = await game_object.getIndex(dirty, coord.object_id);
 
                                         // It's a candidate
                                         if (dirty.objects[coord_object].has_spawned_object) {

@@ -72,7 +72,7 @@ include('config.php');
     <link href="//space.alphacoders.com/bulma-0.7.2/css/bulma.min.css" rel="stylesheet" media="screen">
     <script src='//space.alphacoders.com/spectrum.js'></script>
     <link rel='stylesheet' href='//space.alphacoders.com/spectrum.css' />
-    <script src="https://kit.fontawesome.com/9d83e70dac.js"></script>
+    <link href="//space.alphacoders.com/fontawesome-pro-5.13.1-web/css/all.css" rel="stylesheet">
     <style type="text/css">
 
 
@@ -2590,15 +2590,21 @@ include('config.php');
                     }
 
 
+                    // Higher numbers slow us down, smaller numbers speed us up.
+                    let player_move_speed_division = 68;
+
                     // E.g. Default speed is 500 ms. 1/2 a second.
                     // tile_width / 1000ms / move_delay * floor_modifier
                     // OLD E.g. 1000 / 500 * 1 = 2 (default) or 1000/500 * .5 = 1 (water)
                     //let player_move_speed = 64 * ( 1000 / players[i].current_move_delay * floor_modifier) / 60;
                     // Trying /64 instead of /60 to maybe get a few less instances of the player moving too fast.
-                    let player_move_speed = 64 * ( 1000 / players[i].current_move_delay * floor_modifier) / 64;
-
+                    //let player_move_speed = 64 * ( 1000 / players[i].current_move_delay * floor_modifier) / 60;
+                    //let player_move_speed = 64 * ( 1000 / players[i].current_move_delay * floor_modifier) / 64;
+                    let player_move_speed = 64 * ( 1000 / players[i].current_move_delay * floor_modifier) / player_move_speed_division;
+                    
+                    // Commented this out while I was fixing some screen jumping. This didn't seem to be the cause at all.
                     // lets round it now
-                    player_move_speed = +(player_move_speed.toFixed(2));
+                    //player_move_speed = +(player_move_speed.toFixed(2));
 
                 
                     //console.log("Player move speed: " + player_move_speed);
@@ -2610,6 +2616,11 @@ include('config.php');
                         //player_move_speed = 2;
                     }
 
+
+                    // I like the idea of the stuff below - in the end I had a hard time with the complexity, and adjusting it to things like
+                    //  player_move_speed_division . Might need to bring it back at some point - I know it was due to if a client was lagging or something
+
+                    /*
                     // Maybe a better way of doing it is going to be to see how many pixels we have left, and how
                     // many we should have left
                     let move_time_left = players[i].move_start_time + (players[i].current_move_delay / floor_modifier) - our_time;
@@ -2622,7 +2633,7 @@ include('config.php');
                         players[i].sprite.x = players[i].destination_x;
                         players[i].sprite.y = players[i].destination_y;
                     } else {
-                        let ideal_pixels_left = (Math.floor(move_time_left) / 1000) * 60 * player_move_speed;
+                        let ideal_pixels_left = (Math.floor(move_time_left) / 1000) * player_move_speed_division * player_move_speed;
                         let actual_pixels_left = 0;
                         if(players[i].sprite.x !== players[i].destination_x) {
                             actual_pixels_left = Math.abs(players[i].sprite.x - players[i].destination_x);
@@ -2635,6 +2646,7 @@ include('config.php');
                         }
                         
                     }
+                    */
 
                     //
                     /*

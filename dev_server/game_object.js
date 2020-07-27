@@ -58,7 +58,7 @@ async function calculateDefense(dirty, object_index, damage_types = []) {
                 for(let shield_coord of shield_generator_coords) {
 
                     if(!found_energy_source) {
-                        let coord_object_index = await main.getObjectIndex(shield_coord.object_id);
+                        let coord_object_index = await getIndex(dirty, shield_coord.object_id);
                         if(coord_object_index !== -1 && dirty.objects[coord_object_index].energy > 1 ) {
 
                             console.log("Found energy source for shield defense");
@@ -248,7 +248,7 @@ async function canPlace(dirty, scope, coord, data) {
                 }
 
                 // If the coord we are checking only has an object type id (no object), return false
-                if(checking_coord.object_type_id && main.isFalse(checking_coord.object_id)) {
+                if(checking_coord.object_type_id && helper.isFalse(checking_coord.object_id)) {
                     if(dirty.object_types[object_type_index].id === debug_object_type_id || data.show_output) {
                         log(chalk.yellow("Coord has object id or belongs to object id and it doesn't match the object we passed in"));
                     }
@@ -449,7 +449,7 @@ exports.damage = damage;
  * @param {Object} data
  * @param {number} data.object_index
  * @param {string=} data.reason
- * @param data.skip_check_spawned_event
+ * @param {Boolean=} data.skip_check_spawned_event
  * @requires main, game
  * @returns {Promise<boolean>}
  */
@@ -559,7 +559,7 @@ async function deleteObject(dirty, data) {
             } else if(dirty.objects[data.object_index].ship_coord_id) {
                 let ship_coord_index = await main.getShipCoordIndex({ 'ship_coord_id': dirty.objects[data.object_index].ship_coord_id });
                 if(ship_coord_index !== -1) {
-                    let ship_index = await main.getObjectIndex(dirty.ship_coords[ship_coord_index].ship_id);
+                    let ship_index = await getIndex(dirty, dirty.ship_coords[ship_coord_index].ship_id);
                     if(ship_index !== -1) {
                         dirty.objects[ship_index].ai_id = false;
                         dirty.objects[ship_index].has_change = true;
@@ -596,7 +596,7 @@ async function deleteObject(dirty, data) {
 
             for(let equipment_linker of dirty.equipment_linkers) {
                 if(equipment_linker && equipment_linker.body_id === dirty.objects[data.object_index].id) {
-                    let equipped_object_index = await main.getObjectIndex(equipment_linker.object_id);
+                    let equipped_object_index = await getIndex(dirty, equipment_linker.object_id);
 
                     await deleteObject(dirty, { 'object_index': equipped_object_index });
                 }
@@ -636,7 +636,7 @@ async function deleteObject(dirty, data) {
 
             let ship_coord_index = await main.getShipCoordIndex({ 'ship_coord_id': dirty.objects[data.object_index].ship_coord_id});
             if(ship_coord_index !== -1) {
-                let ship_index = await main.getObjectIndex(dirty.ship_coords[ship_coord_index].ship_id);
+                let ship_index = await getIndex(dirty, dirty.ship_coords[ship_coord_index].ship_id);
                 if(ship_index !== -1) {
                     await world.attachShipEngines(dirty, ship_index);
                     await sendInfo(socket, false, dirty, ship_index);
@@ -744,6 +744,146 @@ async function deleteObject(dirty, data) {
 }
 
 exports.deleteObject = deleteObject;
+
+
+async function getIndex(dirty, object_id) {
+    try {
+
+        if(typeof object_id === "undefined" || object_id === null) {
+            console.log("Received invalid request. In game_object.getIndex");
+            return -1;
+        }
+
+        //console.log("In getObjectIndex");
+
+        object_id = parseInt(object_id);
+
+        if(isNaN(object_id)) {
+            log(chalk.yellow("NaN object id passed into game_object.getIndex"));
+            console.trace("TRACED!");
+            return -1;
+        }
+
+        let object_index = dirty.objects.findIndex(function(obj) { return obj && obj.id === object_id; });
+
+        if(object_index === -1) {
+            let [rows, fields] = await (pool.query("SELECT * FROM objects WHERE id = ?", [object_id]));
+
+            if(rows[0]) {
+
+                let object = rows[0];
+
+                // quickly make sure we haven't already added it
+                let memory_index = dirty.objects.findIndex(function(obj) { return obj && obj.id === object_id; });
+                if(memory_index !== -1) {
+                    //log(chalk.yellow("Already added the object"));
+                    return memory_index;
+                }
+
+                object.has_change = false;
+                //log(chalk.cyan("Adding object id: " + object.id + " to dirty"));
+                object_index = dirty.objects.push(object) - 1;
+                //console.log("New object index: " + object_index);
+
+                dirty.objects[object_index].id = parseInt(dirty.objects[object_index].id);
+
+                //console.log("Object id: " + dirty.objects[object_index].id);
+
+                if(object.has_inventory) {
+                    //log(chalk.cyan("GETTING INVENTORY FOR object id: " + dirty.objects[object_index].id));
+                    await main.getObjectInventory(dirty.objects[object_index].id);
+                }
+
+                let object_type_index = main.getObjectTypeIndex(dirty.objects[object_index].object_type_id);
+
+                if(object_type_index === -1) {
+                    console.log("Did not find object type for the object.... " + dirty.objects[object_index].object_type_id);
+                } else {
+
+                    //console.log("Object type id: " + dirty.object_types[object_type_index].id + " is_ship: " + dirty.object_types[object_type_index].is_ship);
+                    if(dirty.object_types[object_type_index].is_ship) {
+
+
+                        //log(chalk.cyan("Loading ship coords for object id: " + object.id));
+
+                        await main.getShipCoords(object.id);
+                        await world.attachShipEngines(dirty, object_index);
+
+                    }
+
+                    // Might have rules
+                    if(dirty.object_types[object_type_index].is_dockable || dirty.object_types[object_type_index].id === 185) {
+                        //log(chalk.cyan("Getting rules for object id: " + object.id));
+                        await main.getRules(object.id);
+                    }
+                }
+
+            } else {
+                log(chalk.yellow("Did not find object with id: " + object_id + " in the database"));
+
+
+                // if a planet coord still has this object id, lets remove that as well
+                let planet_coord_index = dirty.planet_coords.findIndex(function (obj) { return obj && obj.object_id === object_id; });
+                if(planet_coord_index !== -1) {
+                    console.log("removing from planet coord that still has it");
+                    await main.updateCoordGeneric(socket, { 'planet_coord_index': planet_coord_index, 'object_id': false });
+                }
+
+                // if a ship coord still has this object id, lets remove that as well
+                let ship_coord_index = dirty.ship_coords.findIndex(function(obj) { return obj && obj.object_id === object_id; });
+                if(ship_coord_index !== -1) {
+                    await main.updateCoordGeneric(socket, { 'ship_coord_index': ship_coord_index, 'object_id': false });
+                }
+
+                let coord_index = dirty.coords.findIndex(function(obj) { return obj && obj.object_id === object_id; });
+                if(coord_index !== -1) {
+                    await main.updateCoordGeneric(socket, { 'coord_index': coord_index, 'object_id': false });
+                }
+
+                // If there's an equipment linker with this object, we remove it
+                let equipment_linker_index = dirty.equipment_linkers.findIndex(function(obj) { return obj && obj.object_id === object_id; });
+                if(equipment_linker_index !== -1) {
+                    console.log("Found an equipment linker with this object");
+
+
+
+                    await (pool.query("DELETE FROM equipment_linkers WHERE id = ?", [dirty.equipment_linkers[equipment_linker_index].id]));
+
+                    delete dirty.equipment_linkers[equipment_linker_index];
+                }
+
+                // If there's an inventory item with this object, we remvoe it
+                let inventory_item_index = dirty.inventory_items.findIndex(function(obj) { return obj && obj.object_id === object_id; });
+                if(inventory_item_index !== -1) {
+                    console.log("Found an inventory item with this object");
+                    await (pool.query("DELETE FROM inventory_items WHERE id = ?", [dirty.inventory_items[inventory_item_index].id]));
+
+                    delete dirty.inventory_items[inventory_item_index];
+                }
+
+                return object_index;
+            }
+
+        }
+
+        // This seems like a good place to see if something about the object is.... wrong!!!
+        // TODO for something like this to work we would need to check inventories too. Good/bad idea?
+        /*
+        if(!dirty.objects[object_index].ship_coord_id && !dirty.objects[object_index].planet_coord_id && !dirty.objects[object_index].coord_id) {
+            log(chalk.red("Potentially broken object: " + dirty.objects[object_index].id));
+        }
+        */
+
+        //console.log("Returning object index " + object_index);
+        return object_index;
+    } catch(error) {
+        log(chalk.red("Error in game_object.getIndex: " + error + " object id passed in: " + object_id));
+        console.error(error);
+    }
+
+}
+
+exports.getIndex = getIndex;
 
 
 
@@ -1237,6 +1377,7 @@ module.exports = {
     damage,
     deleteObject,
     getCoordAndRoom,
+    getIndex,
     removeFromCoord,
     sendInfo,
     spawn,

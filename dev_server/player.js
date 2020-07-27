@@ -1,3 +1,4 @@
+//@ts-check
 var io_handler = require('./io.js');
 var io = io_handler.io;
 var database = require('./database.js');
@@ -5,13 +6,16 @@ var pool = database.pool;
 const chalk = require('chalk');
 const log = console.log;
 
+const game = require('./game.js');
 const game_object = require('./game_object.js');
 const helper = require('./helper.js');
+const inventory = require('./inventory.js');
 const main = require('./space_abyss' + process.env.FILE_SUFFIX + '.js');
+const movement = require('./movement.js');
 const world = require('./world.js');
 
 
-async function calculateDefense(dirty, player_index, damage_type = false) {
+async function calculateDefense(dirty, player_index, damage_type = '') {
 
     try {
         // By default all players have one defense
@@ -20,21 +24,20 @@ async function calculateDefense(dirty, player_index, damage_type = false) {
         // Base level + body/ship type
         let defense_level = await world.getPlayerLevel(dirty, { 'player_index': player_index, 'skill_type': 'defense' });
 
-        let player_body_index = await main.getObjectIndex(dirty.players[player_index].body_id);
+        let player_body_index = await game_object.getIndex(dirty, dirty.players[player_index].body_id);
         let player_body_type_index = main.getObjectTypeIndex(dirty.objects[player_body_index].object_type_id);
 
 
         // Start with defense as defense level
         player_defense = defense_level;
 
-        if(damage_type !== false) {
 
-            if(damage_type === 'electric' && helper.notFalse(dirty.object_types[player_body_type_index].electric_defense_modifier) ) {
-                
-                player_defense += dirty.object_types[player_body_type_index].electric_defense_modifier;
-            }
-
+        if(damage_type === 'electric' && helper.notFalse(dirty.object_types[player_body_type_index].electric_defense_modifier) ) {
+            
+            player_defense += dirty.object_types[player_body_type_index].electric_defense_modifier;
         }
+
+
 
 
 
@@ -76,7 +79,7 @@ async function calculateDefense(dirty, player_index, damage_type = false) {
 
         return player_defense;
     } catch(error) {
-        log(chalk.red("Error in player.caclculateDefense: " + error));
+        log(chalk.red("Error in player.calculateDefense: " + error));
         console.error(error);
     }
 
@@ -112,7 +115,7 @@ async function calculateMovementModifier(socket, dirty, scope, coord_index) {
             }
 
             //console.time("land/fluid_check");
-            let player_body_index = await main.getObjectIndex(dirty.players[socket.player_index].body_id);
+            let player_body_index = await game_object.getIndex(dirty, dirty.players[socket.player_index].body_id);
             if(player_body_index !== -1) {
                 let player_body_type_index = main.getObjectTypeIndex(dirty.objects[player_body_index].object_type_id);
                 if(player_body_type_index !== -1) {
@@ -184,7 +187,7 @@ async function claimShip(socket, dirty, ship_id) {
             log(chalk.yellow("Socket doesn't have a player yet"));
             return false;
         }
-        let ship_index = await main.getObjectIndex(parseInt(ship_id));
+        let ship_index = await game_object.getIndex(dirty, parseInt(ship_id));
 
         if(ship_index === -1) {
             log(chalk.yellow("Couldn't find ship"));
@@ -230,7 +233,7 @@ async function claimShip(socket, dirty, ship_id) {
 
                 // Switch the airlock over to the claiming player too
                 if(dirty.ship_coords[i].object_type_id === 266) {
-                    let changing_object_index = await main.getObjectIndex(dirty.ship_coords[i].object_id);
+                    let changing_object_index = await game_object.getIndex(dirty, dirty.ship_coords[i].object_id);
                     if(changing_object_index !== -1) {
                         dirty.objects[changing_object_index].player_id = dirty.players[socket.player_index].id;
                         dirty.objects[changing_object_index].has_change = true;
@@ -249,6 +252,296 @@ async function claimShip(socket, dirty, ship_id) {
 
 exports.claimShip = claimShip;
 
+
+/**
+ * 
+ * @param {Object} dirty 
+ * @param {Object} data 
+ * @param {number} data.player_index
+ * @param {number} data.damage_amount
+ * @param {Object=} data.battle_linker
+ * @param {Array} data.damage_types
+ * @param {number} data.calculating_range
+ * @param {String=} data.flavor_text
+ */
+async function damage(dirty, data) {
+    try {
+
+
+
+        let new_player_hp = dirty.players[data.player_index].current_hp - data.damage_amount;
+
+
+        if(isNaN(new_player_hp)) {
+            log(chalk.red("Something damaged a player and set their HP to NaN!!!!"));
+            console.trace("INVESTIGATE!");
+
+            if(isNan(dirty.players[data.player_index].current_hp)) {
+                log(chalk.red("Player has NaN HP! Gave them 100 HP!"));
+                dirty.players[data.player_index].current_hp = 100;
+                dirty.players[data.player_index].has_change = true;
+            }
+            return false;
+        }
+
+        if(!data.flavor_text) {
+            data.flavor_text = false;
+        } else {
+            console.log("In player.damage with flavor text: " + data.flavor_text);
+        }
+
+        if(!data.damage_types) {
+            data.damage_types = ['normal'];
+        }
+
+        let player_socket = false;
+
+        if(data.battle_linker && data.battle_linker.being_attacked_socket_id) {
+            player_socket = io.sockets.connected[data.battle_linker.being_attacked_socket_id];
+        } else {
+            player_socket = await world.getPlayerSocket(dirty, data.player_index);
+        }
+
+        if(new_player_hp <= 0) {
+            console.log("Calling player.kill");
+            player.kill(dirty, data.player_index);
+        } else {
+            dirty.players[data.player_index].current_hp = new_player_hp;
+            dirty.players[data.player_index].has_change = true;
+
+            await world.increasePlayerSkill(player_socket, dirty, data.player_index, ['defending']);
+
+            if(data.battle_linker) {
+                if(player_socket) {
+                    io.sockets.connected[data.battle_linker.being_attacked_socket_id].emit('damaged_data', {
+                        'player_id': dirty.players[data.player_index].id, 'damage_amount': data.damage_amount, 'was_damaged_type': 'hp',
+                        'damage_source_type': data.battle_linker.attacking_type, 'damage_source_id': data.battle_linker.attacking_id,
+                        'damage_types': data.damage_types,
+                        'calculating_range': data.calculating_range, 'flavor_text': data.flavor_text
+                    });
+                }
+
+            } else {
+
+
+                if(player_socket) {
+                    player_socket.emit('damaged_data', {
+                        'player_id': dirty.players[data.player_index].id, 'damage_amount': data.damage_amount,
+                        'damage_types': data.damage_types, 'was_damaged_type': 'hp',
+                    })
+                }
+
+
+
+
+            }
+
+
+        }
+
+        if(data.damage_types.length !== 0) {
+            for(let i = 0; i < data.damage_types.length; i++) {
+
+                if(data.damage_types[i] === 'poison') {
+                    console.log("Player was attacked by a poison attack!");
+                    let player_body_index = await game_object.getIndex(dirty, dirty.players[data.player_index].body_id);
+                    let object_type_index = main.getObjectTypeIndex(365);
+                    game.addAddictionLinker(dirty, player_socket, object_type_index, { 'player_index': data.player_index, 'player_body_index': player_body_index });
+                }
+            }
+        }
+    } catch(error) {
+        log(chalk.red("Error in player.damage: " + error));
+        console.error(error);
+    }
+
+}
+
+exports.damage = damage;
+
+
+async function kill(dirty, player_index) {
+
+    try {
+
+        // return false if we already have an entry in the database queue
+        let database_queue_index = database_queue.findIndex(function(obj) { return obj &&
+            obj.player_id === socket.player_id && obj.action === 'kill' });;
+
+        if(database_queue_index !== -1) {
+            console.log("Already killing player");
+            return false;
+        }
+
+        // Immediately put in a memory block from multi killing the player
+        database_queue_index = database_queue.push({'player_id': socket.player_id, 'action': 'kill' }) - 1;
+
+        log(chalk.green("\nPlayer id: " + dirty.players[player_index].id + " has died"));
+
+
+        // First thing we do is remove all battle linkers
+        world.removeBattleLinkers(dirty, { 'player_id': dirty.players[player_index].id });
+
+        // Get the socket the player is connected with
+        let player_socket = world.getPlayerSocket(dirty, player_index);
+        if(player_socket === false) {
+            console.log("Got player socket as FALSE");
+        } else {
+            console.log("Got player socket id as: " + player_socket.id);
+        }
+
+
+        // We're going to spawn a dead body whether we can place it or not
+        let insert_object_type_data = { 'object_type_id': 151 };
+        let new_object_id = await world.insertObjectType(false, dirty, insert_object_type_data);
+        let new_object_index = await game_object.getIndex(dirty, new_object_id);
+
+        console.log("Created the dead body");
+
+        // Players can die while on a planet, in their ship, or if their ship got destroyed
+
+        if(dirty.players[player_index].planet_coord_id) {
+            let coord_index = await main.getPlanetCoordIndex({ 'planet_coord_id': dirty.players[player_index].planet_coord_id });
+
+            // player is off this planet coord
+            dirty.planet_coords[coord_index].player_id = false;
+            dirty.planet_coords[coord_index].has_change = true;
+
+
+            let can_place_result = await game_object.canPlace(dirty, 'planet', dirty.planet_coords[coord_index],
+                { 'object_type_id': 151 });
+
+            // place the dead body
+            if(can_place_result) {
+                
+
+                await main.placeObject(false, dirty, { 'object_index': new_object_index,
+                    'planet_coord_index': coord_index });
+
+                /*
+                await world.addObjectToPlanetCoord(dirty, new_object_index, coord_index);
+                await world.sendPlanetCoordInfo(false, "planet_" + dirty.planet_coords[coord_index].planet_id,
+                    dirty, { 'planet_coord_index': coord_index});
+                */
+                console.log("Added it to planet coord, and sent planet coord info");
+
+            } else {
+
+                dirty.waiting_drops.push({'object_index': new_object_index, 'planet_coord_index': coord_index });
+                log(chalk.yellow("Could not place dead body. Pushed to waiting_drops"));
+            }
+
+            
+
+
+
+           
+
+
+
+        }
+        // Ship ID before coord id
+        else if(dirty.players[player_index].ship_coord_id) {
+            let coord_index = await main.getShipCoordIndex({ 'ship_coord_id': dirty.players[player_index].ship_coord_id });
+
+
+
+            // Don't want to overwrite the object that is already on the tile
+            if(!dirty.ship_coords[coord_index].object_id) {
+                await main.updateCoordGeneric(player_socket, { 'ship_coord_index': coord_index, 'player_id': false, 'object_index': new_object_index });
+            } else {
+                dirty.waiting_drops.push({'object_index': new_object_index, 'ship_coord_index': coord_index });
+                log(chalk.yellow("Could not place dead body. Pushed to waiting_drops"));
+            }
+
+
+
+
+            console.log("Added it to ship coord, and sent ship coord info");
+
+        } else if(dirty.players[player_index].coord_id) {
+            /// ?????????????????
+            log(chalk.yellow("Ship should have been damaged, not player. Maybe ship got to 0 HP?"));
+            return false;
+        }
+
+
+        // lets see what the player has on their body, and put it in the dead body
+        let body_index = await game_object.getIndex(dirty, dirty.players[player_index].body_id);
+        console.log("Got body index as: " + body_index + ". Player body id was: " + dirty.players[player_index].body_id);
+
+        // Unequip all the items (this puts basically everything back into the inventory of the player
+
+
+
+        for(let equipment_linker of dirty.equipment_linkers) {
+            if(equipment_linker) {
+                if(equipment_linker.body_id === dirty.objects[body_index].id) {
+                    await unequip(player_socket, dirty, equipment_linker.id);
+                }
+            }
+
+        }
+
+
+        console.log("Unequipped everything from the dead body");
+
+        for(let i = 0; i < dirty.inventory_items.length; i++) {
+            if(dirty.inventory_items[i] && dirty.inventory_items[i].player_id === dirty.players[player_index].id) {
+
+                // remove the inventory item
+                let remove_data = { 'inventory_item_id': dirty.inventory_items[i].id, 'amount': dirty.inventory_items[i].amount };
+                let add_data = { 'adding_to_type': 'object', 'adding_to_id': new_object_id, 'amount': dirty.inventory_items[i].amount };
+                if(dirty.inventory_items[i].object_id) {
+                    add_data.object_id = dirty.inventory_items[i].object_id;
+                }
+
+                if(dirty.inventory_items[i].object_type_id) {
+                    add_data.object_type_id = dirty.inventory_items[i].object_type_id;
+                }
+                await inventory.removeFromInventory(player_socket, dirty, remove_data);
+
+                await inventory.addToInventory(player_socket, dirty, add_data);
+            }
+        }
+
+
+        console.log("Moved inventory items into dead body");
+
+        // delete the old body
+        console.log("Going to delete the old body. Body index: " + body_index);
+        await game_object.deleteObject(dirty, { 'object_index': body_index });
+
+        console.log("Deleted the old body");
+
+        // give the player a new body
+        // TODO we want to have a cost for body switching for any reason
+        await world.setPlayerBody(dirty, player_index);
+
+        // and put our HP back to max
+        dirty.players[player_index].current_hp = dirty.players[player_index].max_hp;
+        dirty.players[player_index].has_change = true;
+
+
+
+        console.log("DONE WITH THE NEW STUFF");
+
+
+
+        await movement.switchToGalaxy(player_socket, dirty, 'death');
+        player_socket.emit('message_data', { 'message': "Your body was killed", 'scope': 'system' });
+
+        // and clear out the database queue
+        delete database_queue[database_queue_index];
+
+
+    } catch(error) {
+        log(chalk.red("Error in player.kill: " + error));
+        console.error(error);
+    }
+}
+
+exports.kill = kill;
 
 async function sendInfo(socket, room, dirty, player_id) {
 
@@ -347,8 +640,8 @@ exports.sendShips = sendShips;
 
 
             // ship is an object, and we store it as the player's ship_id
-            let old_ship_index = await main.getObjectIndex(dirty.players[player_index].ship_id);
-            let new_ship_index = await main.getObjectIndex(parseInt(data.ship_id));
+            let old_ship_index = await game_object.getIndex(dirty, dirty.players[player_index].ship_id);
+            let new_ship_index = await game_object.getIndex(dirty, parseInt(data.ship_id));
 
             if(!old_ship_index) {
                 log(chalk.yellow("Couldn't find old ship index"));
@@ -547,7 +840,7 @@ exports.sendShips = sendShips;
                     if(dirty.ship_coords[i] && dirty.ship_coords[i].ship_id === dirty.objects[new_ship_index].id) {
 
                         if(dirty.ship_coords[i].object_type_id === 265 || dirty.ship_coords[i].object_type_id === 266) {
-                            let changing_object_index = await main.getObjectIndex(dirty.ship_coords[i].object_id);
+                            let changing_object_index = await game_object.getIndex(dirty, dirty.ship_coords[i].object_id);
                             if(changing_object_index !== -1) {
                                 dirty.objects[changing_object_index].player_id = dirty.players[player_index].id;
                                 dirty.objects[changing_object_index].has_change = true;
@@ -573,11 +866,58 @@ exports.sendShips = sendShips;
     exports.switchShip = switchShip;
 
 
+
+    async function unequip(socket, dirty, equipment_linker_id) {
+
+        try {
+
+            equipment_linker_id = parseInt(equipment_linker_id);
+
+            console.log("Player is unequipping equipment_linker_id: " + equipment_linker_id);
+
+            let equipment_linker_index = dirty.equipment_linkers.findIndex(function(obj) { return obj && obj.id === equipment_linker_id; });
+
+            if(equipment_linker_index === -1) {
+                return false;
+            }
+
+
+            if(dirty.equipment_linkers[equipment_linker_index].object_id) {
+                let adding_to_data = { 'adding_to_type': 'player', 'adding_to_id': socket.player_id,
+                    'object_id': dirty.equipment_linkers[equipment_linker_index].object_id,
+                    'object_type_id': dirty.equipment_linkers[equipment_linker_index].object_type_id, 'amount':1 };
+                await inventory.addToInventory(socket, dirty, adding_to_data);
+            } else {
+                let adding_to_data = { 'adding_to_type': 'player', 'adding_to_id': socket.player_id,
+                    'object_type_id': dirty.equipment_linkers[equipment_linker_index].object_type_id, 'amount': dirty.equipment_linkers[equipment_linker_index].amount };
+                await inventory.addToInventory(socket, dirty, adding_to_data);
+            }
+
+            // emit equipment data
+            socket.emit('equipment_linker_info', { 'remove': true, 'equipment_linker': dirty.equipment_linkers[equipment_linker_index] });
+
+
+            await (pool.query("DELETE FROM equipment_linkers WHERE id = ?", [dirty.equipment_linkers[equipment_linker_index].id]));
+
+            delete dirty.equipment_linkers[equipment_linker_index];
+
+
+        } catch(error) {
+            log(chalk.red("Error in player.unequip: " + error));
+            console.error(error);
+        }
+
+    }
+    exports.unequip = unequip;
+
 module.exports = {
     calculateDefense,
     calculateMovementModifier,
     claimShip,
+    damage,
+    kill,
     sendInfo,
     sendShips,
-    switchShip
+    switchShip,
+    unequip
 }

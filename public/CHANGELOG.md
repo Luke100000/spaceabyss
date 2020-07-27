@@ -1,3 +1,27 @@
+## [0.1.23] - 2020-07-27
+
+
+### Added
+- Things you can eat can now impact your manufacturing abilities
+- Support for events generating new planet coords above level 0
+- An event that spawns a building with special enemies to be defeated (event is not yet active, just waiting on the sprite animations to finish). More of this coming!
+- Ability for events to spawn monsters on a coord that didn't have a floor prior to the event
+- Admin ability to despawn events
+- Players can now assemble the Octopus Body
+- The start of content for Water planets (basic enemy types + objects on level 0 to -2)
+- Monsters can now poison players. Poison stacks.
+
+
+### Fixed
+- Not leveling up until the server restarted
+
+
+### Changed
+- Switching Font Awesome (it's what we're using for icons) from a kit they host, to self hosted.
+- AIs now take 10 Power Cells instead of 10 Batteries to manufacture
+- Lots of sprite updates
+- Lots of code refactoring
+
 ## [0.1.22] - 2020-07-16
 
 

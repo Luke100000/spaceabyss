@@ -12,6 +12,18 @@ function getRandomIntInclusive(min, max) {
     return Math.floor(Math.random() * (max - min + 1)) + min; //The maximum is inclusive and the minimum is inclusive
 }
 
+function isFalse(the_value) {
+
+    if(typeof the_value === "undefined" || the_value === 0 || the_value === "0" ||
+        the_value === false || the_value === null || the_value === "null" || 
+        (the_value.constructor === Object && Object.keys(the_value).length === 0) ) {
+        return true;
+    }
+
+    return false;
+}
+
+
 
 function notFalse(the_value) {
 
@@ -43,6 +55,7 @@ function rarityRoll() {
 module.exports = {
 
     getRandomIntInclusive,
+    isFalse,
     notFalse,
     rarityRoll
 

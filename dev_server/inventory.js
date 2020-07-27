@@ -36,7 +36,7 @@ var io;
             let npc_index = -1;
 
             if(data.adding_to_type === 'object') {
-                owner_object_index = await main.getObjectIndex(data.adding_to_id);
+                owner_object_index = await game_object.getIndex(dirty, data.adding_to_id);
 
                 if(owner_object_index === -1) {
                     log(chalk.yellow("Could not find the object we are putting something into"));
@@ -52,7 +52,7 @@ var io;
                 let sql = "";
                 let inserts;
 
-                let object_index = await main.getObjectIndex(data.object_id);
+                let object_index = await game_object.getIndex(dirty, data.object_id);
                 let object_type_index = main.getObjectTypeIndex(dirty.objects[object_index].object_type_id);
                 // Lets grab it
                 if(!data.object_type_id) {
@@ -306,7 +306,7 @@ var io;
                         } else if(dirty.inventory_items[inventory_item_index].owned_by_object_id) {
 
                             // crap now we need to get the owner of the object. Player or npc
-                            let object_index = await main.getObjectIndex(dirty.inventory_items[inventory_item_index].owned_by_object_id);
+                            let object_index = await game_object.getIndex(dirty, dirty.inventory_items[inventory_item_index].owned_by_object_id);
                             if(object_index !== -1) {
                                 if(dirty.objects[object_index].player_id) {
 
@@ -364,7 +364,7 @@ var io;
                 inventory_item_index = await main.getInventoryItemIndex(parseInt(data.inventory_item_id));
             }
 
-            let storage_object_index = await main.getObjectIndex(storage_object_id);
+            let storage_object_index = await game_object.getIndex(dirty, storage_object_id);
 
 
             if(storage_object_index === -1) {
@@ -535,7 +535,7 @@ var io;
                 // Send to people in the room to remove this inventory item
                 // I'm working on making sure when someone takes from somewhere, that it is updated
                 if(dirty.inventory_items[inventory_item_index].owned_by_object_id) {
-                    let inventory_object_index = await main.getObjectIndex(dirty.inventory_items[inventory_item_index].owned_by_object_id);
+                    let inventory_object_index = await game_object.getIndex(dirty, dirty.inventory_items[inventory_item_index].owned_by_object_id);
                     if(inventory_item_index !== -1) {
                         if(dirty.objects[inventory_object_index].planet_coord_id) {
                             let coord_index = await main.getPlanetCoordIndex({ 'planet_coord_id': dirty.objects[inventory_object_index].planet_coord_id });
@@ -571,7 +571,7 @@ var io;
                 // Send to people in the room to remove this inventory item
                 // I'm working on making sure when someon takes from somewhere, that it is updated
                 if(dirty.inventory_items[inventory_item_index].owned_by_object_id) {
-                    let inventory_object_index = await main.getObjectIndex(dirty.inventory_items[inventory_item_index].owned_by_object_id);
+                    let inventory_object_index = await game_object.getIndex(dirty, dirty.inventory_items[inventory_item_index].owned_by_object_id);
                     if(inventory_item_index !== -1) {
                         if(dirty.objects[inventory_object_index].planet_coord_id) {
                             let coord_index = await main.getPlanetCoordIndex({ 'planet_coord_id': dirty.objects[inventory_object_index].planet_coord_id });
