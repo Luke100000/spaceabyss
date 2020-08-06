@@ -1,3 +1,13 @@
 DOING NOW:
 
-    Play game. See if the whole stabbing gloves thing works well on the Crystal Spiders
+
+    Explore more indie mmos, and marketing paths
+
+    Make those merchant spots do stuff!
+        When spaceporst are built, automatically create two merchant areas and assign them to Cadian
+            Same idea with the apartment structure - auto assign areas
+
+            When a market linker ends, if the area has auto_market , just extend it again instead of deleting it.
+
+
+

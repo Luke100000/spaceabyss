@@ -3037,6 +3037,10 @@ function pointerDownDesktop(pointer, pointerTileX, pointerTileY) {
 
             }
 
+            if(temp_coord.floor_type_id === 44) {
+                $('#coord_data').append("This is a Spaceport Merchant Spot!<br>");
+            }
+
             if (temp_coord.floor_type_id && debug_mode) {
                 let floor_type_index = floor_types.findIndex(function (obj) { return obj && obj.id === temp_coord.floor_type_id; });
                 if (floor_type_index !== -1) {
@@ -3244,6 +3248,16 @@ function printAssemblyList(assembling_object = false, coord = false) {
 
 
         let html_string = "";
+
+
+
+        if(assembling_object.player_id !== client_player_id && assembling_object.object_type_id === 116) {
+
+            html_string += "<div class='message is-danger'><div class='message-body'>This is not your shipyard. If you build a ship in it, it will belong to the player that owns the shipyard</div></div>";
+        }
+
+
+
 
         html_string += "<div class='message is-info'><div class='message-header'>Things You Can Assemble</div>";
 
@@ -5692,6 +5706,7 @@ function checkForClientMove(time, tile_x = false, tile_y = false) {
 
             socket.emit('move_data', { 'movement_direction': movement_direction });
             last_move_sent = time;
+            console.log("Sent move data from checkForClientMove");
         }
         return false;
     }
@@ -5866,17 +5881,16 @@ function checkForClientMove(time, tile_x = false, tile_y = false) {
 var monster_sprites = [];
 monster_sprites.push({ 'key': 'algae-king', 'monster_type_id': 113, 'planet_type_id': 16, 'frame_width': 64, 'frame_height': 64, 'frame_count': 4, 'frame_rate': 8 });
 monster_sprites.push({ 'key': 'bionic-crab', 'monster_type_id': 105, 'planet_type_id': 34, 'frame_width': 64, 'frame_height': 64, 'frame_count': 9, 'frame_rate': 8 });
+monster_sprites.push({ 'key': 'construction-worker', 'monster_type_id': 112, 'planet_type_id': 30, 'frame_width': 64, 'frame_height': 66, 'frame_count': 7, 'frame_rate': 8 });
 monster_sprites.push({ 'key': 'jellyfish', 'monster_type_id': 108, 'planet_type_id': 34, 'frame_width': 64, 'frame_height': 64, 'frame_count': 8, 'frame_rate': 8 });
 monster_sprites.push({ 'key': 'sea-urchin', 'monster_type_id': 106, 'planet_type_id': 34, 'frame_width': 64, 'frame_height': 64, 'frame_count': 12, 'frame_rate': 8 });
 monster_sprites.push({ 'key': 'trae', 'planet_type_id': 29, 'frame_width': 104, 'frame_height': 104, 'frame_count': 10, 'frame_rate': 6 });
 monster_sprites.push({ 'key': 'trae-seedling', 'planet_type_id': 29, 'frame_width': 72, 'frame_height': 72, 'frame_count': 6, 'frame_rate': 8 });
 monster_sprites.push({ 'key': 'trae-sproutling', 'planet_type_id': 29, 'frame_width': 64, 'frame_height': 64, 'frame_count': 5, 'frame_rate': 8 });
+monster_sprites.push({ 'key': 'gang-smasher', 'monster_type_id': 111, 'planet_type_id': 30, 'frame_width': 64, 'frame_height': 68, 'frame_count': 8, 'frame_rate': 8 });
+monster_sprites.push({ 'key': 'gang-gunner', 'monster_type_id': 110, 'planet_type_id': 30, 'frame_width': 64, 'frame_height': 66, 'frame_count': 9, 'frame_rate': 8 });
+monster_sprites.push({ 'key': 'gang-boss', 'monster_type_id': 109, 'planet_type_id': 30, 'frame_width': 64, 'frame_height': 82, 'frame_count': 7, 'frame_rate': 8 });
 monster_sprites.push({ 'key': 'widden', 'monster_type_id': 42, 'ship_type_id': 352, 'frame_width': 64, 'frame_height': 64, 'frame_count': 3, 'frame_rate': 4 });
-monster_sprites.push({ 'key': 'construction-worker', 'monster_type_id': 112, 'planet_type_id': 30, 'frame_width': 64, 'frame_height': 64, 'frame_count': 1, 'frame_rate': 8 });
-monster_sprites.push({ 'key': 'gang-smasher', 'monster_type_id': 111, 'planet_type_id': 30, 'frame_width': 64, 'frame_height': 64, 'frame_count': 1, 'frame_rate': 8 });
-monster_sprites.push({ 'key': 'gang-gunner', 'monster_type_id': 110, 'planet_type_id': 30, 'frame_width': 64, 'frame_height': 64, 'frame_count': 1, 'frame_rate': 8 });
-monster_sprites.push({ 'key': 'gang-boss', 'monster_type_id': 109, 'planet_type_id': 30, 'frame_width': 64, 'frame_height': 78, 'frame_count': 1, 'frame_rate': 8 });
-
 
 // Not sure how to do it more efficiently than just calculate the new and old level for... every skill!
 function checkLevelIncrease(old_player_data, new_player_data) {
@@ -6283,7 +6297,7 @@ function moveNpcs() {
 
 
 // This function can move MORE THAN JUST THE CLIENT PLAYER!
-function movePlayerFlow(player_index, destination_coord_type, destination_coord, source = false) {
+function movePlayerFlow(player_index, destination_coord_type, destination_coord, source = '') {
 
     if (typeof destination_coord === 'undefined') {
         return false;
@@ -6309,11 +6323,13 @@ function movePlayerFlow(player_index, destination_coord_type, destination_coord,
     players[player_index].frames_to_idle = 0;
 
     // Some extra things if we are moving our client player
-    if (client_player_index !== -1 && player_index === client_player_index) {
+    if (client_player_index !== -1 && player_index === client_player_index && source !== 'updatePlayerClient > galaxy') {
 
         //console.log("Sending move data: coord_id: " + destination_coord.id);
+
         socket.emit('move_data', { 'destination_coord_type': destination_coord_type, 'destination_coord_id': destination_coord.id });
         last_move_sent = our_time;
+        //console.log("Sent move data from movePlayerFlow source: " + source);
 
         // Reset the # of pixels
         client_move_pixel_amount = 0;
@@ -6902,7 +6918,7 @@ function movePlayerFlow(player_index, destination_coord_type, destination_coord,
 
 function movePlayerInstant(player_index, x, y) {
 
-    console.log("in movePlayerInstant");
+    //console.log("in movePlayerInstant");
 
     players[player_index].destination_x = false;
     players[player_index].destination_y = false;
@@ -6969,9 +6985,9 @@ function pixelToTileY(pixel_number) {
 }
 
 
-function redrawBars() {
+function redrawBars(source = '') {
 
-    //console.log("Redrawing bars");
+    //console.log("Redrawing bars. source: " + source);
 
     graphics.clear();
     graphics.depth = 3;
@@ -7039,22 +7055,27 @@ function redrawBars() {
     battle_linkers.forEach(function (battle_linker, i) {
         //console.log("Looking to draw box for battle linker attacking_type: " + battle_linker.attacking_type + " being_attacked_type: " + battle_linker.being_attacked_type);
 
+        if(client_player_index === -1) {
+            console.log("Don't have player yet");
+            return false;
+        }
+
+
         // TODO NPCS!!!!!
 
         // YELLOWS BEFORE REDS
 
         // A monster is attacking us
-        if (battle_linker.being_attacked_type === 'player' && battle_linker.being_attacked_id === player_id && battle_linker.attacking_type === 'monster') {
+        if (battle_linker.being_attacked_type === 'player' && battle_linker.being_attacked_id === client_player_id && battle_linker.attacking_type === 'monster') {
 
-            // yellow on us
-            let player_index = players.findIndex(function (obj) { return obj && obj.id === battle_linker.being_attacked_id; });
-            if (player_index !== -1) {
-                let player_info = getPlayerInfo(player_index);
-                if (player_info.coord) {
-                    graphics.lineStyle(1, 0xffff00, 1);
-                    graphics.strokeRect(tileToPixel(player_info.coord.tile_x), tileToPixel(player_info.coord.tile_y), 64, 64);
-                }
+
+            if (client_player_info.coord) {
+                graphics.lineStyle(1, 0xffff00, 1);
+                graphics.strokeRect(tileToPixel(client_player_info.coord.tile_x), tileToPixel(client_player_info.coord.tile_y), 64, 64);
+            } else {
+                console.log("Don't have player's coord yet");
             }
+            
 
             // yellow on the monster
             let monster_index = monsters.findIndex(function (obj) { return obj && obj.id === battle_linker.attacking_id; });
@@ -7063,7 +7084,11 @@ function redrawBars() {
                 if (monster_info.coord) {
                     graphics.lineStyle(1, 0xffff00, 1);
                     graphics.strokeRect(tileToPixel(monster_info.coord.tile_x), tileToPixel(monster_info.coord.tile_y), 64, 64);
+                } else {
+                    console.log("Don't have monster's coord yet");
                 }
+            } else {
+                console.log("Don't have monster yet");
             }
         }
 
@@ -7710,18 +7735,18 @@ function removeNpc(npc_id) {
     }
     */
 
-    // lets remove any battle linkers with this monster id in them
+    // lets remove any battle linkers with this npc id in them
     battle_linkers.forEach(function (battle_linker, i) {
         if (battle_linker.attacking_type === 'npc' && battle_linker.attacking_id === npc_id) {
 
             delete battle_linkers[i];
-            //console.log("Removed battle linker");
+            console.log("Removed battle linker - attacking np");
         }
 
         if (battle_linker.being_attacked_type === 'npc' && battle_linker.being_attacked_id === npc_id) {
 
             delete battle_linkers[i];
-            //console.log("Removed battle linker");
+            console.log("Removed battle linker - npc being attacked");
         }
     });
 
@@ -7735,6 +7760,7 @@ function removeNpc(npc_id) {
 function redrawMap() {
 
     //console.log("In redrawMap");
+
 
     if (!client_player_id) {
         return false;
@@ -7949,7 +7975,7 @@ function resetMap() {
 
 function setPlayerMoveDelay(player_index) {
 
-    console.log("In setPlayerMoveDelay");
+    //console.log("In setPlayerMoveDelay");
 
 
 
@@ -7975,7 +8001,7 @@ function setPlayerMoveDelay(player_index) {
             players[player_index].current_move_delay = 500;
         }
 
-        console.log("In planet or ship view. Set current_move_delay to: " + players[player_index].current_move_delay);
+        //console.log("In planet or ship view. Set current_move_delay to: " + players[player_index].current_move_delay);
 
     } else if (current_view === 'galaxy') {
 
@@ -8751,6 +8777,9 @@ function showClickMenuObject(coord) {
 
         // If the ship is on a planet coord and doesn't have a player id, we can claim it. Switch ship
 
+        // get the object index for the ship that our player is in
+        let client_ship_index = objects.findIndex(function (obj) { return obj && obj.id === players[client_player_index].ship_id; });
+
 
         if (!objects[object_index].npc_id && !objects[object_index].player_id) {
 
@@ -8771,19 +8800,40 @@ function showClickMenuObject(coord) {
                 }
                 
 
-                $('#click_menu').append("<button id='switchship_" + objects[object_index].id +
-                "' class='button is-warning is-small'>Claim and Switch To Ship (Abandons Current Ship)</button><br>");
+                if(objects[client_ship_index].object_type_id === 114) {
+                    $('#click_menu').append("<button id='switchship_" + objects[object_index].id +
+                    "' class='button is-warning is-small'>Claim and Switch To Ship (Abandons Pod)</button><br>");
+                } else {
+                    $('#click_menu').append("<button id='switchship_" + objects[object_index].id +
+                    "' class='button is-warning is-small'>Claim and Switch To Ship</button><br>");
+                }
+                
             }
 
             
         } else if (objects[object_index].player_id === client_player_id && objects[object_index].id !== players[client_player_index].ship_id) {
-            $('#click_menu').append("<button id='switchship_" + objects[object_index].id + "' object_id='" + objects[object_index].id +
-                "' class='button is-warning is-small'>Switch To (Abandons Current Ship)</button>");
+
+            // If we are in a pod, it will be abandoned, otherwise it will still be our ship
+            if(objects[client_ship_index].object_type_id === 114) {
+                $('#click_menu').append("<button id='switchship_" + objects[object_index].id + "' object_id='" + objects[object_index].id +
+                "' class='button is-warning is-small'>Switch To (Abandons Pod)</button>");
+            } else {
+
+                
+                $('#click_menu').append("<button id='dockcommand_" + objects[object_index].id + "' object_id='" + objects[object_index].id +
+                "' class='button is-warning is-small'>Dock At Azure Planet</button><br>");
+
+
+                $('#click_menu').append("<button id='switchship_" + objects[object_index].id + "' object_id='" + objects[object_index].id +
+                "' class='button is-warning is-small'>Switch To</button>");
+            }
+
+            
+
         }
 
 
-        // get the object index for the ship that our player is in
-        let client_ship_index = objects.findIndex(function (obj) { return obj && obj.id === players[client_player_index].ship_id; });
+        
 
 
 

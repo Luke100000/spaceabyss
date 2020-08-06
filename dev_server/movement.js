@@ -52,8 +52,8 @@ const world = require('./world.js');
             let passed_rules = false;
             let object_index = await game_object.getIndex(dirty, object_id);
 
-            let object_player_index = await main.getPlayerIndex({ 'player_id': dirty.objects[object_index].player_id });
-            let socket_player_index = await main.getPlayerIndex({ 'player_id': socket.player_id });
+            let object_player_index = await player.getIndex(dirty, { 'player_id': dirty.objects[object_index].player_id });
+            let socket_player_index = await player.getIndex(dirty, { 'player_id': socket.player_id });
 
 
             // go through the object's rules, and as long as one matches, we are fine
@@ -90,7 +90,7 @@ const world = require('./world.js');
 
             log(chalk.green("Docking on a dockable ship! (SPACE STATION!?!)"));
 
-            let player_index = await main.getPlayerIndex({ 'player_id': socket.player_id });
+            let player_index = await player.getIndex(dirty, { 'player_id': socket.player_id });
 
             if(player_index === -1) {
                 log(chalk.yellow("Could not find player"));
@@ -174,23 +174,33 @@ const world = require('./world.js');
         data:   |   movement_direction   |   destination_coord_type   |   destination_coord_id
      */
 
+    /**
+     * @param {Object} socket
+     * @param {Object} dirty
+     * @param {Object} data
+     * @param {String=} data.source
+     */
     async function move(socket, dirty, data) {
 
         try {
+
+
+            //console.log("In movement.move");
+            //if(data.source) {
+            //    console.log("source:" + data.source);
+            //    console.trace("here");
+            //}
 
             // TODO don't allow warp hacking. Putting in a destination coord we couldn't really put it
 
             //let start = new process.hrtime();
 
-            if(!socket.player_id) {
+            if(typeof socket.player_index === "undefined") {
                 return false;
             }
 
-            let player_index = await main.getPlayerIndex({ 'player_id': socket.player_id });
+            let player_index = socket.player_index;
 
-            if(player_index === -1) {
-                return false;
-            }
 
             //console.log("In movement.move with socket id: " + socket.id + " player_id: " + dirty.players[socket.player_index].id +
             //    " socket.player_index: " + socket.player_index + " destination coord_id: " + data.destination_coord_id);
@@ -326,6 +336,7 @@ const world = require('./world.js');
                 let autopilot_index = dirty.autopilots.findIndex(function(obj) { return obj && obj.player_id === dirty.players[player_index].id; });
 
                 if(autopilot_index !== -1) {
+                    console.log("Manual move removing autopilot");
                     dirty.autopilots.splice(autopilot_index, 1);
                 }
             }
@@ -349,6 +360,7 @@ const world = require('./world.js');
 
         } catch(error) {
             log(chalk.red("Error in movement.move: " + error));
+            console.error(error);
         }
 
 
@@ -1165,6 +1177,7 @@ const world = require('./world.js');
                     }
 
                     if(moving_to_coord_index !== -1) {
+                        world.removeBattleLinkers(dirty, { 'player_id': dirty.players[socket.player_index].id });
 
                         // we basically skip moving onto the actual hole, and move directly to the stairs
                         await main.updateCoordGeneric(socket, {'planet_coord_index': previous_planet_coord_index, 'player_id': false });
@@ -1183,7 +1196,7 @@ const world = require('./world.js');
                         socket.emit('clear_map');
 
                         await map.updateMap(socket, dirty);
-                        world.removeBattleLinkers(dirty, { 'player_id': dirty.players[socket.player_index].id });
+                        
                     } else {
                         console.log("Something is blocking the stairs and the area around the stairs");
                         socket.emit('move_failure', { 'failed_planet_coord_id': dirty.planet_coords[moving_to_coord_index].id,
@@ -1244,6 +1257,8 @@ const world = require('./world.js');
 
                     if(moving_to_coord_index !== -1) {
 
+                        world.removeBattleLinkers(dirty, { 'player_id': dirty.players[socket.player_index].id});
+
                         // MOVE DIRECTLY ONTO THE HOLE
                         await main.updateCoordGeneric(socket, { 'planet_coord_index': previous_planet_coord_index, 'player_id': false });
 
@@ -1256,7 +1271,7 @@ const world = require('./world.js');
                         await player.sendInfo(socket, "planet_" + dirty.planet_coords[moving_to_coord_index].planet_id, dirty, dirty.players[socket.player_index].id);
 
                         socket.emit('clear_map');
-                        world.removeBattleLinkers(dirty, { 'player_id': dirty.players[socket.player_index].id});
+                        
                         await map.updateMap(socket, dirty);
 
                     } else {
@@ -1518,6 +1533,7 @@ const world = require('./world.js');
 
                 if(falling_planet_coord_index !== -1) {
                     // lets see if we can place the player there
+                    world.removeBattleLinkers(dirty, { 'player_id': dirty.players[data.player_index].id });
 
                     let can_place_result = await main.canPlacePlayer({ 'scope': 'planet',
                         'coord': dirty.planet_coords[falling_planet_coord_index], 'player_index': data.player_index });
@@ -1537,7 +1553,7 @@ const world = require('./world.js');
                         socket.emit('clear_map');
 
                         await map.updateMap(socket, dirty);
-                        world.removeBattleLinkers(dirty, { 'player_id': dirty.players[data.player_index].id });
+                        
                         return;
                     }
                 }
@@ -1992,6 +2008,7 @@ const world = require('./world.js');
 
                     if(moving_to_coord_index !== -1) {
 
+                        world.removeBattleLinkers(dirty, { 'player_id': dirty.players[socket.player_index].id });
                         // we basically skip moving onto the actual hole, and move directly to the stairs
                         await main.updateCoordGeneric(socket, {'ship_coord_index': previous_ship_coord_index, 'player_id': false });
 
@@ -2009,7 +2026,7 @@ const world = require('./world.js');
                         socket.emit('clear_map');
 
                         await map.updateMap(socket, dirty);
-                        world.removeBattleLinkers(dirty, { 'player_id': dirty.players[socket.player_index].id });
+                        
                     } else {
                         console.log("Something is blocking the stairs and the area around the stairs");
                         socket.emit('move_failure', { 'failed_ship_coord_id': dirty.ship_coords[moving_to_coord_index].id,
@@ -2070,6 +2087,7 @@ const world = require('./world.js');
 
                     if(moving_to_coord_index !== -1) {
 
+                        world.removeBattleLinkers(dirty, { 'player_id': dirty.players[socket.player_index].id});
                         // MOVE DIRECTLY ONTO THE HOLE
                         await main.updateCoordGeneric(socket, { 'ship_coord_index': previous_ship_coord_index, 'player_id': false });
 
@@ -2082,7 +2100,7 @@ const world = require('./world.js');
                         await player.sendInfo(socket, "ship_" + dirty.ship_coords[moving_to_coord_index].ship_id, dirty, dirty.players[socket.player_index].id);
 
                         socket.emit('clear_map');
-                        world.removeBattleLinkers(dirty, { 'player_id': dirty.players[socket.player_index].id});
+                        
                         await map.updateMap(socket, dirty);
 
                     } else {
@@ -2305,7 +2323,7 @@ const world = require('./world.js');
                 socket.emit('chat', {'message': "Monster is blocking the destination", 'scope': 'system' });
             }
 
-            let player_index = await main.getPlayerIndex({'player_id':socket.player_id});
+            let player_index = await player.getIndex(dirty, {'player_id':socket.player_id});
 
             if(dirty.players[player_index].planet_coord_id) {
                 let previous_planet_coord_index = await main.getPlanetCoordIndex({'planet_coord_id': dirty.players[player_index].planet_coord_id });
@@ -2378,7 +2396,7 @@ const world = require('./world.js');
 
     async function placePlayer(socket, dirty, data) {
 
-        let player_index = await main.getPlayerIndex({'player_id': socket.player_id});
+        let player_index = await player.getIndex(dirty, {'player_id': socket.player_id});
 
         if(player_index === -1) {
             log(chalk.yellow("Could not find player for movement.placePlayer"));
@@ -2475,7 +2493,7 @@ const world = require('./world.js');
 
         try {
 
-            let player_index = await main.getPlayerIndex({'player_id':socket.player_id});
+            let player_index = await player.getIndex(dirty, {'player_id':socket.player_id});
 
             if(player_index === -1) {
                 return false;
@@ -2682,7 +2700,7 @@ const world = require('./world.js');
 
         try {
 
-            let player_index = await main.getPlayerIndex({'player_id':socket.player_id});
+            let player_index = await player.getIndex(dirty, {'player_id':socket.player_id});
 
             if(player_index === -1) {
                 log(chalk.yellow("Could not get player"));
@@ -3116,6 +3134,61 @@ const world = require('./world.js');
     exports.switchToShip = switchToShip;
 
 
+    async function warpShipToAzurePlanet(socket, dirty, ship_id) {
+
+        try {
+
+            if(typeof socket.player_index === "undefined") {
+                log(chalk.yellow("Socket is not associated with a player"));
+                return false;
+            }
+
+            console.log("In warpShipToAzurePlanet");
+
+            let ship_index = await game_object.getIndex(dirty, ship_id);
+
+            if(ship_index === -1) {
+                log(chalk.yellow("Could not find ship"));
+                return false;
+            }
+
+            if(dirty.objects[ship_index].object_type_id === 114) {
+                log(chalk.yellow("Cannot warp pods to Azure planet"));
+                return false;
+            }
+
+            if(dirty.objects[ship_index].player_id !== dirty.players[socket.player_index].id) {
+                log(chalk.yellow("Ship does not belong to the player"));
+                return false;
+            }
+
+            if(dirty.objects[ship_index].id === dirty.players[socket.player_index].ship_id) {
+                log(chalk.yellow("Can't warp the ship you are currently in"));
+                return false;
+            }
+
+            let azure_planet_index = dirty.planets.findIndex(function(obj) { return obj && obj.planet_type_id === 16; });
+            let coord_index = await main.getCoordIndex({ 'coord_id': dirty.objects[ship_index].coord_id });
+
+            dirty.objects[ship_index].docked_at_planet_id = dirty.planets[azure_planet_index].id;
+            dirty.objects[ship_index].coord_id = false;
+            game_object.sendInfo(socket, "galaxy", dirty, ship_index);
+
+            await main.updateCoordGeneric(socket, { 'coord_index': coord_index, 'object_id': false });
+
+
+
+
+        } catch(error) {
+            log(chalk.red("Error in movement.warpShipToAzurePlanet: " + error));
+            console.error(error);
+        }
+
+    }
+
+    exports.warpShipToAzurePlanet = warpShipToAzurePlanet;
+
+
     // Currently I think this is basically just used for dying and stuff
     //  data:   ( (player_index | npc_index)   |   (player_id | npc_id ) )  /   warping_to (spaceport | galaxy)  /   planet_id   /   base_coord_index
     async function warpTo(socket, dirty, data) {
@@ -3137,7 +3210,7 @@ const world = require('./world.js');
                 player_index = data.player_index;
                 placing_type = 'player';
             } else if(data.player_id) {
-                player_index = await main.getPlayerIndex({ 'player_id': data.player_id });
+                player_index = await player.getIndex(dirty, { 'player_id': data.player_id });
 
                 if(player_index === -1) {
                     log(chalk.yellow("Could not find player"));
@@ -3435,11 +3508,11 @@ const world = require('./world.js');
 
     module.exports = {
         move,
+        moveGalaxy,
         moveGalaxyObjects,
         switchToGalaxy,
         switchToPlanet,
         switchToShip,
+        warpShipToAzurePlanet,
         warpTo
     }
-
-

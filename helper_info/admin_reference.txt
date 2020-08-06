@@ -15,6 +15,7 @@ game.processAdminChatMessage
 /moveplanet PLANET_ID coord_id
 /reloadevent EVENT_ID
 /replacefloor COORD_TYPE(planet|ship|galaxy) COORD_ID NEW_FLOOR_TYPE_ID
+/sendmessage MESSAGE
 /setplanettype PLANET_ID PLANET_TYPE_ID
 /spawnevent COORD_TYPE(planet|ship|galaxy) COORD_ID EVENT_ID
 /spawnmonster MONSTER_TYPE_ID
@@ -45,11 +46,21 @@ Stardew Valley
 Starsiege
 Mech games.
 board game tiny epic mechs
-Laurum Online ( mobile mmorpg )
-Mystera Legacy ( mmorpg )
-margonem ( mmorpg )
-rpg mo ( mmorpg )
-mirage realms ( mmorpg )
+
+
+OTHER INDIE MMOS - Notes on what they do well - What websites they are mentioned on
+
+    Laurum Online 
+        https://laurum.online/
+        mobile mmorpg
+        Showcases classes - we should showcase how our 'class'/'classless' system works
+    Mystera Legacy
+        https://www.mysteralegacy.com/
+        Link to Tutorial, Leaderboards, and Changelog in header
+    margonem ( mmorpg )
+        leaderboards/rankings
+    rpg mo ( mmorpg )
+    mirage realms ( mmorpg )
 
 
 Other game ideas I want to make:
@@ -70,6 +81,7 @@ LEVELS
     3 = 400
     4 = 900
     5 = 1600
+    101 = 1000000
 
     DIFFICULT:
     global.difficult_level_modifier = 0.20;
@@ -78,11 +90,14 @@ LEVELS
     3 = 100
     4 = 225
     5 = 400
+    101 = 250000
 
 
 COMPLEXITY
     1 is easy.
     10 seems medium?
+    20 is going to take a fair amount of time to get to
+    100 is going to take forever
 
 
 TIMINGS | SERVER SPEED

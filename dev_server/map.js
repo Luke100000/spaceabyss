@@ -19,7 +19,7 @@ const world = require('./world.js');
                 return false;
             }
 
-            let player_index = await main.getPlayerIndex({'player_id': socket.player_id });
+            let player_index = await player.getIndex(dirty, {'player_id': socket.player_id });
 
 
             if(dirty.players[player_index].planet_coord_id) {
@@ -48,7 +48,7 @@ const world = require('./world.js');
             //console.log("In updateMapGalaxy");
 
             //console.log("In updateMapPlanet");
-            let player_index = await main.getPlayerIndex({ 'player_id': socket.player_id });
+            let player_index = await player.getIndex(dirty, { 'player_id': socket.player_id });
 
             if(player_index === -1) {
                 log(chalk.yellow("Unable to find socket player in map.updateMapPlanet"));
@@ -105,7 +105,7 @@ const world = require('./world.js');
     async function updateMapPlanet(socket, dirty) {
         try {
             //console.log("In updateMapPlanet");
-            let player_index = await main.getPlayerIndex({ 'player_id': socket.player_id });
+            let player_index = await player.getIndex(dirty, { 'player_id': socket.player_id });
 
             if(player_index === -1) {
                 log(chalk.yellow("Unable to find socket player in map.updateMapPlanet"));
@@ -249,7 +249,7 @@ const world = require('./world.js');
     async function updateMapShip(socket, dirty) {
         //console.log("Sending ship_data from updateMapShip");
 
-        let player_index = await main.getPlayerIndex({ 'player_id': socket.player_id });
+        let player_index = await player.getIndex(dirty, { 'player_id': socket.player_id });
 
         if(player_index === -1) {
             log(chalk.yellow("Unable to find socket player in map.updateMapPlanet"));

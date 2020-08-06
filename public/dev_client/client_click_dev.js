@@ -565,6 +565,15 @@ $(document).on('click', 'button', function () {
         socket.emit('disconnect_data', {'disconnect':'oh yeah'});
     }
 
+    if(split_name[0] === 'dockcommand') {
+
+        console.log("Sending dock_command_data with ship id: " + split_name[1]);
+        socket.emit('dock_command_data', { 'ship_id': split_name[1] });
+
+        $('#click_menu').empty();
+        $('#click_menu').hide();
+    }
+
     if(split_name[0] == 'drop') {
 
         clicked_x = $('#' + clicked_id).attr('x');

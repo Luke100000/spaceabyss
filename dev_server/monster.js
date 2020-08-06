@@ -12,6 +12,7 @@ const game_object = require('./game_object.js');
 const helper = require('./helper.js');
 const main = require('./space_abyss' + process.env.FILE_SUFFIX + '.js');
 const planet = require('./planet.js');
+const player = require('./player.js');
 const world = require('./world.js');
 
 
@@ -478,7 +479,7 @@ async function damage(dirty, data) {
 
             // It's a player that killed the monster
             if(data.battle_linker && data.battle_linker.attacking_type === 'player') {
-                let player_index = await main.getPlayerIndex({ 'player_id': data.battle_linker.attacking_id });
+                let player_index = await player.getIndex(dirty, { 'player_id': data.battle_linker.attacking_id });
                 let previous_exp = dirty.players[player_index].exp;
                 //console.log("Adding exp to player");
 
@@ -946,7 +947,7 @@ async function move(dirty, i, data) {
                 // get the thing the monster is attacking
 
                 if(data.battle_linker.being_attacked_type === 'player') {
-                    let player_index = await main.getPlayerIndex({ 'player_id': data.battle_linker.being_attacked_id });
+                    let player_index = await player.getIndex(dirty, { 'player_id': data.battle_linker.being_attacked_id });
 
                     if(dirty.players[player_index].planet_coord_id) {
                         let player_planet_coord_index = await main.getPlanetCoordIndex({ 'planet_coord_id': dirty.players[player_index].planet_coord_id });
@@ -1021,6 +1022,56 @@ async function move(dirty, i, data) {
                         } else {
                             new_y = old_coord.tile_y - 1;
                             change_y = -1;
+                        }
+
+                        new_x = old_coord.tile_x;
+                        change_x = 0; 
+                    }
+
+                } else if(dirty.monster_types[data.monster_type_index].attack_movement_type === 'move_away') {
+
+                    let rand_move = helper.getRandomIntInclusive(1,2);
+
+                    if(x_difference !== 0 && rand_move === 1) {
+                        if(attacking_coord.tile_x > old_coord.tile_x) {
+                            new_x = old_coord.tile_x - 1;
+                            change_x = -1;
+                        } else {
+                            new_x = old_coord.tile_x + 1;
+                            change_x = 1;
+                        }
+
+                        new_y = old_coord.tile_y;
+                        change_y = 0;
+                    } else if(y_difference !== 0 && rand_move === 2) {
+                        if(attacking_coord.tile_y > old_coord.tile_y) {
+                            new_y = old_coord.tile_y - 1;
+                            change_y = -1;
+                        } else {
+                            new_y = old_coord.tile_y + 1;
+                            change_y = 1;
+                        }
+
+                        new_x = old_coord.tile_x;
+                        change_x = 0;
+                    } else if(x_difference !== 0) {
+                        if(attacking_coord.tile_x > old_coord.tile_x) {
+                            new_x = old_coord.tile_x - 1;
+                            change_x = -1;
+                        } else {
+                            new_x = old_coord.tile_x + 1;
+                            change_x = 1;
+                        }
+
+                        new_y = old_coord.tile_y;
+                        change_y = 0;
+                    } else if(y_difference !== 0) {
+                        if(attacking_coord.tile_y > old_coord.tile_y) {
+                            new_y = old_coord.tile_y - 1;
+                            change_y = -1;
+                        } else {
+                            new_y = old_coord.tile_y + 1;
+                            change_y = 1;
                         }
 
                         new_x = old_coord.tile_x;

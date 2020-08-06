@@ -259,9 +259,9 @@ exports.claimShip = claimShip;
  * @param {Object} data 
  * @param {number} data.player_index
  * @param {number} data.damage_amount
- * @param {Object=} data.battle_linker
  * @param {Array} data.damage_types
- * @param {number} data.calculating_range
+ * @param {Object=} data.battle_linker
+ * @param {number=} data.calculating_range
  * @param {String=} data.flavor_text
  */
 async function damage(dirty, data) {
@@ -304,7 +304,7 @@ async function damage(dirty, data) {
 
         if(new_player_hp <= 0) {
             console.log("Calling player.kill");
-            player.kill(dirty, data.player_index);
+            kill(dirty, data.player_index);
         } else {
             dirty.players[data.player_index].current_hp = new_player_hp;
             dirty.players[data.player_index].has_change = true;
@@ -360,13 +360,333 @@ async function damage(dirty, data) {
 exports.damage = damage;
 
 
+
+async function getEquipment(dirty, body_id) {
+
+    try {
+
+        if(isNaN(body_id)) {
+            log(chalk.red("Nan value passed in as body id: " + body_id));
+            return false;
+        }
+
+        let [rows, fields] = await (pool.query("SELECT * FROM equipment_linkers WHERE body_id = ?",
+            [body_id]));
+
+        if(rows[0]) {
+            for(let i = 0; i < rows.length; i++) {
+                let equipment_linker = rows[i];
+                // see if we already have the equipment linker, if not, add it
+                let equipment_linker_index = dirty.equipment_linkers.findIndex(function(obj) { return obj && obj.id === equipment_linker.id });
+                if(equipment_linker_index === -1) {
+                    equipment_linker.has_change = false;
+                    dirty.equipment_linkers.push(equipment_linker);
+                    //console.log("Added that player id: " + equipment_linker.player_id + " has object type id: " + equipment_linker.object_type_id + " equipped");
+                }
+
+            }
+        }
+    } catch(error) {
+        log(chalk.red("Error in player.getEquipment: " + error));
+        console.error(error);
+    }
+
+
+
+}
+
+exports.getEquipment = getEquipment;
+
+
+// we pull in a socket_id from the function instead of the database ideally - because the database might not have updated yet.
+// TODO RIGHT NOW we are adding in the ability to query for a player by body id
+
+//      data: body_id   |   name   |   player_id   |   source
+/**
+ * @param {Object} dirty
+ * @param {Object} data
+ */
+async function getIndex(dirty, data) {
+
+    try {
+        //console.log("In player.getIndex");
+
+        if(!data.source) {
+            data.source = false;
+        }
+
+        // Looking up via id, and the id is malformed
+        if(data.player_id) {
+            data.player_id = parseInt(data.player_id);
+
+            if(isNaN(data.player_id)) {
+                log(chalk.yellow("Player id was NaN. Source: " + data.source));
+                console.log(data);
+                return -1;
+            }
+
+        }
+
+        if(data.body_id) {
+            data.body_id = parseInt(data.body_id);
+
+            if(isNaN(data.body_id)) {
+                log(chalk.yellow("Body id was NaN. Source: " + data.source));
+                console.log(data);
+                return -1;
+            }
+
+        }
+
+
+        let player_index = -1;
+
+        if(data.player_id) {
+            player_index = dirty.players.findIndex(function(obj) { return obj && obj.id === data.player_id; });
+        }
+        // Its important to note that with a check on something that can change - their body - we can have an instance
+        // where mysql wants to return a different value than we have in dirty (player just updated body,
+        // dirty isn't written yet)
+        else if(data.body_id) {
+            player_index = dirty.players.findIndex(function(obj) { return obj && obj.body_id === data.body_id; });
+        } else if(data.name) {
+
+            data.name = helper.cleanStringInput(name);
+            player_index = dirty.players.findIndex(function(obj) { return obj && obj.name === data.name });
+        }
+
+        if(player_index === -1) {
+
+            //console.log("Did not find player in dirty. Was sent in player_id: " + data.player_id + " body_id: " + data.body_id);
+            //console.trace("Seeing what called this");
+
+            let where_part;
+            let inserts;
+
+            if(data.player_id) {
+                where_part = 'WHERE id = ?';
+                inserts = [data.player_id];
+            } else if(data.body_id) {
+                where_part = 'WHERE body_id = ?';
+                inserts = [data.body_id];
+            } else if(data.name) {
+                where_part = 'WHERE name = ?';
+                inserts = [data.name];
+            }
+
+            let [rows, fields] = await (pool.query("SELECT * FROM players " + where_part, inserts));
+
+            if(rows[0]) {
+                let adding_player = rows[0];
+                adding_player.has_change = false;
+                console.log("Adding player id: " + adding_player.id + " name: " + adding_player.name);
+
+
+                // Since the MySQL query is so slow - we could have added the player inbetween then and now. FINAL CHECK!
+                // Here we can just checked based on the ID we got back
+                player_index = dirty.players.findIndex(function(obj) { return obj && obj.id === adding_player.id; });
+
+                /*
+                if(data.player_id) {
+                    player_index = dirty.players.findIndex(function(obj) { return obj && obj.id === data.player_id; });
+                } else if(data.body_id) {
+                    player_index = dirty.players.findIndex(function(obj) { return obj && obj.body_id === data.body_id; });
+                } else if(data.name) {
+                    player_index = dirty.players.findIndex(function(obj) { return obj && obj.name === data.name })
+                }
+
+                */
+
+                if(player_index !== -1) {
+                    log(chalk.yellow("Looks like we already added the player"));
+
+                    // We've already found the player in dirty - we were passed in a body id, and that player's body id doesn't
+                    // match what mysql still had ( dirty data has changes that haven't been written yet )
+                    if(data.body_id && dirty.players[player_index].body_id !== data.body_id) {
+                        return -1;
+                    }
+                } else {
+                    player_index = dirty.players.push(adding_player) - 1;
+
+                    dirty.players[player_index].id = parseInt(dirty.players[player_index].id);
+                    dirty.players[player_index].body_id = parseInt(dirty.players[player_index].body_id);
+                    dirty.players[player_index].attacks_defended = 0;
+
+                    console.log("Testing!!! Player index on dirty is: " + player_index);
+                    console.log("Player name at dirty.players index " + player_index + " is....: " + dirty.players[player_index].name);
+
+                    // Brand new created player won't actually have a body when this is first called
+                    if(dirty.players[player_index].body_id) {
+                        await getEquipment(dirty, dirty.players[player_index].body_id);
+                    }
+
+                    await getInventory(dirty, dirty.players[player_index].id);
+                    await getResearchLinkers(dirty, dirty.players[player_index].id);
+                    await getRelationshipLinkers(dirty, dirty.players[player_index].id);
+                    await getShips(dirty, player_index);
+
+                }
+
+
+
+            }
+        }
+
+
+        //console.log("Returning player index: " + player_index);
+
+        return player_index;
+
+
+    } catch(error) {
+        log(chalk.red("Error in player.getIndex: " + error));
+        console.error(error);
+    }
+
+}
+
+exports.getIndex = getIndex;
+
+
+
+async function getInventory(dirty, player_id) {
+
+    //console.log("In player.getInventory");
+
+    try {
+        let [rows, fields] = await (pool.query("SELECT * FROM inventory_items WHERE inventory_items.player_id = ?",
+            [player_id]));
+
+        if(rows[0]) {
+            for(let i = 0; i < rows.length; i++) {
+
+                let inventory_item = rows[i];
+                //console.log("player " + player_id + " has inventory item id: " + inventory_item.id);
+
+                // see if we already have the equipment linker, if not, add it
+                let ii_index = dirty.inventory_items.findIndex(function(obj) { return obj && obj.id === inventory_item.id; });
+                if(ii_index === -1) {
+                    inventory_item.has_change = false;
+                    let new_inventory_item_index = dirty.inventory_items.push(inventory_item) - 1;
+                    world.processInventoryItem(dirty, new_inventory_item_index);
+                    //console.log("Added that player id: " + inventory_item.player_id + " has inventory object type id: " + inventory_item.object_type_id);
+                }
+
+            }
+        }
+    } catch(error) {
+        console.log("Error in player.getInventory: " + error);
+        console.error(error);
+    }
+
+}
+
+exports.getInventory = getInventory;
+
+
+
+async function getRelationshipLinkers(dirty, player_id) {
+
+    try {
+        let [rows, fields] = await (pool.query("SELECT * FROM player_relationship_linkers WHERE player_id = ?",
+            [player_id]));
+
+        if(rows[0]) {
+            for(let i = 0; i < rows.length; i++) {
+                let player_relationship_linker = rows[i];
+                // see if we already have the relationship linker, if not, add it
+                let player_relationship_linker_index = dirty.player_relationship_linkers.findIndex(function(obj) { return obj && obj.id === player_relationship_linker.id; });
+                if(player_relationship_linker_index === -1) {
+                    player_relationship_linker.has_change = false;
+                    dirty.player_relationship_linkers.push(player_relationship_linker);
+
+                }
+
+            }
+        }
+    } catch(error) {
+        log(chalk.red("Error in player.getRelationshipLinkers: " + error));
+    }
+
+}
+
+exports.getRelationshipLinkers = getRelationshipLinkers;
+
+async function getResearchLinkers(dirty, player_id) {
+
+    try {
+        let [rows, fields] = await (pool.query("SELECT * FROM player_research_linkers WHERE player_id = ?",
+            [player_id]));
+
+        if(rows[0]) {
+            for(let i = 0; i < rows.length; i++) {
+                let player_research_linker = rows[i];
+                // see if we already have the research linker, if not, add it
+                let player_research_linker_index = dirty.player_research_linkers.findIndex(function(obj) { return obj && obj.id === player_research_linker.id });
+                if(player_research_linker_index === -1) {
+                    player_research_linker.has_change = false;
+                    dirty.player_research_linkers.push(player_research_linker);
+                    //console.log("Added that player id: " + player_research_linker.player_id + " has research linker for object type id: " + player_research_linker.object_type_id );
+                }
+
+            }
+        }
+    } catch(error) {
+        log(chalk.red("Error in player.getResearchLinkers: " + error));
+        console.error(error);
+    }
+
+}
+
+exports.getResearchLinkers = getResearchLinkers;
+
+
+
+async function getShips(dirty, player_index) {
+
+
+    //log(chalk.green("\nIN GETPLAYERSHIPS"));
+
+    // Get object types that are ships
+    let ship_object_type_ids = [];
+
+    for(let object_type of dirty.object_types) {
+        if(object_type.is_ship) {
+            ship_object_type_ids.push('"' + object_type.id + '"');
+        }
+    }
+
+
+
+    try {
+        let [rows, fields] = await (pool.query("SELECT id FROM objects WHERE player_id = ? AND object_type_id IN(" + ship_object_type_ids.join(',') + ")",
+            [dirty.players[player_index].id]));
+
+        if(rows[0]) {
+            for(let i = 0; i < rows.length; i++) {
+                //log(chalk.cyan("Found ship id: " + rows[i].id));
+
+                await game_object.getIndex(dirty, rows[i].id);
+
+            }
+        }
+    } catch(error) {
+        log(chalk.red("Error in player.getShips: " + error));
+        console.error(error);
+    }
+
+}
+
+exports.getShips = getShips;
+
+
 async function kill(dirty, player_index) {
 
     try {
 
         // return false if we already have an entry in the database queue
-        let database_queue_index = database_queue.findIndex(function(obj) { return obj &&
-            obj.player_id === socket.player_id && obj.action === 'kill' });;
+        let database_queue_index = dirty.database_queue.findIndex(function(obj) { return obj &&
+            obj.player_id === dirty.players[player_index].id && obj.action === 'kill' });;
 
         if(database_queue_index !== -1) {
             console.log("Already killing player");
@@ -374,7 +694,7 @@ async function kill(dirty, player_index) {
         }
 
         // Immediately put in a memory block from multi killing the player
-        database_queue_index = database_queue.push({'player_id': socket.player_id, 'action': 'kill' }) - 1;
+        database_queue_index = dirty.database_queue.push({'player_id': dirty.players[player_index].id, 'action': 'kill' }) - 1;
 
         log(chalk.green("\nPlayer id: " + dirty.players[player_index].id + " has died"));
 
@@ -430,13 +750,6 @@ async function kill(dirty, player_index) {
                 dirty.waiting_drops.push({'object_index': new_object_index, 'planet_coord_index': coord_index });
                 log(chalk.yellow("Could not place dead body. Pushed to waiting_drops"));
             }
-
-            
-
-
-
-           
-
 
 
         }
@@ -532,7 +845,7 @@ async function kill(dirty, player_index) {
         player_socket.emit('message_data', { 'message': "Your body was killed", 'scope': 'system' });
 
         // and clear out the database queue
-        delete database_queue[database_queue_index];
+        delete dirty.database_queue[database_queue_index];
 
 
     } catch(error) {
@@ -549,7 +862,7 @@ async function sendInfo(socket, room, dirty, player_id) {
         player_id = parseInt(player_id);
         //console.log("In sendPlayerInfo with player_id " + player_id);
 
-        let player_index = await main.getPlayerIndex({ 'player_id': player_id });
+        let player_index = await getIndex(dirty, { 'player_id': player_id });
 
         if (player_index === -1) {
             log(chalk.red("Unable to find player"));
@@ -619,15 +932,20 @@ async function sendShips(socket, dirty, player_index) {
 exports.sendShips = sendShips;
 
 
-// There are two general scenarios where this is called
+    // There are two general scenarios where this is called
     // 1. Claiming and switching to a ship in the galaxy mode
     // 2. Switching to a different ship at a spaceport
-    //  data:   ship_id
+    /**
+     * @param {Object} socket
+     * @param {Object} dirty
+     * @param {Object} data
+     * @param {number} data.ship_id
+     */
     async function switchShip(socket, dirty, data) {
         try {
             log(chalk.cyan("Player is switching to ship(object) with id: " + data.ship_id));
 
-            let player_index = await main.getPlayerIndex({ 'player_id': socket.player_id });
+            let player_index = await getIndex(dirty, { 'player_id': socket.player_id });
 
             if(player_index === -1) {
                 log(chalk.yellow("Could not find player. Returning false"));
@@ -741,10 +1059,14 @@ exports.sendShips = sendShips;
                     return false;
                 }
 
-                // The old ship is now on a coord (set in updateCoordGeneric), without a player
-                dirty.objects[old_ship_index].player_id = false;
-                dirty.objects[old_ship_index].has_change = true;
-                await game_object.sendInfo(socket, "galaxy", dirty, old_ship_index);
+                // The old ship is now on a coord (set in updateCoordGeneric)
+                // If it's a pod, we remove the player from it
+                if(dirty.objects[old_ship_index].object_type_id === 114) {
+                    dirty.objects[old_ship_index].player_id = false;
+                    dirty.objects[old_ship_index].has_change = true;
+                    await game_object.sendInfo(socket, "galaxy", dirty, old_ship_index);
+                }
+                
 
 
 
@@ -915,6 +1237,12 @@ module.exports = {
     calculateMovementModifier,
     claimShip,
     damage,
+    getEquipment,
+    getIndex,
+    getInventory,
+    getRelationshipLinkers,
+    getResearchLinkers,
+    getShips,
     kill,
     sendInfo,
     sendShips,

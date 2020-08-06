@@ -6,6 +6,17 @@ const chalk = require('chalk');
 const log = console.log;
 
 
+function cleanStringInput(name) {
+
+    try {
+        return name.replace(/[^a-z0-9áéíóúñü \.,_-]/gim,"").trim();
+    } catch(error) {
+        log(chalk.red("Error in cleanStringInput: " + error));
+    }
+
+
+}
+
 function getRandomIntInclusive(min, max) {
     min = Math.ceil(min);
     max = Math.floor(max);
@@ -28,7 +39,8 @@ function isFalse(the_value) {
 function notFalse(the_value) {
 
     if(typeof the_value === "undefined" || the_value === 0 || the_value === "0" ||
-        the_value === false || the_value === null || the_value === "null" || the_value === "") {
+        the_value === false || the_value === null || the_value === "null" || the_value === "" || 
+        (the_value.constructor === Object && Object.keys(the_value).length === 0)) {
         return false;
     }
 
@@ -54,6 +66,7 @@ function rarityRoll() {
 
 module.exports = {
 
+    cleanStringInput,
     getRandomIntInclusive,
     isFalse,
     notFalse,

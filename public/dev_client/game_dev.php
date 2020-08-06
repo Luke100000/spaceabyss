@@ -742,6 +742,8 @@ include('config.php');
     var pointer_up_time = 10000;
     var moving_direction = false;
     var spaceport_display_needs_regeneration = false;
+    var text_admin;
+    var text_admin_time;
     var text_important;
     var text_important_time;
     var total_moved = 0;
@@ -2431,6 +2433,18 @@ include('config.php');
             text_important.setDepth(11);
             text_important.setVisible(false);
 
+            text_admin = this.add.text(60, 250, 'This is admin text', {
+                fontSize: '18px',
+                padding: { x: 10, y: 5 },
+                backgroundColor: '#000000',
+                fill: '#ad42f5',
+                align: 'center',
+                wordWrap: { width: 576 }
+            });
+            text_admin.setScrollFactor(0);
+            text_admin.setDepth(11);
+            text_admin.setVisible(false);
+
             level_up_music = this.sound.add('level-up');
             //level_up_music.play();
         },
@@ -2811,20 +2825,77 @@ include('config.php');
             }
 
             if(had_moving_player) {
-                redrawBars();
+                redrawBars('update - had_moving_player');
             }
 
 
+
+            let moved_a_monster = false;
+            let monster_move_speed = 2;
+            for(let i = 0; i < monsters.length; i++) {
+
+                if(monsters[i] && monsters[i].sprite && monsters[i].destination_x !== false && typeof monsters[i].destination_x !== 'undefined') {
+                    moved_a_monster = true;
+
+
+                    if(monsters[i].sprite.x < monsters[i].destination_x) {
+
+                        if(monsters[i].sprite.x + monster_move_speed > monsters[i].destination_x) {
+                            monsters[i].sprite.x = monsters[i].destination_x;
+                            monsters[i].destination_x = false;
+                        } else {
+                            monsters[i].sprite.x += monster_move_speed;
+                        }
+
+                    } else if(monsters[i].sprite.x > monsters[i].destination_x) {
+
+                        if(monsters[i].sprite.x - monster_move_speed < monsters[i].destination_x) {
+                            monsters[i].sprite.x = monsters[i].destination_x;
+                            monsters[i].destination_x = false;
+                        } else {
+                            monsters[i].sprite.x -= monster_move_speed;
+                        }
+
+
+                    } else if(monsters[i].sprite.y < monsters[i].destination_y) {
+
+                        if(monsters[i].sprite.y + monster_move_speed > monsters[i].destination_y) {
+                            monsters[i].sprite.y = monsters[i].destination_y;
+                            monsters[i].destination_y = false;
+                        } else {
+                            monsters[i].sprite.y += monster_move_speed;
+                        }
+
+                    } else if(monsters[i].sprite.y > monsters[i].destination_y) {
+
+                        if(monsters[i].sprite.y - monster_move_speed < monsters[i].destination_y) {
+                            monsters[i].sprite.y = monsters[i].destination_y;
+                            monsters[i].destination_y = false;
+                        } else {
+                            monsters[i].sprite.y -= monster_move_speed;
+                        }
+
+                    }
+
+                    updateEffectSprites('monster', i);
+
+                }
+            }
+
+            if(moved_a_monster) {
+                redrawBars('update - moving_monsters');
+            }
+
+
+            /*
             let moving_monsters = monsters.filter(monster => monster.destination_x !== false && monster.destination_x !== 'undefined' && monster.sprite);
 
             if(moving_monsters.length) {
-                //console.log("Have moving monsters");
+                console.log("Have " + moving_monsters.length + " moving monsters");
 
                 let monster_move_speed = 2;
 
                 moving_monsters.forEach(function(monster) {
-                    //console.log("Monster id: " + monster.id + " is moving from " + monster.sprite.x + " to destination x: " + monster.destination_x);
-
                     // Lets clear out destinations for any monster that
                     if(!monster.sprite) {
                         monster.destination_x = false;
@@ -2833,52 +2904,13 @@ include('config.php');
                         return false;
                     }
 
-                    if(monster.sprite.x < monster.destination_x) {
+                    console.log("Monster id: " + monster.id + " is moving from " + monster.sprite.x + " to destination x: " + monster.destination_x);
 
-                        if(monster.sprite.x + monster_move_speed > monster.destination_x) {
-                            monster.sprite.x = monster.destination_x;
-                            monster.destination_x = false;
-                        } else {
-                            monster.sprite.x += monster_move_speed;
-                        }
-
-                    } else if(monster.sprite.x > monster.destination_x) {
-
-                        if(monster.sprite.x - monster_move_speed < monster.destination_x) {
-                            monster.sprite.x = monster.destination_x;
-                            monster.destination_x = false;
-                        } else {
-                            monster.sprite.x -= monster_move_speed;
-                        }
-
-
-                    } else if(monster.sprite.y < monster.destination_y) {
-
-                        if(monster.sprite.y + monster_move_speed > monster.destination_y) {
-                            monster.sprite.y = monster.destination_y;
-                            monster.destination_y = false;
-                        } else {
-                            monster.sprite.y += monster_move_speed;
-                        }
-
-                    } else if(monster.sprite.y > monster.destination_y) {
-
-                        if(monster.sprite.y - monster_move_speed < monster.destination_y) {
-                            monster.sprite.y = monster.destination_y;
-                            monster.destination_y = false;
-                        } else {
-                            monster.sprite.y -= monster_move_speed;
-                        }
-
-                    }
-
-                    let monster_index = monsters.findIndex(function(obj) { return obj && obj.id === monster.id; });
-
-                    updateEffectSprites('monster', monster_index);
 
                 });
-                redrawBars();
+                redrawBars('update - moving_monsters');
             }
+            */
 
             if(info_numbers) {
 
@@ -3024,6 +3056,11 @@ include('config.php');
             if(text_important_time && text_important_time + 5000 < time) {
                 text_important_time = false;
                 text_important.setVisible(false);
+            }
+
+            if(text_admin_time && text_admin_time + 5000 < time) {
+                text_admin_time = false;
+                text_admin.setVisible(false);
             }
 
         }

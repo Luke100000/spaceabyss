@@ -298,7 +298,7 @@ const world = require('./world.js');
 
 
     // Putting a certain # of npcs in our world
-    async function npcActions(dirty, database_queue) {
+    async function npcActions(dirty) {
 
         try {
 
@@ -348,7 +348,7 @@ const world = require('./world.js');
                     }
 
                     if(task_index !== -1) {
-                        performNpcTask(dirty, database_queue, i, task_index);
+                        performNpcTask(dirty, i, task_index);
                     } else {
                         setNpcTask(dirty, i);
                     }
@@ -446,7 +446,7 @@ const world = require('./world.js');
     exports.npcPickUp = npcPickUp;
 
 
-    async function performNpcTask(dirty, database_queue, npc_index, task_index) {
+    async function performNpcTask(dirty, npc_index, task_index) {
         try {
 
             //console.log("Task index: " + task_index);
@@ -468,7 +468,7 @@ const world = require('./world.js');
 
                         if(eating_linker_index !== -1) {
                             log(chalk.green("Npc has something they can eat!"));
-                            game.eat(false, dirty, database_queue, { 'npc_index': npc_index, 'inventory_item_id': dirty.inventory_items[i].id });
+                            game.eat(false, dirty, { 'npc_index': npc_index, 'inventory_item_id': dirty.inventory_items[i].id });
 
                             // and we can remove the task
                             dirty.npc_tasks.splice(task_index, 1);

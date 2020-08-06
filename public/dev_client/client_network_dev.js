@@ -46,6 +46,13 @@ socket.on('admin_data', function(data) {
 });
 
 
+socket.on('admin_message', function(data) {
+    text_admin.setText("Admin: " + data.message);
+    text_admin.setVisible(true);
+    text_admin_time = our_time;
+});
+
+
 socket.on('area_info', function(data) {
 
     data.area.id = parseInt(data.area.id);
@@ -185,7 +192,9 @@ socket.on('battle_linker_info', function(data) {
                     }
 
                     if(battle_linkers[battle_linker_index].being_attacked_type === 'player' && 
-                        battle_linkers[battle_linker_index].being_attacked_id === effect_sprites[i].player_id) {
+                        battle_linkers[battle_linker_index].being_attacked_id === effect_sprites[i].player_id &&
+                            battle_linkers[battle_linker_index].attacking_type === effect_sprites[i].damage_source_type && 
+                            battle_linkers[battle_linker_index].attacking_id === effect_sprites[i].damage_source_id) {
                             effect_sprites[i].player_id = false;
                             effect_sprites[i].setVisible(false);  
                         }
@@ -199,6 +208,7 @@ socket.on('battle_linker_info', function(data) {
             }
 
             delete battle_linkers[battle_linker_index];
+            console.log("Removed battle linker - server said to remove");
             redrawBars();
         } else {
             //console.log("Didn't have it anyways");
@@ -216,6 +226,8 @@ socket.on('battle_linker_info', function(data) {
             // make sure our ints are really ints
             battle_linkers[battle_linker_index].attacking_id = parseInt(battle_linkers[battle_linker_index].attacking_id);
             battle_linkers[battle_linker_index].being_attacked_id = parseInt(battle_linkers[battle_linker_index].being_attacked_id);
+
+            redrawBars();
 
         }
 
@@ -366,7 +378,7 @@ socket.on('clear_equipment_linkers_data', function(data) {
 });
 
 socket.on('clear_map', function(data) {
-    console.log("Got clear map data. Running resetMap");
+    //console.log("Got clear map data. Running resetMap");
     resetMap();
     redrawMap();
 
@@ -1640,11 +1652,13 @@ socket.on('object_info', function(data) {
             if(battle_linkers[i]) {
                 if(battle_linkers[i].being_attacked_id === parseInt(data.object.id) && battle_linkers[i].being_attacked_type === 'object') {
                     delete battle_linkers[i];
+                    console.log("Removed battle linker - object being attacked");
                 }
 
                 // Could have already removed it before this check
                 if(battle_linkers[i] && battle_linkers[i].attacking_id === parseInt(data.object.id) && battle_linkers[i].attacking_type === 'object') {
                     delete battle_linkers[i];
+                    console.log("Removed battle linker - object attacking");
                 }
             }
 
@@ -2196,7 +2210,7 @@ socket.on('planet_coord_info', function (data) {
 
             // It looks like we just got the planet coord that we are on
             // So now if we grab our client_player_info, we should have a coord.
-            console.log("Got planet coord with our player on it");
+            //console.log("Got planet coord with our player on it");
 
             let client_player_info_coord_is_false = false;
             if(client_player_info.coord === false) {

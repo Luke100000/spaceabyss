@@ -17,7 +17,7 @@ function addEffect(data) {
     let debug_effects = false;
 
     if(debug_effects) {
-        console.log("Looking to add an effect");
+        console.log("Looking to add an effect. Currently there are: " + effect_sprites.length + " effect sprites");
     }
 
 
@@ -40,13 +40,17 @@ function addEffect(data) {
 
         // If there's already an exact match sprite visible, we won't need another one
         for(let e = 0; e < effect_sprites.length; e++) {
+
+
             if(effect_sprites[e] && effect_sprites[e].visible === true && 
-                effect_sprites[e].damage_source_id === data.damage_types[i].damage_source_id && 
-                effect_sprites[e].damage_source_type === data.damage_types[i].damage_source_type && 
+                effect_sprites[e].damage_source_id === data.damage_source_id && 
+                effect_sprites[e].damage_source_type === data.damage_source_type && 
                 effect_sprites[e].damage_type === data.damage_types[i]) {
-                    console.log("Already have a sprite doing exactly this!");
+                    if(debug_effects) {
+                        console.log("Already have a sprite doing exactly this!");
+                    }
                     return false;
-                }
+            }
         }
 
 
@@ -334,7 +338,7 @@ function addEffect(data) {
 
 function removeEffects(removing_type, removing_id) {
 
-    //console.log("Removing effects from " + removing_type + " id: " + removing_id);
+    console.log("Removing effects from " + removing_type + " id: " + removing_id);
 
     for(let i = 0; i < effect_sprites.length; i++) {
         if(effect_sprites[i] && effect_sprites[i].visible) {
@@ -355,11 +359,12 @@ function removeEffects(removing_type, removing_id) {
 
 function updateEffectSprites(moved_type, moved_index) {
 
-    // If there's a heat sprite visible attached to us, move that as well
     
     for(let i = 0; i < effect_sprites.length; i++) {
 
         if(effect_sprites[i] && effect_sprites[i].visible && effect_sprites[i].effect_type === 'beam') {
+
+            //console.log("In updateEffectSprites with moved: " + moved_type);
 
 
             let effect_needs_update = false;
@@ -391,6 +396,8 @@ function updateEffectSprites(moved_type, moved_index) {
             } 
             */
 
+    
+
             // Monster that is the beam destination moved
             if(moved_type === 'monster' && effect_sprites[i].monster_id === monsters[moved_index].id) {
                 effect_needs_update = true;
@@ -404,6 +411,18 @@ function updateEffectSprites(moved_type, moved_index) {
                 effect_sprites[i].destination_x = objects[moved_index].sprite.x;
                 effect_sprites[i].destination_y = objects[moved_index].sprite.y;
             }
+
+
+            // Monster that is the beam source moved
+            if(moved_type === 'monster' && effect_sprites[i].damage_source_type === 'monster' && effect_sprites[i].damage_source_id === monsters[moved_index].id) {
+
+                effect_needs_update = true;
+                effect_sprites[i].x = monsters[moved_index].sprite.x;
+                effect_sprites[i].y = monsters[moved_index].sprite.y;
+
+                
+
+            } 
 
             // Player that is the beam source moved
             if(moved_type === 'player' && effect_sprites[i].damage_source_type === 'player' && effect_sprites[i].damage_source_id === players[moved_index].id) {
@@ -422,6 +441,7 @@ function updateEffectSprites(moved_type, moved_index) {
                 effect_sprites[i].destination_x = players[moved_index].sprite.x;
                 effect_sprites[i].destination_y = players[moved_index].sprite.y;
             }
+            
             
             if(moved_type === 'object' && effect_sprites[i].damage_source_type === 'object' && effect_sprites[i].damage_source_id === objects[moved_index].id) {
 

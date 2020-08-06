@@ -8,6 +8,8 @@ const uuid = require('uuid/v1');
 const chalk = require('chalk');
 const log = console.log;
 
+
+const battle = require('./battle.js');
 const game = require('./game.js');
 const game_object = require('./game_object.js');
 const helper = require('./helper.js');
@@ -61,7 +63,7 @@ async function addBattleLinker(socket, dirty, data) {
 
         // attach and get our socket ids if we are dealing with players
         if (data.attacking_type === 'player') {
-            attacking_index = await main.getPlayerIndex({ 'player_id': data.attacking_id });
+            attacking_index = await player.getIndex(dirty, { 'player_id': data.attacking_id });
             if (attacking_index !== -1) {
                 // make sure the other player is connected
                 Object.keys(io.sockets.sockets).forEach(function (id) {
@@ -78,7 +80,7 @@ async function addBattleLinker(socket, dirty, data) {
         }
 
         if (data.being_attacked_type === 'player') {
-            being_attacked_index = await main.getPlayerIndex({ 'player_id': data.being_attacked_id });
+            being_attacked_index = await player.getIndex(dirty, { 'player_id': data.being_attacked_id });
             if (being_attacked_index !== -1) {
                 // make sure the other player is connected
                 Object.keys(io.sockets.sockets).forEach(function (id) {
@@ -587,7 +589,7 @@ async function aiAttack(dirty, data) {
         let being_attacked_coord_index = -1;
 
         if(data.attacking_type === 'player') {
-            being_attacked_index = await main.getPlayerIndex({ 'player_id': data.attacking_id });
+            being_attacked_index = await player.getIndex(dirty, { 'player_id': data.attacking_id });
         } else if(data.attacking_type === 'object') {
             being_attacked_index = await game_object.getIndex(dirty, data.attacking_id);
         } else if(data.attacking_type === 'monster') {
@@ -870,7 +872,7 @@ async function aiAttack(dirty, data) {
             spawn_monster_data.attack_on_spawn_type = 'player';
             spawn_monster_data.attack_on_spawn_id = data.attacking_id;
 
-            let being_attacked_index = await main.getPlayerIndex({ 'player_id': data.attacking_id });
+            let being_attacked_index = await player.getIndex(dirty, { 'player_id': data.attacking_id });
 
             if (dirty.objects[ai_index].planet_coord_id) {
                 let being_attacked_planet_coord_index = await main.getPlanetCoordIndex(
@@ -1103,20 +1105,24 @@ async function attachShipEngines(dirty, ship_index) {
 
 exports.attachShipEngines = attachShipEngines;
 
-async function changeArea(socket, dirty, data) {
+
+/**
+ * @param {Object} socket
+ * @param {Object} dirty
+ * @param {number} area_id
+ * @param {Object} data
+ * @param {String=} data.new_name
+ * @param data.put_on_market
+ * @param {Boolean=} data.auto_market
+ */
+async function changeArea(socket, dirty, area_id, data) {
     try {
 
-        if (!data.area_id) {
+        if (isNaN(area_id)) {
             return false;
         }
 
-        data.area_id = parseInt(data.area_id);
-
-        if (isNaN(data.area_id)) {
-            return false;
-        }
-
-        let area_index = await main.getAreaIndex(data.area_id);
+        let area_index = await main.getAreaIndex(area_id);
 
         if (area_index === -1) {
             return false;
@@ -1137,7 +1143,7 @@ async function changeArea(socket, dirty, data) {
 
             console.log("Owner is renaming an area. New name: " + data.new_name);
 
-            data.new_name = main.cleanStringInput(data.new_name);
+            data.new_name = helper.cleanStringInput(data.new_name);
 
             console.log("New name after we clean it: " + data.new_name);
 
@@ -1147,6 +1153,15 @@ async function changeArea(socket, dirty, data) {
             socket.emit('area_info', { 'area': dirty.areas[area_index] });
 
 
+        }
+
+        if(typeof data.auto_market !== "undefined") {
+            if(data.auto_market) {
+                dirty.areas[area_index].auto_market = true;
+            } else {
+                dirty.areas[area_index].auto_market = false;
+            }
+            dirty.areas[area_index].has_change = true;
         }
 
         if (data.put_on_market) {
@@ -1254,12 +1269,19 @@ async function checkMonsterBattleConditions(dirty, monster_id, checking_type, ch
         let monster_index = await main.getMonsterIndex(monster_id);
 
         if (monster_index === -1) {
+            log(chalk.yellow("Could not find monster"));
             return false;
         }
 
         let monster_type_index = dirty.monster_types.findIndex(function (obj) { return obj && obj.id === dirty.monsters[monster_index].monster_type_id; });
 
-        if (monster_type_index === -1 || !dirty.monster_types[monster_type_index].auto_attack) {
+        if (monster_type_index === -1) {
+            log(chalk.yellow("Could not find monster type"));
+            return false;
+        }
+
+        if(!dirty.monster_types[monster_type_index].auto_attack) {
+            //console.log("Monster type does not auto attack");
             return false;
         }
 
@@ -1274,6 +1296,7 @@ async function checkMonsterBattleConditions(dirty, monster_id, checking_type, ch
 
         // Monster is already attacking something
         if (battle_linker_index !== -1) {
+            //console.log("Monster is already attacking something");
             return false;
         }
 
@@ -1282,28 +1305,36 @@ async function checkMonsterBattleConditions(dirty, monster_id, checking_type, ch
 
         let can_attack = true;
 
+        let player_index = -1;
+
         // If the monster is trying to attack a player, make sure the player isn't on a spaceport tile
         if (checking_type === 'player') {
-            let player_index = await main.getPlayerIndex({ 'player_id': checking_id });
-            if (player_index !== -1) {
+            player_index = await player.getIndex(dirty, { 'player_id': checking_id });
+
+            if(player_index === -1) {
+                log(chalk.yellow("Could not find the player"));
+                return false;
+            }
 
 
-                if(dirty.monsters[monster_index].planet_coord_id) {
-                    let player_coord_index = await main.getPlanetCoordIndex(
-                        { 'planet_coord_id': dirty.players[player_index].planet_coord_id });
-    
-                    if (player_coord_index !== -1) {
-                        if (dirty.planet_coords[player_coord_index].floor_type_id === 11) {
-                            can_attack = false;
-                        }
+            if(dirty.monsters[monster_index].planet_coord_id) {
+                let player_coord_index = await main.getPlanetCoordIndex(
+                    { 'planet_coord_id': dirty.players[player_index].planet_coord_id });
+
+                if (player_coord_index !== -1) {
+                    if (dirty.planet_coords[player_coord_index].floor_type_id === 11) {
+                        console.log("Player is on spaceport");
+                        can_attack = false;
                     }
-                } 
+                }
+            } 
 
                
-            }
+
         }
 
         if (!can_attack) {
+            console.log("Can't attack");
             return false;
         }
 
@@ -1316,19 +1347,25 @@ async function checkMonsterBattleConditions(dirty, monster_id, checking_type, ch
             'being_attacked_type': checking_type
         };
 
-        if (socket !== false) {
-            battle_linker_data.being_attacked_socket_id = socket.id;
+        let player_socket = getPlayerSocket(dirty, player_index);
+
+        if (helper.notFalse(player_socket)) {
+            battle_linker_data.being_attacked_socket_id = player_socket.id;
         }
 
         let new_battle_linker_index = dirty.battle_linkers.push(battle_linker_data) - 1;
 
-        if (socket) {
-            socket.emit('battle_linker_info', { 'battle_linker': dirty.battle_linkers[new_battle_linker_index] });
+        if (helper.notFalse(player_socket)) {
+            player_socket.emit('battle_linker_info', { 'battle_linker': dirty.battle_linkers[new_battle_linker_index] });
+
+            // We could uncomment this to have the monster auto INSTA attack the player
+            //battle.monsterAttackPlayer(dirty, dirty.battle_linkers[new_battle_linker_index]);
         }
 
 
     } catch (error) {
         log(chalk.red("Error in world.checkMonsterBattleConditions: " + error));
+        console.error(error);
     }
 
 
@@ -1373,7 +1410,7 @@ async function checkObjectBattleConditions(socket, dirty, object_id, checking_ty
         let player_index = -1;
         let player_info = false;
         if (checking_type === 'player') {
-            player_index = await main.getPlayerIndex({ 'player_id': checking_id });
+            player_index = await player.getIndex(dirty, { 'player_id': checking_id });
 
             if (player_index === -1) {
                 log(chalk.yellow("Could not find the player"));
@@ -1658,11 +1695,11 @@ async function createFaction(socket, dirty, data) {
     try {
         let name = data.name;
         console.log("Got faction name as: " + name);
-        name = main.cleanStringInput(name);
+        name = helper.cleanStringInput(name);
 
         console.log("Sanitized version: " + name);
 
-        let player_index = await main.getPlayerIndex({ 'player_id': socket.player_id });
+        let player_index = await player.getIndex(dirty, { 'player_id': socket.player_id });
 
         // see if there's a matching faction name already
         let faction_index = dirty.factions.findIndex(function (obj) { return obj && obj.name === name; });
@@ -2603,10 +2640,10 @@ async function getPlayerCoordAndRoom(dirty, player_index) {
 
     try {
 
-        let room = false;
+        let room = '';
         let coord_index = -1;
-        let scope = false;
-        let coord = false;
+        let scope = '';
+        let coord = {};
 
         if (dirty.players[player_index].coord_id) {
             coord_index = await main.getCoordIndex(
@@ -2676,7 +2713,7 @@ async function getPlayerLevel(dirty, data) {
 
                 if (body_index === -1) {
                     log(chalk.yellow("Could not get a body for the player"));
-                    return false;
+                    return 1;
                 }
             }
 
@@ -2689,7 +2726,7 @@ async function getPlayerLevel(dirty, data) {
 
             if (ship_index === -1) {
                 log(chalk.yellow("Could not get a ship for the player"));
-                return false;
+                return 1;
             }
 
 
@@ -2853,14 +2890,9 @@ async function getPlayerLevel(dirty, data) {
 
                 }
 
-              
-
             }
 
-
-
         }
-
 
       
         if(data.skill_type === 'manufacturing') {
@@ -2883,7 +2915,7 @@ function getPlayerSocket(dirty, player_index) {
 
     try {
 
-        let returning_socket = false;
+        let returning_socket = {};
 
         for (let id of Object.keys(io.sockets.sockets)) {
 
@@ -3457,8 +3489,8 @@ async function objectFindTarget(dirty, object_index) {
         }
 
         let coord_index = -1;
-        let starting_x = false;
-        let starting_y = false;
+        let starting_x = 0;
+        let starting_y = 0;
 
         // object could be on a planet coord, or a ship coord
         if (dirty.objects[object_index].planet_coord_id) {
@@ -3493,7 +3525,7 @@ async function objectFindTarget(dirty, object_index) {
                 }
 
                 let checking_coord_index = -1;
-                let temp_coord = false;
+                let temp_coord = {};
 
                 if (dirty.objects[object_index].planet_coord_id) {
                     let planet_coord_data = {
@@ -3517,7 +3549,7 @@ async function objectFindTarget(dirty, object_index) {
                     }
                 }
 
-                if (temp_coord) {
+                if (helper.notFalse(temp_coord)) {
 
                     // There's an object! See if we attack it!
                     // Currently we attack objects that are owned by a player, but not part of our faction, or us
@@ -3555,7 +3587,7 @@ async function objectFindTarget(dirty, object_index) {
 
                     // There's a player! See if we attack it
                     if (temp_coord.player_id) {
-                        let checking_player_index = await main.getPlayerIndex({ 'player_id': dirty.objects[object_index].player_id });
+                        let checking_player_index = await player.getIndex(dirty, { 'player_id': dirty.objects[object_index].player_id });
 
                         if (checking_player_index !== -1) {
                             if (dirty.players[checking_player_index].faction_id &&
@@ -3772,6 +3804,7 @@ function removeBattleLinkers(dirty, data) {
 
     } catch (error) {
         log(chalk.red("Error in world.removeBattleLinkers: " + error));
+        console.error(error);
     }
 
 }
@@ -4118,7 +4151,7 @@ async function sendNpcInfo(socket, room, dirty, npc_id) {
         if (dirty.npcs[npc_index].ship_id) {
             let ship_index = await game_object.getIndex(dirty, dirty.npcs[npc_index].ship_id);
             if (ship_index !== -1) {
-                await sendObjectInfo(socket, room, dirty, ship_index, 'world.sendNpcInfo');
+                await game_object.sendInfo(socket, room, dirty, ship_index, 'world.sendNpcInfo');
             }
 
         }
@@ -4625,7 +4658,7 @@ exports.skinUse = skinUse;
 async function spawnAdjacent(dirty, data) {
     try {
 
-        let base_coord = false;
+        let base_coord = {};
         if (data.scope === 'planet') {
             base_coord = dirty.planet_coords[data.base_coord_index];
         } else if (data.scope === 'ship') {
@@ -5027,7 +5060,7 @@ async function spawnMonster(dirty, monster_type_id, data) {
                 log(chalk.yellow("AI THING SPAWNED CHECK"));
 
                 // get the player socket
-                let being_attacked_player_index = await main.getPlayerIndex({ 'player_id': data.attack_on_spawn_id });
+                let being_attacked_player_index = await player.getIndex(dirty, { 'player_id': data.attack_on_spawn_id });
                 if (being_attacked_player_index !== -1) {
                     let being_attacked_player_socket = getPlayerSocket(dirty, being_attacked_player_index);
                     if (being_attacked_player_socket) {

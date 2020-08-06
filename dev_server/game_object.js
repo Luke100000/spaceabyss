@@ -592,7 +592,7 @@ async function deleteObject(dirty, data) {
 
         // if it's a body - delete any items that are equipped on it
         if(dirty.object_types[object_type_index].race_id) {
-            await main.getPlayerEquipment(dirty.objects[data.object_index].id);
+            await player.getEquipment(dirty, dirty.objects[data.object_index].id);
 
             for(let equipment_linker of dirty.equipment_linkers) {
                 if(equipment_linker && equipment_linker.body_id === dirty.objects[data.object_index].id) {
@@ -1101,7 +1101,7 @@ async function removeFromCoord(dirty, object_index) {
 
 exports.removeFromCoord = removeFromCoord;
 
-async function sendInfo(socket, room, dirty, object_index, source = false) {
+async function sendInfo(socket, room, dirty, object_index, source = '') {
 
     try {
 

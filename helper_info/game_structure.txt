@@ -762,6 +762,7 @@ Generation ship
 Starship
 Transport ship
 Yacht
+Gundam style spaceship for players
 
 
 ENGINE TYPES

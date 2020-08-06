@@ -43,7 +43,7 @@ const world = require('./world.js');
                 console.log("Was sent in object id: " + data.object_id);
 
                 // It could be player v object, or object v object if we are in the galaxy
-                let player_index = await main.getPlayerIndex({ 'player_id': socket.player_id });
+                let player_index = await player.getIndex(dirty, { 'player_id': socket.player_id });
 
                 if(player_index === -1) {
                     return false;
@@ -108,6 +108,7 @@ const world = require('./world.js');
 
     async function getMonsterAttack(dirty, monster_index, calculating_range) {
         try {
+            //console.log("In getMonsterAttack with range: " + calculating_range);
 
             let monster_type_index = main.getMonsterTypeIndex(dirty.monsters[monster_index].monster_type_id);
 
@@ -142,29 +143,6 @@ const world = require('./world.js');
 
     exports.getMonsterAttack = getMonsterAttack;
 
-    async function calculateMonsterAttack(dirty, monster_index, calculating_range) {
-
-        try {
-            let monster_type_index = main.getMonsterTypeIndex(dirty.monsters[monster_index].monster_type_id);
-
-            if(monster_type_index === -1) {
-                log(chalk.yellow("Could not find monster type index for monster id: " + dirty.monsters[monster_index].id));
-                return 1;
-            }
-
-            if(calculating_range > dirty.monster_types[monster_type_index].attack_range) {
-                return 0;
-            }
-
-            return dirty.monster_types[monster_type_index].attack_strength;
-
-        } catch(error) {
-            log(chalk.red("Error in battle.calculateMonsterAttack: " + error));
-        }
-
-
-
-    }
 
     async function calculateNpcAttack(dirty, npc_index, calculating_range) {
         try {
@@ -739,7 +717,7 @@ const world = require('./world.js');
                 room = "planet_" + dirty.planet_coords[data.planet_coord_index].planet_id;
 
                 if(dirty.planet_coords[data.planet_coord_index].player_id) {
-                    being_damaged_player_index = await main.getPlayerIndex({ 'player_id': dirty.planet_coords[data.planet_coord_index].player_id });
+                    being_damaged_player_index = await player.getIndex(dirty, { 'player_id': dirty.planet_coords[data.planet_coord_index].player_id });
                 }
 
                 if(dirty.planet_coords[data.planet_coord_index].monster_id) {
@@ -751,7 +729,7 @@ const world = require('./world.js');
                 room = "ship_" + dirty.ship_coords[data.ship_coord_index].ship_id;
 
                 if(dirty.ship_coords[data.ship_coord_index].player_id) {
-                    being_damaged_player_index = await main.getPlayerIndex({ 'player_id': dirty.ship_coords[data.ship_coord_index].player_id });
+                    being_damaged_player_index = await player.getIndex(dirty, { 'player_id': dirty.ship_coords[data.ship_coord_index].player_id });
                 }
 
                 if(dirty.ship_coords[data.ship_coord_index].monster_id) {
@@ -1020,7 +998,6 @@ const world = require('./world.js');
             }
 
 
-            //let attack = await calculateMonsterAttack(dirty, monster_index, calculating_range);
             // TODO add
             let defense = await game_object.calculateDefense(dirty, object_index, monster_attack.damage_type);
 
@@ -1058,7 +1035,7 @@ const world = require('./world.js');
             }
 
             let monster_index = await main.getMonsterIndex(battle_linker.attacking_id);
-            let player_index = await main.getPlayerIndex({ 'player_id': battle_linker.being_attacked_id });
+            let player_index = await player.getIndex(dirty, { 'player_id': battle_linker.being_attacked_id });
 
             if(monster_index === -1) {
                 log(chalk.yellow("Could not find monster id: " + battle_linker.attacking_id + ". monster_index: " + monster_index));
@@ -1123,10 +1100,10 @@ const world = require('./world.js');
             }
 
             if(monster_attack === false) {
+                console.log("monster did not have an attack");
                 return false;
             }
 
-            //let attack = await calculateMonsterAttack(dirty, monster_index, calculating_range);
             let defense = await player.calculateDefense(dirty, player_index, monster_attack.damage_type);
 
 
@@ -1135,7 +1112,7 @@ const world = require('./world.js');
 
 
             if(monster_attack.damage_amount <= defense) {
-                //console.log("attack was less than defense: " + attack + " < " + defense);
+                //console.log("attack was less than defense: " + monster_attack.damage_amount + " < " + defense);
                 io.to(player_info.room).emit('damaged_data',
                     {'player_id': dirty.players[player_index].id, 'damage_amount': 0, 'was_damaged_type': 'hp',
                         'damage_source_type':'monster', 'damage_source_id': dirty.monsters[monster_index].id,
@@ -1199,11 +1176,12 @@ const world = require('./world.js');
 
         } catch(error) {
             log(chalk.red("Error in battle.monsterAttackPlayer: " + error));
+            console.error(error);
         }
 
-
-
     }
+
+    exports.monsterAttackPlayer = monsterAttackPlayer;
 
 
     async function moveMonsters(dirty) {
@@ -1459,7 +1437,7 @@ const world = require('./world.js');
             }
 
             let npc_index = await main.getNpcIndex(battle_linker.attacking_id);
-            let player_index = await main.getPlayerIndex({ 'player_id': battle_linker.being_attacked_id });
+            let player_index = await player.getIndex(dirty, { 'player_id': battle_linker.being_attacked_id });
 
             if(npc_index === -1) {
                 log(chalk.yellow("Could not find npc id: " + battle_linker.attacking_id));
@@ -1961,7 +1939,7 @@ const world = require('./world.js');
 
             let player_index = -1;
             if(battle_linker) {
-                player_index = await main.getPlayerIndex({ 'player_id': battle_linker.being_attacked_id });
+                player_index = await player.getIndex(dirty, { 'player_id': battle_linker.being_attacked_id });
             } else if(typeof data.player_index !== 'undefined') {
                 player_index = data.player_index;
             }
@@ -2073,7 +2051,7 @@ const world = require('./world.js');
 
 
             let monster_index = await main.getMonsterIndex(battle_linker.being_attacked_id);
-            let player_index = await main.getPlayerIndex({'player_id':battle_linker.attacking_id});
+            let player_index = await player.getIndex(dirty, {'player_id':battle_linker.attacking_id});
 
             if(monster_index === -1) {
                 log(chalk.yellow("Could not find monster id: " + battle_linker.being_attacked_id));
@@ -2260,7 +2238,7 @@ const world = require('./world.js');
 
 
             let npc_index = await main.getNpcIndex(battle_linker.being_attacked_id);
-            let player_index = await main.getPlayerIndex({'player_id':battle_linker.attacking_id});
+            let player_index = await player.getIndex(dirty, {'player_id':battle_linker.attacking_id});
 
             if(npc_index === -1) {
                 log(chalk.yellow("Could not find NPC id: " + battle_linker.being_attacked_id));
@@ -2389,7 +2367,7 @@ const world = require('./world.js');
             }
 
             let object_index = await game_object.getIndex(dirty, battle_linker.being_attacked_id);
-            let player_index = await main.getPlayerIndex({ 'player_id':battle_linker.attacking_id});
+            let player_index = await player.getIndex(dirty, { 'player_id':battle_linker.attacking_id});
 
             if(object_index === -1) {
                 log(chalk.yellow("Could not find object id: " + battle_linker.being_attacked_id));
@@ -2503,8 +2481,8 @@ const world = require('./world.js');
                 return;
             }
 
-            let attacking_player_index = await main.getPlayerIndex({ 'player_id': battle_linker.attacking_id });
-            let defending_player_index = await main.getPlayerIndex({ 'player_id': battle_linker.being_attacked_id });
+            let attacking_player_index = await player.getIndex(dirty, { 'player_id': battle_linker.attacking_id });
+            let defending_player_index = await player.getIndex(dirty, { 'player_id': battle_linker.being_attacked_id });
 
             if(attacking_player_index === -1 || defending_player_index === -1) {
                 log(chalk.yellow("Couldn't find one of the players"));

@@ -1,0 +1,19 @@
+So we have a doctor NPC
+    The goal: To let the player pay the NPC to perform a surgery on them
+    Requirement 1. Player is standing on an auto doc owned by the npc
+    Requirement 2. Npc is next to that auto doc
+    Price could increase based on npc's surgery level
+    Npc's surgery level should increase slowly over time
+
+    So player right clicks on npc, while standing on an auto doc that the npc owns, and that gives the player the option
+        to 'Pay to implant xxxx/yyyy'. Similar to the normal auto doc right click menu, but with a $$$ attached to it
+
+Repairman NPC that sits at a spaceport and will buy broken junk off you, repair it, and sell it
+    Kind of a side note - but we could have a larger spaceport with more merchant spots for the Azure and Corporation planet
+        have lots of space for NPCs and market stalls
+        Names for market stalls shown in the client above the spot? "Bob's Repair" for an NPC that repairs named Bob
+
+
+Could have an artist npc that only produces a couple of art pieces. Could be paintings or a cool neon statue.
+    No effect other than being limited. Decorate captains quarters, sign of power.
+

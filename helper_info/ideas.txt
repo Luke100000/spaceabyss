@@ -39,196 +39,19 @@ I really just don't know if I want an Exodium knife... I feel like I want to get
 
 
 
-So we have a doctor NPC
-    The goal: To let the player pay the NPC to perform a surgery on them
-    Requirement 1. Player is standing on an auto doc owned by the npc
-    Requirement 2. Npc is next to that auto doc
-    Price could increase based on npc's surgery level
-    Npc's surgery level should increase slowly over time
-
-    So player right clicks on npc, while standing on an auto doc that the npc owns, and that gives the player the option
-        to 'Pay to implant xxxx/yyyy'. Similar to the normal auto doc right click menu, but with a $$$ attached to it
-
-
-
-HACKING. THE VIEW I HAVEN'T MADE YET! Need a way to enter into virtual realm
-
-Advanced Forge image and functionality
-
-
-    Maggot burger made from maggots - maggot farms on corporation planets. maggot buckets.
-
-    mechanical ramen - 
-
-
     great ship (the great nomad!)
         need warning before 
         world.tickNomad
 
 
-    Need to change move delay server side so players' can't switch to body/ship/body/ship to reset the move delay. Also, probably shouldn't have a 10 move 
-        wiggle window for really slow things like stations.
 
-
-    autopilot seems to be broken
-
-
-    I need a better way of sending an admin message to everyone about server updates
-    
-    Client is repeatedly moving too fast!
-        I should really try to fix this, make it not happen
-
-
-    Having multiple ships is not intuitive
-
-
-        Need to limit the # of things that can be stacked on a floor. Limit at 100 Territe/tile or so.
-
-
-    Not sure that cooking listens to complexity yet
-
-
-    I want to try and track failed logins, # of logins, etc to see if people are finding the game and leaving,
-        finding the game and failing to login, finding the game and then just.... dying?
-
-
-
-    admin /moveto ship is buggy!!!
-
-
-    Make those merchant spots do stuff!
-
-    I should do a pass on some of the basic things players get to do as well, and try making videos for some of
-        them on Youtube
-        Traps - I need to expand on this
-        Mining - I definitely want things like exodium and gold be to able to be mined from asteroids.
-            I either want asteroids to have a pre-determined composition, or I want to dynamically pull chances
-            for things based on the mining tools used, and the skill.
-
-            Have asteroids move slowly through space?
-                If an asteroid landed on a planet, would spawn a crashed meteorite or something I guess.
-
-    No 'set autopilot destination' option for large dockable ships. It would be good to see why that isn't showing up.
-        Same with switching to. I think it has to do with the belongs_to coords
-
-    If a ship is dockable, we want to run the sprite all the time
-
-
-    The ability to re-generate a single planet level
-
-    The ability to re-generate the floor of a single planet level
-
-    If we can't place a player in the galaxy, try the coords around the player instead of random
-        Search server for: 'Was not able to place player on planet or specific galaxy coord. Getting a random one'
-        Players can effectively force a warp
-
-
-NEED TO DRAW
-
-
-    Some slerm. Baby slerm, generic slerm
-
-    Glass of Life Water / Bulb of Life water?
-        Drew Kick Bulb. Could do the same with life water
-
-
-
-
-
-
-
-
-ART TASKS
-
-
-moss
-
-moss garden
-
-moss deposit
-
-Asteroid Ship
-
-Zuran Cruiser Wreck
-    https://images.gemquery.com/255/content_2554351.jpg
-
-    Spawns a Widden Monster
-
-    Also spawns bugs https://images.gemquery.com/240/content_2402471.png
-
-
-Star Explorer Wreck
-    https://images.gemquery.com/255/content_2554352.jpg
-
-Derelict ship 3x (just salvage)
-    Some small like 24x24 - asteroid size
-    https://www.artstation.com/artwork/mNLa9
-
-
-Some larger, 32x32 so the player can dock at them
-    2x
-
-Thiol Drive
-Broken Thiol Drive
-
-
-The Great Ship
-
-
-
-life herb seedling
-
-
-
-MONSTER PROGRESSION
-carnivorous plant egg
-carnivorous plant baby
-carnivorous plant
-man eater
-
-algae
-algae puffs
-algae 
-blue algae
-algae power cell
-
-
-
-water zealots. Must be blue
-
-
-random advertisement drones that show up here and there on corporation planets!!!! A little drone with a burger image on it, etc.
-    Holo advertisements
-    NEON!
-
-
-Low Priority:
-https://gemquery.com/admin/favorite-view/818
-Sandstone
-Sandstone deposit
-Sandstone floor
-Sandstone wall
-
-
-
-
-
-Need a moveObjectFlow or something for asteroids and such I suppose?
-    The idea of asteroids flowing in space is cool - but I would have to greatly speed up their movement tick time.
-
-Expand on engine hardpoint stuff
-    Make sure ships are slower if they don't have enough engines
-
-Things like energy storage could have a frame for not full, and a frame for full.
-
-A player body type that is resistant to acid - or armor that is especially useful for it. (I LIKE BOTH :p )
+A player body type that is resistant to acid
+    Could do a hyperdiamond body TIER 8
 
     I think it would be neat if there was the option to just take some of what something spawned
     With the Milk Slerm, you could take one or two, and it could generate more, but if you took all,
         it would de-spawn.
 
-
-Gundam style spaceship for players
 
 
 
@@ -236,10 +59,7 @@ Have something like a geothermal well that can be put on any planet - and produc
     But universally decreases the HP of the planet
 
 
-Repairman NPC that sits at a spaceport and will buy broken junk off you, repair it, and sell it
-    Kind of a side note - but we could have a larger spaceport with more merchant spots for the Azure and Corporation planet
-        have lots of space for NPCs and market stalls
-        Names for market stalls shown in the client above the spot? "Bob's Repair" for an NPC that repairs named Bob
+
 
 
 There's a high fail chance for complex things. Manufacturing skill helps. Certain monsters drop blueprints that will
@@ -253,9 +73,6 @@ Gas giant that you can land on - but need a special body type for
 
 
 
- Could give asteroids varrying complexity, to make some easier and some harder to mine.
-
-
 Biogrove planets can be our gaia type planets. Have a tree of life (think of a cooler name) npc spawn and have an AI at the bottom
     level of the planet. Tree of life NPC would follow NPCs on other planets controlling them/things
 
@@ -264,8 +81,6 @@ Quirks for AIs. Like the idea of an AI that gets focused/obsessed on a particula
 
 Maybe have a super attack on a crazy long cooldown. Mob psycho 100, Goku going all out, etc
 
-Could have an artist npc that only produces a couple of art pieces. Could be paintings or a cool neon statue.
-    No effect other than being limited. Decorate captains quarters, sign of power.
 
 Rare items with a limited number that can exist in the galaxy at any given time. Think Star Darts
 
@@ -276,6 +91,10 @@ Piracy/Bounty system
     If a player attacks things on a corporation planet, the CEO puts a bounty on the player's head
 
     Players could put bounties on other players. NPCs could put bounties on players.
+
+    Currently a moderately large problem with a bounty system is there isn't a whole lot of downside to dying
+        and I want to keep it that way. Players could just switch to a human body, and kill themselves with another account 
+        and get the bounty
 
 Objects that get better with age. Kind of like wine. Kids were watching a show and they ate 1,000 year old eggs.
 
@@ -1958,7 +1777,36 @@ Water for hydrogen-fusion tanks.
 The palace of eternal dusk
 Swallowships - would be neat to have specialized ships that filled with water/ore/etc
 
+HACKING. THE VIEW I HAVEN'T MADE YET! Need a way to enter into virtual realm
 
+Advanced Forge image and functionality
+
+    Need to change move delay server side so players' can't switch to body/ship/body/ship to reset the move delay. Also, probably shouldn't have a 10 move 
+        wiggle window for really slow things like stations.
+
+Need to limit the # of things that can be stacked on a floor. Limit at 100 Territe/tile or so.
+
+
+Not sure that cooking listens to complexity yet
+
+admin /moveto ship is buggy!!!
+
+If a ship is dockable, we want to run the sprite all the time
+
+
+
+
+The ability to re-generate a single planet level
+
+The ability to re-generate the floor of a single planet level
+
+If we can't place a player in the galaxy, try the coords around the player instead of random
+    Search server for: 'Was not able to place player on planet or specific galaxy coord. Getting a random one'
+    Players can effectively force a warp
+
+
+Need a moveObjectFlow or something for asteroids and such I suppose?
+    The idea of asteroids flowing in space is cool - but I would have to greatly speed up their movement tick time.
 
 
 

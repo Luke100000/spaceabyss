@@ -1,3 +1,24 @@
+## [0.1.24] - 2020-08-06
+
+### Added
+- Monsters can now have a 'move away' attack movement type. This will generally be the default movement pattern for ranged monsters.
+- Admins can now send a new 'admin' type of message globally to notify everyone if the server is going to shut down or something else important.
+
+### Fixed
+- Autopilot
+- Message warning players that if you build a ship in someone else's shipyard, it will not belong to you when it is complete.
+- Manufacturing Thiol Drives and Blasters
+- Monster beams were not following the monsters. It will now follow the monsters as they move.
+- Bug that would cause many of the same effect sprites to be created needlessly.
+- Bug that would cause all beam sprites directed towards a player disappear when only one needed to be removed.
+- Continuously redrawing hp bars unnecessarily
+- A bug that was immediately deleting new battle linkers when a player moved down a hole or up stairs
+
+
+### Changed
+- When switching ships, only pods will be abandoned. Other ships will remain yours, and you can command the ships you aren't using to dock/warp to the Azure planet. Eventually I want them to autopilot to the nearest planet, but that's a lot more difficult to implement.
+- Made credits a more common drop on monsters - especially on corporation planets
+
 ## [0.1.23] - 2020-07-27
 
 

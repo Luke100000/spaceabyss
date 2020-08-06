@@ -54,7 +54,7 @@ function removeMonster(monster_id) {
 
 
     let removing_monster_id = parseInt(monster_id);
-    //console.log("Have monster info to remove: " + monster_id);
+    console.log("Removing monster id: " + monster_id);
 
     let monster_index = monsters.findIndex(function (obj) { return obj && obj.id === parseInt(monster_id); });
 
@@ -119,13 +119,13 @@ function removeMonster(monster_id) {
         if (battle_linker.attacking_type === 'monster' && battle_linker.attacking_id === removing_monster_id) {
 
             delete battle_linkers[i];
-            //console.log("Removed battle linker");
+            console.log("Removed battle linker - attacking monster");
         }
 
         if (battle_linker.being_attacked_type === 'monster' && battle_linker.being_attacked_id === removing_monster_id) {
 
             delete battle_linkers[i];
-            //console.log("Removed battle linker");
+            console.log("Removed battle linker - mosnter is being attacked");
         }
     });
 
