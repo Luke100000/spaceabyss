@@ -4169,38 +4169,6 @@ async function sendNpcInfo(socket, room, dirty, npc_id) {
 exports.sendNpcInfo = sendNpcInfo;
 
 
-// planet_coord_index   OR   planet_coord_id
-async function sendPlanetCoordInfo(socket, room, dirty, data) {
-
-    try {
-        let coord_index = -1;
-
-        if (data.planet_coord_index) {
-            coord_index = data.planet_coord_index;
-        } else if (data.planet_coord_id) {
-            coord_index = await main.getPlanetCoordIndex({ 'planet_coord_id': data.planet_coord_id });
-        }
-
-        if (coord_index === -1) {
-            return false;
-        }
-
-        if (socket) {
-            socket.emit('planet_coord_info', { 'planet_coord': dirty.planet_coords[coord_index] });
-        }
-
-        if (room) {
-            io.to(room).emit('planet_coord_info', { 'planet_coord': dirty.planet_coords[coord_index] });
-        }
-
-    } catch (error) {
-        log(chalk.red("Error in world.sendPlanetCoordInfo: " + error));
-    }
-
-}
-
-exports.sendPlanetCoordInfo = sendPlanetCoordInfo;
-
 async function sendPlayerAIs(socket, room, dirty, player_id) {
     try {
 

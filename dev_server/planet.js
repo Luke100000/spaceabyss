@@ -6,9 +6,9 @@ const chalk = require('chalk');
 const log = console.log;
 
 const game_object = require('./game_object.js');
+const helper = require('./helper.js');
 const main = require('./space_abyss' + process.env.FILE_SUFFIX + '.js');
 const player = require('./player.js');
-//const world = require('./world.js');
 
 
 
@@ -95,6 +95,102 @@ async function getIndex(dirty, data) {
 exports.getIndex = getIndex;
 
 
+// BIG NOTE! Will only re-generate floor for coors in memory. Gotta explore the entire planet level until we change the server to always load in all planet coords
+async function regenerateFloor(dirty, planet_id, floor_level) {
+
+    try {
+
+        console.log("In planet.regenerateFloor. Planet id: " + planet_id + " floor_level: " + floor_level);
+
+        let planet_index = await getIndex(dirty, { 'planet_id': planet_id });
+
+        if(planet_index === -1) {
+            log(chalk.yellow("Could not get planet"));
+            return false;
+        }
+
+        for(let i = 0; i < dirty.planet_coords.length; i++) {
+
+            if(dirty.planet_coords[i] && dirty.planet_coords[i].planet_id === planet_id && dirty.planet_coords[i].level === floor_level) {
+
+
+                let floor_rarity = helper.rarityRoll();
+                let coord_floor_type_ids = [];
+
+                // grab the applicable floors
+                for (let f = 0; f < dirty.planet_floor_linkers.length; f++) {
+                    if (dirty.planet_floor_linkers[f].planet_type_id === dirty.planets[planet_index].planet_type_id &&
+                        dirty.planet_floor_linkers[f].rarity <= floor_rarity &&
+                        (floor_level <= dirty.planet_floor_linkers[f].highest_planet_level &&
+                            floor_level >= dirty.planet_floor_linkers[f].lowest_planet_level)) {
+
+                        coord_floor_type_ids.push(dirty.planet_floor_linkers[f].floor_type_id);
+
+                    }
+                }
+
+                let floor_type_id = coord_floor_type_ids[Math.floor(Math.random() * coord_floor_type_ids.length)];
+                dirty.planet_coords[i].floor_type_id = floor_type_id;
+                dirty.planet_coords[i].has_change = true;
+
+                sendCoordInfo(false, "planet_" + planet_id, dirty, { 'planet_coord_index': i });
+            
+
+            }
+
+        }
+
+    } catch(error) {
+        log(chalk.red("Error in planet.regenerateFloor: " + error));
+        console.error(error);
+    }
+
+}
+
+exports.regenerateFloor = regenerateFloor;
+
+/**
+ * @param {Object} socket
+ * @param {String} room
+ * @param {Object} dirty
+ * @param {Object} data
+ * @param {number=} data.planet_coord_index
+ * @param {number=} data.planet_coord_id
+ */
+async function sendCoordInfo(socket, room, dirty, data) {
+
+    try {
+        let coord_index = -1;
+
+        if (data.planet_coord_index) {
+            coord_index = data.planet_coord_index;
+        } else if (data.planet_coord_id) {
+            coord_index = await main.getPlanetCoordIndex({ 'planet_coord_id': data.planet_coord_id });
+        }
+
+        if (coord_index === -1) {
+            return false;
+        }
+
+        if (socket) {
+            socket.emit('planet_coord_info', { 'planet_coord': dirty.planet_coords[coord_index] });
+        }
+
+        if (room) {
+            io.to(room).emit('planet_coord_info', { 'planet_coord': dirty.planet_coords[coord_index] });
+        }
+
+    } catch (error) {
+        log(chalk.red("Error in planet.sendCoordInfo: " + error));
+        console.error(error);
+
+    }
+
+}
+
+exports.sendCoordInfo = sendCoordInfo;
+
+
 // data:    planet_id   |   planet_index
 async function sendInfo(socket, room, dirty, data) {
 
@@ -176,5 +272,7 @@ exports.sendInfo = sendInfo;
 module.exports = {
     getCoordAndRoom,
     getIndex,
+    regenerateFloor,
+    sendCoordInfo,
     sendInfo
 }

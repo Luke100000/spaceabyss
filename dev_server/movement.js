@@ -1,3 +1,4 @@
+// @ts-check
 var io_handler = require('./io.js');
 var io = io_handler.io;
 var database = require('./database.js');
@@ -647,8 +648,9 @@ const world = require('./world.js');
 
 
             // THIS CHECKS ALL THE COORDS
-            let can_place = await main.canPlacePlayer({ 'scope': 'galaxy', 'coord': dirty.coords[coord_index],
-                'player_index': socket.player_index });
+
+
+            let can_place = await player.canPlace(dirty, 'galaxy', dirty.coords[coord_index], socket.player_index);
             //let can_place = await main.canPlace('galaxy', dirty.coords[coord_index], 'player', dirty.players[player_index].id);
 
             if(!can_place) {
@@ -1111,8 +1113,9 @@ const world = require('./world.js');
                 return false;
             }
 
-            let can_move_to = await main.canPlacePlayer({ 'scope': 'planet',
-                'coord': dirty.planet_coords[planet_coord_index], 'player_index': socket.player_index });
+
+
+            let can_move_to = await player.canPlace(dirty, 'planet', dirty.planet_coords[planet_coord_index], socket.player_index);
             //let can_move_to = await main.canPlace('planet', dirty.planet_coords[planet_coord_index], 'player', dirty.players[player_index].id);
 
             if(!can_move_to) {
@@ -1145,8 +1148,8 @@ const world = require('./world.js');
 
                     // In most cases, we can just put them on the stairs
 
-                    let can_place_result = await main.canPlacePlayer({ 'scope': 'planet',
-                        'coord': dirty.planet_coords[stairs_index], 'player_index': socket.player_index });
+
+                    let can_place_result = await player.canPlace(dirty, 'planet', dirty.planet_coords[stairs_index], socket.player_index);
 
                     if(can_place_result) {
                         moving_to_coord_index = stairs_index;
@@ -1161,8 +1164,8 @@ const world = require('./world.js');
                                     'planet_level': new_planet_level, 'tile_x': x, 'tile_y': y });
 
                                 if(trying_index !== -1) {
-                                    can_place_result = await main.canPlacePlayer({ 'scope': 'planet',
-                                        'coord': dirty.planet_coords[trying_index], 'player_index': socket.player_index });
+
+                                    can_place_result = await player.canPlace(dirty, 'planet', dirty.planet_coords[trying_index], socket.player_index);
 
                                     if(can_place_result) {
                                         moving_to_coord_index = trying_index;
@@ -1222,8 +1225,8 @@ const world = require('./world.js');
                     let moving_to_coord_index = -1;
 
                     // In most cases, we can just put them on the hole
-                    let can_place_result = await main.canPlacePlayer({ 'scope': 'planet',
-                        'coord': dirty.planet_coords[hole_index], 'player_index': socket.player_index });
+
+                    let can_place_result = await player.canPlace(dirty, 'planet', dirty.planet_coords[hole_index], socket.player_index);
 
                     if(can_place_result) {
                         moving_to_coord_index = hole_index;
@@ -1238,8 +1241,8 @@ const world = require('./world.js');
                                     'planet_level': new_planet_level, 'tile_x': x, 'tile_y': y });
 
                                 if(trying_index !== -1) {
-                                    can_place_result = await main.canPlacePlayer({ 'scope': 'planet',
-                                        'coord': dirty.planet_coords[trying_index], 'player_index': socket.player_index });
+
+                                    can_place_result = await player.canPlace(dirty, 'planet', dirty.planet_coords[trying_index], socket.player_index);
 
                                     if(can_place_result) {
                                         moving_to_coord_index = trying_index;
@@ -1535,8 +1538,7 @@ const world = require('./world.js');
                     // lets see if we can place the player there
                     world.removeBattleLinkers(dirty, { 'player_id': dirty.players[data.player_index].id });
 
-                    let can_place_result = await main.canPlacePlayer({ 'scope': 'planet',
-                        'coord': dirty.planet_coords[falling_planet_coord_index], 'player_index': data.player_index });
+                    let can_place_result = await player.canPlace(dirty, 'planet', dirty.planet_coords[falling_planet_coord_index], data.player_index);
 
                     if(can_place_result === true) {
                         console.log("Found a coord below, and the player can fall onto it");
@@ -1942,8 +1944,9 @@ const world = require('./world.js');
                 return false;
             }
 
-            let can_move_to = await main.canPlacePlayer({ 'scope': 'ship',
-                'coord': dirty.ship_coords[ship_coord_index], 'player_index': player_index });
+            let can_move_to = await player.canPlace(dirty, 'ship', dirty.ship_coords[ship_coord_index], player_index);
+
+
             //let can_move_to = await main.canPlace('ship', dirty.ship_coords[ship_coord_index], 'player', dirty.players[player_index].id);
 
             if(!can_move_to) {
@@ -1975,8 +1978,8 @@ const world = require('./world.js');
 
                     // In most cases, we can just put them on the stairs
 
-                    let can_place_result = await main.canPlacePlayer({ 'scope': 'ship',
-                        'coord': dirty.ship_coords[stairs_index], 'player_index': socket.player_index });
+
+                    let can_place_result = await player.canPlace(dirty, 'ship', dirty.ship_coords[stairs_index], socket.player_index);
 
                     if(can_place_result) {
                         moving_to_coord_index = stairs_index;
@@ -1991,8 +1994,8 @@ const world = require('./world.js');
                                     'ship_level': new_ship_level, 'tile_x': x, 'tile_y': y });
 
                                 if(trying_index !== -1) {
-                                    can_place_result = await main.canPlacePlayer({ 'scope': 'ship',
-                                        'coord': dirty.ship_coords[trying_index], 'player_index': socket.player_index });
+
+                                    can_place_result = await player.canPlace(dirty, 'ship', dirty.ship_coords[trying_index], socket.player_index);
 
                                     if(can_place_result) {
                                         moving_to_coord_index = trying_index;
@@ -2052,8 +2055,8 @@ const world = require('./world.js');
                     let moving_to_coord_index = -1;
 
                     // In most cases, we can just put them on the hole
-                    let can_place_result = await main.canPlacePlayer({ 'scope': 'ship',
-                        'coord': dirty.ship_coords[hole_index], 'player_index': socket.player_index });
+
+                    let can_place_result = await player.canPlace(dirty, 'ship', dirty.ship_coords[hole_index], socket.player_index);
 
                     if(can_place_result) {
                         moving_to_coord_index = hole_index;
@@ -2068,8 +2071,8 @@ const world = require('./world.js');
                                     'ship_level': new_ship_level, 'tile_x': x, 'tile_y': y });
 
                                 if(trying_index !== -1) {
-                                    can_place_result = await main.canPlacePlayer({ 'scope': 'ship',
-                                        'coord': dirty.ship_coords[trying_index], 'player_index': socket.player_index });
+
+                                    can_place_result = await player.canPlace(dirty, 'ship', dirty.ship_coords[trying_index], socket.player_index);
 
                                     if(can_place_result) {
                                         moving_to_coord_index = trying_index;
@@ -2828,8 +2831,8 @@ const world = require('./world.js');
 
                         let coord_data = { 'tile_x': random_x, 'tile_y': random_y};
                         let coord_index = await main.getCoordIndex(coord_data);
-                        let can_place_result = await main.canPlacePlayer({ 'scope': 'galaxy',
-                            'coord': dirty.coords[coord_index], 'player_index': player_index });
+
+                        let can_place_result = await player.canPlace(dirty, 'galaxy', dirty.coords[coord_index], player_index);
                         //let can_place_result = await main.canPlace('galaxy', dirty.coords[coord_index], 'player', dirty.players[player_index].id);
                         if(can_place_result) {
                             placed_ship = true;
@@ -2874,8 +2877,8 @@ const world = require('./world.js');
                                 let possible_coord_index = await main.getCoordIndex({'tile_x': i, 'tile_y': j});
 
                                 if(possible_coord_index !== -1) {
-                                    let can_place_result = await main.canPlacePlayer({ 'scope': 'galaxy',
-                                        'coord': dirty.coords[possible_coord_index], 'player_index': player_index });
+
+                                    let can_place_result = await player.canPlace(dirty, 'galaxy', dirty.coords[possible_coord_index], player_index);
                                     //let can_place_result = await main.canPlace('galaxy', dirty.coords[possible_coord_index], 'player', dirty.players[player_index].id);
                                     //console.log("Can place result: " + can_place_result);
                                     if(can_place_result === true) {
@@ -3048,14 +3051,15 @@ const world = require('./world.js');
 
                     if(dirty.ship_coords[i] && dirty.ship_coords[i].ship_id === dirty.objects[ship_index].id) {
 
-                        let can_place_result = await main.canPlacePlayer({ 'scope': 'ship', 'coord': dirty.ship_coords[i], 'player_index': player_index });
+
+                        let can_place_result = await player.canPlace(dirty, 'ship', dirty.ship_coords[i], player_index);
 
                         if(can_place_result === true) {
                             ship_coord_index = i;
                         }
 
                         /*
-                        Removed in favor of using canPlacePlayer. Leaving for an update or two just incase I notice some changes. 0.1.17
+                        Removed in favor of using player.canPlace. Leaving for an update or two just incase I notice some changes. 0.1.17
                         // If there's nothing there, we can place the player
                         if(!dirty.ship_coords[i].object_type_id && !dirty.ship_coords[i].player_id && !dirty.ship_coords[i].monster_id && 
                             !dirty.ship_coords[i].npc_id) {
@@ -3275,8 +3279,8 @@ const world = require('./world.js');
                         let can_place_result = false;
                         if(placing_type === 'player') {
                             console.log("Seeing if we can place player there");
-                            can_place_result = await main.canPlacePlayer({ 'scope': 'planet',
-                                'coord': dirty.planet_coords[i], 'player_index': player_index });
+
+                            can_place_result = await player.canPlace(dirty, 'planet', dirty.planet_coords[i], player_index);
 
                         } else if(placing_type === 'npc') {
                             can_place_result = await main.canPlaceNpc('planet', dirty.planet_coords[i], placing_id);
@@ -3309,8 +3313,8 @@ const world = require('./world.js');
                         let coord_index = await main.getCoordIndex(coord_data);
                         let can_place_result = false;
                         if(placing_type === 'player') {
-                            can_place_result = await main.canPlacePlayer({ 'scope': 'galaxy',
-                                'coord': dirty.coords[coord_index], 'player_index': player_index });
+
+                            can_place_result = await player.canPlace(dirty, 'galaxy', dirty.coords[coord_index], player_index);
                         } else if(placing_type === 'npc') {
                             can_place_result = await main.canPlaceNpc('galaxy', dirty.coords[coord_index], placing_id);
                         }
@@ -3344,8 +3348,7 @@ const world = require('./world.js');
 
                                     if(placing_type === 'player') {
 
-                                        can_place_result = await main.canPlacePlayer({ 'scope': 'galaxy',
-                                            'coord': dirty.coords[coord_index], 'player_index': player_index, 'show_output': true });
+                                        can_place_result = await player.canPlace(dirty, 'galaxy', dirty.coords[coord_index], player_index);
                                     } else if(placing_type === 'npc') {
                                         can_place_result = await main.canPlaceNpc('galaxy', dirty.coords[coord_index], placing_id);
                                     }

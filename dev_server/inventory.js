@@ -7,6 +7,7 @@ const log = console.log;
 
 const world = require('./world.js');
 const game_object = require('./game_object.js');
+const helper = require('./helper.js');
 const main = require('./space_abyss' + process.env.FILE_SUFFIX + '.js');
 
 var io;
@@ -662,9 +663,16 @@ var io;
             if(action === 'remove') {
                 let sending_inventory_item = dirty.inventory_items[inventory_item_index];
                 sending_inventory_item.remove = true;
-                socket.emit('inventory_item_info', { 'inventory_item': sending_inventory_item });
+                if(helper.notFalse(socket)) {
+                    socket.emit('inventory_item_info', { 'inventory_item': sending_inventory_item });
+                }
+                
             } else {
-                socket.emit('inventory_item_info', { 'inventory_item': dirty.inventory_items[inventory_item_index] });
+
+                if(helper.notFalse(socket)) {
+                    socket.emit('inventory_item_info', { 'inventory_item': dirty.inventory_items[inventory_item_index] });
+                }
+                
             }
         } catch(error) {
             log(chalk.red("Error in inventory.sendInventoryItem: " + error));

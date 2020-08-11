@@ -1,3 +1,34 @@
+## [0.1.25] - 2020-08-11
+
+### Added
+- Admin function to regenerate the floor of a planet level
+- Generic message when moving to a tile isn't going to work
+- Fire Wall
+- Fire Lava and Fire Simple floors
+- Two advertisement drones (monsters) on the Corporation Planet
+- Maggot Burgers
+- Mech Take Out
+- Cherry Blossom and Cherry Blossom Sipmle floor
+- Cherree (monster)
+- Boomtis
+
+### Fixed
+- Warmind should now show up
+- Clients will no longer think they can move onto a tile with part of a monster on it
+- When monsters that take up multiple tiles die, they will now be removed from all tiles.
+- Asteroid Ship display
+
+### Changed
+- Most monsters on the Machine Planet Type spawned on 3 different levels. I want to increase variety, and have reduced that to an average of 2 levels.
+- Reduced Warmind HP
+- Complexity and tier of some items. I'm going to try and standardize the complexities of the different tiers a little. Otherwise things get a little too confusing.
+- Ice and Ice Simple floor tiles
+- Ice Wall spite
+- Fire floor spite
+- The Great Nomad sprite
+- Maggot sprite
+
+
 ## [0.1.24] - 2020-08-06
 
 ### Added

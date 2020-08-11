@@ -3,7 +3,9 @@ NAMES ARRAY - We can put this directly into npc_dev.js -> spawnNpc
 *****************************************
 
 ['Aganon','Azrael','Cheris','Dezken','Encaledus','Ethra','Farosh','Grax','Grum','Gruss','Hish','Hiul','Issash','Kirix',
-    'Kujen','Kwuga','Laru','Liozh','Mak','Mikodez','Nur','Okik','Olo','Raasek','Rahal','Remi','Rhoden','Rosk','Sissix','Tkrit','Tokamak','Toum']
+    'Kujen','Kwuga','Laru','Liozh','Mak','Mikodez','Nur','Okik','Olo','Raasek','Rahal','Remi',
+    'Rhoden','Rosk','Sissix','Tkrit','Tokamak','Toum','Zan', 'Jayd', 'Idomenes', 'Lilimariah,
+    'Pyrrh', 'Azaiel','Exoletus','Lecythus''Tish','Tishlin','Asatiel','Ois','Seddun']
 
 
 

@@ -717,6 +717,7 @@ include('config.php');
     var on_chest = false;
     var player_image = "Player";
     var pixels_moved = 0;
+    var last_failed_move_coord_id = 0;
     var last_frame_update = 0;          // Used for animation our tilemap stuff
     var last_move;
     var last_click_div_move = 0;
@@ -838,6 +839,9 @@ include('config.php');
                 { frameWidth: 64, frameHeight: 64, endFrame: 36 });
 
             // Ships
+            this.load.spritesheet('player-asteroid-ship', 'https://space.alphacoders.com/asteroid-ship-animated.png',
+                { 'frameWidth': 64, 'frameHeight': 64, endFrame: 3 });
+
             this.load.spritesheet('player-blockade-runner', 'https://space.alphacoders.com/blockade-runner-animated.png',
                 { 'frameWidth': 64, 'frameHeight': 64, endFrame: 12 });
 
@@ -1114,6 +1118,16 @@ include('config.php');
 
 
             /*********** PLAYER ANIMATIONS end is total frame count - 1 (starts at 0)  **************/
+
+
+            // Asteroid Ship
+            let player_asteroid_ship_config = {
+                key: 'player-asteroid-ship-animation',
+                frames: this.anims.generateFrameNumbers('player-asteroid-ship', { start: 0, end: 2, first: 2 }),
+                frameRate: 2,
+                repeat: -1
+            };
+            this.anims.create(player_asteroid_ship_config);
 
             // BLOCKADE RUNNER
             let player_blockade_runner_left_config = {
@@ -2129,6 +2143,14 @@ include('config.php');
                 repeat: -1
             };
             this.anims.create(vueg_baby_config);
+
+            let warmind_config = {
+                key: 'warmind-animation',
+                frames: this.anims.generateFrameNumbers('warmind', { start: 0, end: 2, first: 2 }),
+                frameRate: 2,
+                repeat: -1
+            };
+            this.anims.create(warmind_config);
 
             let world_leech_config = {
                 key: 'world-leech-animation',

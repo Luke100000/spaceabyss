@@ -2768,8 +2768,7 @@ async function loginPlayer(socket, dirty, data) {
 
             if(planet_coord_index !== -1) {
 
-                let can_place_result = await canPlacePlayer({ 'scope': 'planet',
-                    'coord': dirty.planet_coords[planet_coord_index], 'player_index': player_index });
+                let can_place_result = await player.canPlace(dirty, 'planet', dirty.planet_coords[planet_coord_index], player_index);
 
                 if(can_place_result === true) {
 
@@ -2815,8 +2814,8 @@ async function loginPlayer(socket, dirty, data) {
 
             if(ship_coord_index !== -1) {
 
-                let can_place_result = await canPlacePlayer({ 'scope': 'ship',
-                    'coord': dirty.ship_coords[ship_coord_index], 'player_index': player_index });
+
+                let can_place_result = await player.canPlace(dirty, 'ship', dirty.ship_coords[ship_coord_index], player_index);
 
                 if(can_place_result === true) {
 
@@ -2846,8 +2845,9 @@ async function loginPlayer(socket, dirty, data) {
                     if(dirty.players[player_index].previous_coord_id) {
                         console.log("Player has a previous galaxy coord as well. Trying to put their ship on it");
                         let coord_index = await getCoordIndex({'coord_id': dirty.players[player_index].previous_coord_id});
-                        let can_place_result = await canPlacePlayer({ 'scope': 'galaxy',
-                            'coord': dirty.coords[coord_index], 'player_index': player_index });
+
+
+                        let can_place_result = await player.canPlace(dirty, 'galaxy', dirty.coords[coord_index], player_index);
                         //let can_place_result = await canPlace('galaxy', dirty.coords[coord_index], 'player', dirty.players[player_index].id);
                         if(can_place_result) {
                             let coord_data = { 'coord_index': coord_index, 'player_id': dirty.players[player_index].id,
@@ -2887,7 +2887,8 @@ async function loginPlayer(socket, dirty, data) {
 
             if(coord_index !== -1) {
 
-                let can_place_result = await canPlacePlayer({'scope': 'galaxy', 'coord': dirty.coords[coord_index], 'player_index': player_index });
+
+                let can_place_result = await player.canPlace(dirty, 'galaxy', dirty.coords[coord_index], player_index);
 
                 if(can_place_result === true) {
                     console.log("Coord index: " + coord_index);
@@ -2942,7 +2943,7 @@ async function loginPlayer(socket, dirty, data) {
                 let coord_data = { 'tile_x': random_x, 'tile_y': random_y};
                 let coord_index = await getCoordIndex(coord_data);
 
-                let can_place_result = await canPlacePlayer({ 'scope': 'galaxy', 'coord': dirty.coords[coord_index], 'player_index': player_index });
+                let can_place_result = await player.canPlace(dirty, 'galaxy', dirty.coords[coord_index], player_index);
 
                 if(can_place_result === true) {
                     console.log("Found galaxy coord to place player on! (index: " + coord_index + " id: " +
@@ -3091,346 +3092,6 @@ module.exports.canPlaceFloor = canPlaceFloor;
 
 
 
-// The logic in this function is very close to the logic in the client function
-//      data:   scope   |   coord   |   player_index   |   show_output
-/**
- * @param {Object} data 
- * @param {String} data.scope
- * @param {Object} data.coord
- * @param {number} data.player_index
- * @param {boolean=} data.show_output
- */
-async function canPlacePlayer(data) {
-
-    try {
-
-
-        if(typeof data.player_index === 'undefined') {
-            log(chalk.red("Need a player index passed in"));
-            return false;
-        }
-
-        let checking_coords = [];
-
-        // If we have a player id, use the body or a ship type, depending on the view
-        let body_index = -1;
-        let ship_index = -1;
-        let type_index = -1;
-
-
-        if(data.scope === 'planet' || data.scope === 'ship') {
-            //console.log("Getting body");
-            body_index = await game_object.getIndex(dirty, dirty.players[data.player_index].body_id);
-
-            if(body_index === -1) {
-
-                if(data.show_output) {
-                    log(chalk.yellow("Could not get player's body"));
-                }
-
-                return false;
-            }
-
-            type_index = getObjectTypeIndex(dirty.objects[body_index].object_type_id);
-        } else if(data.scope === 'galaxy') {
-            //console.log("Getting ship");
-            ship_index = await game_object.getIndex(dirty, dirty.players[data.player_index].ship_id);
-
-            if(ship_index === -1) {
-
-                if(data.show_output) {
-                    log(chalk.yellow("Could not get player's ship. id: " + dirty.players[data.player_index].ship_id));
-                }
-
-                return false;
-            }
-            type_index = getObjectTypeIndex(dirty.objects[ship_index].object_type_id);
-        }
-
-        if(body_index === -1 && ship_index === -1) {
-
-            if(data.show_output) {
-                log(chalk.yellow("Couldn't get body or ship"));
-
-                console.log("Player's ship id: " + dirty.players[data.player_index].ship_id);
-                console.log("Ship's object type id: " + dirty.objects[ship_index].object_type_id);
-            }
-
-            return false;
-        }
-
-        if(type_index === -1) {
-
-            if(data.show_output) {
-                log(chalk.yellow("Couldn't get type for body or ship"));
-            }
-
-            return false;
-        }
-
-
-        //console.log("collecting the coords");
-        /************************** COLLECT ALL THE COORDS *******************************/
-        let last_x = data.coord.tile_x;
-        let last_y = data.coord.tile_y;
-        let movement_tile_width = 1;
-        let movement_tile_height = 1;
-
-        // see if the object type has non visual display linkers
-        let display_linkers = dirty.object_type_display_linkers.filter(linker =>
-            linker.object_type_id === dirty.object_types[type_index].id && !linker.only_visual);
-
-        if(display_linkers.length > 0) {
-
-
-            for(let linker of display_linkers) {
-                let linker_movement_width = linker.position_x + 1;
-                if(linker_movement_width > movement_tile_width) {
-                    movement_tile_width = linker_movement_width;
-                }
-
-                let linker_movement_height = linker.position_y + 1;
-                if(linker_movement_height > movement_tile_height) {
-                    movement_tile_height = linker_movement_height;
-                }
-            }
-
-
-            last_x = data.coord.tile_x + movement_tile_width - 1;
-            last_y = data.coord.tile_y + movement_tile_height - 1;
-
-            for(let x = data.coord.tile_x; x <= last_x; x++) {
-                for(let y = data.coord.tile_y; y <= last_y; y++) {
-
-
-                    let checking_coord_index = -1;
-                    if(data.scope === 'galaxy') {
-                        checking_coord_index = await getCoordIndex({ 'tile_x': x, 'tile_y': y });
-
-                        if(checking_coord_index !== -1) {
-                            checking_coords.push(dirty.coords[checking_coord_index]);
-                        }
-                    } else if(data.scope === 'planet') {
-                        checking_coord_index = await getPlanetCoordIndex({ 'planet_id': coord.planet_id,
-                            'planet_level': coord.level, 'tile_x': x, 'tile_y': y });
-
-                        if(checking_coord_index !== -1) {
-                            checking_coords.push(dirty.planet_coords[checking_coord_index]);
-                        }
-                    } else if(data.scope === 'ship') {
-                        checking_coord_index = await getShipCoordIndex({ 'ship_id': coord.ship_id,
-                            'level': coord.level,
-                            'tile_x': x, 'tile_y': y });
-
-                        if(checking_coord_index !== -1) {
-                            checking_coords.push(dirty.ship_coords[checking_coord_index]);
-                        }
-                    }
-
-                    // We weren't able to find all the coords we needed to match up to all the display linkers
-                    if(checking_coord_index === -1) {
-
-                        if(data.show_output) {
-                            console.log("Returning false on coord not found");
-                        }
-
-                        return false;
-                    }
-
-
-                }
-            }
-        } else {
-
-            checking_coords.push(data.coord);
-        }
-
-
-
-        /********************** GO THROUGH EACH OF THE COORDS ***********************/
-        for(let checking_coord of checking_coords) {
-            //console.log("Checking coord id: " + checking_coord.id);
-
-            if(checking_coord.floor_type_id) {
-                let floor_type_index = getFloorTypeIndex(checking_coord.floor_type_id);
-
-                if(floor_type_index !== -1) {
-                    if(!dirty.floor_types[floor_type_index].can_walk_on) {
-
-                        if(data.show_output) {
-                            console.log("Returning false on " + checking_coord.tile_x + "," + checking_coord.tile_y + " can't walk on floor");
-                        }
-
-                        return false;
-                    }
-                }
-            }
-
-            if(checking_coord.monster_id || checking_coord.belongs_to_monster_id) {
-
-                if(data.show_output) {
-                    console.log("Returning false on " + checking_coord.tile_x + "," + checking_coord.tile_y + " monster");
-                }
-
-                return false;
-            }
-
-            if(checking_coord.npc_id) {
-
-                if(data.show_output) {
-                    console.log("Returning false on " + checking_coord.tile_x + "," + checking_coord.tile_y + " npc");
-                }
-
-                return false;
-            }
-
-            // We have a base object type here - no object/belongs object
-            if(checking_coord.object_type_id && !checking_coord.object_id && !checking_coord.belongs_to_object_id) {
-                let object_type_index = getObjectTypeIndex(checking_coord.object_type_id);
-
-                if(object_type_index !== -1) {
-                    if(!dirty.object_types[object_type_index].can_walk_on) {
-
-                        if(data.show_output) {
-                            console.log("Checking coord id: " + checking_coord.id + " scope: " + data.scope);
-                            console.log("Returning false on " + checking_coord.tile_x + "," + checking_coord.tile_y + " not walkable object");
-                        }
-
-                        //log(chalk.yellow("Blocked by object_type_id"));
-                        return false;
-                    }
-                }
-            }
-
-            if(checking_coord.object_id || checking_coord.belongs_to_object_id) {
-
-
-                // If it's us... we're done with that coord
-                if(data.scope === 'galaxy' && checking_coord.object_id &&
-                    checking_coord.object_id === dirty.players[data.player_index].ship_id) {
-
-                } else if(data.scope === 'galaxy' && checking_coord.belongs_to_object_id &&
-                    checking_coord.belongs_to_object_id === dirty.players[data.player_index].ship_id) {
-
-                } else {
-
-                    let object_index = -1;
-                    if(checking_coord.object_id) {
-                        object_index = await game_object.getIndex(dirty, checking_coord.object_id);
-                    } else if(checking_coord.belongs_to_object_id) {
-                        object_index = await game_object.getIndex(dirty, checking_coord.belongs_to_object_id);
-                    }
-
-                    if(object_index !== -1) {
-                        let object_type_index = getObjectTypeIndex(dirty.objects[object_index].object_type_id);
-                        if(!dirty.object_types[object_type_index].can_walk_on) {
-
-                            if(data.show_output) {
-                                console.log("Returning false");
-                            }
-
-                            return false;
-                        }
-                    }
-                }
-
-            }
-
-
-            //console.log("Checking coord planet id: " + checking_coord.planet_id);
-
-            // || checking_coord.belongs_to_planet_id
-            if(data.scope === 'galaxy' && checking_coord.planet_id) {
-
-                if(data.show_output) {
-                    console.log("Returning false on " + checking_coord.tile_x + "," + checking_coord.tile_y + " planet");
-                }
-
-                return false;
-            }
-
-
-            if(data.scope === 'galaxy' && checking_coord.belongs_to_planet_id) {
-
-                // step 1. Find the base planet coord it
-
-                let planet_index = await planet.getIndex(dirty, { 'planet_id': checking_coord.belongs_to_planet_id });
-
-                if(planet_index !== -1) {
-                    let origin_planet_coord_index = await getCoordIndex({ 'coord_id': dirty.planets[planet_index].coord_id });
-                    if(origin_planet_coord_index !== -1) {
-
-                        let linker_position_x = checking_coord.tile_x - dirty.coords[origin_planet_coord_index].tile_x;
-                        let linker_position_y = checking_coord.tile_y - dirty.coords[origin_planet_coord_index].tile_y;
-
-                        // step 2. Find the display linker we are trying to move to
-                        let display_linker_index = dirty.planet_type_display_linkers.findIndex(function(obj) {
-                            return obj.planet_type_id === dirty.planets[planet_index].planet_type_id && obj.position_x === linker_position_x &&
-                                obj.position_y === linker_position_y; });
-
-                        // step 3. Check if it's only_visual or not
-                        if(display_linker_index !== -1 && !dirty.planet_type_display_linkers[display_linker_index].only_visual) {
-
-                            if(data.show_output) {
-                                console.log("Returning false on " + checking_coord.tile_x + "," + checking_coord.tile_y + " belongs to planet");
-                            }
-                            return false;
-                        }
-
-
-
-                    }
-                }
-
-
-
-            }
-
-            if(checking_coord.player_id && checking_coord.player_id !== dirty.players[data.player_index].id) {
-
-                if(data.show_output) {
-                    console.log("Returning false on " + checking_coord.tile_x + "," + checking_coord.tile_y + " other player");
-                }
-
-                return false;
-            }
-
-            if(checking_coord.belongs_to_object_id && checking_coord.belongs_to_object_id !== dirty.players[data.player_index].body_id &&
-                checking_coord.belongs_to_object_id !== dirty.players[data.player_index].ship_id) {
-                if(data.show_output) {
-                    console.log("Returning false on " + checking_coord.tile_x + "," + checking_coord.tile_y + " belongs to other object");
-                }
-
-                return false;
-            }
-
-            // We have to make sure that the player can interact with this area
-            if(checking_coord.area_id) {
-                let area_index = await getAreaIndex(checking_coord.area_id);
-
-                if(dirty.players[data.player_index].id !== dirty.areas[area_index].owner_id && dirty.players[data.player_index].id !== dirty.areas[area_index].renting_player_id) {
-                    return false;
-                }
-            }
-
-
-
-        }
-
-        if(data.show_output) {
-            console.log("Returning true");
-        }
-
-        return true;
-    } catch(error) {
-        log(chalk.red("Error in main.canPlacePlayer: " + error));
-        console.error(error);
-    }
-}
-
-module.exports.canPlacePlayer = canPlacePlayer;
-
-
 // some of the movement rules are different for monsters vs for players. E.g. players can move onto spaceport files
 async function canPlace(scope, coord, placing_type, placing_id, data = false) {
 
@@ -3565,7 +3226,7 @@ async function canPlace(scope, coord, placing_type, placing_id, data = false) {
 
         // PLAYER
         if(placing_type === 'player') {
-            log(chalk.red("Use canPlacePlayer instead"));
+            log(chalk.red("Use player.canPlace instead"));
             return false;
 
         }

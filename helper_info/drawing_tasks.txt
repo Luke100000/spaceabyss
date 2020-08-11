@@ -2,13 +2,46 @@
 trash asteroid - asteroid made up of compacted trash sent out to space. The sci fi version of throwing 
     your trash in the ocean
 
+
 gravity effect
 
 thorn effect
 
+cherry blossom floor
+    Monster: Orchid Mantis. 
+    Monster: Cherry blossom tree.
+    Monster: Flowering Spider https://images.gemquery.com/256/content_2564492.jpg
+    Object: Silk
+
+    Ship: Silk Ship (like an egg sack in space https://www.ridmycritters.com/wp-content/uploads/how-to-get-rid-of-spider-eggs.jpg )
 
 
-NEED TO DRAW
+
+Frost Spider ( https://images.gemquery.com/256/content_2564483.jpg )
+    Drops Glaze
+
+Icer Pistol
+    Glaze and Power Cells
+
+inferno core
+
+plasma torch
+
+heat lance
+
+
+diamond batteries -6 and lower on machine planets
+
+
+player body that is resistant to acid
+    https://images.gemquery.com/256/content_2563273.jpg
+
+energy blade
+    mix of https://vignette.wikia.nocookie.net/dragonball/images/7/72/Salza1.jpg/revision/latest/scale-to-width-down/350?cb=20180526030043 and
+     https://images-na.ssl-images-amazon.com/images/I/41JeLa-AmuL._AC_.jpg
+
+
+
 
 
     Some slerm. Baby slerm, generic slerm
@@ -16,14 +49,6 @@ NEED TO DRAW
     Glass of Life Water / Bulb of Life water?
         Drew Kick Bulb. Could do the same with life water
 
-
-
-
-
-
-
-
-ART TASKS
 
 
 moss

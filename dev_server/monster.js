@@ -215,7 +215,14 @@ async function canPlace(dirty, scope, coord, data) {
             return false;
         }
 
-        let monster_type_index = dirty.monster_types.findIndex(function(obj) { return obj && obj.id === monster_type_id; });
+        let monster_type_index = main.getMonsterTypeIndex(monster_type_id);
+        
+
+        if(monster_type_index === -1) {
+            log(chalk.yellow("Could not find that monster type. data.monster_index: " + data.monster_index + " data.monster_type_id: " + data.monster_type_id));
+
+            return false;
+        }
 
 
         /************** COLLECT ALL THE COORDS ********************/
@@ -575,7 +582,7 @@ async function deleteMonster(dirty, data) {
         let monster_info = await getCoordAndRoom(dirty, data.monster_index);
 
 
-        // If the object is associate with a coord, remove it from that coord
+        // If the monster is associate with a coord, remove it from that coord
         if(monster_info.scope === 'galaxy') {
             await main.updateCoordGeneric(false, { 'coord_index': monster_info.coord_index, 'monster_id': false });
         } else if(monster_info.scope === 'planet') {
@@ -583,6 +590,42 @@ async function deleteMonster(dirty, data) {
         } else if(monster_info.scope === 'ship') {
             await main.updateCoordGeneric(false, { 'ship_coord_index': monster_info.coord_index, 'monster_id': false });
             console.log("Updated ship coord to no object_id");
+        }
+
+
+        // If the monster has a movement_tile_width or movement_tile_height > 1, we need to go through the coords and remove any belongs_to_monster_id
+        if(dirty.monster_types[monster_type_index].movement_tile_width > 1 || dirty.monster_types[monster_type_index].movement_tile_height > 1) {
+            console.time("removeMonsterBelongs");
+
+            if(monster_info.scope === 'galaxy') {
+
+                for(let g = 0; g < dirty.coords.length; g++) {
+                    if(dirty.coords[g] && dirty.coords[g].belongs_to_monster_id === dirty.monsters[data.monster_index].id) {
+                        await main.updateCoordGeneric(false, { 'coord_index': g, 'belongs_to_monster_id': false });
+                    }
+                }
+
+            } else if(monster_info.scope === 'planet') {
+
+                for(let p = 0; p < dirty.planet_coords.length; p++) {
+                    if(dirty.planet_coords[p] && dirty.planet_coords[p].belongs_to_monster_id === dirty.monsters[data.monster_index].id) {
+                        await main.updateCoordGeneric(false, { 'planet_coord_index': p, 'belongs_to_monster_id': false });
+                    }
+                }
+
+            } else if(monster_info.scope === 'ship') {
+
+                for(let s = 0; s < dirty.ship_coords.length; s++) {
+                    if(dirty.ship_coords[s] && dirty.ship_coords[s].belongs_to_monster_id === dirty.monsters[data.monster_index].id) {
+                        await main.updateCoordGeneric(false, { 'ship_coord_index': s, 'belongs_to_monster_id': false });
+                    }
+                }
+
+            }
+
+            console.timeEnd("removeMonsterBelongs");
+
+
         }
 
 

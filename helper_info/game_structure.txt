@@ -262,16 +262,16 @@ PLAYER WEAPONS
 
 
 FREE
-    TIER 1 - Territe, Batteries, Chitin
-        TIER 2 - Refine Territe, Batteries, Keratin, AI Fragments, Parasites
-            TIER 3 - Exodium, Power Cells, Living Wood, Silk, Thiol
-                TIER 4 - Refined Exodium, Power Cells,
-                    TIER 5 - Diamond
-                        TIER 6 - Spun Diamond, Diamond Battery
-                            TIER 7 - HyperDiamond
-                                TIER 8 - Crystal
-                                    TIER 9 Hypercrystal, Crystal Battery
-                                        TIER 10 - Crystadmantium (Crystonium), Antimatter, Quantum Battery
+    TIER 1 - Territe, Batteries, Chitin (complexity 1-4)
+        TIER 2 - Refined Territe, Batteries, Keratin,  (complexity 6-9)
+            TIER 3 - Exodium, Power cells, Living Wood, Silk, Thiol (complexity 10-14)
+                TIER 4 - Refined Exodium, Power Cells, AI Fragments (18-22)
+                    TIER 5 - Diamond (26-32)
+                        TIER 6 - Spun Diamond, Diamond Battery (36-40)
+                            TIER 7 - HyperDiamond (44-48)
+                                TIER 8 - Crystal (52-56)
+                                    TIER 9 Hypercrystal, Crystal Battery (60-64)
+                                        TIER 10 - Crystadmantium (Crystonium), Antimatter, Quantum Battery (100+)
 
 
 
@@ -283,13 +283,21 @@ CONTROL
         Mind Control Injector
 
 
-CORROSIVE
+CORROSIVE (combination of damage + addiction (damage over time ))
+
+                
+
+                Chem Blaster
+
+                        Biochemical Assault Rifle
 
 ELECTRIC
         Energy Blade
             Volt Rifle
                     Shock Rifle
                                 Lightning Gun
+
+        Shock Glove
 
 EXPLOSION
     Corrupted Battery Pack
@@ -313,9 +321,9 @@ HACKING
 HEAT
         Hull Welder
             Plasma Torch
-                Heat Lance
+                Heat Lance ( inferno core required to make )
 
-                Flamethrower *RANGE*
+                Flamethrower *RANGE* (inferno cores required as well )
 
 
 GRAVITY
@@ -350,18 +358,23 @@ PIERCING
 
             Gatling Gun
 
-            Railgun *RANGE*
+                    Railgun *RANGE*
 
-                    Atom Piercer
+                            Atom Piercer
 
-POISON
+
+                    Fernblade
+
+POISON (no initial damage - just done addiction stuff)
 
 PLASMA
             Blaster
                 Blaster Rifle
 
-RADIATION
+RADIATION (no initial damage - just does addiction stuff)
             Prion Gloves
+
+                    Gamma Gun
 
 
 
@@ -380,19 +393,27 @@ STATION WEAPONS
 
 POSSIBLE WEAPONS
 
+
 3mm heavy micro rifle
 Antimatter tipped millimeter long nanomissles
 Chrysalis gun
+Effectors (influence people - kind of like organic mind hacking)
 Electromagnetic coil gun
 Energy Disk
 Erasure Cannon
 Fusion Weapons
+Gauss rifle
 Gravity weapons
+Gravgun
+Grid-fire impulsor
+Knife missiles
+Laser Axe
+line gun
 Liquid Hydrogen Weapons
+Monofilament warp
 proton pack
 Pulse Pistol
 Pulse Rifle
-Gauss rifle
 Plasma Pistol
 Plasma Rifle
 Pyrorifle
@@ -402,14 +423,8 @@ phase-plasma pulse rifle
 Refrigerator later. Shoots a ball of something at someone, then collects the energy/heat 
     around that and shoots off laser away from it
 Thunderbolter
-Effectors (influence people - kind of like organic mind hacking)
-Knife missiles
-line gun
 Selfmotivated effector sidearm
 Thudder
-Gravgun
-Monofilament warp
-Grid-fire impulsor
 ZPE flux-polarizers
 
 
@@ -626,6 +641,7 @@ Ruel Body
 
 Slagcell
     High bonus to attack. High negatives to hp and defense. Glass cannons of suffering
+    Most commonly on the inferno world - so maybe weak to freezing
 
 
 
@@ -642,16 +658,16 @@ References:
 PLAYER SHIPS
 
 FREE
-    TIER 1 - Territe, Batteries, Chitin
-        TIER 2 - Refine Territe, Batteries, Keratin, AI Fragments
-            TIER 3 - Exodium, Power cells, Living Wood, Silk, Thiol
-                TIER 4 - Refined Exodium, Power Cells,
-                    TIER 5 - Diamond
-                        TIER 6 - Spun Diamond, Diamond Battery
-                            TIER 7 - HyperDiamond
-                                TIER 8 - Crystal
-                                    TIER 9 Hypercrystal, Crystal Battery
-                                        TIER 10 - Crystadmantium (Crystonium), Antimatter, Quantum Battery
+    TIER 1 - Territe, Batteries, Chitin (complexity 1-4)
+        TIER 2 - Refine Territe, Batteries, Keratin,  (complexity 6-9)
+            TIER 3 - Exodium, Power cells, Living Wood, Silk, Thiol (complexity 10-14)
+                TIER 4 - Refined Exodium, Power Cells, AI Fragments (18-22)
+                    TIER 5 - Diamond (26-32)
+                        TIER 6 - Spun Diamond, Diamond Battery (36-40)
+                            TIER 7 - HyperDiamond (44-48)
+                                TIER 8 - Crystal (52-56)
+                                    TIER 9 Hypercrystal, Crystal Battery (60-64)
+                                        TIER 10 - Crystadmantium (Crystonium), Antimatter, Quantum Battery (100+)
 
 
 Pod (DRAWN)
@@ -700,7 +716,8 @@ Pod (DRAWN)
                     Cruiser
                         Dreadnought ( have image idea )
                         Battlecruiser
-                            Supercruiser
+                            Nova-class Battlecruiser
+                                Supercruiser
 
             Living Wood Ship
 

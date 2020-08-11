@@ -45,74 +45,24 @@ I really just don't know if I want an Exodium knife... I feel like I want to get
 
 
 
-A player body type that is resistant to acid
-    Could do a hyperdiamond body TIER 8
 
-    I think it would be neat if there was the option to just take some of what something spawned
-    With the Milk Slerm, you could take one or two, and it could generate more, but if you took all,
-        it would de-spawn.
+Think of content for Jovian planets and the moons around them
+Think of content for Archipelago planets
+Think of content for traps
 
 
-
-
-Have something like a geothermal well that can be put on any planet - and produces stored energy (batteries?)
-    But universally decreases the HP of the planet
-
-
-
-
-
-There's a high fail chance for complex things. Manufacturing skill helps. Certain monsters drop blueprints that will
- 99% the success rate of manufacturing the item. Not really sure how I would want to implement blueprints. One time use?
- X times use?
-
-
-
-Gas giant that you can land on - but need a special body type for
-    Can have 'moons' smaller planets around it!!!!!
-
-
-
-Biogrove planets can be our gaia type planets. Have a tree of life (think of a cooler name) npc spawn and have an AI at the bottom
-    level of the planet. Tree of life NPC would follow NPCs on other planets controlling them/things
-
-Quirks for AIs. Like the idea of an AI that gets focused/obsessed on a particular thing. Clockmaker builds clocks.
-
-
-Maybe have a super attack on a crazy long cooldown. Mob psycho 100, Goku going all out, etc
-
-
-Rare items with a limited number that can exist in the galaxy at any given time. Think Star Darts
-
-Piracy/Bounty system
-    Could have identity documents that get used when visiting a spaceport. Otherwise spaceport interations would have
-        a record of you being there that a mercenary could obtain.
-
-    If a player attacks things on a corporation planet, the CEO puts a bounty on the player's head
-
-    Players could put bounties on other players. NPCs could put bounties on players.
-
-    Currently a moderately large problem with a bounty system is there isn't a whole lot of downside to dying
-        and I want to keep it that way. Players could just switch to a human body, and kill themselves with another account 
-        and get the bounty
 
 Objects that get better with age. Kind of like wine. Kids were watching a show and they ate 1,000 year old eggs.
 
 Eventually want to make water something more than... nothing. Tail instead of legs on a body if you wanted
 
-Flesh planet type. The whole planet is a massive organism. Pinks an flesh colors
 
-Super polluted planet. Needs drugs to stay healthy. Snow.
-
-Researching system is pretty basic. Wouldn't be a bad idea to expand on it.
-
-Body switching skill. Have a negative effect after switching bodies that people slowly get used too.
 
 
 More work on factions
 
 
-Could have really high levels of addiction affect the player instead of just the body
+
 
 Group some npcs into houses. The idea of powerful houses, being from a powerful house. Offers some protection. Could even have different npc houses
     fight each other. Lots of neat lore in children growing up with a lot of power already, and still aiming for even more.
@@ -144,10 +94,6 @@ Crystal vein/river deep in the mountain worlds
 Avrana Kern ends up being a vindictive AI. Always enough processing power to put down someone. Showing their dead body location when she analyses their plan and sees its faults.
 
 Mercenary/fighter type npc that levels up and goes after bounties
-
-Switching space battles to object attack object. Need to make sure that the ships's coord id is changed when the player
-    moves their ship, and battle linkers in galaxy are added as object v object
-
 
 
 Neptunian guys in large ice armor to keep their super modified brains near absolute zero.
@@ -191,23 +137,12 @@ Allow a player to rent out tiles that they own. So Cadian can build a building o
             max_price
 
 
-Try to have two visuals for the walls - one specifically if there is a wall under it
-    Could test with ship walls pretty easily.
-
-    CURRENTLY SEMI-TESTED. HAVE TODO IN client_functions_dev.php in mapAddObjectType
-
 
 Could add hacking via inserting hidden virus rules into objects
-
-#really not sure I want to code this :p
-For cosmetic objects vs functional ones, one day we could have the cosmetics displaying normally,
-    and the functional ones when the player goes into combat. Think a nano mesh smart armor that instantly surrounds
-    the player, or is normally see through or whatever
 
 
 When a player interacts with an NPC, it can modify their relationship linker with that NPC. Having a really good
     relationship with an NPC could let you have them join your ship
-
 
 
 
@@ -461,9 +396,6 @@ Equipping a pan or something to increase cooking skill. Could have a whole body 
 Viruses that consume crops. Eventually mutate.
 
 Weeds that grow and spread.
-
-Algae to energy conversion. Drew an algae cube
-
 
 
 Would be neat to have different bodies have different healing rates and base HP values. Rock would heal slowly but have more initial HP.
@@ -912,12 +844,9 @@ Creatures of godlike power and infantile rage
 Inviligators
 Promethean
 
-Idomenes
-Lilimariah
-Pyrrha
-Azaiel
 
-Angel like creatures
+
+
 Nerve toxin
 
 Nano assemblers pulling carbon, hydrogen, and oxides out of the air to create an armor. Black diamond armor
@@ -1354,8 +1283,7 @@ The puff-creant was a small symbiont, half animal, half vegetable, which you pai
  Slermtron
  Garden penthous
  Gain
- Algae is more for fuel and food (energy for things!)
- Moss is more for stat changes
+
 
  Vat grown meat
 
@@ -1371,18 +1299,17 @@ The puff-creant was a small symbiont, half animal, half vegetable, which you pai
 
 Idiran
 
-Cold fusion (plant based - maybe on the Biogrove planet)
-Also on the Biogrove planet - something like mana - lifeblood or osmething. Rivers of it.
+
 
 Her hair was an artful tangle of massed black curls studded with tiny helium-filled 
 globes of gold, platinum,and emberald. Violet gown. Black gloved arms.
 
 Churt Lyne
 
-Nova-class Battlecruiser
+
 
 Maser filament (radiation I think)
-Fernblade
+
 
 Using a mushed up brain as reaction mass for thrust.
 
@@ -1392,11 +1319,7 @@ Self repairer construct
 Zetetic
 Aggressive Hegemonizing Swarm Objects
 
-Tish
-Tishlin
-Asatiel
-Ois
-Seddun
+
 
 Gelfield suit
 Atomechanical nucleus
@@ -1577,8 +1500,7 @@ Life Salve - Life herb and life water.
 
 Med kit - Nano bonder and life herb
 
-Laser Axe
-Shock Glove
+
 
 Cyberware
 
@@ -1632,10 +1554,9 @@ Really like shipbuild as a job. Npc job too. Could contract an NPC to do the bui
     Could have a credit cost instead of a material cost for stuff like this. If it's really difficult, the NPC could ask more money after it kind of 'fails'
     Would just be on the planet
 
-Exoletus
-Lecythus
 
-Sickly yellow sluge of eighter letter DNA yeaster breakign down things into fresh monomers that can be printed into something new
+
+Sickly yellow sluge of eighter letter DNA yeast breaking down things into fresh monomers that can be printed into something new
 
 Biologic initiator
 
@@ -1809,6 +1730,57 @@ Need a moveObjectFlow or something for asteroids and such I suppose?
     The idea of asteroids flowing in space is cool - but I would have to greatly speed up their movement tick time.
 
 
+Could do a hyperdiamond body TIER 8 - can be resistant to acid
+
+
+I think it would be neat if there was the option to just take some of what something spawned
+    With the Milk Slerm, you could take one or two, and it could generate more, but if you took all,
+        it would de-spawn.
+
+
+Have something like a geothermal well that can be put on any planet - and produces stored energy (batteries?)
+    But universally decreases the HP of the planet
+
+
+The idea of blueprints for manufacturing something. Certain monsters drop blueprints that will
+ 99% the success rate of manufacturing the item. Not really sure how I would want to implement blueprints. One time use?
+ X times use?
+
+
+Biogrove planets can be our gaia type planets. Have a tree of life (think of a cooler name) npc spawn and have an AI at the bottom
+    level of the planet. Tree of life NPC would follow NPCs on other planets controlling them/things
+
+Quirks for AIs. Like the idea of an AI that gets focused/obsessed on a particular thing. Clockmaker builds clocks.
+
+
+Maybe have a super attack on a crazy long cooldown. Mob psycho 100, Goku going all out, etc
+
+
+
+Rare items with a limited number that can exist in the galaxy at any given time. Think Star Darts
+
+Piracy/Bounty system
+    Could have identity documents that get used when visiting a spaceport. Otherwise spaceport interations would have
+        a record of you being there that a mercenary could obtain.
+
+    If a player attacks things on a corporation planet, the CEO puts a bounty on the player's head
+
+    Players could put bounties on other players. NPCs could put bounties on players.
+
+    Currently a moderately large problem with a bounty system is there isn't a whole lot of downside to dying
+        and I want to keep it that way. Players could just switch to a human body, and kill themselves with another account 
+        and get the bounty
+
+
+Flesh planet type. The whole planet is a massive organism. Pinks an flesh colors
+
+Body switching skill. Have a negative effect after switching bodies that people slowly get used too.
+
+Could have really high levels of addiction affect the player instead of just the body
+
+Super polluted planet. Needs drugs to stay healthy. Snow.
+
+Researching system is pretty basic. Wouldn't be a bad idea to expand on it.
 
 
 ***************** END UNSORTED IDEAS ************************************************************************
@@ -1834,6 +1806,11 @@ The option of a player being in the game world, but basically being an observer.
     inventory transfer - but then you have issues along the lines of someone using that to safely get monster loot,
     and transferring (even via dropping on the ground) the look to get to a normal player.
 
+#really not sure I want to code this :p
+For cosmetic objects vs functional ones, one day we could have the cosmetics displaying normally,
+    and the functional ones when the player goes into combat. Think a nano mesh smart armor that instantly surrounds
+    the player, or is normally see through or whatever
+
 
 ************** USED IDEAS THAT WE ARE SAVING FOR WHATEVER REASON *****************
 
@@ -1841,3 +1818,5 @@ The option of a player being in the game world, but basically being an observer.
 I want two ships with airlocks to be able to move next to each other and interact
     We already get so much of this functionality from 'is_dockable'. So I'm not sure if the solution is to just
     make more ships have the 'is_dockable' flag set to true.
+
+Angel like creatures

@@ -208,7 +208,7 @@ const world = require('./world.js');
                     }
 
                     // send the updated coord to the room
-                    await world.sendPlanetCoordInfo(false, "planet_" + dirty.planet_coords[checking_coord_index].planet_id, dirty,
+                    await planet.sendCoordInfo(false, "planet_" + dirty.planet_coords[checking_coord_index].planet_id, dirty,
                         { 'planet_coord_index': checking_coord_index });
 
 
@@ -1510,7 +1510,7 @@ const world = require('./world.js');
                         await main.updateCoordGeneric(socket, update_coord_data);
 
                         // I believe updateCoordGeneric will send our enough info
-                        //world.sendPlanetCoordInfo(false, "planet_" + dirty.planet_coords[data.planet_coord_index].planet_id, dirty, { 'planet_coord_index': data.planet_coord_index});
+                        // planet.sendCoordInfo(false, "planet_" + dirty.planet_coords[data.planet_coord_index].planet_id, dirty, { 'planet_coord_index': data.planet_coord_index});
                     }
 
                 }
@@ -4734,8 +4734,8 @@ exports.eat = eat;
                                 'planet_level': new_level, 'tile_x': x, 'tile_y': y });
 
                             if(possible_coord_index !== -1) {
-                                let can_place_result = await main.canPlacePlayer({ 'scope': 'planet',
-                                    'coord': dirty.planet_coords[possible_coord_index], 'player_index': player_index });
+                                let can_place_result = await player.canPlace(dirty, 'planet', dirty.planet_coords[possible_coord_index], player_index);
+
                                 if(can_place_result) {
                                     // woot!
                                     console.log("Found a planet coord to move to");
@@ -4854,7 +4854,8 @@ exports.eat = eat;
 
                         if(dirty.ship_coords[i] && dirty.ship_coords[i].ship_id === moving_to_id) {
 
-                            let can_place_result = await main.canPlacePlayer({ 'scope': 'ship', 'coord': dirty.ship_coords[i], 'player_index': socket.player_index });
+
+                            let can_place_result = await player.canPlace(dirty, 'ship', dirty.ship_coords[i], socket.player_index);
 
                             if(can_place_result === true) {
                                 ship_coord_index = i;
@@ -4884,8 +4885,14 @@ exports.eat = eat;
 
                 console.log("Done with admin moveto");
             }
+            else if(data.message.includes("/regenerateplanetlevelfloor")) {
+                console.log("Was sent /regenerateplanetlevelfloor message");
+                let split = data.message.split(" ");
+                let planet_id = parseInt(split[1]);
+                let floor_level = parseInt(split[2]);
+                await planet.regenerateFloor(dirty, planet_id, floor_level);
 
-            else if (data.message.includes("/reloadevent")) {
+            } else if (data.message.includes("/reloadevent")) {
                 console.log("Was sent /reloadevent message");
                 let split = data.message.split(" ");
                 let event_id = split[1];
@@ -5024,10 +5031,10 @@ exports.eat = eat;
 
 
             }
-            else if(data.message.includes("/spawnmonster")) {
+            else if(data.message.includes("/spawnmonster ")) {
 
                 let split = data.message.split(" ");
-                let monster_type_id = split[1];
+                let monster_type_id = parseInt(split[1]);
 
                 console.log("Admin message to spawn monster type id: " + monster_type_id);
 
@@ -5559,7 +5566,7 @@ exports.eat = eat;
 
                     await game_object.deleteObject(dirty, {'object_index': object_index });
                     if(object_info.coord.planet_id) {
-                        await world.sendPlanetCoordInfo(false, object_info.room, dirty, { 'planet_coord_index': object_info.coord_index });
+                        await planet.sendCoordInfo(false, object_info.room, dirty, { 'planet_coord_index': object_info.coord_index });
                     } else if(object_info.coord.ship_id) {
                         await world.sendShipCoordInfo(false, object_info.room, dirty, { 'ship_coord_index': object_info.coord_index });
                     } else {
@@ -5679,7 +5686,7 @@ exports.eat = eat;
 
                     await game_object.deleteObject(dirty, {'object_index': object_index });
                     if(object_info.coord.planet_id) {
-                        await world.sendPlanetCoordInfo(false, object_info.room, dirty, { 'planet_coord_index': object_info.coord_index });
+                        await planet.sendCoordInfo(false, object_info.room, dirty, { 'planet_coord_index': object_info.coord_index });
                     } else if(object_info.coord.ship_id) {
                         await world.sendShipCoordInfo(false, object_info.room, dirty, { 'ship_coord_index': object_info.coord_index });
                     } else {
@@ -6710,7 +6717,7 @@ exports.eat = eat;
                             let adding_to_data = { 'adding_to_type': 'object', 'adding_to_id': assembly.assembler_object_id,
                                 'amount':1,  'object_type_id': assembly.being_assembled_object_type_id  };
 
-                            await inventory.addToInventory(socket, dirty, adding_to_data);
+                            await inventory.addToInventory(player_socket, dirty, adding_to_data);
                         } else {
                             let object_data = {'object_type_id': assembly.being_assembled_object_type_id,
                                 'player_id': dirty.objects[assembler_object_index].player_id };
@@ -6721,7 +6728,7 @@ exports.eat = eat;
 
                         }
 
-                        if(player_socket) {
+                        if(helper.notFalse(player_socket)) {
                             player_socket.emit('result_info', { 'status': 'success',
                                 'text': "Assembling " + dirty.object_types[assembled_object_type_index].name + " Succeeded!",
                                 'object_id': dirty.objects[assembler_object_index].id });
@@ -7777,8 +7784,7 @@ exports.eat = eat;
             let found_move = false;
             for(let possible_move of possible_next_moves) {
 
-                let can_place_result = await main.canPlacePlayer({ 'scope': 'galaxy',
-                    'coord': dirty.coords[possible_move.coord_index], 'player_index': player_index });
+                let can_place_result = await player.canPlace(dirty, 'galaxy', dirty.coords[possible_move.coord_index], player_index);
                 //let can_place_result = await main.canPlace('galaxy', dirty.coords[possible_move.coord_index], 'player', dirty.players[player_index].id);
                 if(can_place_result) {
                     found_move = true;
@@ -10444,9 +10450,11 @@ exports.eat = eat;
                             let possible_coord_index = await main.getPlanetCoordIndex({ 'planet_id': elevator_info.coord.planet_id,
                                 'planet_level': elevator_info.coord.level, 'tile_x': x, 'tile_y': y });
 
+                                
                             if(possible_coord_index !== -1) {
-                                let can_place_result = await main.canPlacePlayer({ 'scope': 'planet',
-                                    'coord': dirty.planet_coords[possible_coord_index], 'player_index': socket.player_index });
+
+                                let can_place_result = await player.canPlace(dirty, 'planet', dirty.planet_coords[possible_coord_index], socket.player_index);
+                                
                                 if(can_place_result) {
                                     // woot!
                                     console.log("Found a planet coord to move to");
@@ -10462,8 +10470,9 @@ exports.eat = eat;
                                 'level': elevator_info.coord.level, 'tile_x': x, 'tile_y': y });
 
                             if(possible_coord_index !== -1) {
-                                let can_place_result = await main.canPlacePlayer({ 'scope': 'ship',
-                                    'coord': dirty.ship_coords[possible_coord_index], 'player_index': socket.player_index });
+
+
+                                let can_place_result = await player.canPlace(dirty, 'ship', dirty.ship_coords[possible_coord_index], socket.player_index);
                                 if(can_place_result) {
                                     // woot!
                                     found_coord_index = possible_coord_index;

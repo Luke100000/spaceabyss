@@ -1,5 +1,13 @@
 DOING NOW:
 
+    make sure players don't see the royal cruiser as an option
+
+
+    see if I can get someone to make a trailer on fivr
+
+
+    create a player alone - have him live on the great nomad
+
 
     Explore more indie mmos, and marketing paths
 
@@ -8,6 +16,14 @@ DOING NOW:
             Same idea with the apartment structure - auto assign areas
 
             When a market linker ends, if the area has auto_market , just extend it again instead of deleting it.
+
+
+    Can make slagcells weak to ice
+
+    I wouldn't hate a visual indicator if a monster is going to one shot a player
+        shader? box?
+
+    draw temp frost spider, glaze, and icer pistol
 
 
 

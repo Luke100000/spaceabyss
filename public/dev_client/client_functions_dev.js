@@ -219,11 +219,9 @@ function animateObject(object) {
 }
 
 
-// This logic of this functions closely matches the server
-//  data:   scope   |   coord   |   player_index   |   show_output (optional)
-function canPlacePlayer(data) {
+function canPlacePlayer(scope, coord, player_index, show_output = false) {
 
-    if (typeof data.player_index === 'undefined') {
+    if (typeof player_index === 'undefined') {
         return false;
     }
 
@@ -235,13 +233,13 @@ function canPlacePlayer(data) {
     let type_index = -1;
 
 
-    if (data.scope === 'planet' || data.scope === 'ship') {
+    if (scope === 'planet' || scope === 'ship') {
         //console.log("Getting body");
-        body_index = getObjectIndex(players[data.player_index].body_id);
+        body_index = getObjectIndex(players[player_index].body_id);
 
         if (body_index === -1) {
 
-            if (data.show_output) {
+            if (show_output) {
                 console.log("Could not get player's body");
             }
 
@@ -249,14 +247,14 @@ function canPlacePlayer(data) {
         }
 
         type_index = getObjectTypeIndex(objects[body_index].object_type_id);
-    } else if (data.scope === 'galaxy') {
+    } else if (scope === 'galaxy') {
         //console.log("Getting ship");
-        ship_index = getObjectIndex(players[data.player_index].ship_id);
+        ship_index = getObjectIndex(players[player_index].ship_id);
 
         if (ship_index === -1) {
 
-            if (data.show_output) {
-                console.log("Could not get player's ship. id: " + players[data.player_index].ship_id);
+            if (show_output) {
+                console.log("Could not get player's ship. id: " + players[player_index].ship_id);
             }
 
             return false;
@@ -266,10 +264,10 @@ function canPlacePlayer(data) {
 
     if (body_index === -1 && ship_index === -1) {
 
-        if (data.show_output) {
+        if (show_output) {
             console.log("Couldn't get body or ship");
 
-            console.log("Player's ship id: " + players[data.player_index].ship_id);
+            console.log("Player's ship id: " + players[player_index].ship_id);
             console.log("Ship's object type id: " + objects[ship_index].object_type_id);
         }
 
@@ -278,7 +276,7 @@ function canPlacePlayer(data) {
 
     if (type_index === -1) {
 
-        if (data.show_output) {
+        if (show_output) {
             console.log("Couldn't get type for body or ship");
 
         }
@@ -289,8 +287,8 @@ function canPlacePlayer(data) {
 
     //console.log("collecting the coords");
     /************************** COLLECT ALL THE COORDS *******************************/
-    let last_x = data.coord.tile_x;
-    let last_y = data.coord.tile_y;
+    let last_x = coord.tile_x;
+    let last_y = coord.tile_y;
     let movement_tile_width = 1;
     let movement_tile_height = 1;
 
@@ -314,21 +312,21 @@ function canPlacePlayer(data) {
         }
 
 
-        last_x = data.coord.tile_x + movement_tile_width - 1;
-        last_y = data.coord.tile_y + movement_tile_height - 1;
+        last_x = coord.tile_x + movement_tile_width - 1;
+        last_y = coord.tile_y + movement_tile_height - 1;
 
-        for (let x = data.coord.tile_x; x <= last_x; x++) {
-            for (let y = data.coord.tile_y; y <= last_y; y++) {
+        for (let x = coord.tile_x; x <= last_x; x++) {
+            for (let y = coord.tile_y; y <= last_y; y++) {
 
 
                 let checking_coord_index = -1;
-                if (data.scope === 'galaxy') {
+                if (scope === 'galaxy') {
                     checking_coord_index = getCoordIndex({ 'tile_x': x, 'tile_y': y });
 
                     if (checking_coord_index !== -1) {
                         checking_coords.push(coords[checking_coord_index]);
                     }
-                } else if (data.scope === 'planet') {
+                } else if (scope === 'planet') {
                     checking_coord_index = getPlanetCoordIndex({
                         'planet_id': coord.planet_id,
                         'planet_level': coord.level, 'tile_x': x, 'tile_y': y
@@ -337,7 +335,7 @@ function canPlacePlayer(data) {
                     if (checking_coord_index !== -1) {
                         checking_coords.push(planet_coords[checking_coord_index]);
                     }
-                } else if (data.scope === 'ship') {
+                } else if (scope === 'ship') {
                     checking_coord_index = getShipCoordIndex({
                         'ship_id': coord.ship_id,
                         'tile_x': x, 'tile_y': y
@@ -351,7 +349,7 @@ function canPlacePlayer(data) {
                 // We weren't able to find all the coords we needed to match up to all the display linkers
                 if (checking_coord_index === -1) {
 
-                    if (data.show_output) {
+                    if (show_output) {
                         console.log("Returning false on coord not found");
                     }
 
@@ -362,7 +360,7 @@ function canPlacePlayer(data) {
             }
         }
     } else {
-        checking_coords.push(data.coord);
+        checking_coords.push(coord);
     }
 
 
@@ -390,7 +388,7 @@ function canPlacePlayer(data) {
             if (floor_type_index !== -1) {
                 if (!floor_types[floor_type_index].can_walk_on) {
 
-                    if (data.show_output) {
+                    if (show_output) {
                         console.log("Returning false on " + checking_coord.tile_x + "," + checking_coord.tile_y + " can't walk on floor");
                     }
 
@@ -402,7 +400,7 @@ function canPlacePlayer(data) {
         // Coord has a monster
         if (checking_coord.monster_id || checking_coord.belongs_to_monster_id) {
 
-            if (data.show_output) {
+            if (show_output) {
                 console.log("Returning false on " + checking_coord.tile_x + "," + checking_coord.tile_y + " monster");
             }
 
@@ -412,7 +410,7 @@ function canPlacePlayer(data) {
         // Coord has an npc
         if (checking_coord.npc_id) {
 
-            if (data.show_output) {
+            if (show_output) {
                 console.log("Returning false on " + checking_coord.tile_x + "," + checking_coord.tile_y + " npc");
             }
 
@@ -432,8 +430,8 @@ function canPlacePlayer(data) {
 
                 } else if (!object_types[object_type_index].can_walk_on) {
 
-                    if (data.show_output) {
-                        console.log("Checking coord id: " + checking_coord.id + " scope: " + data.scope);
+                    if (show_output) {
+                        console.log("Checking coord id: " + checking_coord.id + " scope: " + scope);
                         console.log("Returning false on " + checking_coord.tile_x + "," + checking_coord.tile_y + " not walkable object");
                     }
 
@@ -448,11 +446,11 @@ function canPlacePlayer(data) {
 
 
             // If it's us... we're done with that coord
-            if (data.scope === 'galaxy' && checking_coord.object_id &&
-                checking_coord.object_id === players[data.player_index].ship_id) {
+            if (scope === 'galaxy' && checking_coord.object_id &&
+                checking_coord.object_id === players[player_index].ship_id) {
 
-            } else if (data.scope === 'galaxy' && checking_coord.belongs_to_object_id &&
-                checking_coord.belongs_to_object_id === players[data.player_index].ship_id) {
+            } else if (scope === 'galaxy' && checking_coord.belongs_to_object_id &&
+                checking_coord.belongs_to_object_id === players[player_index].ship_id) {
 
             } else {
 
@@ -463,7 +461,7 @@ function canPlacePlayer(data) {
 
                     if (!object_types[object_type_index].can_walk_on && !object_types[object_type_index].is_dockable) {
 
-                        if (data.show_output) {
+                        if (show_output) {
                             console.log("Returning false");
                         }
 
@@ -479,9 +477,9 @@ function canPlacePlayer(data) {
         //console.log("Checking coord planet id: " + checking_coord.planet_id);
 
         // || checking_coord.belongs_to_planet_id
-        if (data.scope === 'galaxy' && checking_coord.planet_id) {
+        if (scope === 'galaxy' && checking_coord.planet_id) {
 
-            if (data.show_output) {
+            if (show_output) {
                 console.log("Returning false on " + checking_coord.tile_x + "," + checking_coord.tile_y + " planet");
             }
 
@@ -489,7 +487,7 @@ function canPlacePlayer(data) {
         }
 
 
-        if (data.scope === 'galaxy' && checking_coord.belongs_to_planet_id) {
+        if (scope === 'galaxy' && checking_coord.belongs_to_planet_id) {
 
             // step 1. Find the base planet coord it
 
@@ -511,7 +509,7 @@ function canPlacePlayer(data) {
                     // step 3. Check if it's only_visual or not
                     if (display_linker_index !== -1 && !planet_type_display_linkers[display_linker_index].only_visual) {
 
-                        if (data.show_output) {
+                        if (show_output) {
                             console.log("Something about visual stuff");
                         }
                         return false;
@@ -526,9 +524,9 @@ function canPlacePlayer(data) {
 
         }
 
-        if (checking_coord.player_id && checking_coord.player_id !== players[data.player_index].id) {
+        if (checking_coord.player_id && checking_coord.player_id !== players[player_index].id) {
 
-            if (data.show_output) {
+            if (show_output) {
                 console.log("Returning false on " + checking_coord.tile_x + "," + checking_coord.tile_y + " other player");
             }
 
@@ -537,9 +535,9 @@ function canPlacePlayer(data) {
 
         /*
         * I want to say that the checks above  ( if(checking_coord.object_id || checking_coord.belongs_to_object_id) { ) cover this case
-        if(checking_coord.belongs_to_object_id && checking_coord.belongs_to_object_id !== players[data.player_index].body_id &&
-            checking_coord.belongs_to_object_id !== players[data.player_index].ship_id) {
-            if(data.show_output) {
+        if(checking_coord.belongs_to_object_id && checking_coord.belongs_to_object_id !== players[player_index].body_id &&
+            checking_coord.belongs_to_object_id !== players[player_index].ship_id) {
+            if(show_output) {
                 console.log("Returning false on " + checking_coord.tile_x + "," + checking_coord.tile_y + " belongs to other object");
             }
 
@@ -549,7 +547,7 @@ function canPlacePlayer(data) {
 
     }
 
-    if (data.show_output) {
+    if (show_output) {
         console.log("Returning true");
     }
 
@@ -884,7 +882,15 @@ function createPlayerSprite(player_index) {
 
 
         // THE 'IDLE' FOR SHIPS - DOWN ANIMATION
-        if(objects[ship_index].object_type_id === 313) {
+
+
+        // ASTEROID SHIP
+        if (objects[ship_index].object_type_id === 298) {
+            new_texture_key = 'player-asteroid-ship';
+            new_texture_animation_key = 'player-asteroid-ship-animation';
+            new_movement_display = 'static';
+        }
+        else if(objects[ship_index].object_type_id === 313) {
             new_texture_key = 'player-blockade-runner';
             new_texture_animation_key = 'player-blockade-runner-down-animation';
         } else if (objects[ship_index].object_type_id === 238) {
@@ -5755,10 +5761,9 @@ function checkForClientMove(time, tile_x = false, tile_y = false) {
         }
         // Normal cases
         else {
-            let can_place_result = canPlacePlayer({
-                'scope': 'galaxy', 'coord': coords[checking_coord_index],
-                'player_index': client_player_index
-            });
+
+            let can_place_result = canPlacePlayer('galaxy', coords[checking_coord_index], client_player_index);
+
 
             if (can_place_result === false) {
 
@@ -5773,40 +5778,14 @@ function checkForClientMove(time, tile_x = false, tile_y = false) {
     } else if (players[client_player_index].planet_coord_id) {
         //console.log("Move is on planet coord");
 
-        if (planet_coords[checking_coord_index] && planet_coords[checking_coord_index].object_type_id) {
-            let object_type_index = object_types.findIndex(function (obj) { return obj && obj.id === planet_coords[checking_coord_index].object_type_id; });
+        let can_place_result = canPlacePlayer('planet', planet_coords[checking_coord_index], client_player_index);
 
-            if (object_type_index !== -1) {
-                if (!object_types[object_type_index].can_walk_on) {
+        if (can_place_result === false) {
 
-                    deny_move = true;
-                }
+            if(debug_moving) {
+                console.log("Can place in galaxy result false");
             }
-        }
-
-        if (planet_coords[checking_coord_index].monster_id) {
             deny_move = true;
-            //console.log("%c Move denied based on monster (planet coord monster id)", log_warning);
-        }
-
-        // The above isn't seeming to work well. Lets also check out monsters and see if a monster has this planet coord
-        let active_monsters = monsters.filter(n => n);
-        for (let monster of active_monsters) {
-            if (monster.planet_coord_id === planet_coords[checking_coord_index].id) {
-                deny_move = true;
-                //console.log("%c Move denied based on monster (monster's planet coord id)", log_warning);
-            }
-        }
-
-
-        if (planet_coords[checking_coord_index].npc_id) {
-            deny_move = true;
-            console.log("Move denied based on npc");
-        }
-
-        if (planet_coords[checking_coord_index].player_id) {
-            deny_move = true;
-            console.log("Move denied based on player");
         }
     }
 
@@ -5814,6 +5793,21 @@ function checkForClientMove(time, tile_x = false, tile_y = false) {
         if(debug_moving) {
             console.log("Move was denied");
         }
+
+        console.log("Move was denied");
+
+        if(players[client_player_index].planet_coord_id) {
+
+            console.log("move failed on planet");
+
+            if(last_failed_move_coord_id === planet_coords[checking_coord_index].id && getRandomIntInclusive(1,30) === 3) {
+                addInfoNumber(players[client_player_index].sprite.x, players[client_player_index].sprite.y,
+                    { 'fill_color': "#f44242", 'text': "Can't Move There" });
+            }
+
+            last_failed_move_coord_id = planet_coords[checking_coord_index].id;
+        }
+        
         
         return false;
     }
@@ -5881,15 +5875,21 @@ function checkForClientMove(time, tile_x = false, tile_y = false) {
 var monster_sprites = [];
 monster_sprites.push({ 'key': 'algae-king', 'monster_type_id': 113, 'planet_type_id': 16, 'frame_width': 64, 'frame_height': 64, 'frame_count': 4, 'frame_rate': 8 });
 monster_sprites.push({ 'key': 'bionic-crab', 'monster_type_id': 105, 'planet_type_id': 34, 'frame_width': 64, 'frame_height': 64, 'frame_count': 9, 'frame_rate': 8 });
+monster_sprites.push({ 'key': 'blossomtis', 'monster_type_id': 116, 'planet_type_id': 29, 'frame_width': 64, 'frame_height': 64, 'frame_count': 4, 'frame_rate': 8 });
+monster_sprites.push({ 'key': 'burger-drone', 'monster_type_id': 118, 'planet_type_id': 30, 'frame_width': 64, 'frame_height': 64, 'frame_count': 23, 'frame_rate': 8 });
+monster_sprites.push({ 'key': 'cherree', 'monster_type_id': 117, 'planet_type_id': 29, 'frame_width': 64, 'frame_height': 64, 'frame_count': 3, 'frame_rate': 8 });
 monster_sprites.push({ 'key': 'construction-worker', 'monster_type_id': 112, 'planet_type_id': 30, 'frame_width': 64, 'frame_height': 66, 'frame_count': 7, 'frame_rate': 8 });
-monster_sprites.push({ 'key': 'jellyfish', 'monster_type_id': 108, 'planet_type_id': 34, 'frame_width': 64, 'frame_height': 64, 'frame_count': 8, 'frame_rate': 8 });
-monster_sprites.push({ 'key': 'sea-urchin', 'monster_type_id': 106, 'planet_type_id': 34, 'frame_width': 64, 'frame_height': 64, 'frame_count': 12, 'frame_rate': 8 });
-monster_sprites.push({ 'key': 'trae', 'planet_type_id': 29, 'frame_width': 104, 'frame_height': 104, 'frame_count': 10, 'frame_rate': 6 });
-monster_sprites.push({ 'key': 'trae-seedling', 'planet_type_id': 29, 'frame_width': 72, 'frame_height': 72, 'frame_count': 6, 'frame_rate': 8 });
-monster_sprites.push({ 'key': 'trae-sproutling', 'planet_type_id': 29, 'frame_width': 64, 'frame_height': 64, 'frame_count': 5, 'frame_rate': 8 });
+monster_sprites.push({ 'key': 'frost-spider', 'monster_type_id': 114, 'planet_type_id': 11, 'frame_width': 64, 'frame_height': 64, 'frame_count': 3, 'frame_rate': 8 });
 monster_sprites.push({ 'key': 'gang-smasher', 'monster_type_id': 111, 'planet_type_id': 30, 'frame_width': 64, 'frame_height': 68, 'frame_count': 8, 'frame_rate': 8 });
 monster_sprites.push({ 'key': 'gang-gunner', 'monster_type_id': 110, 'planet_type_id': 30, 'frame_width': 64, 'frame_height': 66, 'frame_count': 9, 'frame_rate': 8 });
 monster_sprites.push({ 'key': 'gang-boss', 'monster_type_id': 109, 'planet_type_id': 30, 'frame_width': 64, 'frame_height': 82, 'frame_count': 7, 'frame_rate': 8 });
+monster_sprites.push({ 'key': 'jellyfish', 'monster_type_id': 108, 'planet_type_id': 34, 'frame_width': 64, 'frame_height': 64, 'frame_count': 8, 'frame_rate': 8 });
+monster_sprites.push({ 'key': 'sea-urchin', 'monster_type_id': 106, 'planet_type_id': 34, 'frame_width': 64, 'frame_height': 64, 'frame_count': 12, 'frame_rate': 8 });
+monster_sprites.push({ 'key': 'take-out-drone', 'monster_type_id': 119, 'planet_type_id': 30, 'frame_width': 64, 'frame_height': 64, 'frame_count': 24, 'frame_rate': 8 });
+monster_sprites.push({ 'key': 'trae', 'planet_type_id': 29, 'frame_width': 104, 'frame_height': 104, 'frame_count': 10, 'frame_rate': 6 });
+monster_sprites.push({ 'key': 'trae-seedling', 'planet_type_id': 29, 'frame_width': 72, 'frame_height': 72, 'frame_count': 6, 'frame_rate': 8 });
+monster_sprites.push({ 'key': 'trae-sproutling', 'planet_type_id': 29, 'frame_width': 64, 'frame_height': 64, 'frame_count': 5, 'frame_rate': 8 });
+
 monster_sprites.push({ 'key': 'widden', 'monster_type_id': 42, 'ship_type_id': 352, 'frame_width': 64, 'frame_height': 64, 'frame_count': 3, 'frame_rate': 4 });
 
 // Not sure how to do it more efficiently than just calculate the new and old level for... every skill!
