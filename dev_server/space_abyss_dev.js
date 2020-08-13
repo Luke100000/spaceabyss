@@ -1209,14 +1209,6 @@ const player = require('./player.js');
 const world = require('./world.js');
 
 
-
-eval(fs.readFileSync('global_functions.js')+'');
-
-
-
-
-
-
 io.sockets.on('connection', function (socket) {
 
     log(chalk.green("Have new client connecting!"));
@@ -3240,7 +3232,7 @@ async function canPlace(scope, coord, placing_type, placing_id, data = false) {
                 // only things like spaceport tiles, hole, stairs will block it (npc will attack monsters, clear objects)
                 // TODO maybe factor in player things?
 
-                if(coord.object_type_id === 63 || coord.object_type_id === 62 || coord.floor_type_id === 11) {
+                if(coord.object_type_id === 63 || coord.object_type_id === 62 || coord.floor_type_id === 11 || coord.floor_type_id === 44) {
                     return false;
                 } else {
                     return true;
@@ -5118,6 +5110,8 @@ async function tickNomad(dirty) {
     }
 }
 
+module.exports.tickNomad = tickNomad;
+
 
 async function tickNpcSkills() {
     try {
@@ -5231,8 +5225,6 @@ setInterval(writeDirty, 20000);
 // 30 seconds
 setInterval(tickResearches, 30000, dirty);
 setInterval(tickMonsterDecay, 30000, dirty);
-// Testing at 30s. Should be more like 1 day with a 15% chance
-//setInterval(tickNomad, 30000, dirty);
 
 
 // 60 seconds
@@ -5263,6 +5255,10 @@ setInterval(tickNpcSkills, 3600000);
 
 // 2 hours
 setInterval(tickDecay, 7200000, dirty);
+
+
+// 12 hours
+//setInterval(tickNomad, 43200000, dirty);
 
 
 /*

@@ -280,20 +280,20 @@ async function canPlace(dirty, scope, coord, player_index, show_output = false) 
 
                     let checking_coord_index = -1;
                     if(scope === 'galaxy') {
-                        checking_coord_index = await getCoordIndex({ 'tile_x': x, 'tile_y': y });
+                        checking_coord_index = await main.getCoordIndex({ 'tile_x': x, 'tile_y': y });
 
                         if(checking_coord_index !== -1) {
                             checking_coords.push(dirty.coords[checking_coord_index]);
                         }
                     } else if(scope === 'planet') {
-                        checking_coord_index = await getPlanetCoordIndex({ 'planet_id': coord.planet_id,
+                        checking_coord_index = await main.getPlanetCoordIndex({ 'planet_id': coord.planet_id,
                             'planet_level': coord.level, 'tile_x': x, 'tile_y': y });
 
                         if(checking_coord_index !== -1) {
                             checking_coords.push(dirty.planet_coords[checking_coord_index]);
                         }
                     } else if(scope === 'ship') {
-                        checking_coord_index = await getShipCoordIndex({ 'ship_id': coord.ship_id,
+                        checking_coord_index = await main.getShipCoordIndex({ 'ship_id': coord.ship_id,
                             'level': coord.level,
                             'tile_x': x, 'tile_y': y });
 
@@ -432,7 +432,7 @@ async function canPlace(dirty, scope, coord, player_index, show_output = false) 
                 let planet_index = await planet.getIndex(dirty, { 'planet_id': checking_coord.belongs_to_planet_id });
 
                 if(planet_index !== -1) {
-                    let origin_planet_coord_index = await getCoordIndex({ 'coord_id': dirty.planets[planet_index].coord_id });
+                    let origin_planet_coord_index = await main.getCoordIndex({ 'coord_id': dirty.planets[planet_index].coord_id });
                     if(origin_planet_coord_index !== -1) {
 
                         let linker_position_x = checking_coord.tile_x - dirty.coords[origin_planet_coord_index].tile_x;
@@ -745,6 +745,7 @@ exports.getEquipment = getEquipment;
 /**
  * @param {Object} dirty
  * @param {Object} data
+ * @param {number=} data.player_id
  */
 async function getIndex(dirty, data) {
 
@@ -1075,7 +1076,7 @@ async function kill(dirty, player_index) {
             if(can_place_result) {
                 
 
-                await main.placeObject(false, dirty, { 'object_index': new_object_index,
+                await game_object.place(false, dirty, { 'object_index': new_object_index,
                     'planet_coord_index': coord_index });
 
                 /*

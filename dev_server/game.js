@@ -163,7 +163,7 @@ const world = require('./world.js');
                             let new_object_id = await world.insertObjectType(false, dirty, insert_object_type_data);
                             let new_object_index = await game_object.getIndex(dirty, new_object_id);
 
-                            await main.placeObject(false, dirty, { 'object_index': new_object_index,
+                            await game_object.place(false, dirty, { 'object_index': new_object_index,
                                 'planet_coord_index': checking_coord_index });
                             //await world.addObjectToPlanetCoord(dirty, new_object_index, checking_coord_index);
                             await world.objectFindTarget(dirty, new_object_index);
@@ -299,8 +299,7 @@ const world = require('./world.js');
                 io.emit('chat', {'scope': 'global',
                     'message': dirty.players[player_index].name + " has conquered the planet " + dirty.planets[planet_index].name });
 
-                await world.addPlayerLog(socket, dirty, { 'player_index': player_index,
-                    'message': dirty.players[player_index].name + " has taken over planet " + dirty.planets[planet_index].name });
+                await world.addPlayerLog(dirty, player_index, dirty.players[player_index].name + " has taken over planet " + dirty.planets[planet_index].name);
             } else if(data.ship_coord_index) {
                 await main.updateCoordGeneric(socket, { 'ship_coord_index': data.ship_coord_index, 'object_index': object_index });
 
@@ -319,8 +318,7 @@ const world = require('./world.js');
                 // planet.sendInfo doesn't yet support global sends
                 io.emit('object_info', { 'object': dirty.objects[ship_index] });
                 io.emit('chat', {'scope': 'global', 'message': dirty.players[player_index].name + " has conquered a ship" });
-                world.addPlayerLog(socket, dirty, { 'player_index': player_index,
-                    'message': dirty.players[player_index].name + " has taken over ship " + dirty.objects[ship_index].name });
+                world.addPlayerLog(dirty, player_index, dirty.players[player_index].name + " has taken over ship " + dirty.objects[ship_index].name );
             }
         } catch(error) {
             log(chalk.red("Error in game.placeAI: " + error));
@@ -599,13 +597,13 @@ const world = require('./world.js');
 
             if(data.planet_coord_index) {
                 // object_id   |   coord_index   |   planet_coord_index   |   ship_coord_index
-                await main.placeObject(socket, dirty, { 'object_index': new_object_index,
+                await game_object.place(socket, dirty, { 'object_index': new_object_index,
                     'planet_coord_index': data.planet_coord_index });
 
 
             } else if(data.ship_coord_index) {
 
-                await main.placeObject(socket, dirty, { 'object_index': new_object_index, 'ship_coord_index': data.ship_coord_index });
+                await game_object.place(socket, dirty, { 'object_index': new_object_index, 'ship_coord_index': data.ship_coord_index });
 
             }
 
@@ -1131,8 +1129,7 @@ const world = require('./world.js');
             // Everyone should know the planet has a new name
             io.emit('planet_info', { 'planet': dirty.planets[planet_index] });
 
-            world.addPlayerLog(socket, dirty, { 'player_index': socket.player_index,
-                'message': dirty.players[socket.player_index].name + " has renamed planet " + old_name + " to " + new_name });
+            world.addPlayerLog(dirty, socket.player_index, dirty.players[socket.player_index].name + " has renamed planet " + old_name + " to " + new_name);
 
 
 
@@ -1487,9 +1484,9 @@ const world = require('./world.js');
 
 
                         if(converter_info.scope === "planet") {
-                            await main.placeObject(socket, dirty, { 'object_index': new_object_index, 'planet_coord_index': converter_info.coord_index });
+                            await game_object.place(socket, dirty, { 'object_index': new_object_index, 'planet_coord_index': converter_info.coord_index });
                         } else if(converter_info.scope === "ship") {
-                            await main.placeObject(socket, dirty, { 'object_index': new_object_index, 'ship_coord_index': converter_info.coord_index });
+                            await game_object.place(socket, dirty, { 'object_index': new_object_index, 'ship_coord_index': converter_info.coord_index });
                         }
 
 
@@ -2947,7 +2944,7 @@ exports.eat = eat;
                         await main.updateCoordGeneric(socket, { 'ship_coord_index': coord_index, 'object_type_id': false });
                     }
 
-                    let placed_result = await main.placeObject(socket, dirty, object_update_data);
+                    let placed_result = await game_object.place(socket, dirty, object_update_data);
 
                     console.log("placed_result: " + placed_result);
 
@@ -3496,7 +3493,7 @@ exports.eat = eat;
                         place_object_data.ship_coord_index = spawner_info.coord_index;
                     }
 
-                    await main.placeObject(false, dirty, place_object_data);
+                    await game_object.place(false, dirty, place_object_data);
                 }
 
 
@@ -3924,7 +3921,7 @@ exports.eat = eat;
                     return false;
                 }
 
-                await main.placeObject(false, dirty, { 'object_index': new_object_index,
+                await game_object.place(false, dirty, { 'object_index': new_object_index,
                     'planet_coord_index': coord_index });
 
                 console.log("Placed new object id: " + dirty.objects[new_object_index].id + " with spawned event_id: " + dirty.objects[new_object_index].spawned_event_id);
@@ -4688,7 +4685,38 @@ exports.eat = eat;
 
 
                 destroyPlanet(socket, dirty, { 'planet_index': planet_index });
-            } else if(data.message.includes("/generateplanet ")) {
+            } else if(data.message.includes("/fix ")) {
+
+
+                
+                return false;
+
+                let infected_index = await player.getIndex(dirty, { 'player_id': 64 });
+
+                console.log("admin is fixing ships");
+
+                for(let i = 0; i < dirty.objects.length; i++) {
+
+                    if(dirty.objects[i] && dirty.objects[i].player_id === 64 && dirty.objects[i].object_type_id === 313 && dirty.objects[i].id !== 87268) {
+                        console.log("Going to delete ship id: " + dirty.objects[i].id + " player id: " + dirty.objects[i].player_id);
+                        await game_object.deleteObject(dirty, { 'object_index': i });
+                        //deleteShip(false, dirty, dirty.objects[i].id, 'bug');
+                        
+                    }
+
+                    if(dirty.objects[i] && dirty.objects[i].player_id === 64 && dirty.objects[i].object_type_id === 296 && dirty.objects[i].id !== 105859) {
+                        console.log("Going to delete ship id: " + dirty.objects[i].id + " player id: " + dirty.objects[i].player_id);
+                        await game_object.deleteObject(dirty, { 'object_index': i });
+                        //deleteShip(false, dirty, dirty.objects[i].id, 'bug');
+                        
+                    }
+
+                }
+
+            }
+            
+            
+            else if(data.message.includes("/generateplanet ")) {
                 console.log("Was generate planet message");
                 let split = data.message.split(" ");
                 let planet_id = split[1];
@@ -4705,6 +4733,33 @@ exports.eat = eat;
 
                 // Not looking like await/non await is making a difference
                 await world.generatePlanet(socket, dirty, planet_index, planet_type_index);
+            }
+
+            else if(data.message.includes("/gift ")) {
+                console.log("Was gift message");
+                let split = data.message.split(" ");
+                let player_id = parseInt(split[1]);
+                let amount = parseInt(split[2]);
+                let object_type_id = parseInt(split[3]);
+
+                let gifting_to_player_index = await player.getIndex(dirty, { 'player_id': player_id });
+
+                if(gifting_to_player_index === -1) {
+                    log(chalk.yellow("Could not find that player"));
+                    return false;
+                }
+
+                let gifting_object_type_index = main.getObjectTypeIndex(object_type_id);
+
+                if(dirty.object_types[gifting_object_type_index].assembled_as_object) {
+                    log(chalk.yellow("Code this!"));
+                    return false;
+                }
+
+                console.log("gifting " + amount + " " + dirty.object_types[gifting_object_type_index].name + " to player " + dirty.players[gifting_to_player_index].id);
+
+                await inventory.addToInventory({}, dirty, 
+                    { 'adding_to_type': 'player', 'adding_to_id': player_id, 'amount': amount, 'object_type_id': object_type_id });
             }
 
             else if(data.message.includes("/move ")) {
@@ -4820,7 +4875,7 @@ exports.eat = eat;
                 }
 
 
-                let placed_result = await main.placeObject(socket, dirty, place_data);
+                let placed_result = await game_object.place(socket, dirty, place_data);
 
                 console.log("Placed result: " + placed_result);
             }
@@ -5307,12 +5362,12 @@ exports.eat = eat;
 
                     if(dirty.players[player_index].ship_coord_id) {
                         console.log("Placing object on ship coord");
-                        await main.placeObject(socket, dirty, { 'object_index': new_object_index, 'ship_coord_index': found_coord_index });
+                        await game_object.place(socket, dirty, { 'object_index': new_object_index, 'ship_coord_index': found_coord_index });
                     } else if(dirty.players[player_index].coord_id) {
                         console.log("Placing object on galaxy coord");
-                        await main.placeObject(socket, dirty, { 'object_index': new_object_index, 'coord_index': found_coord_index });
+                        await game_object.place(socket, dirty, { 'object_index': new_object_index, 'coord_index': found_coord_index });
                     } else if(dirty.players[player_index].planet_coord_id) {
-                        await main.placeObject(socket, dirty, { 'object_index': new_object_index, 'planet_coord_index': found_coord_index });
+                        await game_object.place(socket, dirty, { 'object_index': new_object_index, 'planet_coord_index': found_coord_index });
                     }
 
 
@@ -5334,6 +5389,10 @@ exports.eat = eat;
 
 
 
+            } else if(data.message.includes("/tickthegreatnomad")) {
+
+                await main.tickNomad(dirty, true);
+                
             } else if(data.message.includes("/tickspawners")) {
                 await tickSpawners(dirty);
             } else if(data.message.includes("/tickEvents")) {
@@ -6669,7 +6728,7 @@ exports.eat = eat;
 
                     // The assembly has ticked to completion, or it's an admin and we don't want to wait to test everything
                     if(assembly.current_tick_count >= dirty.assembled_in_linkers[assembled_in_linker_index].tick_count ||
-                        (player_socket !== false && player_socket.is_admin === true) ) {
+                        ( helper.notFalse(player_socket) && player_socket.is_admin === true) ) {
                         assembly_is_finished = true;
                     }
 
@@ -6684,10 +6743,41 @@ exports.eat = eat;
                     }
 
 
-
                     /************** ASSEMBLY IS FINISHED ********************/
 
                     log(chalk.green("\nAssembly Finished"));
+
+                    // We absolutely want the assembly to be deleted even if there are errors down the road. Making 700 ships is butt!
+                    // Increment the amount completed
+                    assembly.amount_completed++;
+
+                    if(dirty.assemblies[i].amount_completed >= dirty.assemblies[i].total_amount) {
+
+                        //console.log("Going to delete the assembly now");
+                        await (pool.query("DELETE FROM assemblies WHERE id = ?", [dirty.assemblies[i].id]));
+
+                        let temp_assembly = dirty.assemblies[i];
+            
+                        delete dirty.assemblies[i];
+
+                        // let the room know the assembly is finished
+                        io.to(assembler_object_info.room).emit('assembly_info', { 'assembly': dirty.assemblies[i], 'finished': true });
+
+                        // Set it to not active if it isn't already deleted
+                        if(dirty.objects[assembler_object_index]) {
+                            dirty.objects[assembler_object_index].is_active = false;
+                            await game_object.sendInfo(false, assembler_object_info.room, dirty, assembler_object_index, 'game.tickAssemblies');
+                        }
+
+                    } else {
+                        dirty.assemblies[i].current_tick_count = 0;
+                        dirty.assemblies[i].has_change = true;
+                        // Just send the updated info
+                        io.to(assembler_object_info.room).emit('assembly_info', { 'assembly': dirty.assemblies[i] });
+                    }
+
+
+
 
                     let assembled_object_type_index = main.getObjectTypeIndex(assembly.being_assembled_object_type_id);
 
@@ -6748,7 +6838,7 @@ exports.eat = eat;
 
                         dirty.players[player_index].has_change = true;
 
-                        if(player_socket) {
+                        if(helper.notFalse(player_socket)) {
                             await player.sendInfo(player_socket, false, dirty, dirty.players[player_index].id);
                             //await sendPlayerStats(player_socket, dirty);
                         }
@@ -6776,7 +6866,7 @@ exports.eat = eat;
                                     console.log("Adding assembled ship to planet coord. new_object_index: " +
                                         new_object_index + " assembler_coord_index: " + assembler_coord_index);
                                     // Place the new object on the coord
-                                    await main.placeObject(false, dirty, { 'object_index': new_object_index.id,
+                                    await game_object.place(false, dirty, { 'object_index': new_object_index.id,
                                         'planet_coord_index': assembler_coord_index });
 
                                     // we gotta generate the ship
@@ -6798,7 +6888,7 @@ exports.eat = eat;
 
                                 console.log("Adding assembled ship to ship coord. EEEEEK");
                                 // Place the new object on the coord
-                                await main.placeObject(false, dirty, { 'object_index': new_object_index,
+                                await game_object.place(false, dirty, { 'object_index': new_object_index,
                                     'ship_coord_index': assembler_coord_index });
                                 /*
                                 await world.addObjectToShipCoord(dirty, new_object_index, assembler_coord_index);
@@ -6814,7 +6904,7 @@ exports.eat = eat;
 
                                 console.log("Adding assembled ship to coord. EEEEEK");
                                 // Place the new object on the coord
-                                await main.placeObject(false, dirty, { 'object_index': new_object_index,
+                                await game_object.place(false, dirty, { 'object_index': new_object_index,
                                     'coord_index': assembler_coord_index });
                                 /*
                                 await world.addObjectToCoord(dirty, new_object_index, assembler_coord_index);
@@ -6842,7 +6932,7 @@ exports.eat = eat;
                                 let adding_to_data = { 'adding_to_type': 'object', 'adding_to_id': assembly.assembler_object_id,
                                     'amount':1, 'object_id': dirty.objects[new_object_index].id, 'object_type_id': assembly.being_assembled_object_type_id  };
 
-                                await inventory.addToInventory(socket, dirty, adding_to_data);
+                                await inventory.addToInventory(player_socket, dirty, adding_to_data);
                             }
 
 
@@ -6850,9 +6940,7 @@ exports.eat = eat;
                             if(dirty.players[player_index].socket_id) {
                                 //console.log("Assembly player has socket_id: " + dirty.players[player_index].socket_id);
 
-                                let player_socket = io.sockets.connected[dirty.players[player_index].socket_id];
-
-                                if(player_socket) {
+                                if(helper.notFalse(player_socket)) {
                                     console.log("Found player socket as connected. Sending assembly_info");
                                     player_socket.emit('assembly_info', { 'finished': true, 'assembly': dirty.assemblies[i] });
                                 }
@@ -6889,41 +6977,13 @@ exports.eat = eat;
                         }
 
 
-                        // Increment the amount completed
-                        assembly.amount_completed++;
-
-                        if(dirty.assemblies[i].amount_completed >= dirty.assemblies[i].total_amount) {
-
-                            //console.log("Going to delete the assembly now");
-                            await (pool.query("DELETE FROM assemblies WHERE id = ?", [dirty.assemblies[i].id]));
-
-                            // let the room know the assembly is finished
-                            io.to(assembler_object_info.room).emit('assembly_info', { 'assembly': dirty.assemblies[i], 'finished': true });
-
-                            delete dirty.assemblies[i];
-
-                            // Set it to not active if it isn't already deleted
-                            if(dirty.objects[assembler_object_index]) {
-                                dirty.objects[assembler_object_index].is_active = false;
-                                await game_object.sendInfo(false, assembler_object_info.room, dirty, assembler_object_index, 'game.tickAssemblies');
-                            }
-
-                        } else {
-                            dirty.assemblies[i].current_tick_count = 0;
-                            dirty.assemblies[i].has_change = true;
-                            // Just send the updated info
-                            io.to(assembler_object_info.room).emit('assembly_info', { 'assembly': dirty.assemblies[i] });
-                        }
-
-
-
                     }
 
                     /****************************** ASSEMBLY FAILED *********************************/
                     else {
 
 
-                        if(player_socket) {
+                        if(helper.notFalse(player_socket)) {
 
 
                             // Send a system message that the research has failed
@@ -6979,7 +7039,7 @@ exports.eat = eat;
 
                         dirty.players[player_index].has_change = true;
 
-                        if(player_socket) {
+                        if(helper.notFalse(player_socket)) {
                             await player.sendInfo(player_socket, false, dirty, dirty.players[player_index].id);
                             //await sendPlayerStats(player_socket, dirty);
                         }
@@ -7857,7 +7917,7 @@ exports.eat = eat;
                                     let new_object_id = await world.insertObjectType(false, dirty, insert_object_type_data);
                                     let new_object_index = await game_object.getIndex(dirty, new_object_id);
 
-                                    await main.placeObject(false, dirty, { 'object_index': new_object_index,
+                                    await game_object.place(false, dirty, { 'object_index': new_object_index,
                                         'planet_coord_index': checking_coord_index });
 
                                     /*
@@ -8442,7 +8502,7 @@ exports.eat = eat;
 
 
 
-                            if(player_socket) {
+                            if(helper.notFalse(player_socket)) {
                                 player_socket.emit('research_info', { 'remove': true, 'research': dirty.researches[i] });
                                 player_socket.emit('player_research_linker_info', { 'player_research_linker': dirty.player_research_linkers[player_research_linker_index] });
 
@@ -8467,7 +8527,7 @@ exports.eat = eat;
                             dirty.players[player_index].researching_skill_points++;
                             dirty.players[player_index].has_change = true;
 
-                            if(player_socket) {
+                            if(helper.notFalse(player_socket)) {
                                 await player.sendInfo(player_socket, false, dirty, dirty.players[player_index].id);
                             }
 
@@ -8475,7 +8535,7 @@ exports.eat = eat;
 
 
 
-                            if(player_socket) {
+                            if(helper.notFalse(player_socket)) {
                                 player_socket.emit('research_info', { 'research': dirty.researches[i] });
 
                                 // Send a system message that the research has failed
@@ -8513,6 +8573,7 @@ exports.eat = eat;
 
         } catch(error) {
             log(chalk.red("Error in game.tickResearches: " + error));
+            console.error(error);
         }
 
 
@@ -9283,10 +9344,10 @@ exports.eat = eat;
             let new_object_index = await game_object.getIndex(dirty, new_object_id);
 
             if(planting_scope === 'planet') {
-                await main.placeObject(false, dirty, { 'object_index': new_object_index,
+                await game_object.place(false, dirty, { 'object_index': new_object_index,
                 'planet_coord_index': coord_index });
             } else if(planting_scope === 'ship') {
-                await main.placeObject(false, dirty, { 'object_index': new_object_index,
+                await game_object.place(false, dirty, { 'object_index': new_object_index,
                 'ship_coord_index': coord_index });
             }
 

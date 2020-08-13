@@ -1,3 +1,39 @@
+## [0.1.27] - 2020-08-13
+
+### Added
+- Warning message when players attempt to dock at The Great Nomad
+- Admin function to tick The Great Nomad
+- Danger message if a player is thinking about attacking a monster that is likely to near instantly kill them, or insta kill them.
+- Admin ability to gift items to players if they lost items somehow
+
+
+### Fixed
+- Objects that can not be assembled will now not show up, even if those objects have assembly linkers associated with them.
+- Issues with placing objects with multiple tiles
+- Bug with researching while the player is offline
+- Maggot Burgers and Mech Take Out can be picked up and attacked
+- An error or two when players died
+- Players can no longer be attacked on Spaceport Merchant tiles
+
+
+### Changed
+- Implemented the start of a new system I've been thinking about for quite a while now. Tiles/coords will grab the array index of their neighbors to the top/bottom/left/right, 
+so we can traverse those indexes rather than searching the entire array. Currently this is only active for grabbing new ship tiles/coords in ships. If I don't notice 
+any large issues with it, I'll keep expanding this system. It takes the lookup times on a pod from 300ms to 1ms and should scale much better
+- Reduced 'Crush' attack damage from 150 to 75 for Trae
+- Regenerated the BioGrove, Inferno, and Frozon Planets
+
+## [0.1.26] - 2020-08-11
+
+
+### Added
+- Temporary script to fix the extra 1400 or so ships
+
+### Fixed
+- Couldn't land on Azure planets
+- Potential fix for the infinite assembly bug (not tested yet)
+
+
 ## [0.1.25] - 2020-08-11
 
 ### Added

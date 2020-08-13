@@ -8,6 +8,7 @@ game.processAdminChatMessage
 /deletespawnedevent spawned_event_id
 /destroyplanet PLANET_ID
 /generateplanet PLANET_ID
+/gift PLAYER_ID AMOUNT OBJECT_TYPE_ID
 /move (UP|DOWN)
 /moveto TYPE (SHIP) TYPE_ID
 /movenpc NPC_ID planet_coord_id
@@ -24,6 +25,7 @@ game.processAdminChatMessage
 /spawnobject AMOUNT OBJECT_TYPE_NAME
 /tickEvents
 /tickspawners
+/tickthegreatnomad
 /updateshiptype OBJECT_TYPE_ID
 
 
@@ -62,6 +64,8 @@ OTHER INDIE MMOS - Notes on what they do well - What websites they are mentioned
         leaderboards/rankings
     rpg mo ( mmorpg )
     mirage realms ( mmorpg )
+
+    realm of the mad god
 
 
 Other game ideas I want to make:

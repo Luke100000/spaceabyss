@@ -16,6 +16,17 @@ var io;
     //  Params: adding_to_type   |   adding_to_id   |   amount   |   object_type_id   |     |   type_id
     //              object_id   |   price
 
+    /**
+     * @param {Object} socket
+     * @param {Object} dirty
+     * @param {Object} data
+     * @param {String} data.adding_to_type
+     * @param {number} data.adding_to_id
+     * @param {number=} data.amount
+     * @param {number=} data.object_type_id
+     * @param {number=} data.object_id
+     * @param {number=} data.price
+     */
     async function addToInventory(socket, dirty, data) {
 
         try {
@@ -63,7 +74,7 @@ var io;
 
                 if(data.adding_to_type === 'player') {
                     sql = "INSERT INTO inventory_items(player_id,object_id,object_type_id,amount, price) VALUES(?,?,?,?,?)";
-                    inserts = [socket.player_id, data.object_id, data.object_type_id, 1, price];
+                    inserts = [data.adding_to_id, data.object_id, data.object_type_id, 1, price];
                 } else if(data.adding_to_type === 'npc') {
                     sql = "INSERT INTO inventory_items(npc_id,object_id,object_type_id,amount, price) VALUES(?,?,?,?,?)";
                     inserts = [data.adding_to_id, data.object_id, data.object_type_id, 1, price];
@@ -103,7 +114,7 @@ var io;
                 // lets see if we have an inventory item index
                 if(data.adding_to_type === 'player') {
                     inventory_item_index = dirty.inventory_items.findIndex(function (obj) {
-                        return obj && obj.player_id === socket.player_id && obj.object_type_id === data.object_type_id; });
+                        return obj && obj.player_id === data.adding_to_id && obj.object_type_id === data.object_type_id; });
                 } else if(data.adding_to_type === 'npc') {
                     inventory_item_index = dirty.inventory_items.findIndex(function (obj) {
                         return obj && obj.npc_id === data.adding_to_id && obj.object_type_id === data.object_type_id; });
@@ -126,7 +137,7 @@ var io;
 
                     if(data.adding_to_type === 'player') {
                         sql = "INSERT INTO inventory_items(player_id,object_type_id,amount,price) VALUES(?,?,?,?)";
-                        inserts = [socket.player_id, data.object_type_id, data.amount, price];
+                        inserts = [data.adding_to_id, data.object_type_id, data.amount, price];
                     } else if(data.adding_to_type === 'npc') {
                         sql = "INSERT INTO inventory_items(npc_id,object_type_id,amount,price)VALUES(?,?,?,?)";
                         inserts = [data.adding_to_id, data.object_type_id, data.amount, price];
@@ -159,7 +170,7 @@ var io;
 
                 if(data.adding_to_type === 'player') {
                     inventory_item_index = dirty.inventory_items.findIndex(function (obj) {
-                        return obj && obj.player_id === socket.player_id && obj.floor_type_id === data.floor_type_id;
+                        return obj && obj.player_id === data.adding_to_id && obj.floor_type_id === data.floor_type_id;
                     });
                 } else if(data.adding_to_type === 'npc') {
                     inventory_item_index = dirty.inventory_items.findIndex(function (obj) {
@@ -181,7 +192,7 @@ var io;
 
                     if(data.adding_to_type === 'player') {
                         sql = "INSERT INTO inventory_items(player_id,floor_type_id,amount,price) VALUES(?,?,?,?)";
-                        inserts = [socket.player_id, data.floor_type_id, data.amount, price];
+                        inserts = [data.adding_to_id, data.floor_type_id, data.amount, price];
                     } else if(data.adding_to_type === 'npc') {
                         sql = "INSERT INTO inventory_items(npc_id,floor_type_id,amount,price)VALUES(?,?,?,?)";
                         inserts = [data.adding_to_id, data.floor_type_id, data.amount, price];
@@ -214,7 +225,7 @@ var io;
 
             if(data.adding_to_type === 'player') {
 
-                await sendInventory(socket, false, dirty, 'player', socket.player_id);
+                await sendInventory(socket, false, dirty, 'player', data.adding_to_id);
             } else if(data.adding_to_type === 'object' && owner_object_index !== -1) {
 
                 //console.log("Owner object index was " + owner_object_index);
@@ -636,7 +647,7 @@ var io;
             if(inventory_items !== false) {
                 inventory_items.forEach(function(inventory_item) {
 
-                    if(socket !== false) {
+                    if(helper.notFalse(socket)) {
                         socket.emit('inventory_item_info', { 'inventory_item': inventory_item });
                     } else if(room !== false) {
                         io.to(room).emit('inventory_item_info', { 'inventory_item': inventory_item });

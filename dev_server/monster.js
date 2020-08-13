@@ -1140,7 +1140,7 @@ async function move(dirty, i, data) {
                                         'tile_x': x, 'tile_y':y };
                                     let checking_coord_index = await main.getPlanetCoordIndex(checking_data);
 
-                                    let monster_can_place_result = await monster.canPlace(dirty, 'planet',
+                                    let monster_can_place_result = await canPlace(dirty, 'planet',
                                         dirty.planet_coords[checking_coord_index], {'monster_index': i });
 
                                     if(checking_coord_index !== -1 && monster_can_place_result === true ) {
@@ -1160,7 +1160,7 @@ async function move(dirty, i, data) {
                                         'tile_x': x, 'tile_y':y };
                                     let checking_coord_index = await main.getShipCoordIndex(checking_data);
 
-                                    let monster_can_place_result = await monster.canPlace(dirty, 'ship',
+                                    let monster_can_place_result = await canPlace(dirty, 'ship',
                                         dirty.ship_coords[checking_coord_index], { 'monster_index': i });
 
                                     if(checking_coord_index !== -1 && monster_can_place_result === true ) {

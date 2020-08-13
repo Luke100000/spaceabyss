@@ -1441,7 +1441,7 @@ const world = require('./world.js');
 
 
                 // player moved onto a spaceport tile - remove any battle linkers with them. SAFE.
-                if(dirty.planet_coords[planet_coord_index].floor_type_id === 11) {
+                if(dirty.planet_coords[planet_coord_index].floor_type_id === 11 || dirty.planet_coords[planet_coord_index].floor_type_id === 44) {
                     //console.log("Player moved onto spaceport. Removing battle linkers");
                     await world.removeBattleLinkers(dirty, { 'player_id': socket.player_id });
                 } else {
@@ -2147,8 +2147,9 @@ const world = require('./world.js');
                 let ending_y = -1;
                 let starting_x = -1;
                 let ending_x = -1;
+                let send_additional_coords = true;
 
-                // We only need to send new planet coords to the client
+                // We only need to send new ship coords to the client
                 if(dirty.ship_coords[previous_ship_coord_index].tile_y > dirty.ship_coords[ship_coord_index].tile_y) {
                 //if (movement_direction === "up") {
 
@@ -2157,6 +2158,17 @@ const world = require('./world.js');
                     starting_x = dirty.ship_coords[ship_coord_index].tile_x - Math.floor(global.show_cols / 2);
                     ending_x = dirty.ship_coords[ship_coord_index].tile_x + Math.floor(global.show_cols / 2);
 
+                    
+                    // @ts-ignore
+                    let destination_coord_index = await helper.getDestinationCoordIndex(dirty, 'ship', ship_coord_index, 'up', Math.floor(global.show_rows / 2));
+
+                    if(destination_coord_index === -1) {
+                        //console.log("Don't bother sending additional coords");
+                        send_additional_coords = false;
+                    } else {
+                        //console.log("Should send additional coords");
+                    }
+
                 }
                 if(dirty.ship_coords[previous_ship_coord_index].tile_y < dirty.ship_coords[ship_coord_index].tile_y) {
                 //else if(movement_direction === "down") {
@@ -2164,6 +2176,16 @@ const world = require('./world.js');
                     ending_y = starting_y;
                     starting_x = dirty.ship_coords[ship_coord_index].tile_x - Math.floor(global.show_cols / 2);
                     ending_x = dirty.ship_coords[ship_coord_index].tile_x + Math.floor(global.show_cols / 2);
+
+                    // @ts-ignore
+                    let destination_coord_index = await helper.getDestinationCoordIndex(dirty, 'ship', ship_coord_index, 'down', Math.floor(global.show_rows / 2));
+
+                    if(destination_coord_index === -1) {
+                        //console.log("Don't bother sending additional coords");
+                        send_additional_coords = false;
+                    } else {
+                        //console.log("Should send additional coords");
+                    }
                 }
                 if(dirty.ship_coords[previous_ship_coord_index].tile_x > dirty.ship_coords[ship_coord_index].tile_x) {
                 //else if(movement_direction === "left") {
@@ -2171,6 +2193,16 @@ const world = require('./world.js');
                     ending_x = starting_x;
                     starting_y = dirty.ship_coords[ship_coord_index].tile_y - Math.floor(global.show_rows / 2);
                     ending_y = dirty.ship_coords[ship_coord_index].tile_y + Math.floor(global.show_rows / 2);
+
+                    // @ts-ignore
+                    let destination_coord_index = await helper.getDestinationCoordIndex(dirty, 'ship', ship_coord_index, 'left', Math.floor(global.show_cols / 2));
+
+                    if(destination_coord_index === -1) {
+                        //console.log("Don't bother sending additional coords");
+                        send_additional_coords = false;
+                    } else {
+                        //console.log("Should send additional coords");
+                    }
                 }
                 if(dirty.ship_coords[previous_ship_coord_index].tile_x < dirty.ship_coords[ship_coord_index].tile_x) {
                 //else if(movement_direction === "right") {
@@ -2178,11 +2210,74 @@ const world = require('./world.js');
                     ending_x = starting_x;
                     starting_y = dirty.ship_coords[ship_coord_index].tile_y - Math.floor(global.show_rows / 2);
                     ending_y = dirty.ship_coords[ship_coord_index].tile_y + Math.floor(global.show_rows / 2);
+
+                    // @ts-ignore
+                    let destination_coord_index = await helper.getDestinationCoordIndex(dirty, 'ship', ship_coord_index, 'right', Math.floor(global.show_cols / 2));
+
+                    if(destination_coord_index === -1) {
+                        //console.log("Don't bother sending additional coords");
+                        send_additional_coords = false;
+                    } else {
+                        //console.log("Should send additional coords");
+                    }
+
+                    /*
+                    let moving_coord_index = ship_coord_index;
+
+                    // We start at our x, and start looking to the right
+                    for(let i = dirty.ship_coords[ship_coord_index].tile_x; i <= ending_x && send_additional_coords; i++) {
+
+                        console.log("Seeing if coord at " + dirty.ship_coords[moving_coord_index].tile_x + "," + dirty.ship_coords[moving_coord_index].tile_y + " has a right index");
+
+                        if(typeof dirty.ship_coords[moving_coord_index].right_coord_index !== 'undefined') {
+
+                            // No coord there. Stop
+                            if(dirty.ship_coords[moving_coord_index].right_coord_index === -1) {
+                                console.log("Nothing to the right. Stopping");
+                                send_additional_coords = false;
+                            } else {
+                                console.log("Found index to the right");
+                                moving_coord_index = dirty.ship_coords[moving_coord_index].right_coord_index;
+                            }
+                        } 
+                        // grab the index
+                        else {
+                            console.log("No index yet");
+                            let checking_tile_x = i + 1;
+                            let ship_coord_data = {  'ship_id': dirty.ship_coords[moving_coord_index].ship_id,
+                            'level': dirty.ship_coords[moving_coord_index].level, 'tile_x': checking_tile_x, 'tile_y': dirty.ship_coords[moving_coord_index].tile_y };
+                            console.log(ship_coord_data);
+                            let additional_ship_coord_index = await main.getShipCoordIndex(ship_coord_data);
+
+                            dirty.ship_coords[moving_coord_index].right_coord_index = additional_ship_coord_index;
+
+                            if(additional_ship_coord_index !== -1) {
+                                moving_coord_index = dirty.ship_coords[moving_coord_index].right_coord_index;
+                                console.log("Found index");
+                            } else {
+                                send_additional_coords = false;
+                                console.log("Did not find index");
+                            }
+
+                        }
+
+                    }
+                    */
                 }
 
                 //console.log("Movement has us sending new coords from x: " + starting_x + " - " + ending_x + " y: " + starting_y + " - " + ending_y);
 
-                for(let i = starting_x; i <= ending_x; i++) {
+
+                await main.updateCoordGeneric(socket, {'ship_coord_index': previous_ship_coord_index, 'player_id': false });
+                await main.updateCoordGeneric(socket, {'ship_coord_index': ship_coord_index, 'player_id': socket.player_id });
+
+                // send the updated player info
+                dirty.players[player_index].ship_coord_id = dirty.ship_coords[ship_coord_index].id;
+                dirty.players[player_index].has_change = true;
+                await player.sendInfo(socket, "ship_" + dirty.ship_coords[ship_coord_index].ship_id, dirty, dirty.players[player_index].id);
+
+
+                for(let i = starting_x; i <= ending_x && send_additional_coords; i++) {
                     for(let j = starting_y; j <= ending_y; j++) {
 
                         // coords don't exist < 0
@@ -2209,15 +2304,6 @@ const world = require('./world.js');
 
                     }
                 }
-
-
-                await main.updateCoordGeneric(socket, {'ship_coord_index': previous_ship_coord_index, 'player_id': false });
-                await main.updateCoordGeneric(socket, {'ship_coord_index': ship_coord_index, 'player_id': socket.player_id });
-
-                // send the updated player info
-                dirty.players[player_index].ship_coord_id = dirty.ship_coords[ship_coord_index].id;
-                dirty.players[player_index].has_change = true;
-                await player.sendInfo(socket, "ship_" + dirty.ship_coords[ship_coord_index].ship_id, dirty, dirty.players[player_index].id);
 
 
                 //await map.updateMap(socket, dirty);
@@ -2260,7 +2346,6 @@ const world = require('./world.js');
 
                 await player.calculateMovementModifier(socket, dirty, 'ship', ship_coord_index);
             }
-
 
 
         } catch(error) {
@@ -2806,6 +2891,8 @@ const world = require('./world.js');
                     return false;
                 }
 
+
+
                 let player_ship_index = await game_object.getIndex(dirty, dirty.players[player_index].ship_id);
 
                 if(player_ship_index === -1) {
@@ -2817,39 +2904,52 @@ const world = require('./world.js');
                 let ship_galaxy_coord_index = await main.getCoordIndex({ 'coord_id': dirty.objects[ship_index].coord_id });
 
                 if(ship_galaxy_coord_index === -1) {
-                    log(chalk.yellow("Could not find the galaxy coord that the ship is on. Placing randomly in galaxy"));
 
-                    // We gotta randomly place it SOMEWHERE!!!!
-                    let max_tries = 50;
-                    let current_tries = 1;
-                    let placed_ship = false;
 
-                    while(!placed_ship && current_tries < max_tries) {
-                        current_tries++;
-                        let random_x = Math.floor(Math.random() * 20);
-                        let random_y = Math.floor(Math.random() * 20);
+                    // Normally we would place somewhere randomly in the galaxy. If we are on The Great Nomad - we're stuck out of the galaxy for now
+                    if(dirty.objects[ship_index].object_type_id === 351) {
 
-                        let coord_data = { 'tile_x': random_x, 'tile_y': random_y};
-                        let coord_index = await main.getCoordIndex(coord_data);
+                        socket.emit('result_info', { 'status': 'failure', 'text': 'The Great Nomad is currently out beyond our galaxy' });
+                        return false;
 
-                        let can_place_result = await player.canPlace(dirty, 'galaxy', dirty.coords[coord_index], player_index);
-                        //let can_place_result = await main.canPlace('galaxy', dirty.coords[coord_index], 'player', dirty.players[player_index].id);
-                        if(can_place_result) {
-                            placed_ship = true;
-                            console.log("Found galaxy coord to place player's ship on! (index: " + coord_index + " id: " +
-                                dirty.coords[coord_index].id + " tile_x: " + dirty.coords[coord_index].tile_x +
-                                " tile_y: " + dirty.coords[coord_index].tile_y);
+                    } else {
+                        log(chalk.yellow("Could not find the galaxy coord that the ship is on. Placing randomly in galaxy"));
 
-                            dirty.objects[player_ship_index].coord_id = dirty.coords[coord_index].id;
-                            dirty.objects[player_ship_index].has_change = true;
-                            let coord_data = { 'coord_index': coord_index, 'object_id': dirty.objects[player_ship_index].id };
-                            await main.updateCoordGeneric(socket, coord_data);
-
-                            ship_galaxy_coord_index = coord_index;
-
+                        // We gotta randomly place it SOMEWHERE!!!!
+                        let max_tries = 50;
+                        let current_tries = 1;
+                        let placed_ship = false;
+    
+                        while(!placed_ship && current_tries < max_tries) {
+                            current_tries++;
+                            let random_x = Math.floor(Math.random() * 20);
+                            let random_y = Math.floor(Math.random() * 20);
+    
+                            let coord_data = { 'tile_x': random_x, 'tile_y': random_y};
+                            let coord_index = await main.getCoordIndex(coord_data);
+    
+                            let can_place_result = await player.canPlace(dirty, 'galaxy', dirty.coords[coord_index], player_index);
+                            //let can_place_result = await main.canPlace('galaxy', dirty.coords[coord_index], 'player', dirty.players[player_index].id);
+                            if(can_place_result) {
+                                placed_ship = true;
+                                console.log("Found galaxy coord to place player's ship on! (index: " + coord_index + " id: " +
+                                    dirty.coords[coord_index].id + " tile_x: " + dirty.coords[coord_index].tile_x +
+                                    " tile_y: " + dirty.coords[coord_index].tile_y);
+    
+                                dirty.objects[player_ship_index].coord_id = dirty.coords[coord_index].id;
+                                dirty.objects[player_ship_index].has_change = true;
+                                let coord_data = { 'coord_index': coord_index, 'object_id': dirty.objects[player_ship_index].id };
+                                await main.updateCoordGeneric(socket, coord_data);
+    
+                                ship_galaxy_coord_index = coord_index;
+    
+                            }
                         }
+                        return false;
                     }
-                    return false;
+
+
+                    
                 }
 
                 // OK LETS REDO THE STUPID ASS SCENARIOS

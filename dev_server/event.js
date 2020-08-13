@@ -659,17 +659,17 @@ async function spawn(dirty, event_index, data) {
                         " with spawned_event_id: " + dirty.objects[new_object_index].spawned_event_id);
 
                     if(event_scope === 'planet') {
-                        await main.placeObject(false, dirty, { 'object_index': new_object_index,
+                        await game_object.place(false, dirty, { 'object_index': new_object_index,
                             'planet_coord_index': linker_coord_index });
 
                         console.log("Object's planet_coord_id: " + dirty.objects[new_object_index].planet_coord_id);
                     } else if(event_scope === 'ship') {
-                        await main.placeObject(false, dirty, { 'object_index': new_object_index,
+                        await game_object.place(false, dirty, { 'object_index': new_object_index,
                             'ship_coord_index': linker_coord_index });
 
                         console.log("Object's ship_coord_id: " + dirty.objects[new_object_index].ship_coord_id);
                     } else if(event_scope === 'galaxy') {
-                        await main.placeObject(false, dirty, { 'object_index': new_object_index,
+                        await game_object.place(false, dirty, { 'object_index': new_object_index,
                             'coord_index': linker_coord_index });
 
                         console.log("Object's coord_id: " + dirty.objects[new_object_index].coord_id);

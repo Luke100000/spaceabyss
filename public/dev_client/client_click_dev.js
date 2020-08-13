@@ -1250,6 +1250,17 @@ $(document).on('click', 'button', function () {
         $('#click_menu').hide();
     }
 
+    // Toggle debug mode
+    if(split_name[0] === 'thegreatnomad') {
+
+        $('#click_menu').empty();
+        $('#click_menu').hide();
+
+        document.cookie = "thegreatnomad=1";
+
+    }
+
+
     if(split_name[0] == 'trade') {
         console.log("Initiating trade with player");
         socket.emit('trade_initiate', {other_player_id: split_name[1]});

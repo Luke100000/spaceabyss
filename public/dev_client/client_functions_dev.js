@@ -533,6 +533,33 @@ function canPlacePlayer(scope, coord, player_index, show_output = false) {
             return false;
         }
 
+
+        // Special case - The Great Nomad
+        if(scope === 'galaxy' && object_type_index !== -1 && object_types[object_type_index].id === 351) {
+            console.log("PLAYER IS TRYING TO LAND ON THE GREAT NOMAD");
+
+
+            // We allow it!
+            if (document.cookie.split(';').filter((item) => item.includes('thegreatnomad=1')).length) {
+
+            } 
+            // Players need to confirm
+            else {
+                $('#click_menu').css({
+                    'top': 250, 'left': 250, 'position': 'absolute', 'max-height': '400px', 'max-width': '640px',
+                    'overflow-y': 'scroll', 'overflow-x': 'scroll', 'padding': '10px'
+                }).fadeIn('fast');
+            
+                $('#click_menu').empty();
+    
+                $('#click_menu').append("This ship is The Great Nomad. No player can control it. It will randomly leave and re-enter our galaxy.<br><br>");
+                $('#click_menu').append("While outside of the galaxy, there is no way to return other than dying");
+                $('#click_menu').append("<button id='thegreatnomad' class='button is-info'>I understand the risks. Let me dock at The Great Nomad</button>");
+                return false;
+            }
+
+        }
+
         /*
         * I want to say that the checks above  ( if(checking_coord.object_id || checking_coord.belongs_to_object_id) { ) cover this case
         if(checking_coord.belongs_to_object_id && checking_coord.belongs_to_object_id !== players[player_index].body_id &&
@@ -2568,7 +2595,7 @@ function getPlayerObjectTypeIndex(showing_player) {
 
 function generateAirlockDisplay() {
 
-    console.log("In generateAirlockDisplay");
+    //console.log("In generateAirlockDisplay");
 
     $('#launch').empty();
 
@@ -3276,6 +3303,10 @@ function printAssemblyList(assembling_object = false, coord = false) {
             });
 
             if (assembled_in_linker_index === -1) {
+                return false;
+            }
+
+            if(!object_type.is_assembled) {
                 return false;
             }
 
@@ -8535,6 +8566,14 @@ function showClickMenuMonster(coord) {
                 "monster_id='" + monsters[monster_index].id + "' class='button is-warning is-small'>" +
                 "Stop Attacking " + monster_types[monster_type_index].name + "</button><br>");
         } else {
+
+            // Generally, a monster's base attack is about 10% of HP - give it some wiggle room with / 8 instead of a straight / 10
+            if(monster_types[monster_type_index].hp && monster_types[monster_type_index].hp / 8 > (players[client_player_index].max_hp) ) {
+                $('#click_menu').append("<div class='notification is-danger' style='padding:10px;'>WARNING: This monster can kill you in 1 hit</div><br>");
+            }
+
+
+
             $('#click_menu').append("<button id='attack_" + monsters[monster_index].id + "' " +
                 "monster_id='" + monsters[monster_index].id + "' class='button is-warning is-small'>" +
                 "Attack " + monster_types[monster_type_index].name + "</button><br>");

@@ -110,7 +110,7 @@ async function addBattleLinker(socket, dirty, data) {
                     return false;
                 }
 
-                if (dirty.planet_coords[attacking_coord_index].floor_type_id === 11) {
+                if (dirty.planet_coords[attacking_coord_index].floor_type_id === 11 || dirty.planet_coords[attacking_coord_index].floor_type_id === 44) {
                     console.log("No attacking when spaceport tiles are involved");
 
                     // Let the player know this reason
@@ -179,7 +179,7 @@ async function addBattleLinker(socket, dirty, data) {
                     return false;
                 }
 
-                if (dirty.planet_coords[being_attacked_coord_index].floor_type_id === 11) {
+                if (dirty.planet_coords[being_attacked_coord_index].floor_type_id === 11 || dirty.planet_coords[being_attacked_coord_index].floor_type_id === 44) {
                     console.log("No attacking when spaceport tiles are involved");
                     return false;
                 }
@@ -271,7 +271,7 @@ exports.addBattleLinker = addBattleLinker;
 async function addObjectToCoord(dirty, object_index, coord_index) {
 
     try {
-        log(chalk.red("CALLING OUTDATED FUNCTION. Instead of this use world.insertObjectType and then main.placeObject"));
+        log(chalk.red("CALLING OUTDATED FUNCTION. Instead of this use world.insertObjectType and then game_object.place"));
         return false;
         console.log("Adding info to the galaxy coord");
         dirty.coords[coord_index].object_id = dirty.objects[object_index].id;
@@ -357,21 +357,27 @@ exports.addObjectToShipCoord = addObjectToShipCoord;
 
 
 
-// data:    player_index    |   message
-async function addPlayerLog(socket, dirty, data) {
+async function addPlayerLog(dirty, player_index, message) {
 
     try {
         console.log("In world.addPlayerLog");
 
+
+        let player_id = 0;
+
+        if(player_index !== -1 && dirty.players[player_index]) {
+            player_id = dirty.players[player_index].id;
+        }
+
         let sql = "INSERT INTO player_logs(player_id,message,month,year) VALUES(?,?,?,?)";
-        let inserts = [dirty.players[data.player_index].id, data.message, dirty.galaxies[0].month, dirty.galaxies[0].year];
+        let inserts = [player_id, message, dirty.galaxies[0].month, dirty.galaxies[0].year];
 
         let [result] = await (pool.query(sql, inserts));
 
         console.log("Done in world.addPlayerLog");
 
     } catch (error) {
-        log(chalk.red("Error in addPlayerLog: " + error));
+        log(chalk.red("Error in world.addPlayerLog: " + error));
         console.error(error);
     }
 }
@@ -1322,8 +1328,8 @@ async function checkMonsterBattleConditions(dirty, monster_id, checking_type, ch
                     { 'planet_coord_id': dirty.players[player_index].planet_coord_id });
 
                 if (player_coord_index !== -1) {
-                    if (dirty.planet_coords[player_coord_index].floor_type_id === 11) {
-                        console.log("Player is on spaceport");
+                    if (dirty.planet_coords[player_coord_index].floor_type_id === 11 || dirty.planet_coords[player_coord_index].floor_type_id === 44) {
+                        //console.log("Player is on spaceport");
                         can_attack = false;
                     }
                 }
@@ -1334,7 +1340,7 @@ async function checkMonsterBattleConditions(dirty, monster_id, checking_type, ch
         }
 
         if (!can_attack) {
-            console.log("Can't attack");
+            //console.log("Can't attack");
             return false;
         }
 
@@ -1421,7 +1427,7 @@ async function checkObjectBattleConditions(socket, dirty, object_id, checking_ty
             player_info = await getPlayerCoordAndRoom(dirty, player_index);
 
             // If the player is on a spaceport tile, we won't be able to attack the player
-            if (player_info.coord && player_info.coord.floor_type_id === 11) {
+            if (player_info.coord && (player_info.coord.floor_type_id === 11 || player_info.coord.floor_type_id === 44) ) {
                 return false;
             }
         }
@@ -1866,7 +1872,7 @@ async function createShipCoord(dirty, ship_index, linker) {
             let new_object_index = await game_object.getIndex(dirty, new_object_id);
 
 
-            await main.placeObject(false, dirty, { 'object_index': new_object_index, 'ship_coord_index': new_ship_coord_index, 'reason': 'generate_ship' });
+            await game_object.place(false, dirty, { 'object_index': new_object_index, 'ship_coord_index': new_ship_coord_index, 'reason': 'generate_ship' });
         }
     } catch(error) {
         log(chalk.red("Error in world.createShipCoord:" + error));
@@ -4533,7 +4539,7 @@ async function setPlayerMoveDelay(socket, dirty, player_index) {
                             //console.log("Ship engines changed move delay to: " + socket.move_delay);
                         } else {
                             if(!dirty.object_types[ship_type_index].needs_engines) {
-                                console.log("Ship does not require engines");
+                                //console.log("Ship does not require engines");
                             }
 
                             if(typeof dirty.objects[ship_index].current_engine_power === 'undefined') {
@@ -4715,7 +4721,7 @@ async function spawnAdjacent(dirty, data) {
                     place_object_data.ship_coord_index = placing_coord_index;
                 }
 
-                await main.placeObject(socket, dirty, place_object_data);
+                await game_object.place(socket, dirty, place_object_data);
 
 
 
@@ -4837,7 +4843,7 @@ async function spawnGalaxyObjects(dirty) {
         let new_object_index = dirty.objects.findIndex(function(obj) { return obj && obj.id === new_object_id; });
 
         if(new_object_index !== -1) {
-            await main.placeObject(false, dirty, { 'object_index': new_object_index,
+            await game_object.place(false, dirty, { 'object_index': new_object_index,
                 'coord_index': coord_index });
             //await world.addObjectToCoord(dirty, new_object_index, coord_index);
         } else {
@@ -5157,15 +5163,23 @@ async function submitBid(socket, dirty, data) {
 exports.submitBid = submitBid;
 
 
-async function tickNomad(dirty) {
+async function tickNomad(dirty, admin_command = false) {
 
      try {
 
-        return false;
-
         console.log("In world.tickNomad");
 
-        let nomad_index = await game_object.getIndex(dirty, 86424);
+        // Admin commands always tick The Great Nomad. Otherwise it's a 10% chance every 12 hours
+        if(admin_command === false) {
+            let rand_chance = helper.getRandomIntInclusive(1,10);
+
+            if(rand_chance !== 4) {
+                return false;
+            }
+        }
+        
+
+        let nomad_index = await game_object.getIndex(dirty, 105872);
 
         if(nomad_index === -1) {
             log(chalk.yellow("Could not find The Great Nomad"));
@@ -5180,6 +5194,8 @@ async function tickNomad(dirty) {
 
             game_object.removeFromCoord(dirty, nomad_index);
 
+            addPlayerLog(dirty, -1, "The Great Nomad has left the galaxy");
+
             
             
 
@@ -5187,11 +5203,36 @@ async function tickNomad(dirty) {
         // Try to add it to a random galaxy coord
         else {
 
-            // testing on the same coord each time
-            let coord_index = await main.getCoordIndex({ 'tile_x': 4, 'tile_y': 14 });
+            let random_x = helper.getRandomIntInclusive(4,96);
+            let random_y = helper.getRandomIntInclusive(4,96)
 
-            if(game_object.canPlace(dirty, 'galaxy', dirty.coords[coord_index], { 'object_index': nomad_index })) {
-                await main.placeObject(false, dirty, { 'object_index': nomad_index, 'coord_index': coord_index });
+            // testing on the same coord each time
+            let coord_index = await main.getCoordIndex({ 'tile_x': random_x, 'tile_y': random_y });
+
+            if(coord_index === -1) {
+                log(chalk.yellow("Could not find galaxy coord at: " + random_x + "," + random_y));
+                return false;
+            }
+
+            let can_place_result = await game_object.canPlace(dirty, 'galaxy', dirty.coords[coord_index], { 'object_index': nomad_index });
+
+            if(can_place_result) {
+                console.log("Trying to place The Great Nomad at: " + random_x + "," + random_y);
+                let placed_result = await game_object.place(false, dirty, { 'object_index': nomad_index, 'coord_index': coord_index });
+
+                if(placed_result) {
+                    console.log("Successfully placed The Great Nomad");
+                    addPlayerLog(dirty, -1, "The Great Nomad has returned to the galaxy");
+
+                    game_object.sendInfo(false, "ship_" + dirty.objects[nomad_index].id, dirty, nomad_index);
+                    game_object.sendInfo(false, 'galaxy', dirty, nomad_index);
+                } else {
+                    log(chalk.yellow("Failed to place The Great Nomad"));
+                }
+
+                
+            } else {
+                console.log("Can't place The Great Nomad at: " + random_x + "," + random_y);
             }
 
         }

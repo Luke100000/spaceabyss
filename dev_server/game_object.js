@@ -10,6 +10,7 @@ const helper = require('./helper.js');
 const inventory = require('./inventory.js');
 const main = require('./space_abyss' + process.env.FILE_SUFFIX + '.js');
 const planet = require('./planet.js');
+const player = require('./player.js');
 const world = require('./world.js');
 
 
@@ -328,7 +329,7 @@ async function canPlaceAround(dirty, tiles_around, data) {
 
                     if(trying_coord_index !== -1) {
 
-                        console.log("Trying coord id: " + dirty.planet_coords[trying_coord_index])
+                        console.log("Trying coord id: " + dirty.planet_coords[trying_coord_index].id)
 
                         let can_place_result = await canPlace(dirty, 'planet', dirty.planet_coords[trying_coord_index], can_place_data );
                         console.log("Can place result: " + can_place_result);
@@ -457,6 +458,8 @@ async function deleteObject(dirty, data) {
 
     try {
 
+        console.log("In deleteObject");
+
         if(data.object_index === -1 || !dirty.objects[data.object_index]) {
             console.log("Did not find an object there at dirty.objects");
 
@@ -467,7 +470,7 @@ async function deleteObject(dirty, data) {
             data.reason = false;
         }
 
-        //console.log("In game.deleteObject for object id: " + dirty.objects[data.object_index].id);
+        //console.log("In game_object.deleteObject for object id: " + dirty.objects[data.object_index].id);
         //console.log("Reason: " + data.reason);
 
         //console.log("Deleting object id: " + dirty.objects[data.object_index].id);
@@ -548,7 +551,7 @@ async function deleteObject(dirty, data) {
         if (dirty.objects[data.object_index].object_type_id === 72) {
 
             if(dirty.objects[data.object_index].planet_coord_id) {
-                let planet_index = await planet.getIndex(dirty, { 'planet_id': dirty.objects[data.object_index].planet_id, 'source': 'game.deleteObject' });
+                let planet_index = await planet.getIndex(dirty, { 'planet_id': dirty.objects[data.object_index].planet_id, 'source': 'game_object.deleteObject' });
                 if (planet_index !== -1) {
                     dirty.planets[planet_index].ai_id = false;
                     dirty.planets[planet_index].player_id = false;
@@ -574,6 +577,7 @@ async function deleteObject(dirty, data) {
 
         // Spaceship
         if(dirty.object_types[object_type_index].is_ship) {
+            console.log("Object is a ship");
             await game.deleteShip(socket, dirty, dirty.objects[data.object_index].id, data.reason);
         }
 
@@ -646,7 +650,7 @@ async function deleteObject(dirty, data) {
 
 
 
-        //console.log("Sending object info with remove from game.deleteObject");
+        //console.log("Sending object info with remove from game_object.deleteObject");
         if(object_info !== false) {
             io.to(object_info.room).emit('object_info', { 'remove': true, 'object': dirty.objects[data.object_index] });
         }
@@ -733,9 +737,9 @@ async function deleteObject(dirty, data) {
             await game.checkSpawnedEvent(dirty, check_spawned_event_id);
         }
 
-        //console.log("Done in game.deleteObject");
+        //console.log("Done in game_object.deleteObject");
     } catch(error) {
-        log(chalk.red("Error in game.deleteObject: " + error));
+        log(chalk.red("Error in game_object.deleteObject: " + error));
         console.error(error);
     }
 
@@ -937,6 +941,365 @@ async function getCoordAndRoom(dirty, object_index) {
 }
 
 exports.getCoordAndRoom = getCoordAndRoom;
+
+
+
+/**
+ *
+ * @param socket
+ * @param dirty
+ * @param {Object} data
+ * @param {number=} data.object_id
+ * @param {number=} data.object_index
+ * @param {number=} data.planet_coord_index
+ * @param {number=} data.ship_coord_index
+ * @param {number=} data.coord_index
+ * @param {String=} data.reason
+ * @returns {Promise<boolean>}
+ */
+async function place(socket, dirty, data) {
+
+    try {
+
+        //log(chalk.cyan("In game_object.place with data: "));
+        //console.log(data);
+
+        let object_index = -1;
+
+        if(typeof data.object_index !== 'undefined') {
+            object_index = data.object_index;
+        } else if(data.object_id) {
+            object_index = await getIndex(dirty, data.object_id);
+        }
+
+        if(object_index === -1) {
+            return false;
+        }
+
+        let object_type_index = main.getObjectTypeIndex(dirty.objects[object_index].object_type_id);
+
+
+        // We can't place things on stairs or a hole - I think in general I should have this in the various canPlace functions
+        // But this is such a game breaking thing
+        if(typeof data.planet_coord_index !== "undefined" && (dirty.planet_coords[data.planet_coord_index].object_type_id === 63 ||
+            dirty.planet_coords[data.planet_coord_index].object_type_id === 62 )) {
+            log(chalk.yellow("Can't place on hole or stairs! Why didn't canPlace catch this?!?"));
+            console.trace("this!");
+            return false;
+        }
+
+        // PORTAL
+        if(dirty.objects[object_index].object_type_id === 47) {
+            let place_portal_data = { };
+
+            if(data.planet_coord_index) {
+                place_portal_data.planet_coord_index = data.planet_coord_index;
+
+            } else if(data.ship_coord_index) {
+                place_portal_data.ship_coord_index = data.ship_coord_index;
+            }
+
+            await game.placePortal(socket, dirty, object_index, place_portal_data );
+
+            // Pretty sure this is inserting and
+            //await game.addPortal(socket, dirty, dirty.objects[object_index].id, add_portal_data);
+
+        }
+        // AI
+        else if(dirty.objects[object_index].object_type_id === 72) {
+            let add_ai_data = {};
+
+            if(data.planet_coord_index) {
+                add_ai_data = { 'object_id': dirty.objects[object_index].id, 'planet_coord_index': data.planet_coord_index };
+            } else if(data.ship_coord_index) {
+                add_ai_data = { 'object_id': dirty.objects[object_index].id, 'ship_coord_index': data.ship_coord_index };
+            }
+
+            await game.placeAI(socket, dirty, add_ai_data);
+        }
+        // HOLE
+        else if(dirty.object_types[object_type_index].is_hole) {
+
+
+            console.log("Player is placing a hole");
+
+
+            if(dirty.object_types[object_type_index].id === 62) {
+                log(chalk.red("Can't place the default un-attackable hole"));
+                return false;
+            }
+
+            // No need for all these checks - it's part of the system! Just add it
+            if(data.reason && data.reason === "generate_ship") {
+
+                await main.updateCoordGeneric(socket, { 'ship_coord_index': data.ship_coord_index, 'object_index': object_index });
+                return true;
+            }
+
+            // Also needs to be level 0 or higher
+            if(typeof data.planet_coord_index !== "undefined" && dirty.planet_coords[data.planet_coord_index].level < 1) {
+                console.log("Can't place hole on level < 1");
+                return false;
+            }
+
+
+
+            // We need to see if the coord below can accept stairs (we can create it if needed)
+
+            let below_level = dirty.planet_coords[data.planet_coord_index].level - 1;
+
+            let below_data = { 'planet_id': dirty.planet_coords[data.planet_coord_index].planet_id, 'planet_level': below_level,
+                'tile_x': dirty.planet_coords[data.planet_coord_index].tile_x,
+                'tile_y': dirty.planet_coords[data.planet_coord_index].tile_y };
+
+            // If the below level is still > 0, we can try inserting the coord
+            if(below_level > 0) {
+                below_data.can_insert = true;
+            }
+
+            let below_coord_index = await main.getPlanetCoordIndex(below_data);
+
+            if(below_coord_index === -1) {
+                console.log("Couldn't get coord below...");
+                return false;
+            }
+
+            let already_have_stairs = false;
+            // See if there are already stairs below, or if we can make stairs below
+            if(dirty.planet_coords[below_coord_index].object_type_id) {
+                let below_object_type_index = main.getObjectTypeIndex(dirty.planet_coords[below_coord_index].object_type_id);
+                if(below_object_type_index !== -1 && dirty.object_types[below_object_type_index].is_stairs) {
+                    already_have_stairs = true;
+                }
+            }
+
+            // see if we can place an object on that below coord
+            if(!already_have_stairs && !await canPlace(dirty, 'planet', dirty.planet_coords[below_coord_index],
+                { 'object_type_id': dirty.objects[object_index].object_type_id })) {
+                console.log("Something is blocking us from placing the stairs below");
+                return false;
+            }
+
+            // Looks good. Add the hole
+            await main.updateCoordGeneric(socket, { 'planet_coord_index': data.planet_coord_index, 'object_index': object_index });
+
+
+            // Create and add the stairs
+            if(!already_have_stairs) {
+                let inserting_object_type_data = {
+                    'object_type_id': dirty.object_types[object_type_index].linked_object_type_id };
+
+                // We also want the new stairs to have the same player or npc as the hole does
+                if(dirty.objects[object_index].player_id) {
+                    inserting_object_type_data.player_id = dirty.objects[object_index].player_id;
+                } else if(dirty.objects[object_index].npc_id) {
+                    inserting_object_type_data.npc_id = dirty.objects[object_index].npc_id;
+                }
+
+                let new_object_id = await world.insertObjectType(socket, dirty, inserting_object_type_data);
+                let new_object_index = await getIndex(dirty, new_object_id);
+                await main.updateCoordGeneric(socket, { 'planet_coord_index': below_coord_index, 'object_index': new_object_index });
+            }
+
+
+
+
+        }
+        // STAIRS
+        else if(dirty.object_types[object_type_index].is_stairs) {
+
+
+            console.log("Player is placing stairs");
+
+
+            if(dirty.object_types[object_type_index].id === 63) {
+                log(chalk.red("Can't place the default un-attackable stairs"));
+                return false;
+            }
+
+            // No need for all these checks - it's part of the system! Just add it
+            if(data.reason && data.reason === "generate_ship") {
+
+                await main.updateCoordGeneric(socket, { 'ship_coord_index': data.ship_coord_index, 'object_index': object_index });
+                return true;
+            } else if(typeof data.ship_coord_index !== "undefined") {
+
+                socket.emit('result_info', { 'status': 'failure', 'text': "Can't place stairs on ships"});
+                return false;
+            }
+
+            // Also needs to be level 0 or higher
+            if(dirty.planet_coords[data.planet_coord_index].level < 0) {
+                console.log("Can't place stairs on levels < 0");
+                socket.emit('result_info', { 'status': 'failure', 'text': "Can't place stairs underground"});
+                return false;
+            }
+
+
+
+            // We need to see if the coord above
+            let above_level = dirty.planet_coords[data.planet_coord_index].level + 1;
+            let above_data = { 'planet_id': dirty.planet_coords[data.planet_coord_index].planet_id, 'planet_level': above_level,
+                'tile_x': dirty.planet_coords[data.planet_coord_index].tile_x,
+                'tile_y': dirty.planet_coords[data.planet_coord_index].tile_y };
+
+            if(above_level > 0) {
+                above_data.can_insert = true;
+            }
+
+            let above_coord_index = await main.getPlanetCoordIndex(above_data);
+
+            if(above_coord_index === -1) {
+                console.log("Couldn't get coord above...");
+                return false;
+            }
+
+            // See if there's already a hole there, or we are able to make one
+            let already_have_hole = false;
+
+            if(dirty.planet_coords[above_coord_index].object_type_id) {
+                let above_object_type_index = main.getObjectTypeIndex(dirty.planet_coords[above_coord_index].object_type_id);
+                if(above_object_type_index !== -1 && dirty.object_types[above_object_type_index].is_hole) {
+                    already_have_hole = true;
+                }
+            }
+
+            let can_place_stairs_result = await canPlace(dirty, 'planet', dirty.planet_coords[above_coord_index],
+            { 'object_type_id': dirty.object_types[object_type_index].linked_object_type_id, 'show_output': true });
+
+
+
+            // Looks like we are all good. Add the stairs
+            await main.updateCoordGeneric(socket, { 'planet_coord_index': data.planet_coord_index, 'object_index': object_index });
+
+            // Create and add the hole
+            let inserting_object_type_data = {
+                'object_type_id': dirty.object_types[object_type_index].linked_object_type_id };
+
+            if(dirty.objects[object_index].player_id) {
+                inserting_object_type_data.player_id = dirty.objects[object_index].player_id;
+            } else if(dirty.objects[object_index].npc_id) {
+                inserting_object_type_data.npc_id = dirty.objects[object_index].npc_id;
+            }
+
+            let new_object_id = await world.insertObjectType(socket, dirty, inserting_object_type_data);
+            let new_object_index = await getIndex(dirty, new_object_id);
+            await main.updateCoordGeneric(socket, { 'planet_coord_index': above_coord_index, 'object_index': new_object_index });
+
+
+
+        }
+        // ELEVATOR
+        // It's actually all pretty standard with an elevator - we just need to make sure we mess with the elevator linkers afterwards
+        else if(dirty.object_types[object_type_index].id === 269) {
+
+
+            if(data.planet_coord_index) {
+                await main.updateCoordGeneric(socket, { 'planet_coord_index': data.planet_coord_index, 'object_index': object_index });
+                dirty.objects[object_index].planet_id = dirty.planet_coords[data.planet_coord_index].planet_id;
+                dirty.objects[object_index].has_change = true;
+            } else if(data.ship_coord_index) {
+
+                await main.updateCoordGeneric(socket, { 'ship_coord_index': data.ship_coord_index, 'object_index': object_index });
+                dirty.objects[object_index].ship_id = dirty.ship_coords[data.ship_coord_index].ship_id;
+                dirty.objects[object_index].has_change = true;
+            }
+
+            await world.manageElevatorLinkers(socket, dirty, dirty.objects[object_index].id);
+        }
+        // Default case - we can just update the coord
+        else {
+
+
+            // see if the object type has display linkers that aren't only visual (takes up space)
+            let display_linkers = dirty.object_type_display_linkers.filter(linker =>
+                linker.object_type_id === dirty.object_types[object_type_index].id && !linker.only_visual);
+
+            // This object will take up multiple tiles of space
+            if(display_linkers.length > 0) {
+
+                let origin_coord;
+                if(typeof data.coord_index !== 'undefined') {
+                    origin_coord = dirty.coords[data.coord_index];
+                } else if(typeof data.planet_coord_index !== 'undefined') {
+                    origin_coord = dirty.planet_coords[data.planet_coord_index];
+                } else if(typeof data.ship_coord_index !== 'undefined') {
+                    origin_coord = dirty.ship_coords[data.ship_coord_index];
+                }
+
+                display_linkers.forEach(await async function(linker) {
+
+                    // get the coord that the display linker is about
+                    let tile_x = origin_coord.tile_x + linker.position_x;
+                    let tile_y = origin_coord.tile_y + linker.position_y;
+
+                    let placing_coord_index = -1;
+                    if(typeof data.coord_index !== 'undefined') {
+                        placing_coord_index = await main.getCoordIndex({ 'tile_x': tile_x, 'tile_y': tile_y });
+                    } else if(typeof data.planet_coord_index !== 'undefined') {
+                        placing_coord_index = await main.getPlanetCoordIndex({ 'planet_id': origin_coord.planet_id,
+                            'planet_level': origin_coord.level, 'tile_x': tile_x, 'tile_y': tile_y });
+                    } else if(typeof data.ship_coord_index !== 'undefined') {
+                        placing_coord_index = await main.getShipCoordIndex({ 'ship_id': origin_coord.ship_id,
+                            'level': origin_coord.level,
+                            'tile_x': tile_x, 'tile_y': tile_y });
+                    }
+
+                    if(placing_coord_index !== -1) {
+                        let update_data = {};
+
+                        if(typeof data.coord_index !== 'undefined') {
+                            update_data.coord_index = placing_coord_index;
+                        } else if(typeof data.planet_coord_index !== 'undefined') {
+                            update_data.planet_coord_index = placing_coord_index;
+                        } else if(typeof data.ship_coord_index !== 'undefined') {
+                            update_data.ship_coord_index = placing_coord_index;
+                        }
+
+                        if(tile_x === origin_coord.tile_x && tile_y === origin_coord.tile_y) {
+                            update_data.object_index = object_index;
+                        } else {
+                            update_data.belongs_to_object_id = dirty.objects[object_index].id;
+                        }
+
+                        await main.updateCoordGeneric(socket, update_data);
+
+                    }
+
+                });
+
+            } else {
+                // simple way!
+
+                if(typeof data.coord_index !== 'undefined') {
+                    await main.updateCoordGeneric(socket, { 'coord_index': data.coord_index, 'object_index': object_index });
+
+                } else if(typeof data.planet_coord_index !== 'undefined') {
+                    await main.updateCoordGeneric(socket, { 'planet_coord_index': data.planet_coord_index, 'object_index': object_index });
+                    dirty.objects[object_index].planet_id = dirty.planet_coords[data.planet_coord_index].planet_id;
+                    dirty.objects[object_index].has_change = true;
+                } else if(typeof data.ship_coord_index !== 'undefined') {
+
+                    await main.updateCoordGeneric(socket, { 'ship_coord_index': data.ship_coord_index, 'object_index': object_index });
+                    dirty.objects[object_index].ship_id = dirty.ship_coords[data.ship_coord_index].ship_id;
+                    dirty.objects[object_index].has_change = true;
+                }
+            }
+
+
+
+        }
+
+        return true;
+
+    } catch(error) {
+        log(chalk.red("Error in game_object.place: " + error));
+        console.error(error);
+    }
+
+}
+
+exports.place = place;
 
 
 
@@ -1231,7 +1594,7 @@ async function spawn(dirty, object_index, debug_object_type_id = 0) {
             // If the chosen linker requires a floor type, do that check now
             if(chosen_linker.requires_floor_type_class && chosen_linker.requires_floor_type_class !== 0) {
                 met_requirements = false;
-                let object_info = await game_object.getCoordAndRoom(dirty, i);
+                let object_info = await getCoordAndRoom(dirty, i);
                 if(object_info.coord) {
                     let coord_floor_type_index = main.getFloorTypeIndex(object_info.coord.floor_type_id);
 
@@ -1378,6 +1741,7 @@ module.exports = {
     deleteObject,
     getCoordAndRoom,
     getIndex,
+    place,
     removeFromCoord,
     sendInfo,
     spawn,

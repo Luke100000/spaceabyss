@@ -83,7 +83,7 @@ const world = require('./world.js');
                                     let new_object_id = await world.insertObjectType(false, dirty, insert_object_type_data);
                                     let new_object_index = await game_object.getIndex(dirty, new_object_id);
 
-                                    await main.placeObject(false, dirty, { 'object_index': new_object_index,
+                                    await game_object.place(false, dirty, { 'object_index': new_object_index,
                                         'planet_coord_index': planet_coord_index });
                                 }
 

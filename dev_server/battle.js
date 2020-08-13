@@ -1117,7 +1117,7 @@ const world = require('./world.js');
                     {'player_id': dirty.players[player_index].id, 'damage_amount': 0, 'was_damaged_type': 'hp',
                         'damage_source_type':'monster', 'damage_source_id': dirty.monsters[monster_index].id,
                         'damage_types': [monster_attack.damage_type],
-                        'calculating_range': calculating_range, 'flavor_text': flavor_text });
+                        'calculating_range': calculating_range, 'flavor_text': flavor_text, 'additional_effect': monster_attack.additional_effect });
                 return false;
             }
 
