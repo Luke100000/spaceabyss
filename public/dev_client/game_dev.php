@@ -1056,6 +1056,10 @@ include('config.php');
                 frameWidth: 256, frameHeight: 64, endFrame: 6
             });
 
+            this.load.spritesheet('thorn-effect', 'https://space.alphacoders.com/thorn-effect.png', {
+                frameWidth: 64, frameHeight: 64, endFrame: 3
+            });
+
 
             // THE MAIN GAME!!! OBJECTS AND PLAYERS
             this.load.spritesheet('above-images', 'https://space.alphacoders.com/above-images.png?334',
@@ -2357,6 +2361,16 @@ include('config.php');
             };
 
             this.anims.create(salvaging_effect_config);
+
+            var thorn_effect_config = {
+                key: 'thorn-effect-animation',
+                frames: this.anims.generateFrameNumbers('thorn-effect', { start: 0, end: 2, first: 0 } ),
+                frameRate: 10,
+                hideOnComplete: true
+            };
+
+            this.anims.create(thorn_effect_config);
+
 
 
 

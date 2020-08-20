@@ -5179,7 +5179,7 @@ async function tickNomad(dirty, admin_command = false) {
         }
         
 
-        let nomad_index = await game_object.getIndex(dirty, 105872);
+        let nomad_index = await game_object.getIndex(dirty, 105913);
 
         if(nomad_index === -1) {
             log(chalk.yellow("Could not find The Great Nomad"));

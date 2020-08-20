@@ -90,6 +90,11 @@ socket.on('assembled_in_linker_data', function(data) {
 
 socket.on('assembly_info', function(data) {
 
+    if(!data.assembly) {
+        console.log("assembly_info with no assembly");
+        return false;
+    }
+
 
     // lets see if we need to add this to our list of active assemblies
     let active_assembly_index = active_assemblies.findIndex(function (obj) { return obj && obj.id === parseInt(data.assembly.id); });
@@ -409,7 +414,7 @@ socket.on('coord_data', function(data) {
  * @param {int=} data.object_id If an object was attacked, its ID
  * @param {int=} data.planet_id If a planet was attacked, its ID
  * @param {int=} data.player_id If a player was ttacked, its ID
- * @param 
+ * @param {String=} data.additional_effect If a monster attack has an additional effect, the name
  */
 socket.on('damaged_data', function(data) {
 
@@ -566,6 +571,12 @@ socket.on('damaged_data', function(data) {
     // Sometimes, and AI or something else will mean that energy is being damaged, not HP. We add an effect for that.
     if(data.was_damaged_type && data.was_damaged_type === 'energy') {
         effect_data.damage_types = ['energy'];
+        addEffect(effect_data);
+    }
+
+    if(data.additional_effect) {
+        console.log("monster attack had additional effect!");
+        effect_data.damage_types = [data.additional_effect];
         addEffect(effect_data);
     }
 
@@ -1619,11 +1630,8 @@ socket.on('npc_info', function(data) {
 
 socket.on('object_info', function(data) {
 
-    //console.log("Received object_info_data for object id: " + data.object.id);
 
-    if(data.object.id === 86021) {
-        console.log("Got object_info for object id: " + data.object.id);
-    }
+    //console.log("Received object_info for object id: " + data.object.id);
 
     if(data.remove ) {
         console.log("%c Server said to remove object id: " + data.object.id, log_warning);
@@ -1965,6 +1973,12 @@ socket.on('object_info', function(data) {
             redraw_object = true;
             // if this object has a coord that matches our view, and we should draw it, draw it!!!
 
+        }
+
+        // has_spawned_object change
+        if(objects[object_index].has_spawned_object !== data.object.has_spawned_object) {
+            console.log("has_spawned_object changed");
+            redraw_object = true;
         }
 
         if(parseInt(data.object.current_hp) !== parseInt(objects[object_index].current_hp)) {

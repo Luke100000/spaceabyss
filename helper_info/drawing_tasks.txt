@@ -1,13 +1,53 @@
+***************************************
+** THINGS I'M SENDING FERNANDO'S WAY **
+***************************************
 
-trash asteroid - asteroid made up of compacted trash sent out to space. The sci fi version of throwing 
-    your trash in the ocean
+
+Energy Blade
 
 
-gravity effect
+Volt Rifle
 
-thorn effect
+Icer Pistol
 
-cherry blossom floor
+hull welder
+
+plasma torch
+
+Burster: Attack Animation
+Type: Monster
+Fames Needed:
+    2-3 Designs
+
+Reference Image: https://images.gemquery.com/256/content_2569019.jpg
+
+
+Nomad Observer: Animation
+Type: Monster
+
+
+Vooard: Design
+Type: Monster
+Frames Needed:
+    2-3 Designs
+Size: 36x36 max
+
+***************************
+** GENERAL DRAWING IDEAS **
+***************************
+
+
+
+Trees
+
+Cherry Blossom Floor Tileset
+Frames Needed:
+    3+ Tiles that tile well
+Size: 32x32 exactly
+Notes: These appear on a level on the Biogrove planet. 
+
+
+
     Monster: Orchid Mantis. 
     Monster: Cherry blossom tree.
     Monster: Flowering Spider https://images.gemquery.com/256/content_2564492.jpg
@@ -110,3 +150,5 @@ Sandstone
 Sandstone deposit
 Sandstone floor
 Sandstone wall
+
+

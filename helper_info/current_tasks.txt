@@ -1,12 +1,21 @@
 DOING NOW:
 
 
-    iceslerm/cream? Gabe is asking about it
+    players have a hard time with tasks. What do I do? I don't want to create a quest system around this - but I would like to offer helpful ideas:
+
+        1. Build and Algae Vat and get Blue Algae from it (But it spawns Algae... not blue Algae? )
+        2. Build an Octopus Body
+        3. Fully Research Algae and 
+
+    
+
+    should do the same thing with a moveobjectto type of command for that dead body issue
+        along these lines, maybe have an admin page for 'lost' objects, monsters, etc
+
+
+    Ocotopus body needs consumables
 
     see if I can get someone to make a trailer on fivr
-
-
-    create a player alone - have him live on the great nomad
 
 
     Explore more indie mmos, and marketing paths
@@ -20,10 +29,11 @@ DOING NOW:
 
     Can make slagcells weak to ice
 
-    I wouldn't hate a visual indicator if a monster is going to one shot a player
-        shader? box?
 
     draw temp frost spider, glaze, and icer pistol
+
+
+
 
 
 

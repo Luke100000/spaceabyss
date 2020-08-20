@@ -4046,6 +4046,7 @@ exports.eat = eat;
 
             // default is returning false.
             log(chalk.yellow("Not sure what we are comparing. Returning false. game.canInteract"));
+            console.trace("here");
             return false;
 
         } catch(error) {
@@ -4688,7 +4689,7 @@ exports.eat = eat;
             } else if(data.message.includes("/fix ")) {
 
 
-                
+
                 return false;
 
                 let infected_index = await player.getIndex(dirty, { 'player_id': 64 });
@@ -5089,9 +5090,22 @@ exports.eat = eat;
             else if(data.message.includes("/spawnmonster ")) {
 
                 let split = data.message.split(" ");
-                let monster_type_id = parseInt(split[1]);
+                let monster_type_name = helper.cleanStringInput(split[1]);
+                console.log("Admin message to spawn monster type: " + monster_type_name);
 
-                console.log("Admin message to spawn monster type id: " + monster_type_id);
+                let monster_type_index = -1;
+
+                for(let i = 0; i < dirty.monster_types.length; i++) {
+                    if(dirty.monster_types[i] && dirty.monster_types[i].name === monster_type_name) {
+                        monster_type_index = i;
+                    }
+                }
+
+                if(monster_type_index === -1) {
+                    log(chalk.yellow("Could not find monster type with name: " + monster_type_name));
+                }
+
+                
 
                 let player_index = await player.getIndex(dirty, {'player_id': socket.player_id});
 
@@ -5116,7 +5130,7 @@ exports.eat = eat;
                                     'planet_level': dirty.planet_coords[coord_index].level, 'tile_x': x, 'tile_y': y });
 
                                 let monster_can_place_result = await monster.canPlace(dirty, 'planet',
-                                    dirty.planet_coords[checking_coord_index], {'monster_type_id': monster_type_id });
+                                    dirty.planet_coords[checking_coord_index], {'monster_type_id': dirty.monster_types[monster_type_index].id });
 
                                 if(checking_coord_index !== -1 && monster_can_place_result === true ) {
 
@@ -5149,7 +5163,7 @@ exports.eat = eat;
                                     'level': dirty.ship_coords[coord_index].level, 'tile_x': x, 'tile_y': y });
 
                                 let monster_can_place_result = await monster.canPlace(dirty, 'ship',
-                                    dirty.ship_coords[checking_coord_index], {'monster_type_id': monster_type_id });
+                                    dirty.ship_coords[checking_coord_index], {'monster_type_id': dirty.monster_types[monster_type_index].id });
 
                                 if(checking_coord_index !== -1 && monster_can_place_result === true ) {
 
@@ -5179,7 +5193,7 @@ exports.eat = eat;
                                     'tile_x': x, 'tile_y': y });
 
                                 let monster_can_place_result = await monster.canPlace(dirty, 'galaxy',
-                                    dirty.coords[checking_coord_index], { 'monster_type_id': monster_type_id });
+                                    dirty.coords[checking_coord_index], { 'monster_type_id': dirty.monster_types[monster_type_index].id });
 
                                 if(checking_coord_index !== -1 &&  monster_can_place_result === true) {
 
@@ -5206,7 +5220,7 @@ exports.eat = eat;
 
 
                 console.log("Going to call world.spawnMonster!");
-                await world.spawnMonster(dirty, monster_type_id, spawn_monster_data);
+                await world.spawnMonster(dirty, dirty.monster_types[monster_type_index].id, spawn_monster_data);
 
 
             }
@@ -5405,7 +5419,24 @@ exports.eat = eat;
                 let object_type_id = split[1];
                 await game_object.updateType(dirty, object_type_id);
 
+            } else if(data.message.includes("/warptoazureplanet ")) {
+                console.log("Was warp to azure planet message");
+                let split = data.message.split(" ");
+
+                let player_id = parseInt(split[1]);
+
+                let player_index = await player.getIndex(dirty, { 'player_id': player_id });
+
+                if(player_index === -1) {
+                    log(chalk.yellow("Could not find player"));
+                    return false;
+                }
+
+                await movement.warpTo(socket, dirty, { 'player_index': player_index, 'warping_to': 'spaceport', 'planet_id': 6 });
+
             }
+
+
         } catch(error) {
             log(chalk.red("Error in game.processAdminChatMessage: " + error));
             console.error(error);
@@ -8913,7 +8944,7 @@ exports.eat = eat;
 
         try {
 
-            let debug_object_type_ids = [259];
+            let debug_object_type_ids = [];
 
             //log(chalk.green("Got pick up request"));
 
@@ -9024,14 +9055,15 @@ exports.eat = eat;
 
             let can_interact = false;
             if(scope === "planet") {
-                can_interact = canInteract(socket, dirty, player_info.scope, dirty.planet_coords[picking_up_coord_index]);
+                can_interact = await canInteract(socket, dirty, player_info.scope, dirty.planet_coords[picking_up_coord_index]);
             } else if(scope === "ship") {
-                can_interact = canInteract(socket, dirty, player_info.scope, dirty.ship_coords[picking_up_coord_index]);
+                can_interact = await canInteract(socket, dirty, player_info.scope, dirty.ship_coords[picking_up_coord_index]);
             }
 
 
             if(!can_interact) {
                 log(chalk.yellow("Player cannot interact with that coord"));
+                socket.emit('result_info', { 'status': 'failure', 'text': "Too far away" });
                 return false;
             }
 

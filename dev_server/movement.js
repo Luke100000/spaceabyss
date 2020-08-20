@@ -1085,6 +1085,7 @@ const world = require('./world.js');
 
         try {
 
+            //console.time("movePlanet");
             if(typeof socket.player_index === 'undefined') {
                 log(chalk.yellow("Can't move - socket doesn't have a player yet"));
                 return false;
@@ -1485,6 +1486,8 @@ const world = require('./world.js');
 
 
             }
+
+            //console.timeEnd("movePlanet");
 
         } catch(error) {
             log(chalk.red("Error in movement.movePlanet: " + error));
@@ -2150,6 +2153,7 @@ const world = require('./world.js');
                 let send_additional_coords = true;
 
                 // We only need to send new ship coords to the client
+                // MOVED UP
                 if(dirty.ship_coords[previous_ship_coord_index].tile_y > dirty.ship_coords[ship_coord_index].tile_y) {
                 //if (movement_direction === "up") {
 
@@ -2158,7 +2162,63 @@ const world = require('./world.js');
                     starting_x = dirty.ship_coords[ship_coord_index].tile_x - Math.floor(global.show_cols / 2);
                     ending_x = dirty.ship_coords[ship_coord_index].tile_x + Math.floor(global.show_cols / 2);
 
+
+
+                    //console.time("sendRow");
                     
+                    let sending_row = dirty.ship_coords[ship_coord_index].tile_y - (Math.floor(global.show_rows / 2));
+
+
+                    let begin_time = Date.now();
+
+                    await map.sendRow(socket, dirty, 'ship', 'up', dirty.ship_coords[ship_coord_index].tile_x, ship_coord_index, sending_row);
+
+                    let end_time = Date.now();
+                    let time_difference = end_time - begin_time;
+
+                    // Sometimes this lookup will take too long initially, and then we don't want to call all the additional ones.
+                    if(time_difference < 30) {
+                        // Ships can have very different shapes, so we are going to do a little extra work and sendRow from 3 spots to hopefully see every coordinate
+                        // lets move left and right a few tiles and call sendRow from there
+                        let final_left_coord_index = ship_coord_index;
+                        let hit_nothing = false;
+                        for(let x = dirty.ship_coords[ship_coord_index].tile_x - 1; x > dirty.ship_coords[ship_coord_index].tile_x - 4 && !hit_nothing; x--) {
+                            await map.getCoordNeighbor(dirty, 'ship', final_left_coord_index, 'left');
+                            if(dirty.ship_coords[final_left_coord_index].left_coord_index !== -1) {
+                                final_left_coord_index = dirty.ship_coords[final_left_coord_index].left_coord_index;
+                            } else {
+                                hit_nothing = true;
+                            }
+                        }
+
+                        if(final_left_coord_index !== ship_coord_index) {
+                            await map.sendRow(socket, dirty, 'ship', 'up', dirty.ship_coords[final_left_coord_index].tile_x, final_left_coord_index, sending_row);
+                        }
+
+                        let final_right_coord_index = ship_coord_index;
+                        hit_nothing = false;
+                        for(let x = dirty.ship_coords[ship_coord_index].tile_x + 1; x < dirty.ship_coords[ship_coord_index].tile_x + 4 && !hit_nothing; x++) {
+                            await map.getCoordNeighbor(dirty, 'ship', final_right_coord_index, 'right');
+                            if(dirty.ship_coords[final_right_coord_index].right_coord_index !== -1) {
+                                final_right_coord_index = dirty.ship_coords[final_right_coord_index].right_coord_index;
+                            } else {
+                                hit_nothing = true;
+                            }
+                        }
+
+                        if(final_right_coord_index !== ship_coord_index) {
+                            await map.sendRow(socket, dirty, 'ship', 'up', dirty.ship_coords[final_right_coord_index].tile_x, final_right_coord_index, sending_row);
+                        }
+
+                    } 
+
+
+                    
+
+                    //console.timeEnd("sendRow");
+
+                    
+                    /*
                     // @ts-ignore
                     let destination_coord_index = await helper.getDestinationCoordIndex(dirty, 'ship', ship_coord_index, 'up', Math.floor(global.show_rows / 2));
 
@@ -2168,15 +2228,69 @@ const world = require('./world.js');
                     } else {
                         //console.log("Should send additional coords");
                     }
+                    */
 
                 }
+                // MOVED DOWN
                 if(dirty.ship_coords[previous_ship_coord_index].tile_y < dirty.ship_coords[ship_coord_index].tile_y) {
-                //else if(movement_direction === "down") {
+                
                     starting_y = dirty.ship_coords[ship_coord_index].tile_y + Math.floor(global.show_rows / 2);
                     ending_y = starting_y;
                     starting_x = dirty.ship_coords[ship_coord_index].tile_x - Math.floor(global.show_cols / 2);
                     ending_x = dirty.ship_coords[ship_coord_index].tile_x + Math.floor(global.show_cols / 2);
 
+
+                    //console.time("sendRow");
+                    
+                    let sending_row = dirty.ship_coords[ship_coord_index].tile_y + (Math.floor(global.show_rows / 2));
+
+                    let begin_time = Date.now();
+                    
+                    await map.sendRow(socket, dirty, 'ship', 'down', dirty.ship_coords[ship_coord_index].tile_x, ship_coord_index, sending_row);
+
+                    let end_time = Date.now();
+                    let time_difference = end_time - begin_time;
+
+                    // Sometimes this lookup will take too long initially, and then we don't want to call all the additional ones.
+                    if(time_difference < 30) {
+
+                        // Ships can have very different shapes, so we are going to do a little extra work and sendRow from 3 spots to hopefully see every coordinate
+                        // lets move left and right a few tiles and call sendRow from there
+                        let final_left_coord_index = ship_coord_index;
+                        let hit_nothing = false;
+                        for(let x = dirty.ship_coords[ship_coord_index].tile_x - 1; x > dirty.ship_coords[ship_coord_index].tile_x - 4 && !hit_nothing; x--) {
+                            await map.getCoordNeighbor(dirty, 'ship', final_left_coord_index, 'left');
+                            if(dirty.ship_coords[final_left_coord_index].left_coord_index !== -1) {
+                                final_left_coord_index = dirty.ship_coords[final_left_coord_index].left_coord_index;
+                            } else {
+                                hit_nothing = true;
+                            }
+                        }
+
+                        if(final_left_coord_index !== ship_coord_index) {
+                            await map.sendRow(socket, dirty, 'ship', 'down', dirty.ship_coords[final_left_coord_index].tile_x, final_left_coord_index, sending_row);
+                        }
+
+                        let final_right_coord_index = ship_coord_index;
+                        hit_nothing = false;
+                        for(let x = dirty.ship_coords[ship_coord_index].tile_x + 1; x < dirty.ship_coords[ship_coord_index].tile_x + 4 && !hit_nothing; x++) {
+                            await map.getCoordNeighbor(dirty, 'ship', final_right_coord_index, 'right');
+                            if(dirty.ship_coords[final_right_coord_index].right_coord_index !== -1) {
+                                final_right_coord_index = dirty.ship_coords[final_right_coord_index].right_coord_index;
+                            } else {
+                                hit_nothing = true;
+                            }
+                        }
+
+                        if(final_right_coord_index !== ship_coord_index) {
+                            await map.sendRow(socket, dirty, 'ship', 'down', dirty.ship_coords[final_right_coord_index].tile_x, final_right_coord_index, sending_row);
+                        }
+                    }
+
+
+                    //console.timeEnd("sendRow");
+
+                    /*
                     // @ts-ignore
                     let destination_coord_index = await helper.getDestinationCoordIndex(dirty, 'ship', ship_coord_index, 'down', Math.floor(global.show_rows / 2));
 
@@ -2186,15 +2300,71 @@ const world = require('./world.js');
                     } else {
                         //console.log("Should send additional coords");
                     }
+                    */
                 }
+                // MOVED LEFT
                 if(dirty.ship_coords[previous_ship_coord_index].tile_x > dirty.ship_coords[ship_coord_index].tile_x) {
-                //else if(movement_direction === "left") {
+                
                     starting_x = dirty.ship_coords[ship_coord_index].tile_x - Math.floor(global.show_cols / 2);
                     ending_x = starting_x;
                     starting_y = dirty.ship_coords[ship_coord_index].tile_y - Math.floor(global.show_rows / 2);
                     ending_y = dirty.ship_coords[ship_coord_index].tile_y + Math.floor(global.show_rows / 2);
 
+
+                    //console.time("sendColumn");
+                    
+                    let sending_column = dirty.ship_coords[ship_coord_index].tile_x - (Math.floor(global.show_cols / 2));
+                    //log(chalk.cyan("Telling server to send column: " + sending_column + " to a client"));
+                    
+                    let begin_time = Date.now();
+
+                    await map.sendColumn(socket, dirty, 'ship', 'left', dirty.ship_coords[ship_coord_index].tile_y, ship_coord_index, sending_column);
+
+                    let end_time = Date.now();
+                    let time_difference = end_time - begin_time;
+
+                    // Sometimes this lookup will take too long initially, and then we don't want to call all the additional ones.
+                    if(time_difference < 30) {
+
+                        // Ships can have very different shapes, so we are going to do a little extra work and sendColumn from 3 spots to hopefully see every coordinate
+                        // lets move up and right a few tiles and call sendRow from there
+                        let final_up_coord_index = ship_coord_index;
+                        let hit_nothing = false;
+                        for(let y = dirty.ship_coords[ship_coord_index].tile_y - 1; y > dirty.ship_coords[ship_coord_index].tile_y - 4 && !hit_nothing; y--) {
+                            await map.getCoordNeighbor(dirty, 'ship', final_up_coord_index, 'up');
+                            if(dirty.ship_coords[final_up_coord_index].up_coord_index !== -1) {
+                                final_up_coord_index = dirty.ship_coords[final_up_coord_index].up_coord_index;
+                            } else {
+                                hit_nothing = true;
+                            }
+                        }
+
+                        if(final_up_coord_index !== ship_coord_index) {
+                            await map.sendColumn(socket, dirty, 'ship', 'left', dirty.ship_coords[final_up_coord_index].tile_y, final_up_coord_index, sending_column);
+                        }
+
+                        let final_down_coord_index = ship_coord_index;
+                        hit_nothing = false;
+                        for(let y = dirty.ship_coords[ship_coord_index].tile_y + 1; y < dirty.ship_coords[ship_coord_index].tile_y + 4 && !hit_nothing; y++) {
+                            await map.getCoordNeighbor(dirty, 'ship', final_down_coord_index, 'down');
+                            if(dirty.ship_coords[final_down_coord_index].down_coord_index !== -1) {
+                                final_down_coord_index = dirty.ship_coords[final_down_coord_index].down_coord_index;
+                            } else {
+                                hit_nothing = true;
+                            }
+                        }
+
+                        if(final_down_coord_index !== ship_coord_index) {
+                            await map.sendColumn(socket, dirty, 'ship', 'left', dirty.ship_coords[final_down_coord_index].tile_y, final_down_coord_index, sending_column);
+                        }
+                    }
+
+
+                    //console.timeEnd("sendColumn");
+                    
+                
                     // @ts-ignore
+                    /*
                     let destination_coord_index = await helper.getDestinationCoordIndex(dirty, 'ship', ship_coord_index, 'left', Math.floor(global.show_cols / 2));
 
                     if(destination_coord_index === -1) {
@@ -2203,7 +2373,9 @@ const world = require('./world.js');
                     } else {
                         //console.log("Should send additional coords");
                     }
+                    */
                 }
+                // RIGHT
                 if(dirty.ship_coords[previous_ship_coord_index].tile_x < dirty.ship_coords[ship_coord_index].tile_x) {
                 //else if(movement_direction === "right") {
                     starting_x = dirty.ship_coords[ship_coord_index].tile_x + Math.floor(global.show_cols / 2);
@@ -2211,6 +2383,56 @@ const world = require('./world.js');
                     starting_y = dirty.ship_coords[ship_coord_index].tile_y - Math.floor(global.show_rows / 2);
                     ending_y = dirty.ship_coords[ship_coord_index].tile_y + Math.floor(global.show_rows / 2);
 
+                    //console.time("sendColumn");
+                    
+                    let sending_column = dirty.ship_coords[ship_coord_index].tile_x + (Math.floor(global.show_cols / 2));
+                    
+
+                    let begin_time = Date.now();
+
+                    await map.sendColumn(socket, dirty, 'ship', 'right', dirty.ship_coords[ship_coord_index].tile_y, ship_coord_index, sending_column);
+
+                    let end_time = Date.now();
+                    let time_difference = end_time - begin_time;
+
+                    // Sometimes this lookup will take too long initially, and then we don't want to call all the additional ones.
+                    if(time_difference < 30) {
+                        // Ships can have very different shapes, so we are going to do a little extra work and sendColumn from 3 spots to hopefully see every coordinate
+                        // lets move up and right a few tiles and call sendRow from there
+                        let final_up_coord_index = ship_coord_index;
+                        let hit_nothing = false;
+                        for(let y = dirty.ship_coords[ship_coord_index].tile_y - 1; y > dirty.ship_coords[ship_coord_index].tile_y - 4 && !hit_nothing; y--) {
+                            await map.getCoordNeighbor(dirty, 'ship', final_up_coord_index, 'up');
+                            if(dirty.ship_coords[final_up_coord_index].up_coord_index !== -1) {
+                                final_up_coord_index = dirty.ship_coords[final_up_coord_index].up_coord_index;
+                            } else {
+                                hit_nothing = true;
+                            }
+                        }
+
+                        if(final_up_coord_index !== ship_coord_index) {
+                            await map.sendColumn(socket, dirty, 'ship', 'right', dirty.ship_coords[final_up_coord_index].tile_y, final_up_coord_index, sending_column);
+                        }
+
+                        let final_down_coord_index = ship_coord_index;
+                        hit_nothing = false;
+                        for(let y = dirty.ship_coords[ship_coord_index].tile_y + 1; y < dirty.ship_coords[ship_coord_index].tile_y + 4 && !hit_nothing; y++) {
+                            await map.getCoordNeighbor(dirty, 'ship', final_down_coord_index, 'down');
+                            if(dirty.ship_coords[final_down_coord_index].down_coord_index !== -1) {
+                                final_down_coord_index = dirty.ship_coords[final_down_coord_index].down_coord_index;
+                            } else {
+                                hit_nothing = true;
+                            }
+                        }
+
+                        if(final_down_coord_index !== ship_coord_index) {
+                            await map.sendColumn(socket, dirty, 'ship', 'right', dirty.ship_coords[final_down_coord_index].tile_y, final_down_coord_index, sending_column);
+                        }
+                    }
+
+                    //console.timeEnd("sendColumn");
+
+                    /*
                     // @ts-ignore
                     let destination_coord_index = await helper.getDestinationCoordIndex(dirty, 'ship', ship_coord_index, 'right', Math.floor(global.show_cols / 2));
 
@@ -2220,6 +2442,7 @@ const world = require('./world.js');
                     } else {
                         //console.log("Should send additional coords");
                     }
+                    */
 
                     /*
                     let moving_coord_index = ship_coord_index;
@@ -2277,6 +2500,8 @@ const world = require('./world.js');
                 await player.sendInfo(socket, "ship_" + dirty.ship_coords[ship_coord_index].ship_id, dirty, dirty.players[player_index].id);
 
 
+                /*
+                console.time("additionalCoords");
                 for(let i = starting_x; i <= ending_x && send_additional_coords; i++) {
                     for(let j = starting_y; j <= ending_y; j++) {
 
@@ -2304,6 +2529,9 @@ const world = require('./world.js');
 
                     }
                 }
+
+                console.timeEnd("additionalCoords");\
+                */
 
 
                 //await map.updateMap(socket, dirty);
@@ -3295,6 +3523,18 @@ const world = require('./world.js');
 
     // Currently I think this is basically just used for dying and stuff
     //  data:   ( (player_index | npc_index)   |   (player_id | npc_id ) )  /   warping_to (spaceport | galaxy)  /   planet_id   /   base_coord_index
+    /**
+     * @param {Object} socket
+     * @param {Object} dirty
+     * @param {Object} data
+     * @param {number=} data.player_index
+     * @param {number=} data.npc_index
+     * @param {number=} data.player_id
+     * @param {number=} data.npc_id
+     * @param {String} data.warping_to
+     * @param {number=} data.planet_id
+     * @param {number=} data.base_coord_index
+     */
     async function warpTo(socket, dirty, data) {
 
         try {
@@ -3306,7 +3546,7 @@ const world = require('./world.js');
             let placing_type = '';
             let placing_id = 0;
             let placing_thing;
-            let placing_socket = false;
+            let placing_socket = {};
             let placing_data = {};
             let removing_data = {};
 

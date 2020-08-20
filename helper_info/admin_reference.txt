@@ -20,13 +20,14 @@ game.processAdminChatMessage
 /sendmessage MESSAGE
 /setplanettype PLANET_ID PLANET_TYPE_ID
 /spawnevent COORD_TYPE(planet|ship|galaxy) COORD_ID EVENT_ID
-/spawnmonster MONSTER_TYPE_ID
+/spawnmonster MONSTER_TYPE_NAME
 /spawnnpc NPC_JOB_ID
 /spawnobject AMOUNT OBJECT_TYPE_NAME
 /tickEvents
 /tickspawners
 /tickthegreatnomad
 /updateshiptype OBJECT_TYPE_ID
+/warptoazureplanet PLAYER_ID
 
 
 

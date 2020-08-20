@@ -16,9 +16,94 @@ A decent 'large object' size is 24x24 (asteroids)
 A decent size for producing/manufacturing objects is 26x26
 Small monster: 20x20 (process, rat, something else small), medium monster 22x22
 
-*****************************************
-************ MATERIAL TREE ****************
-*****************************************
+
+Damage is per slot taken up (3 slots per arm)
+
+FREE
+
+    TIER 1 - Territe, Batteries, Chitin, Exoskeleton, Quick Matter (From Territe), AI Dust
+    Energy Sources: Battery
+    Minimum Monster Damage: 1
+    Complexity: 1-4
+    Damage (player weapons): Melee 1, Range 1
+    Defense (player armor): 1
+    Armor Types: Territe
+
+        TIER 2 - Refined Territe, Batteries, Keratin, Gold
+        Minimum Monster Damage: 5
+        Complexity: 6-9
+        Damage: Melee 2, Range 1
+        Defense (player armor): 1
+
+            TIER 3 - Exodium, Power cells, Living Wood, Silk, Thiol, Glass
+            Minimum Monster Damage: 20
+            Complexity: 10-14
+            Damage: Melee 3, Range 2
+            Defense (player armor): 3
+            Armor Types: Exodium, Living Wood, Slerm/(Bubble)
+
+                TIER 4 - Refined Exodium, Power Cells, AI Fragments, Inferno Core, Jelly
+                Minimum Monster Damage: 30
+                Complexity: 18-22
+                Damage: Melee 5, Range 3
+                Defense (player armor): 4
+                Armor Types: Keratin Plating
+                
+                    TIER 5 - Diamond, Plasteel, Stabglass
+                    Minimum Monster Damage: 40
+                    Complexity: 26-32
+                    Damage: Melee 7, Range 4
+                    Defense (player armor): 5
+                    Armor Types: Diamond
+
+                        TIER 6 - Spun Diamond, Diamond Cell/Battery 
+                        Minimum Monster Damage: 60
+                        Complexity: 36-40
+                        Damage: Melee 8, Range 5
+                        Defense (player armor): 6
+
+
+                            TIER 7 - Crystal, HyperDiamond, Carrion Glass
+                            Complexity: 44-48
+                            Minimum Monster Damage: 80
+                            Damage: 9, 6
+                            Defense (player armor): 7
+                            Armor Types: Crystal
+
+                                TIER 8 - Jungle Crystal, Neutronium
+                                Complexity: 52-56
+                                Minimum Monster Damage: 120
+                                Damage: 10, 7
+                                Defense (player armor): 8
+                                
+
+                                    TIER 9 Hypercrystal, Crystal Battery
+                                    Minimum Monster Damage: 140
+                                    Complexity: 60-64
+                                    Damage: 11, 8
+                                    Defense (player armor): 9
+                                    Armor Types: Hypercrystal
+
+                                        TIER 10 - Crystadmantium (Crystonium), Antimatter, Quantum Battery 
+                                        Minimum Monster Damage: 200
+                                        Complexity: 100+
+                                        Damage: 12, 9
+                                        Defense (player armor): 10
+                                        Armor Types: Crystadmantium
+                                    
+
+Potential Materials:
+    Bubblecarbon
+
+Potential Armor Types:
+    Plasteel: More powerful nanite mix, with some AI elements give this armor a slight intelligence.
+                    Improved defensive capabilites due to interpretting the combat situation and adjusting accordingly
+    
+    Equipment sets I'm not sure about :
+    Power (Think Power armor)
+    Nanite
+    gravity armor? electro magnetic armor?
+
 
 Common Material Endings: ite, ium, ine, asm, tite, tine, er, ak
 
@@ -29,132 +114,22 @@ Titite, Titium, Titasm, Titine, Tkrite, Tkium, Tokite, Tokium, Tokine, Toktite, 
 Hexite, Hexium, Hexine, Hextite, Hextine, Lexite, Lexium, Lextite, Lextine, Dezite, Dezium, Dezine, Deztite, Deztine, Shuite, Shuium, Shuine, Mikite, Mikium,
 Miktite, Miktine, Nexite, Nexium, Nexine, Nextite, Nextine
 
-Territe:
-    Obtained Via: Iron Deposits, Asteroids
-    Complexity: 2
-    Easiest way to obtain: Mine asteroid in your pod. 0 danger or difficulty
 
 
 
-    Refined Territe:
-        Requirements:
-            Territe must be researched
-        Complexity: 6
-        Obtained Via:
-            Territe + Nano Bonder in a forge
-        Easiest way to obtain: Just processing. Takes a tiny amount of skill, but is trivial
+Crystadmantium (Crystonium):
+    Description:    Stable artificial elements, the continent of stability, above atomic weight 900.
+                    Requires tons of energy to produce. Not found in nature. Chrysadmantium.
+                    Even a star can't melt it. Built one atom at a time in a supercollider.
+    Requirements:
+        Crystals must be researched
+    Complexity: 102
+    Obtained Via:
+        Crystal + Nanite Mesh in forge (might want to make a more advanced forge). Takes FOREVER.
+        HIGH COMPLEXITY
 
 
 
-
-    Gold:
-        Mostly used as an additive for non-conducting, or non corrosion properties.
-
-
-        Plasteel:
-            Complexity: 14
-            Obtained Via: Syntite + AIFragment (Complexity 14) in Forge
-
-
-
-        Exodium:
-            Obtained Via: More difficult deposits and monsters
-            Complexity: 12
-            Easiest way to obtain: On slaver planets at -2. Slaver guards are on the level
-                with 400 HP, 20 Attack
-
-            Refined Exodium
-
-
-    Exoskeleton Fragment
-
-        Chitin
-            High resistance to corrosive, blunt
-            Obtained Via: Voon, other bugs
-            Complexity: 4
-            Easiest way to obtain: Crystal Spiders on mountain worlds. 100 HP 5 Attack
-
-
-        Keratin
-
-
-            Living-wood
-
-
-
-            Silk
-
-                        Spun Diamond
-
-
-        Thiol:
-            Obtained Via: Thiol deposits on acid planets
-            Complexity: 15
-            Easiest way to obtain: Thiol deposits on acid planets. 500 HP 25 Attack
-
-
-
-            Glass
-                Stabglass
-                    Carrion glass
-
-            Neutronium
-
-
-            Diamond
-                Hyperdiamond
-
-
-
-                    Crystal
-                        Obtained Via: Crystal Deposits, Ruel
-                        Complexity: 22
-                        Easiest way to obain: Mountain level -2. Crystal Guard. 1000 HP 50 Attack
-
-
-                    jungle crystal
-
-                        Crystadmantium (Crystonium):
-                            Description:    Stable artificial elements, the continent of stability, above atomic weight 900.
-                                            Requires tons of energy to produce. Not found in nature. Chrysadmantium.
-                                            Even a star can't melt it. Built one atom at a time in a supercollider.
-                            Requirements:
-                                Crystals must be researched
-                            Complexity: 102
-                            Obtained Via:
-                                Crystal + Nanite Mesh in forge (might want to make a more advanced forge). Takes FOREVER.
-                                HIGH COMPLEXITY
-
-
-******* ENERGY SOURCES ********
-Battery
-
-    Power Cell
-
-        Diamond Cell (Battery?)
-
-            Crystal Cell (Battery?)
-
-
-
-Nano Bonder
-    Obtained Via: Easy monsters
-    Requirements: None
-
-    Nanite Mesh
-        Requirements:
-            Researched Nano Bonder
-        Obtained Via:
-            Nano Bonder + AIFragment (Complexity 14) in Forge
-
-AI Fragment:
-    Obtained Via: AI Dust (Complexity 14) and Crystals (Complexity 22) in a Forge
-
-
-
-Potential Materials:
-    Quickmatter ( We are having basic territe things turn into
-    Bubblecarbon
 
 
 *****************************************
@@ -205,227 +180,6 @@ Territe Armor:
                                 Requirements:
                                     Crystadmantium
                                     Nanite Mesh
-
-
-
-    Chitin Armor:
-        Description:    Really hard pieces of exoskeleton put together.
-        Complexity: 6
-        Requirements:
-            Chitin
-
-        Easiest way to obtain:
-            Kill some Crystal Spiders on Mountain worlds. No complexity requirements
-
-
-        Keratin plating
-            Description:
-
-
-
-
-
-
-
-
-Plasteel
-    Description:    More powerful nanite mix, with some AI elements give this armor a slight intelligence.
-                    Improved defensive capabilites due to interpretting the combat situation and adjusting accordingly
-    Complexity: 30
-    Requirements:
-        Plasteel
-        Nanite Mesh
-
-
-
-
-
-Equipment sets I'm not sure about :
-Power (Think Power armor)
-Nanite
-gravity armor? electro magnetic armor?
-
-
-AUGMENTS
-    Augments for manufacturing, research, and auto doc.
-    Augments for hp, attack, and defense
-
-
-
-
-*****************************************
-******************** WEAPON TREE *************************
-*****************************************
-
-
-PLAYER WEAPONS
-
-
-FREE
-    TIER 1 - Territe, Batteries, Chitin (complexity 1-4)
-        TIER 2 - Refined Territe, Batteries, Keratin,  (complexity 6-9)
-            TIER 3 - Exodium, Power cells, Living Wood, Silk, Thiol (complexity 10-14)
-                TIER 4 - Refined Exodium, Power Cells, AI Fragments (18-22)
-                    TIER 5 - Diamond (26-32)
-                        TIER 6 - Spun Diamond, Diamond Battery (36-40)
-                            TIER 7 - HyperDiamond (44-48)
-                                TIER 8 - Crystal (52-56)
-                                    TIER 9 Hypercrystal, Crystal Battery (60-64)
-                                        TIER 10 - Crystadmantium (Crystonium), Antimatter, Quantum Battery (100+)
-
-
-
-
-ANTIMATTER
-                                        Antimatter Rifle
-
-CONTROL
-        Mind Control Injector
-
-
-CORROSIVE (combination of damage + addiction (damage over time ))
-
-                
-
-                Chem Blaster
-
-                        Biochemical Assault Rifle
-
-ELECTRIC
-        Energy Blade
-            Volt Rifle
-                    Shock Rifle
-                                Lightning Gun
-
-        Shock Glove
-
-EXPLOSION
-    Corrupted Battery Pack
-        Thiol Bomb
-            Corrupted Power Cell
-                    Nuke
-                            Planet Buster
-                                Stardriller
-
-
-FREEZING
-            Icer Pistol
-                    Chiller
-
-HACKING
-    Hacking Knife
-        Hack Dust
-                Airborne Code Injectors *RANGE*
-                    Black ice viruses
-
-HEAT
-        Hull Welder
-            Plasma Torch
-                Heat Lance ( inferno core required to make )
-
-                Flamethrower *RANGE* (inferno cores required as well )
-
-
-GRAVITY
-            Graviblaster
-                Microtearer
-
-
-            Gravity Whip ( 2 range - lashes out with gravity. Can impact single areas, and then crush with overwhelming gravity force.)
-                            normal whips pull towards you, this grabs you and then crushingly pulls you to the floor/ceiling
-LASER
-        Laser Wire
-        Laser Gun *RANGE*
-                Megawatt Laser Gun *RANGE*
-            Laser Rifle
-                    Megawatt Laser Rifle
-
-
-MELEE
-No Equip (Fists - Melee)
-    Quick Matter Knife
-            Exodium Knife
-                    Diamond Claw
-
-
-PIERCING
-    Stabbing gloves. Requires parts from spiked enemy + exodium. Could be from an urchin type monster
-
-        Mimetic Arm
-
-
-        Bolt Thrower *RANGE*
-
-            Gatling Gun
-
-                    Railgun *RANGE*
-
-                            Atom Piercer
-
-
-                    Fernblade
-
-POISON (no initial damage - just done addiction stuff)
-
-PLASMA
-            Blaster
-                Blaster Rifle
-
-RADIATION (no initial damage - just does addiction stuff)
-            Prion Gloves
-
-                    Gamma Gun
-
-
-
-DEFENSIVE ITEMS
-
-Force Shield
-
-
-STATION WEAPONS
-
-    Station Railgun
-
-    Station Las Cannon
-
-
-
-POSSIBLE WEAPONS
-
-
-3mm heavy micro rifle
-Antimatter tipped millimeter long nanomissles
-Chrysalis gun
-Effectors (influence people - kind of like organic mind hacking)
-Electromagnetic coil gun
-Energy Disk
-Erasure Cannon
-Fusion Weapons
-Gauss rifle
-Gravity weapons
-Gravgun
-Grid-fire impulsor
-Knife missiles
-Laser Axe
-line gun
-Liquid Hydrogen Weapons
-Monofilament warp
-proton pack
-Pulse Pistol
-Pulse Rifle
-Plasma Pistol
-Plasma Rifle
-Pyrorifle
-particle beam phalanx
-pulse rifle
-phase-plasma pulse rifle
-Refrigerator later. Shoots a ball of something at someone, then collects the energy/heat 
-    around that and shoots off laser away from it
-Thunderbolter
-Selfmotivated effector sidearm
-Thudder
-ZPE flux-polarizers
 
 
 
@@ -672,45 +426,48 @@ FREE
 
 Pod (DRAWN)
 
-    Mining (DRAWN)
+    Mining
 
-        Mining Frigate 
+            Mining Frigate 
 
-                exhumer https://www.artstation.com/artwork/eyJ26 
+                    exhumer https://www.artstation.com/artwork/eyJ26 
 
-                    Mining Barge
+                            Mining Barge
 
-                            Mining Command Platorm (https://gemquery.com/content/view/2543463)
+                                    Mining Command Platorm (https://gemquery.com/content/view/2543463)
 
 
 
-        Factory Ship (+ to manufacturing)
+                Factory Ship (+ to manufacturing)
+
                             Industry Platform (++ to manufacturing)
 
 
-    Cargo Ship (DRAWN)
+    Cargo Ship
 
-        Light freighter ( https://images.gemquery.com/254/content_2542324.jpg )
+            Light freighter ( https://images.gemquery.com/254/content_2542324.jpg )
 
-                    Freighter ( Have Image Idea )
+                        Freighter ( Have Image Idea )
 
-
-                        Heavy Freighter
+                                Heavy Freighter
 
         Tanker (Have Image Idea)
 
-            Blockade Runner (DRAWN)
 
 
 
-            Cutter (DRAWN)
+            Blockade Runner
 
 
+            Cutter
 
-            Lancer (DRAWN)
-            Striker ( have image idea )
+
+    Fighter
+
+            Lancer
+            Striker
                 Corvette
-                Destroyer ( have image idea )
+                Destroyer
                 Frigate ( have image idea )
 
                     Cruiser
@@ -730,26 +487,24 @@ Pod (DRAWN)
 
 
     Science Vessel
-                        Sun Ship - can go undamaged into the sun area
+
                     Garden Ship
+                        Sun Ship - can go undamaged into the sun area
 
 
 
-
-    Fighter (DRAWN)
-
-    Shuttle (DRAWN)
+    Shuttle
 
         Yacht ( have image idea )
 
-            Royal Cruiser (have image idea)
+                Royal Cruiser (have image idea)
 
-                Royal Starship
+                        Royal Starship
 
         Light Sail Ship (Lighthugger)
 
 
-            Carrier
+                Carrier
                             Colony Ship
                                 Worldship
                                 Stardome
@@ -758,8 +513,8 @@ Pod (DRAWN)
 
 
             Station
-                Asteroid Station
-                    City Station (have 1 image idea)
+                    Asteroid Station
+                            City Station (have 1 image idea)
 
 NPC SHIPS
     Prisonship

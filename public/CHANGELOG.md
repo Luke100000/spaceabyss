@@ -1,3 +1,33 @@
+## [0.1.28] - 2020-08-19
+
+
+### Added
+- Admin can warp a player back to the Azure planet in limited circumstances now
+- Monster attacks can now have an additional effect. The first example of this is going to be the Trae having a thorn effect show up on the player
+- Ice Sleem. Consumable by human bodies.
+- Portal image added
+- Voonita can now drop AI Dust
+
+
+### Fixed
+- Bug that was allowing players to pick up things no matter how far away they were
+- Bug that would cause some objects to not immediately update on the client when a player harvested them
+
+
+### Changed
+- Minimum HP requirement for Blue Algae to spawn from an Algae Vat has been increased from 100% to 101%
+- Cyberskell HP from 200 to 100 (will probably go back up if I decide to increase attack - which I think I will)
+- admin spawning monster type command changed from using an ID to a name
+- Updated the object ID of The Great Nomad to match production server
+- Gave the Reinforced Human Body additional defense to all damage types
+- Building a portal now needs to be done in a Manufacturer. Increased complexity from 10 to 20
+- Reduced Voonita HP from 50 to 25
+- Increased Transporter drops to 50 Credits/200 AI Dust/10 Exoskeleton Fragments.
+- Changed how the server finds additional ship coords to send to the player as the player moves. Tiles are now grabbing and storing the indexes of their up/down/left/right 
+neighbors - and once they know that, traversing space around the player is extremely quick for the server.
+- Removed Nano Bonder drop from Macro Viruses
+
+
 ## [0.1.27] - 2020-08-13
 
 ### Added

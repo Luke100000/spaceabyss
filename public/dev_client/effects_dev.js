@@ -193,6 +193,9 @@ function addEffect(data) {
             effect_type = 'beam';
             data.x += 32;
             data.y += 32;
+        } else if(data.damage_types[i] === 'thorn') {
+            new_texture_key = 'thorn-effect';
+            new_texture_animation_key = 'thorn-effect-animation';
         }
 
         // We didn't find our texture!!!
