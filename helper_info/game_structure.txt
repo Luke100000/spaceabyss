@@ -21,7 +21,7 @@ Damage is per slot taken up (3 slots per arm)
 
 FREE
 
-    TIER 1 - Territe, Batteries, Chitin, Exoskeleton, Quick Matter (From Territe), AI Dust
+    TIER 1 - Territe, Batteries, Chitin, Exoskeleton, Quick Matter (From Territe), AI Dust, Life Water (Complexity Tier: 4)
     Energy Sources: Battery
     Minimum Monster Damage: 1
     Complexity: 1-4
@@ -29,7 +29,7 @@ FREE
     Defense (player armor): 1
     Armor Types: Territe
 
-        TIER 2 - Refined Territe, Batteries, Keratin, Gold
+        TIER 2 - Refined Territe, Batteries, Exoskeleton, Gold
         Minimum Monster Damage: 5
         Complexity: 6-9
         Damage: Melee 2, Range 1
@@ -42,14 +42,14 @@ FREE
             Defense (player armor): 3
             Armor Types: Exodium, Living Wood, Slerm/(Bubble)
 
-                TIER 4 - Refined Exodium, Power Cells, AI Fragments, Inferno Core, Jelly
+                TIER 4 - Refined Exodium, Power Cells, AI Fragments (18), AI (22), Inferno Core, Jelly
                 Minimum Monster Damage: 30
                 Complexity: 18-22
                 Damage: Melee 5, Range 3
                 Defense (player armor): 4
                 Armor Types: Keratin Plating
                 
-                    TIER 5 - Diamond, Plasteel, Stabglass
+                    TIER 5 - Diamond, Plasteel, Stabglass, Portal
                     Minimum Monster Damage: 40
                     Complexity: 26-32
                     Damage: Melee 7, Range 4
@@ -400,6 +400,89 @@ Slagcell
 
 
 
+*****************************************
+************************** PLANETS ***************************
+*****************************************
+
+    TIER 1
+    Azure 0 to -1
+    Desert 0
+    Machine 0
+    Biogrove 0 to -1
+    Corporation 0
+
+        TIER 2
+        Azure -2 and deeper
+        Desert -1 to -2
+        Machine -1 to -2
+        Mountain 0
+        Biogrove -2
+        Slaver 0
+        Corporation -1
+
+            TIER 3
+            Machine -3 to -4
+            Water 0 to -1
+            Frozen 0
+            Slaver -1 to -2
+            Corporation -2
+            Acid 0
+
+
+                TIER 4
+                Desert -3 and -4
+                Mountain -1
+                Inferno 0
+                Biogrove -3 to -4
+                Water -2 to -3
+                Corporation -3
+                Acid -1
+
+                    TIER 5
+                    Desert -5 to -6
+                    Machine -5 to -6
+                    Mountain -2
+                    Frozen -1 to -2
+                    Slaver -3 to -4
+                    Corporation -4
+                    Acid -2
+                    
+
+                        TIER 6
+                        Desert -7 and -8
+                        Inferno -1 and -2
+                        Biogrove -5 and -6
+                        Water -4 to -5
+                        Frozen -3 to -4
+
+                            TIER 7
+                            Machine -7 to -8
+                            Mountain -3 to -4
+                            Water -6 to -7
+                            Slaver -5 to -6
+                            Corporation -5 to -6
+                            Acid -3 to -4
+
+                                TIER 8
+                                Mountain -5 to -6
+                                Inferno -3 and -4
+                                Biogrove -7 and -8
+                                Frozen -5 to -6
+                                Acid -5 to -6
+
+                                    TIER 9
+                                    Sun 0
+                                    Inferno -5 and -6
+                                    Acid -7 and lower
+
+
+                                        TIER 10
+                                        Sun 0
+                                        Inferno -7 and lower
+
+
+
+
 
 *****************************************
 ************************** SHIPS ***************************
@@ -426,95 +509,96 @@ FREE
 
 Pod (DRAWN)
 
-    Mining
+    Mining (small)
 
-            Mining Frigate 
+            Mining Frigate (small)
 
-                    exhumer https://www.artstation.com/artwork/eyJ26 
+                    exhumer https://www.artstation.com/artwork/eyJ26 (medium)
 
-                            Mining Barge
+                            Mining Barge (medium)
 
-                                    Mining Command Platorm (https://gemquery.com/content/view/2543463)
-
-
-
-                Factory Ship (+ to manufacturing)
-
-                            Industry Platform (++ to manufacturing)
-
-
-    Cargo Ship
-
-            Light freighter ( https://images.gemquery.com/254/content_2542324.jpg )
-
-                        Freighter ( Have Image Idea )
-
-                                Heavy Freighter
-
-        Tanker (Have Image Idea)
+                                    Mining Command Platorm (https://gemquery.com/content/view/2543463) (medium)
 
 
 
+                Factory Ship (+ to manufacturing) (medium)
 
-            Blockade Runner
-
-
-            Cutter
+                            Industry Platform (++ to manufacturing) (medium)
 
 
-    Fighter
+    Cargo Ship (small)
 
-            Lancer
-            Striker
-                Corvette
-                Destroyer
-                Frigate ( have image idea )
+            Light freighter ( https://images.gemquery.com/254/content_2542324.jpg ) (small)
 
-                    Cruiser
-                        Dreadnought ( have image idea )
-                        Battlecruiser
-                            Nova-class Battlecruiser
-                                Supercruiser
+                        Freighter ( Have Image Idea ) (medium)
 
-            Living Wood Ship
+                                Heavy Freighter (medium)
 
-            Water Ship
-                                Water City
-
-            Silk Ship
-                        Spun Diamond Silk Ship
+        Tanker (Have Image Idea) (small/medium?change tier?)
 
 
 
-    Science Vessel
 
-                    Garden Ship
-                        Sun Ship - can go undamaged into the sun area
+            Blockade Runner (small)
+
+
+            Cutter (small)
+
+
+    Fighter (small)
+                        Assault Fighter (small)
+
+            Lancer (small)
+            Striker (small)
+                Corvette (small)
+                Destroyer (medium)
+                Frigate ( have image idea ) (medium) (this is redundant for now - like the destroyer more)
+
+                    Cruiser (medium)
+                        Dreadnought ( have image idea ) (medium)
+                        Battlecruiser (medium)
+                            Nova-class Battlecruiser (medium)
+                                Supercruiser (medium)
+
+            Living Wood Ship (small)
+
+            Water Ship (small)
+                                Water City (medium/large?)
+
+            Silk Ship (small)
+                        Spun Diamond Silk Ship (small)
+
+
+
+    Science Vessel (small)
+
+                    Garden Ship (medium)
+                        Sun Ship - can go undamaged into the sun area (small)
 
 
 
     Shuttle
 
-        Yacht ( have image idea )
+        Yacht ( have image idea ) (small)
 
-                Royal Cruiser (have image idea)
+                Royal Cruiser (have image idea) (medium)
 
-                        Royal Starship
+                        Royal Starship (medium)
 
-        Light Sail Ship (Lighthugger)
-
-
-                Carrier
-                            Colony Ship
-                                Worldship
-                                Stardome
-                                Cityship (More of a high tech version of a city station )
-                                    Star Fortress - Tier 9
+        Light Sail Ship (Lighthugger) (small)
 
 
-            Station
-                    Asteroid Station
-                            City Station (have 1 image idea)
+                Carrier (medium)
+                            Colony Ship (large)
+                                Worldship (large)
+                                Stardome (large)
+                                Cityship (More of a high tech version of a city station ) (large)
+                                    Star Fortress - Tier 9 (large)
+
+
+            Station (medium)
+                    Asteroid Station (medium)
+                            City Station (have 1 image idea) (large)
 
 NPC SHIPS
     Prisonship
@@ -535,6 +619,7 @@ Starship
 Transport ship
 Yacht
 Gundam style spaceship for players
+Gunship
 
 
 ENGINE TYPES

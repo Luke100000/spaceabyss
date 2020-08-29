@@ -1012,7 +1012,7 @@ include('config.php');
             });
 
             this.load.spritesheet('gravity-effect', 'https://space.alphacoders.com/gravity-effect.png', {
-                frameWidth: 64, frameHeight: 64, endFrame: 3
+                frameWidth: 90, frameHeight: 128, endFrame: 14
             });
 
             this.load.spritesheet('laser-effect', 'https://space.alphacoders.com/laser-effect.png', {
@@ -1057,7 +1057,7 @@ include('config.php');
             });
 
             this.load.spritesheet('thorn-effect', 'https://space.alphacoders.com/thorn-effect.png', {
-                frameWidth: 64, frameHeight: 64, endFrame: 3
+                frameWidth: 64, frameHeight: 64, endFrame: 10
             });
 
 
@@ -2257,6 +2257,15 @@ include('config.php');
 
             this.anims.create(fire_effect_config);
 
+            var gravity_effect_config = {
+                key: 'gravity-effect-animation',
+                frames: this.anims.generateFrameNumbers('gravity-effect', { start: 0, end: 13, first: 0 } ),
+                frameRate: 10,
+                hideOnComplete: true
+            };
+
+            this.anims.create(gravity_effect_config);
+
             var hacking_effect_config = {
                 key: 'hacking-effect-animation',
                 frames: this.anims.generateFrameNumbers('hacking-effect', { start: 0, end: 11, first: 0 } ),
@@ -2364,7 +2373,7 @@ include('config.php');
 
             var thorn_effect_config = {
                 key: 'thorn-effect-animation',
-                frames: this.anims.generateFrameNumbers('thorn-effect', { start: 0, end: 2, first: 0 } ),
+                frames: this.anims.generateFrameNumbers('thorn-effect', { start: 0, end: 9, first: 0 } ),
                 frameRate: 10,
                 hideOnComplete: true
             };

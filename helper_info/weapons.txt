@@ -8,43 +8,12 @@ PLAYER WEAPONS
 
 Damage is per slot taken up (3 slots per arm)
 
-FREE
-    TIER 1 - Territe, Batteries, Chitin
-    Complexity: 1-4
-    Damage: Melee 1, Range 1
-
-        TIER 2 - Refined Territe, Batteries, Keratin
-        Complexity: 6-9
-        Damage: Melee 2, Range 1
-
-            TIER 3 - Exodium, Power cells, Living Wood, Silk, Thiol
-            Complexity: 10-14
-            Damage: Melee 3, Range 2
-
-                TIER 4 - Refined Exodium, Power Cells, AI Fragments 
-                Complexity: 18-22
-                Damage: Melee 5, Range 3
-                
-                    TIER 5 - Diamond 
-                    Complexity: 26-32
-                    Damage: Melee 7, Range 4
-
-                        TIER 6 - Spun Diamond, Diamond Battery 
-                        Complexity: 36-40
-                        Damage: Melee 8, Range 5
-                            TIER 7 - HyperDiamond (44-48)
-                                TIER 8 - Crystal (52-56)
-                                    TIER 9 Hypercrystal, Crystal Battery (60-64)
-                                        TIER 10 - Crystadmantium (Crystonium), Antimatter, Quantum Battery (100+)
-
-
-
 
 ANTIMATTER
                                         Antimatter Rifle
 
 CONTROL
-        Mind Control Injector
+            Mind Control Injector
 
 
 CORROSIVE (combination of damage + addiction (damage over time ))
@@ -54,14 +23,14 @@ CORROSIVE (combination of damage + addiction (damage over time ))
                         Biochemical Assault Rifle
 
 ELECTRIC
-        Energy Blade
+            Energy Blade
 
 
-            Volt Rifle
-                    Shock Rifle
-                                Lightning Gun
+                Volt Rifle
+                        Shock Rifle
+                                    Lightning Gun
 
-        Shock Glove (too many gloves?)
+            Shock Glove (too many gloves?)
 
 EXPLOSION
     Corrupted Battery Pack
@@ -165,9 +134,14 @@ POSSIBLE WEAPONS
 
 
 3mm heavy micro rifle
+Autocannon
+Blast Cannon
 Chrysalis gun
+Compression Laser
+Distruptor Cannon
 Effectors (influence people - kind of like organic mind hacking)
 Electromagnetic coil gun
+Electron Flux Whip (ELF)
 Energy Disk
 Erasure Cannon
 Fusion Weapons
@@ -175,18 +149,23 @@ Gauss rifle
 Gravity weapons
 Gravgun
 Grid-fire impulsor
+Heavy Blaster
 Knife missiles
 line gun
 Liquid Hydrogen Weapons
 Monofilament warp
+Nanite Cannon
 proton pack
 Pulse Pistol
 Pulse Rifle
+Plasma Cannon
 Plasma Pistol
 Plasma Rifle
 particle beam phalanx
 pulse rifle
 phase-plasma pulse rifle
+Quantum Gun
+Radiation Gun
 Refrigerator later. Shoots a ball of something at someone, then collects the energy/heat 
     around that and shoots off laser away from it
 Thunderbolter

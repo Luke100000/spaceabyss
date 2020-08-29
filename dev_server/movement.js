@@ -179,7 +179,11 @@ const world = require('./world.js');
      * @param {Object} socket
      * @param {Object} dirty
      * @param {Object} data
+     * @param {String} data.movement_direction
+     * @param {String=} data.destination_coord_type
+     * @param {number=} data.destination_coord_id
      * @param {String=} data.source
+
      */
     async function move(socket, dirty, data) {
 
@@ -343,16 +347,19 @@ const world = require('./world.js');
             }
 
 
-            // We only send in movement direction when we didn't find a coord to move to. This basically only applies
-            // If the player is on a planet, and they are potentially falling
-            if(data.movement_direction) {
+            // Right now, the only case where we don't have a destination_coord_id is when there was no coord found next to a +1 or above
+            // planet coord and the player may be falling.
+            if(data.movement_direction && typeof data.destination_coord_id === 'undefined') {
                 await movePlanetFall(socket, dirty, {'player_index': player_index, 'movement_direction': data.movement_direction });
+            } else if(dirty.players[player_index].virtual_coord_id) {
+                await moveVirtual(socket, dirty, data.destination_coord_id, data.movement_direction);
             } else if (dirty.players[player_index].planet_coord_id) {
-                await movePlanet(socket, dirty, data.destination_coord_id);
+                await movePlanet(socket, dirty, data.destination_coord_id, data.movement_direction);
             } else if (dirty.players[player_index].ship_coord_id) {
-                await moveShip(socket, dirty, data.destination_coord_id);
+                await moveShip(socket, dirty, data.destination_coord_id, data.movement_direction);
             } else {
 
+                // TODO need to use data.movement direction to get neighbor coord if possible
                 let new_coord_index = await main.getCoordIndex({ 'coord_id': data.destination_coord_id });
 
                 await moveGalaxy(socket, dirty, new_coord_index);
@@ -1081,7 +1088,7 @@ const world = require('./world.js');
     exports.moveGalaxyNpc = moveGalaxyNpc;
 
 
-    async function movePlanet(socket, dirty, destination_coord_id) {
+    async function movePlanet(socket, dirty, destination_coord_id, movement_direction) {
 
         try {
 
@@ -1100,13 +1107,43 @@ const world = require('./world.js');
             }
 
 
-            let planet_coord_index = await main.getPlanetCoordIndex({ 'planet_coord_id': destination_coord_id });
+            let planet_coord_index = -1;
+
+            //console.time("neighbor");
+            if(movement_direction === 'left') {
+                await map.getCoordNeighbor(dirty, 'planet', previous_planet_coord_index, 'left');
+                planet_coord_index = dirty.planet_coords[previous_planet_coord_index].left_coord_index;
+            } else if(movement_direction === 'right') {
+                await map.getCoordNeighbor(dirty, 'planet', previous_planet_coord_index, 'right');
+                planet_coord_index = dirty.planet_coords[previous_planet_coord_index].right_coord_index;
+            } else if(movement_direction === 'up') {
+                await map.getCoordNeighbor(dirty, 'planet', previous_planet_coord_index, 'up');
+                planet_coord_index = dirty.planet_coords[previous_planet_coord_index].up_coord_index;
+            } else if(movement_direction === 'down') {
+                await map.getCoordNeighbor(dirty, 'planet', previous_planet_coord_index, 'down');
+                planet_coord_index = dirty.planet_coords[previous_planet_coord_index].down_coord_index;
+            } 
+            //console.timeEnd("neighbor");
+
+            if(planet_coord_index === -1 && destination_coord_id) {
+                log(chalk.red("Neighbor returned nothing, but movement had a destination sent in!"));
+                planet_coord_index = await main.getPlanetCoordIndex({ 'planet_coord_id': destination_coord_id });
+            }
+
 
             if(planet_coord_index === -1) {
                 log(chalk.yellow("Could not find the planet coord player is trying to move to"));
                 return false;
             }
 
+            // Check for a mismatch (temp debugging) {
+            if(dirty.planet_coords[planet_coord_index].id !== destination_coord_id) {
+                log(chalk.red("Neighbor coord and destination coord are not the same!!!"));
+                return false;
+            }
+            
+
+            // TODO this allows for diagonal movement hacking. Check for total change. x total change, y total change. Total can't be more than 1
             // Make sure the coords are close enough
             if( Math.abs(dirty.planet_coords[previous_planet_coord_index].tile_x - dirty.planet_coords[planet_coord_index].tile_x) > 1 ||
                 Math.abs(dirty.planet_coords[previous_planet_coord_index].tile_y - dirty.planet_coords[planet_coord_index].tile_y) > 1) {
@@ -1297,6 +1334,7 @@ const world = require('./world.js');
             // Basic Move
             else {
                 //console.log("In basic move");
+                //console.time("otherCoords");
 
                 let passed_rules = true;
 
@@ -1355,6 +1393,55 @@ const world = require('./world.js');
 
 
                 let planet_index = await planet.getIndex(dirty, { 'planet_id': dirty.planet_coords[planet_coord_index].planet_id });
+
+
+                await main.updateCoordGeneric(socket, {'planet_coord_index': previous_planet_coord_index, 'player_id': false });
+                await main.updateCoordGeneric(socket, {'planet_coord_index': planet_coord_index, 'player_id': dirty.players[socket.player_index].id });
+
+                // send the updated player info
+                dirty.players[socket.player_index].planet_coord_id = dirty.planet_coords[planet_coord_index].id;
+                dirty.players[socket.player_index].has_change = true;
+                await player.sendInfo(socket, "planet_" + dirty.planet_coords[planet_coord_index].planet_id, dirty, dirty.players[socket.player_index].id);
+
+
+                // player moved onto a spaceport tile - remove any battle linkers with them. SAFE.
+                if(dirty.planet_coords[planet_coord_index].floor_type_id === 11 || dirty.planet_coords[planet_coord_index].floor_type_id === 44) {
+                    //console.log("Player moved onto spaceport. Removing battle linkers");
+                    await world.removeBattleLinkers(dirty, { 'player_id': socket.player_id });
+                } else {
+
+                    // we need to see if this planet has an AI on it, and if so - if the player violated those rules with
+                    // the move
+                    let planet_index = await planet.getIndex(dirty, {'planet_id':dirty.planet_coords[planet_coord_index].planet_id, 'source': 'movement.movePlanet' });
+                    if(planet_index !== -1 && dirty.planets[planet_index].player_id) {
+
+                        // see if that player has built an AI
+                        let ai_index = dirty.objects.findIndex(function(obj) {
+                            return obj && obj.player_id === dirty.planets[planet_index].player_id && obj.object_type_id === 72; });
+                        if(ai_index !== -1) {
+                            //console.log("There is an AI on this planet. AI id: " + dirty.objects[ai_index].id);
+
+
+                            dirty.rules.forEach(function(rule) {
+                                if(rule.object_id === dirty.objects[ai_index].id) {
+                                    //console.log("Checking rule: " + rule.rule);
+
+                                    if(rule.rule === 'attack_all_players') {
+                                        console.log("Player moved on a planet with attack_all_players as a rule");
+                                        let ai_attack_data = {
+                                            'ai_id': dirty.objects[ai_index].id, 'attacking_type': 'player',
+                                            'attacking_id': socket.player_id };
+                                        world.aiAttack(dirty, ai_attack_data);
+                                    }
+                                }
+                            });
+
+                        }
+
+                    }
+
+
+                }
 
 
                 for(let i = starting_x; i <= ending_x; i++) {
@@ -1431,54 +1518,7 @@ const world = require('./world.js');
                     }
                 }
 
-
-                await main.updateCoordGeneric(socket, {'planet_coord_index': previous_planet_coord_index, 'player_id': false });
-                await main.updateCoordGeneric(socket, {'planet_coord_index': planet_coord_index, 'player_id': dirty.players[socket.player_index].id });
-
-                // send the updated player info
-                dirty.players[socket.player_index].planet_coord_id = dirty.planet_coords[planet_coord_index].id;
-                dirty.players[socket.player_index].has_change = true;
-                await player.sendInfo(socket, "planet_" + dirty.planet_coords[planet_coord_index].planet_id, dirty, dirty.players[socket.player_index].id);
-
-
-                // player moved onto a spaceport tile - remove any battle linkers with them. SAFE.
-                if(dirty.planet_coords[planet_coord_index].floor_type_id === 11 || dirty.planet_coords[planet_coord_index].floor_type_id === 44) {
-                    //console.log("Player moved onto spaceport. Removing battle linkers");
-                    await world.removeBattleLinkers(dirty, { 'player_id': socket.player_id });
-                } else {
-
-                    // we need to see if this planet has an AI on it, and if so - if the player violated those rules with
-                    // the move
-                    let planet_index = await planet.getIndex(dirty, {'planet_id':dirty.planet_coords[planet_coord_index].planet_id, 'source': 'movement.movePlanet' });
-                    if(planet_index !== -1 && dirty.planets[planet_index].player_id) {
-
-                        // see if that player has built an AI
-                        let ai_index = dirty.objects.findIndex(function(obj) {
-                            return obj && obj.player_id === dirty.planets[planet_index].player_id && obj.object_type_id === 72; });
-                        if(ai_index !== -1) {
-                            //console.log("There is an AI on this planet. AI id: " + dirty.objects[ai_index].id);
-
-
-                            dirty.rules.forEach(function(rule) {
-                                if(rule.object_id === dirty.objects[ai_index].id) {
-                                    //console.log("Checking rule: " + rule.rule);
-
-                                    if(rule.rule === 'attack_all_players') {
-                                        console.log("Player moved on a planet with attack_all_players as a rule");
-                                        let ai_attack_data = {
-                                            'ai_id': dirty.objects[ai_index].id, 'attacking_type': 'player',
-                                            'attacking_id': socket.player_id };
-                                        world.aiAttack(dirty, ai_attack_data);
-                                    }
-                                }
-                            });
-
-                        }
-
-                    }
-
-
-                }
+                //console.timeEnd("otherCoords");
 
                 await player.calculateMovementModifier(socket, dirty, 'planet', planet_coord_index);
 
@@ -1910,7 +1950,7 @@ const world = require('./world.js');
 
     exports.movePlanetNpc = movePlanetNpc;
 
-    async function moveShip(socket, dirty, destination_coord_id) {
+    async function moveShip(socket, dirty, destination_coord_id, movement_direction) {
 
         try {
 
@@ -2699,6 +2739,18 @@ const world = require('./world.js');
 
         } catch(error) {
             log(chalk.red("Error in movement.moveThroughPortal: " + error));
+            console.error(error);
+        }
+    }
+
+
+    async function moveVirtual(socket, dirty, destination_coord_id, movement_direction) {
+        try {
+
+            socket.emit('result_info', { 'status': 'failure', 'text': "You are too weak to move in the virtual realm" });
+        } catch(error) {
+            log(chalk.red("Error in movement.moveVirtual: " + error));
+            console.error(error);
         }
     }
 
@@ -3464,6 +3516,60 @@ const world = require('./world.js');
     }
 
     exports.switchToShip = switchToShip;
+
+
+    async function switchToVirtual(socket, dirty) {
+        try {
+
+            if(typeof socket.player_index === "undefined") {
+                log(chalk.yellow("Socket doesn't have player index yet"));
+                return false;
+            }
+
+            // If we don't have an virtual coords yet, lets make a grid of them!
+            if(dirty.virtual_coords.length === 0) {
+                console.log("No virtual coords yet. Making some");
+                for(let x = 0; x < 10; x++) {
+                    for(let y = 0; y < 10; y++) {
+
+                        dirty.virtual_coords.push({ 'tile_x': x, 'tile_y': y, 'floor_type_id': 73 });
+
+                    }
+                }
+            }
+
+            console.log("Going to place on a virtual coord");
+            let placing_coord_index = -1;
+            // Place on a random virtual coord
+            for(let i = 0; i < dirty.virtual_coords.length && placing_coord_index === -1; i++) {
+                if(dirty.virtual_coords[i] && !dirty.virtual_coords[i].player_id && !dirty.virtual_coords[i].monster_id) {
+                    placing_coord_index = i;
+                }
+            }
+
+            if(placing_coord_index === -1) {
+                log(chalk.yellow("Failed to place player"));
+                return false;
+            }
+
+            dirty.players[socket.player_index].virtual_coord_id = dirty.virtual_coords[placing_coord_index].id;
+            dirty.players[socket.player_index].virtual_coord_index = placing_coord_index;
+
+            socket.join("virtual");
+
+            await player.sendInfo(socket, "virtual", dirty, dirty.players[socket.player_index].id);
+
+            socket.emit('view_change_data', { 'view': 'virtual'});
+            await map.updateMap(socket, dirty);
+            
+
+        } catch(error) {
+            log(chalk.red("Error in movement.switchToVirtual: " + error));
+            console.error(error);
+        }
+    }
+
+    exports.switchToVirtual = switchToVirtual;
 
 
     async function warpShipToAzurePlanet(socket, dirty, ship_id) {

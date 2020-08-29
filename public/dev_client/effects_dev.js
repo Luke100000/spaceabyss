@@ -136,7 +136,13 @@ function addEffect(data) {
             new_texture_animation_key = 'electric-effect-animation';
             data.x += 32;
             data.y += 32;
-        } else if(data.damage_types[i] === 'hacking') {
+        } else if(data.damage_types[i] === 'gravity') {
+            new_texture_key = 'gravity-effect';
+            new_texture_animation_key = 'gravity-effect-animation';
+            data.x += 32;
+            data.y += 32;
+        }
+        else if(data.damage_types[i] === 'hacking') {
             new_texture_key = 'hacking-effect';
             new_texture_animation_key = 'hacking-effect-animation';
             data.x += 32;

@@ -61,7 +61,7 @@ Eventually want to make water something more than... nothing. Tail instead of le
 
 More work on factions
 
-
+track time in game?
 
 
 Group some npcs into houses. The idea of powerful houses, being from a powerful house. Offers some protection. Could even have different npc houses
@@ -1781,6 +1781,108 @@ Could have really high levels of addiction affect the player instead of just the
 Super polluted planet. Needs drugs to stay healthy. Snow.
 
 Researching system is pretty basic. Wouldn't be a bad idea to expand on it.
+
+could have a player body type with a really long movement delay, but they warp
+
+Menelaus Illation Montrose
+Agamemmon
+Azarchel
+Sark
+
+File bug
+Bioterror bug
+
+Cyrano
+CPur
+Nubelle
+Ximen
+Totipotent cells
+Melchor
+
+Prometheus formula
+Pulsar that emits tons of radiation on and in the space around it.
+Raining molten glass
+
+Judgement Engine
+
+Xypotech
+Ratiotech
+Sapentech
+
+Engineering plants to draw up the trace minerals you need
+
+Could have a plant that when planted can draw up AI dust on desert, exodium on slaver, etc. ( would probably have to be different plants )
+
+Machine plant that grows microscopic superconductive circuits
+
+Algae vats that are at 110% hp or higher could have a chance of making radiation algae - and that thrives in space. Eats radiation.
+
+Could have npc job happiness be incredibly simple. No interaction at all - ever - is bad. Separate var for that.
+
+I really do want Space Abyss to build a story with/without players
+
+Liquid-crystals - could be a river type on the mountain world
+
+Recycling bodies and other matter (neat idea but lots of overlap with salvaging)
+
+Gavatra
+
+Spray on suit
+
+Could have stuff like that for temporary buffs against certain damage. Frost spray gives resistance to heat damage for a bit.
+
+We have stuff like an algae vat that needs to be sustained. The same idea but for a monster/planet
+
+Could have a planet that decays by default and players need to feed it to keep it healthy
+
+Salvageable machine wrecks on machine worlds. Can be picked up
+    I'd want to buy them
+
+Octhulhu
+Avispine
+Spoonwormer
+Nemollis
+Megaloain
+Seldurum
+Darumoss
+Burnn
+
+Effect idea: .hack//Sign episode 19, 18 mins in. Yellow beams converging at a sphere
+
+When a world leech spawns, have it as a noted event. Have world leeches suck the life out of planets
+
+An event that spawns replicator like MLM on a planet. Have to figure out how strong to make them. The event, the replicators could have a goal. If they 
+    achieve the goal, then spawn the next time at the same difficulty or lower. Planet hp is impacted or something. If they are killed off/don't reach their goal,
+    spawn stronger next time.
+
+Players in the virtual world could start as little squares and slowly be more like a full human body as hacking skill levels up
+
+Different types of virtual terminals could have different effects. Added attack, defense ,etc.
+
+The idea of the Biogrove planet being a farming planet for players. Too much and gets unhealthy.
+
+Seldon
+Gaal
+Salvor
+Anslem
+
+Patrol ship
+Escot ship
+
+XXXXX Heavy Industries
+
+Tomaz
+Jord
+Lundin
+Yate
+
+Down came the glitches and burned us in ditches. Glitches could be slang for MLM
+
+Imperial police flyer
+
+Plant that bleeds nickel. Could do similar for exodium.
+
+
 
 
 ***************** END UNSORTED IDEAS ************************************************************************

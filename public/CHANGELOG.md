@@ -1,4 +1,35 @@
-## [0.1.28] - 2020-08-19
+## [0.2.0] - 2020-08-29
+
+
+### Added 
+- Energy Blade
+- Consumables for Slerm player body types
+- Players now have the ability to move up stairs they are currently on. Right Click -> Move Up Stairs
+
+### Changed
+- Warmind spawning removed from level -7 of machine worlds
+- Reduced Glitched God damage
+- All current monsters on the Water Plant are now weak to Electric attacks.
+- Voon Matriarch spawning changed from Rare to Epic
+- Message when you can't increase HP of a spawner further (e.g. an Algae Vat) from a failure message to a success message, just letting you know that more 
+is pointless.
+- Recoded how monster drops happen to use the new coord_index system
+- If an object type can be walked on, it will now drop undeath a player/npc/monster
+- Drops of a Warmind. Warminds can now drop AI Fragments. This gives players multiple paths to get AI Fragments. Manufacturing from AI Dust, or monster battling. 
+Removed Battery drop of Warminds. Changed Power Cell drop for Warminds from Rare to Common, and increased amount from 2 to 4
+- Increased Portal complexity from 20 to 26
+- Monsters that move adjacent now use the new coord neighbor index system
+- Basic planet movement now uses neighbor indexes. We also send the player's updated information before sending the additional off screen coords
+- DDrone hacking defense modifier changed from -4 to -3
+- Warmind hacking defense modifier changed from 0 to -3
+
+### Fixed
+- Bug with trying to add an adjacent index back if the adjacent coord was not found
+- Bug with pathfinding going out of bounds of the grid when we fail to find a path, and then try to find paths around it
+- Mutliple other bugs with pathfinding, as well as efficiency changes
+
+
+## [0.1.28] - 2020-08-20
 
 
 ### Added

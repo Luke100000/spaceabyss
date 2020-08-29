@@ -218,7 +218,8 @@ async function canPlace(dirty, scope, coord, data) {
             }
 
 
-            if(checking_coord.npc_id || checking_coord.player_id || checking_coord.monster_id) {
+            // Only block the object type if there's a monster/player/npc if it's not something we can walk on
+            if(!dirty.object_types[object_type_index].can_walk_on && (checking_coord.npc_id || checking_coord.player_id || checking_coord.monster_id) ) {
                 if(dirty.object_types[object_type_index].id === debug_object_type_id || data.show_output) {
                     log(chalk.yellow("npc, player, or monster already on that coord"));
                 }

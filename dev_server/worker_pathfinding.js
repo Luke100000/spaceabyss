@@ -162,7 +162,7 @@ parentPort.once('message', (data) => {
 
     let path = [];
 
-    while(!found_path && path_attempts < 10) {
+    while(!found_path && path_attempts < 4) {
 
 
         let changed_destination = true;
@@ -215,17 +215,31 @@ parentPort.once('message', (data) => {
         path_attempts++;
 
         if(changed_destination) {
-            path = finder.findPath(grid_origin_x, grid_origin_y,
-                grid_destination_x, grid_destination_y, grid);
-    
-            //console.log(path);
-    
-            if(path.length > 0) {
-                found_path = true;
+            //console.log("Changed destination");
+
+            // We're onto a destination outside of our bounds
+            if(grid_destination_x < 0 || grid_destination_y > 6 || grid_destination_y < 0 || grid_destination_y > 6) {
+                break;
             }
-    
-    
-            grid = grid_backup.clone();
+            else {
+                path = finder.findPath(grid_origin_x, grid_origin_y,
+                    grid_destination_x, grid_destination_y, grid);
+        
+                //console.log(path);
+        
+                if(path.length > 0) {
+                    found_path = true;
+                }
+        
+        
+                grid = grid_backup.clone();
+
+            }
+
+
+
+
+        
         }
      
     }

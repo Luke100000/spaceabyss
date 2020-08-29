@@ -1100,7 +1100,8 @@ const world = require('./world.js');
             }
 
             if(monster_attack === false) {
-                console.log("monster did not have an attack");
+                //console.log("monster did not have an attack");
+                //console.log(dirty.monsters[monster_index].path);
                 return false;
             }
 

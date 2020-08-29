@@ -212,6 +212,7 @@ dirty.ship_coords = [];
 dirty.ship_linkers = [];
 dirty.structures = [];
 dirty.trap_linkers = [];
+dirty.virtual_coords = [];
 dirty.waiting_drops = [];
 
 
@@ -861,6 +862,8 @@ inits.init(function(callback) {
 
 // Load up planet coords that spawn monsters
 inits.init(1, function(callback) {
+  
+
     pool.query("SELECT * FROM planet_coords WHERE spawns_monster_type_id != false", function(err, rows, fields) {
         if(err) throw err;
 
@@ -873,10 +876,13 @@ inits.init(1, function(callback) {
 
         callback(null);
     });
+   
 });
 
 // Load up planet coords that are > level 0
-inits.init(2, function(callback) {
+inits.init(function(callback) {
+
+
     pool.query("SELECT * FROM planet_coords WHERE level > 0", function(err, rows, fields) {
         if(err) throw err;
 
@@ -890,6 +896,8 @@ inits.init(2, function(callback) {
 
         callback(null);
     });
+   
+    
 });
 
 inits.init(function(callback) {
@@ -1885,6 +1893,11 @@ io.sockets.on('connection', function (socket) {
                 //movement.switchToPlanet(socket, dirty);
                 log(chalk.yellow("In planet section of view_change_data but we don't do anything else here"));
                 await world.setPlayerMoveDelay(socket, dirty, player_index);
+            } else if(data.new_view === 'virtual') {
+                console.log("Player is trying to enter the virtual view!");
+                await movement.switchToVirtual(socket, dirty);
+                await map.updateMap(socket, dirty);
+
             }
 
             /*
@@ -1917,6 +1930,7 @@ io.sockets.on('connection', function (socket) {
             */
         } catch(error) {
             log(chalk.red("Error in view_change_data: " + error));
+            console.error(error);
         }
 
 

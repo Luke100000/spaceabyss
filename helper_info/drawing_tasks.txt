@@ -36,7 +36,8 @@ Size: 36x36 max
 ** GENERAL DRAWING IDEAS **
 ***************************
 
-
+Tree Spaceship
+Water Spaceship
 
 Trees
 
@@ -77,11 +78,10 @@ player body that is resistant to acid
     https://images.gemquery.com/256/content_2563273.jpg
 
 energy blade
-    mix of https://vignette.wikia.nocookie.net/dragonball/images/7/72/Salza1.jpg/revision/latest/scale-to-width-down/350?cb=20180526030043 and
-     https://images-na.ssl-images-amazon.com/images/I/41JeLa-AmuL._AC_.jpg
 
 
 
+draw temp frost spider, glaze, and icer pistol
 
 
     Some slerm. Baby slerm, generic slerm

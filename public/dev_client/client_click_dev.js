@@ -886,6 +886,12 @@ $(document).on('click', 'button', function () {
 
     }
 
+    if(split_name[0] === "moveupstairs") {
+        socket.emit('move_data', { 'destination_coord_type': client_player_info.scope, 'destination_coord_id': client_player_info.coord.id, 'movement_direction': 'none' });
+        $('#click_menu').empty();
+        $('#click_menu').hide();
+    }
+
 
     if(split_name[0] === "pickup") {
 
@@ -1295,7 +1301,6 @@ $(document).on('click', 'button', function () {
 
         socket.emit('view_change_data', { 'new_view': new_view });
     }
-
 
 
 

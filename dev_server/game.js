@@ -1570,7 +1570,7 @@ const world = require('./world.js');
                         let text = "You aren't skilled enough to increase HP further";
                         if(socket) {
                             socket.emit('chat', { 'scope': 'system', 'message': text, 'is_important': true });
-                            socket.emit('result_info', { 'status': 'failure', 'text': "Not skilled enough to increase HP further", 
+                            socket.emit('result_info', { 'status': 'success', 'text': "As Healthy As Your Skills Can Make It!", 
                             'object_id': dirty.objects[converter_object_index].id});
                         }
                         
@@ -5090,19 +5090,21 @@ exports.eat = eat;
             else if(data.message.includes("/spawnmonster ")) {
 
                 let split = data.message.split(" ");
-                let monster_type_name = helper.cleanStringInput(split[1]);
-                console.log("Admin message to spawn monster type: " + monster_type_name);
 
-                let monster_type_index = -1;
-
-                for(let i = 0; i < dirty.monster_types.length; i++) {
-                    if(dirty.monster_types[i] && dirty.monster_types[i].name === monster_type_name) {
-                        monster_type_index = i;
-                    }
+                let monster_type_name = "";
+                for(let i = 1; i < split.length; i++) {
+                    monster_type_name +=  " " + split[i];
                 }
+
+                monster_type_name = monster_type_name.trim();
+
+
+                let monster_type_index = dirty.monster_types.findIndex(function(obj) {
+                    return obj && obj.name.toUpperCase() === monster_type_name.toUpperCase() });
 
                 if(monster_type_index === -1) {
                     log(chalk.yellow("Could not find monster type with name: " + monster_type_name));
+                    return false;
                 }
 
                 

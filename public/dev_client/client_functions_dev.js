@@ -6353,12 +6353,28 @@ function movePlayerFlow(player_index, destination_coord_type, destination_coord,
     players[player_index].move_pixel_amount = 0;
     players[player_index].frames_to_idle = 0;
 
+    players[player_index].destination_x = destination_coord.tile_x * tile_size + tile_size / 2 + players[player_index].sprite_x_offset;
+    players[player_index].destination_y = destination_coord.tile_y * tile_size + tile_size / 2 + players[player_index].sprite_y_offset;
+    players[player_index].destination_coord_id = destination_coord.id;
+
+
     // Some extra things if we are moving our client player
     if (client_player_index !== -1 && player_index === client_player_index && source !== 'updatePlayerClient > galaxy') {
 
         //console.log("Sending move data: coord_id: " + destination_coord.id);
 
-        socket.emit('move_data', { 'destination_coord_type': destination_coord_type, 'destination_coord_id': destination_coord.id });
+        let movement_direction = 'unknown';
+        if(players[player_index].destination_x < players[player_index].sprite.x) {
+            movement_direction = 'left';
+        } else if(players[player_index].destination_x > players[player_index].sprite.x) {
+            movement_direction = 'right';
+        } else if(players[player_index].destination_y < players[player_index].sprite.y) {
+            movement_direction = 'up';
+        } else if(players[player_index].destination_y > players[player_index].sprite.y) {
+            movement_direction = 'down';
+        }
+
+        socket.emit('move_data', { 'destination_coord_type': destination_coord_type, 'destination_coord_id': destination_coord.id, 'movement_direction': movement_direction });
         last_move_sent = our_time;
         //console.log("Sent move data from movePlayerFlow source: " + source);
 
@@ -6395,9 +6411,6 @@ function movePlayerFlow(player_index, destination_coord_type, destination_coord,
 
 
 
-    players[player_index].destination_x = destination_coord.tile_x * tile_size + tile_size / 2 + players[player_index].sprite_x_offset;
-    players[player_index].destination_y = destination_coord.tile_y * tile_size + tile_size / 2 + players[player_index].sprite_y_offset;
-    players[player_index].destination_coord_id = destination_coord.id;
 
 
     //console.log("Set destination x,y to: " + players[player_index].destination_x + "," + players[player_index].destination_y);
@@ -9286,6 +9299,14 @@ function showClickMenuObject(coord) {
         }
     }
 
+
+
+    //  AUTO DOC Show some cool auto doc implanting options
+    if (objects[object_index].object_type_id === 376) {
+        $('#click_menu').append("<button class='button is-info' id='viewchange_virtual' newview='virtual'>Enter Virtual Realm</button>");
+
+    }
+
     // IRON DOOR
     /*
     if(objects[object_index].object_type_id === 185) {
@@ -9467,6 +9488,13 @@ function showClickMenuObjectType(coord) {
                     coord.id + "' class='button is-danger is-small'>Destroy " + object_types[object_type_index].name + "</button>");
             }
 
+        }
+
+        // If the object type is a stairs, and the player is standing on the coord, let them move onto it to move up
+        if(object_types[object_type_index].is_stairs && coord.id === client_player_info.coord.id) {
+            console.log("Player right clicked on stairs that they are on");
+            $('#click_menu').append("<button id='moveupstairs' class='button is-default'>Move Up Stairs</button>");
+            
         }
     }
 

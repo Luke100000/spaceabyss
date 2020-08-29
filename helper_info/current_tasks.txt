@@ -1,19 +1,33 @@
+CURRENT GAMEPLAY TEST:
+    Phatheon creating an AI on the Desert Planet, and then creating a new character to just attack it until it dies
+
+
 DOING NOW:
 
+    Don't increase attack skill when attacking an object type with no attack
 
-    players have a hard time with tasks. What do I do? I don't want to create a quest system around this - but I would like to offer helpful ideas:
-
-        1. Build and Algae Vat and get Blue Algae from it (But it spawns Algae... not blue Algae? )
-        2. Build an Octopus Body
-        3. Fully Research Algae and 
-
-    
-
-    should do the same thing with a moveobjectto type of command for that dead body issue
-        along these lines, maybe have an admin page for 'lost' objects, monsters, etc
+    Hacking view
+        First thing is a virtual terminal to step into
+            Once a player steps into it, 'enter hacking view button' or something
+            Continue iterating on this. First step is switching into the view, and back out of the view
+                Next is movement
 
 
-    Ocotopus body needs consumables
+    I keep coming back to The Great Nomad growing things. 
+
+
+    Work on sending out a newsletter with a google form questionaire. See what people like/dislike so far
+
+
+    Switch to body could have the option to not transfer your inventory over to the new body. Wouldn't be bad to have 
+        that option. Players could fully setup bodies ahead of time.
+
+
+
+
+
+    See if HP numbers when changing bodies is wacky. It feels wacky.
+
 
     see if I can get someone to make a trailer on fivr
 
@@ -27,10 +41,27 @@ DOING NOW:
             When a market linker ends, if the area has auto_market , just extend it again instead of deleting it.
 
 
-    Can make slagcells weak to ice
+
+    In Space Abyss You Can....
+        BECOME AN OCTOPUS
+        SURGICALLY IMPLANT A KNIFE IN YOUR HEAD
+        etc
+
+    players have a hard time with tasks. What do I do? I don't want to create a quest system around this - but I would like to offer helpful ideas:
+
+        1. Build and Algae Vat and get Blue Algae from it (But it spawns Algae... not blue Algae? )
+        2. Become an Octopus!!
+        3. Fully Research Algae and ...
+        4. Build a Shuttle
+        5. Have a body with two Mimetic Arms
 
 
-    draw temp frost spider, glaze, and icer pistol
+        Implementation Idea #1:
+            achievments table (player_id, object_type_id, monster_type_id)
+            achievement_linkers table (player_id, achievement id)
+
+        Implementation Idea #2:
+            Just have a text list of things on the website. 
 
 
 

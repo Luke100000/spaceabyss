@@ -1,0 +1,56 @@
+BOARD/CARD GAMES
+Android netrunner - card list
+board game tiny epic mechs
+
+VIDEO GAMES
+Azure Dreams - Gameplay mechanics, dungeon, city building, monster capturing
+Cookie Clicker
+Creatures
+Eve Online
+Gravity Well - Owning planets
+Rimworld
+Space Domination/Star Dart
+Starbound
+    https://starbounder.org/Food
+Stardew Valley
+Starsiege
+Subspace Continuum
+
+
+
+OTHER INDIE MMOS - Notes on what they do well - What websites they are mentioned on
+
+    Laurum Online 
+        https://laurum.online/
+        mobile mmorpg
+        Showcases classes - we should showcase how our 'class'/'classless' system works
+    Mystera Legacy
+        https://www.mysteralegacy.com/
+        Link to Tutorial, Leaderboards, and Changelog in header
+    margonem ( mmorpg )
+        leaderboards/rankings
+    rpg mo ( mmorpg )
+    mirage realms ( mmorpg )
+
+    realm of the mad god
+
+
+Other game ideas I want to make:
+A new version of Space Domination
+Possibly something like gravity well
+A Kingdom-like ACP Game
+7th Continent-esque exploration ACP Game
+
+Sites:
+Artstation
+http://www.projectrho.com/public_html/rocket/
+
+
+MMORPG News Sources:
+    https://www.mmorpg.com ( can submit game to be in their index )
+    https://mmomonkey.com/
+    https://massivelyop.com/
+
+
+GAMES TO TRY:
+    http://starcolony.com/
