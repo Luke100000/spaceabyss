@@ -5856,19 +5856,19 @@ function checkForClientMove(time, tile_x = false, tile_y = false) {
     // AND START THE MOVE!
     if (players[client_player_index].ship_coord_id) {
         if(debug_moving) {
-            console.log("Calling movePlayerFlow - ship");
+            console.log("Calling initiateMovePlayerFlow - ship");
         }
-        movePlayerFlow(client_player_index, 'ship', ship_coords[checking_coord_index], 'movePlayer');
+        initiateMovePlayerFlow(client_player_index, 'ship', ship_coords[checking_coord_index], 'movePlayer');
     } else if (players[client_player_index].planet_coord_id) {
         if(debug_moving) {
-            console.log("Calling movePlayerFlow - planet");
+            console.log("Calling initiateMovePlayerFlow - planet");
         }
-        movePlayerFlow(client_player_index, 'planet', planet_coords[checking_coord_index], 'movePlayer');
+        initiateMovePlayerFlow(client_player_index, 'planet', planet_coords[checking_coord_index], 'movePlayer');
     } else if (players[client_player_index].coord_id) {
         if(debug_moving) {
-            console.log("Calling movePlayerFlow - galaxy");
+            console.log("Calling initiateMovePlayerFlow - galaxy");
         }
-        movePlayerFlow(client_player_index, 'galaxy', coords[checking_coord_index], 'movePlayer');
+        initiateMovePlayerFlow(client_player_index, 'galaxy', coords[checking_coord_index], 'movePlayer');
     }
 
 
@@ -5908,6 +5908,7 @@ monster_sprites.push({ 'key': 'algae-king', 'monster_type_id': 113, 'planet_type
 monster_sprites.push({ 'key': 'bionic-crab', 'monster_type_id': 105, 'planet_type_id': 34, 'frame_width': 64, 'frame_height': 64, 'frame_count': 9, 'frame_rate': 8 });
 monster_sprites.push({ 'key': 'blossomtis', 'monster_type_id': 116, 'planet_type_id': 29, 'frame_width': 64, 'frame_height': 64, 'frame_count': 4, 'frame_rate': 8 });
 monster_sprites.push({ 'key': 'burger-drone', 'monster_type_id': 118, 'planet_type_id': 30, 'frame_width': 64, 'frame_height': 64, 'frame_count': 23, 'frame_rate': 8 });
+monster_sprites.push({ 'key': 'buster', 'monster_type_id': 124, 'planet_type_id': 7, 'frame_width': 64, 'frame_height': 64, 'frame_count': 11, 'frame_rate': 8 });
 monster_sprites.push({ 'key': 'cherree', 'monster_type_id': 117, 'planet_type_id': 29, 'frame_width': 64, 'frame_height': 64, 'frame_count': 3, 'frame_rate': 8 });
 monster_sprites.push({ 'key': 'construction-worker', 'monster_type_id': 112, 'planet_type_id': 30, 'frame_width': 64, 'frame_height': 66, 'frame_count': 7, 'frame_rate': 8 });
 monster_sprites.push({ 'key': 'frost-spider', 'monster_type_id': 114, 'planet_type_id': 11, 'frame_width': 64, 'frame_height': 64, 'frame_count': 3, 'frame_rate': 8 });
@@ -5915,12 +5916,12 @@ monster_sprites.push({ 'key': 'gang-smasher', 'monster_type_id': 111, 'planet_ty
 monster_sprites.push({ 'key': 'gang-gunner', 'monster_type_id': 110, 'planet_type_id': 30, 'frame_width': 64, 'frame_height': 66, 'frame_count': 9, 'frame_rate': 8 });
 monster_sprites.push({ 'key': 'gang-boss', 'monster_type_id': 109, 'planet_type_id': 30, 'frame_width': 64, 'frame_height': 82, 'frame_count': 7, 'frame_rate': 8 });
 monster_sprites.push({ 'key': 'jellyfish', 'monster_type_id': 108, 'planet_type_id': 34, 'frame_width': 64, 'frame_height': 64, 'frame_count': 8, 'frame_rate': 8 });
+monster_sprites.push({ 'key': 'observer', 'monster_type_id': 121, 'ship_type_id': 351, 'frame_width': 64, 'frame_height': 64, 'frame_count': 5, 'frame_rate': 8 });
 monster_sprites.push({ 'key': 'sea-urchin', 'monster_type_id': 106, 'planet_type_id': 34, 'frame_width': 64, 'frame_height': 64, 'frame_count': 12, 'frame_rate': 8 });
 monster_sprites.push({ 'key': 'take-out-drone', 'monster_type_id': 119, 'planet_type_id': 30, 'frame_width': 64, 'frame_height': 64, 'frame_count': 24, 'frame_rate': 8 });
 monster_sprites.push({ 'key': 'trae', 'planet_type_id': 29, 'frame_width': 104, 'frame_height': 104, 'frame_count': 10, 'frame_rate': 6 });
 monster_sprites.push({ 'key': 'trae-seedling', 'planet_type_id': 29, 'frame_width': 72, 'frame_height': 72, 'frame_count': 6, 'frame_rate': 8 });
 monster_sprites.push({ 'key': 'trae-sproutling', 'planet_type_id': 29, 'frame_width': 64, 'frame_height': 64, 'frame_count': 5, 'frame_rate': 8 });
-
 monster_sprites.push({ 'key': 'widden', 'monster_type_id': 42, 'ship_type_id': 352, 'frame_width': 64, 'frame_height': 64, 'frame_count': 3, 'frame_rate': 4 });
 
 // Not sure how to do it more efficiently than just calculate the new and old level for... every skill!
@@ -6328,16 +6329,16 @@ function moveNpcs() {
 
 
 // This function can move MORE THAN JUST THE CLIENT PLAYER!
-function movePlayerFlow(player_index, destination_coord_type, destination_coord, source = '') {
+function initiateMovePlayerFlow(player_index, destination_coord_type, destination_coord, source = '') {
 
     if (typeof destination_coord === 'undefined') {
         return false;
     }
 
     if (source === false) {
-        //console.log("In movePlayerFlow. No source");
+        //console.log("In initiateMovePlayerFlow. No source");
     } else {
-        //console.log("In movePlayerFlow. Source: " + source);
+        //console.log("In initiateMovePlayerFlow. Source: " + source);
     }
 
     if (!players[player_index].sprite) {
@@ -6376,7 +6377,7 @@ function movePlayerFlow(player_index, destination_coord_type, destination_coord,
 
         socket.emit('move_data', { 'destination_coord_type': destination_coord_type, 'destination_coord_id': destination_coord.id, 'movement_direction': movement_direction });
         last_move_sent = our_time;
-        //console.log("Sent move data from movePlayerFlow source: " + source);
+        //console.log("Sent move data from initiateMovePlayerFlow source: " + source);
 
         // Reset the # of pixels
         client_move_pixel_amount = 0;
@@ -8871,13 +8872,14 @@ function showClickMenuObject(coord) {
                 "' class='button is-warning is-small'>Switch To (Abandons Pod)</button>");
             } else {
 
-                
-                $('#click_menu').append("<button id='dockcommand_" + objects[object_index].id + "' object_id='" + objects[object_index].id +
-                "' class='button is-warning is-small'>Dock At Azure Planet</button><br>");
+        
 
 
                 $('#click_menu').append("<button id='switchship_" + objects[object_index].id + "' object_id='" + objects[object_index].id +
                 "' class='button is-warning is-small'>Switch To</button>");
+
+                $('#click_menu').append("<button id='dockcommand_" + objects[object_index].id + "' object_id='" + objects[object_index].id +
+                "' class='button is-warning is-small'>Dock At Azure Planet</button><br>");
             }
 
             
@@ -10031,7 +10033,7 @@ function updatePlayer(data, player_index) {
                 else if (data.player.planet_coord_id !== players[player_index].planet_coord_id) {
                     players[player_index].planet_coord_id = data.player.planet_coord_id;
                     updated_planet_coord_id = true;
-                    movePlayerFlow(player_index, 'planet', planet_coords[coord_index], 'updatePlayer > planet');
+                    initiateMovePlayerFlow(player_index, 'planet', planet_coords[coord_index], 'updatePlayer > planet');
                 }
 
                 if (parseInt(data.player.skin_object_type_id) !== players[player_index].skin_object_type_id) {
@@ -10101,7 +10103,7 @@ function updatePlayer(data, player_index) {
                 else if (data.player.ship_coord_id !== players[player_index].ship_coord_id) {
                     players[player_index].ship_coord_id = data.player.ship_coord_id;
                     updated_ship_coord_id = true;
-                    movePlayerFlow(player_index, 'ship', ship_coords[coord_index], 'updatePlayer > ship');
+                    initiateMovePlayerFlow(player_index, 'ship', ship_coords[coord_index], 'updatePlayer > ship');
                 }
 
                 // Player switched bodies!
@@ -10201,7 +10203,7 @@ function updatePlayer(data, player_index) {
             else if (data.player.coord_id !== players[player_index].coord_id) {
                 players[player_index].coord_id = data.player.coord_id;
                 updated_coord_id = true;
-                movePlayerFlow(player_index, 'galaxy', coords[coord_index], 'updatePlayer > galaxy');
+                initiateMovePlayerFlow(player_index, 'galaxy', coords[coord_index], 'updatePlayer > galaxy');
             } else {
                 console.log("There was no move");
             }
@@ -10289,7 +10291,7 @@ function updatePlayerClient(data) {
                 } else {
                     updated_client_planet_coord_id = true;
                     players[client_player_index].planet_coord_id = data.player.planet_coord_id;
-                    movePlayerFlow(client_player_index, 'planet', planet_coords[new_planet_coord_index], 'updatePlayerClient > planet');
+                    initiateMovePlayerFlow(client_player_index, 'planet', planet_coords[new_planet_coord_index], 'updatePlayerClient > planet');
                 }
 
 
@@ -10437,7 +10439,7 @@ function updatePlayerClient(data) {
                 //console.log("Moving to ship coord id: " + ship_coords[coord_index].id + " tile x,y: " + ship_coords[coord_index].tile_x + "," + ship_coords[coord_index].tile_y);
                 players[client_player_index].ship_coord_id = data.player.ship_coord_id;
                 updated_client_ship_coord_id = true;
-                movePlayerFlow(client_player_index, 'ship', ship_coords[coord_index], 'updatePlayerClient > ship');
+                initiateMovePlayerFlow(client_player_index, 'ship', ship_coords[coord_index], 'updatePlayerClient > ship');
             }
             // We moved to a different level
             
@@ -10478,7 +10480,7 @@ function updatePlayerClient(data) {
 
         players[client_player_index].coord_id = data.player.coord_id;
         if (coord_index !== -1) {
-            movePlayerFlow(client_player_index, 'galaxy', coords[coord_index], 'updatePlayerClient > galaxy');
+            initiateMovePlayerFlow(client_player_index, 'galaxy', coords[coord_index], 'updatePlayerClient > galaxy');
         }
 
 

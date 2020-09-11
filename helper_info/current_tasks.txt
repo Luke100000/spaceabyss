@@ -4,16 +4,33 @@ CURRENT GAMEPLAY TEST:
 
 DOING NOW:
 
-    Don't increase attack skill when attacking an object type with no attack
 
-    Hacking view
-        First thing is a virtual terminal to step into
-            Once a player steps into it, 'enter hacking view button' or something
-            Continue iterating on this. First step is switching into the view, and back out of the view
-                Next is movement
+
+    Could have a monster looking portal (still an object type) as an event. Basically make a portal, but it looks like a huge monster mouth. Transports you to 'inside the monster' (Could just be a ship in the code )
+    To add this we would need an is_portal attribute on OBJECT TYPES so there are multiple possible portals.
+
+    Would spawn a ship, and we would just not add that ship to any coords. Things like this would probably be at risk of being deleted
+        at some point, so would add another attribute to object types can_be_nowhere. I suppose :p This would also work for the great ship.
+        Stuff like: https://images.gemquery.com/254/content_2549852.jpg for the object type. 2x2 tiles.
+
+    So the actual steps:
+        1. Spawn a ship, don't add it to any coord. The ship should have a portal on it somewhere.
+        2. Spawn another portal somewhere on a planet. Make sure they are linked. Some neat event space now!
 
 
     I keep coming back to The Great Nomad growing things. 
+
+
+    Did a stupid and added the BURSTER as a monster BUSTER. Switch all BUSTER to BURSTER
+
+
+    Hacking view
+    First thing is a virtual terminal to step into
+        Once a player steps into it, 'enter hacking view button' or something
+        Continue iterating on this. First step is switching into the view, and back out of the view
+            Next is movement
+
+    Doesn't look like the water walls are being damaged on the water ship
 
 
     Work on sending out a newsletter with a google form questionaire. See what people like/dislike so far
@@ -21,9 +38,6 @@ DOING NOW:
 
     Switch to body could have the option to not transfer your inventory over to the new body. Wouldn't be bad to have 
         that option. Players could fully setup bodies ahead of time.
-
-
-
 
 
     See if HP numbers when changing bodies is wacky. It feels wacky.

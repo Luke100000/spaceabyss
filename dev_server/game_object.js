@@ -90,9 +90,9 @@ async function calculateDefense(dirty, object_index, damage_types = []) {
 
 
 /**
- *
- * @param scope
- * @param coord
+ * @param {Object} dirty
+ * @param {String} scope
+ * @param {Object} coord
  * @param {Object} data
  * @param {number=} data.object_index
  * @param {number=} data.object_type_id
@@ -102,7 +102,8 @@ async function calculateDefense(dirty, object_index, damage_types = []) {
 async function canPlace(dirty, scope, coord, data) {
     try {
 
-        let debug_object_type_id = 151;
+        let debug_object_type_id = 0;
+
 
         let checking_coords = [];
 
@@ -227,12 +228,23 @@ async function canPlace(dirty, scope, coord, data) {
                 return false;
             }
 
+            // Object Type ID comparisons
             if(!data.object_index) {
 
-                if(checking_coord.object_id || checking_coord.object_type_id || checking_coord.belong_to_object_id) {
+                // Not going to place a generic object_type on an object
+                if(checking_coord.object_id) {
+                    if(dirty.object_types[object_type_index].id === debug_object_type_id || data.show_output) {
+                        log(chalk.yellow("No object index passed in, and coord already has an object_id"))
+                    }
+                    return false;
+                }
+
+                // False if there's a different object type there.
+                if( (checking_coord.object_type_id  && checking_coord.object_type_id !== dirty.object_types[object_type_index].id) || 
+                    (checking_coord.belongs_to_object_id && checking_coord.belongs_to_object_type_id !== dirty.object_types[object_type_index].id)) {
 
                     if(dirty.object_types[object_type_index].id === debug_object_type_id || data.show_output) {
-                        log(chalk.yellow("No object index passed in, and coord already has an object_id, object_type_id, or belongs_to_object_id"))
+                        log(chalk.yellow("No object index passed in, and coord already has an object_type_id, or belongs_to_object_id"))
                     }
                     return false;
                 }
@@ -277,6 +289,7 @@ async function canPlace(dirty, scope, coord, data) {
 exports.canPlace = canPlace;
 
 
+// WARNING!!!! DEPRECATING THIS IN FAVOR OF WORLD.getOpenCoordIndex
 /**
  * 
  * @param {Object} dirty 
@@ -287,9 +300,11 @@ exports.canPlace = canPlace;
  * @param {number=} data.object_index
  * @param {number=} data.object_type_id
  */
+// WARNING!!!! DEPRECATING THIS IN FAVOR OF WORLD.getOpenCoordIndex
 async function canPlaceAround(dirty, tiles_around, data) {
 
     try {
+        // WARNING!!!! DEPRECATING THIS IN FAVOR OF WORLD.getOpenCoordIndex
 
         let origin_tile_x;
         let origin_tile_y;
@@ -330,10 +345,10 @@ async function canPlaceAround(dirty, tiles_around, data) {
 
                     if(trying_coord_index !== -1) {
 
-                        console.log("Trying coord id: " + dirty.planet_coords[trying_coord_index].id)
+                        //console.log("Trying coord id: " + dirty.planet_coords[trying_coord_index].id)
 
                         let can_place_result = await canPlace(dirty, 'planet', dirty.planet_coords[trying_coord_index], can_place_data );
-                        console.log("Can place result: " + can_place_result);
+                        //console.log("Can place result: " + can_place_result);
                         if(can_place_result === true) {
                             placing_coord_index = trying_coord_index;
                         }
@@ -809,9 +824,9 @@ async function getIndex(dirty, object_id) {
                     if(dirty.object_types[object_type_index].is_ship) {
 
 
-                        //log(chalk.cyan("Loading ship coords for object id: " + object.id));
+                        log(chalk.cyan("Loading ship coords for object id: " + object.id));
 
-                        await main.getShipCoords(object.id);
+                        await main.getShipCoords(object_index);
                         await world.attachShipEngines(dirty, object_index);
 
                     }

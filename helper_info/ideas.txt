@@ -1044,12 +1044,7 @@ Diamond Ship
 Quark-gluon plasma missle
 Microton AM warheads
 
-Could have a monster looking portal (still an object type) as an event. Basically make a portal, but it looks like a huge monster mouth. Transports you to 'inside the monster' (Could just be a ship in the code )
-    To add this we would need an is_portal attribute on OBJECT TYPES so there are multiple possible portals.
 
-    Would spawn a ship, and we would just not add that ship to any coords. Things like this would probably be at risk of being deleted
-        at some point, so would add another attribute to object types can_be_nowhere. I suppose :p This would also work for the great ship.
-        Stuff like: https://images.gemquery.com/254/content_2549852.jpg for the object type. 2x2 tiles.
 
 
 Could have a player body that changes over time.
@@ -1881,6 +1876,9 @@ Down came the glitches and burned us in ditches. Glitches could be slang for MLM
 Imperial police flyer
 
 Plant that bleeds nickel. Could do similar for exodium.
+
+
+Edo Station
 
 
 

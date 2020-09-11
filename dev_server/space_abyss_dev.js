@@ -2761,7 +2761,7 @@ async function loginPlayer(socket, dirty, data) {
         }
         // And make sure we have the ship coords in memory
         else {
-            await getShipCoords(dirty.players[player_index].ship_id);
+            await getShipCoords(ship_index);
         }
 
         if(dirty.players[player_index].previous_planet_coord_id) {
@@ -4126,15 +4126,18 @@ async function getRules(object_id) {
 
 module.exports.getRules = getRules;
 
-async function getShipCoords(ship_id) {
+async function getShipCoords(ship_index) {
 
     try {
 
-        //console.log("In getShipCoords");
+        console.log("In getShipCoords");
         let [rows, fields] = await (pool.query("SELECT * FROM ship_coords WHERE ship_id = ?",
-            [ship_id]));
+            [dirty.objects[ship_index].id]));
 
         if(rows[0]) {
+
+            let airlock_index = -1;
+
             for(let i = 0; i < rows.length; i++) {
 
                 let ship_coord = rows[i];
@@ -4144,12 +4147,22 @@ async function getShipCoords(ship_id) {
                 let ship_coord_index = dirty.ship_coords.findIndex(function(obj) { return obj && obj.id === ship_coord.id; });
                 if(ship_coord_index === -1) {
                     ship_coord.has_change = false;
-                    dirty.ship_coords.push(ship_coord);
+                    ship_coord_index = dirty.ship_coords.push(ship_coord) - 1;
+                }
+
+                if(dirty.ship_coords[ship_coord_index].object_type_id === 266) {
+                    airlock_index = ship_coord_index;
                 }
             }
+
+            dirty.objects[ship_index].airlock_index = airlock_index;
+            log(chalk.magenta("Set airlock index for ship to: " + dirty.objects[ship_index].airlock_index));
+        } else {
+            log(chalk.yellow("No ship coords for this ship"));
         }
     } catch(error) {
         log(chalk.red("Error in getShipCoords: " + error));
+        console.error(error);
     }
 
 }
@@ -4712,9 +4725,9 @@ async function writeDirty(show_output = false) {
         if(ship_coord.has_change) {
             //console.log("Ship coord has a change");
             let sql = "UPDATE ship_coords SET area_id = ?, belongs_to_monster_id = ?, belongs_to_object_id = ?, floor_type_id = ?, " +
-                "object_amount = ?, object_id = ?, object_type_id = ?, player_id = ?, structure_id = ? WHERE id = ?";
+                "is_damaged = ?, monster_id = ?, object_amount = ?, object_id = ?, object_type_id = ?, player_id = ?, structure_id = ? WHERE id = ?";
             let inserts = [ship_coord.area_id, ship_coord.belongs_to_monster_id, ship_coord.belongs_to_objct_id, ship_coord.floor_type_id,
-                ship_coord.object_amount, ship_coord.object_id, ship_coord.object_type_id, ship_coord.player_id, ship_coord.structure_id,
+                ship_coord.is_damaged, ship_coord.monster_id, ship_coord.object_amount, ship_coord.object_id, ship_coord.object_type_id, ship_coord.player_id, ship_coord.structure_id,
                 ship_coord.id];
 
             pool.query(sql, inserts, function(err, result) {
@@ -5272,7 +5285,7 @@ setInterval(tickDecay, 7200000, dirty);
 
 
 // 12 hours
-//setInterval(tickNomad, 43200000, dirty);
+setInterval(tickNomad, 43200000, dirty);
 
 
 /*

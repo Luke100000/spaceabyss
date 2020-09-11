@@ -2,42 +2,22 @@
 ** THINGS I'M SENDING FERNANDO'S WAY **
 ***************************************
 
+water ship animation
+living wood spaceship animation
 
-Energy Blade
-
+silk ship
+silk floor
+silk wall
 
 Volt Rifle
 
-Icer Pistol
-
-hull welder
-
-plasma torch
-
-Burster: Attack Animation
-Type: Monster
-Fames Needed:
-    2-3 Designs
-
-Reference Image: https://images.gemquery.com/256/content_2569019.jpg
 
 
-Nomad Observer: Animation
-Type: Monster
-
-
-Vooard: Design
-Type: Monster
-Frames Needed:
-    2-3 Designs
-Size: 36x36 max
 
 ***************************
 ** GENERAL DRAWING IDEAS **
 ***************************
 
-Tree Spaceship
-Water Spaceship
 
 Trees
 
@@ -142,7 +122,7 @@ algae power cell
 water zealots. Must be blue
 
 
-
+Energy Blade
 
 Low Priority:
 https://gemquery.com/admin/favorite-view/818

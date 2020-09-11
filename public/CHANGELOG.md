@@ -1,3 +1,39 @@
+## [0.2.1] - 2020-09-11
+
+### Added
+- Silk Fragment
+- Spiders on Azure Planets now drop Silk Fragments
+- Broken Nanite Clusters now drop AI Dust
+- Algae King now drops Living Wood, Algae, and Blue Algae
+- Protein Powder
+- Voon eggs can be made into Powder
+- Human bodies can eat Protein Powder
+- Kick Plants can now be farmed on Spaceships (Use Ice or Life Water to heal them, same idea as Algae Vats)
+- is_damaged property to ship coords. This should make it easier for the server to go through and find damaged tiles to heal, and undamaged tiles to damage.
+- Support for ship walls and floors that aren't the normal ship wall/floor. Water, desert, and more coming soon (the reasons for this are also coming soon)!
+- A new monster movement type - warp away.
+- Burster Monster
+- Observer Monster
+
+
+### Changed
+- Players will no longer get a skill increase for attacking objects that don't attack back (doors, walls, etc)
+- Increased the dirt pile amount that Mag Dust will drop from 1 to 4
+- When first docking at or otherwise going to a ship, if that ship has an airlock, the server will try to place the player near the airlock first.
+- Did another pass at using neighbor coords to place and drop things. I'm slowly getting a good and fast system working.
+- To repair a ship, you will now need the material that ship was made out of (commonly Territe for beginner ships, Exodium for the next tier of ships, etc)
+- The order of the 'Switch To' and 'Dock At Azure Planet' buttons. Switch To is now the first button
+- Started up The Great Nomad moving in and out of the galaxy
+- Increased pod health from 10 to 30. Pods were insta-dying in the area around the sun. I think it was too confusing for new players.
+
+### Fixed
+- Multiple beam fixes. Mining beams would sometimes disappear, or laser beams would show up at the wrong destination (looked like monsters were attacking each other)
+- Additional effect fixes. Resetting things like rotation and sprite origin for a re-used sprite.
+- Broken Nanite Cluster Animation having an empty frame.
+- Slerm Milk can now be picked up.
+- Admin ability to spawn monsters on ships wasn't working. This really only applies to testing monsters.
+- Bug with monsters moving on ships. Turns out the ship coords were never actually saving that a monster was on them.
+
 ## [0.2.0] - 2020-08-29
 
 

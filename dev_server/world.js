@@ -14,6 +14,7 @@ const game = require('./game.js');
 const game_object = require('./game_object.js');
 const helper = require('./helper.js');
 const main = require('./space_abyss' + process.env.FILE_SUFFIX + '.js');
+const map = require('./map.js');
 const monster = require('./monster.js');
 const planet = require('./planet.js');
 const player = require('./player.js');
@@ -2641,6 +2642,283 @@ async function generateShip(dirty, ship_index) {
 }
 
 exports.generateShip = generateShip;
+
+
+async function getOpenCoordIndex(dirty, coord_type, base_coord_index, placing_type, placing_index, distance_left, block_directions = []) {
+
+    try {
+
+        //console.log("In getOpenCoordIndex");
+
+        let base_coord = {};
+        if(coord_type === 'ship') {
+            base_coord = dirty.ship_coords[base_coord_index];
+        } else if(coord_type === 'planet') {
+            base_coord = dirty.planet_coords[base_coord_index];
+        } else if(coord_type === 'galaxy') {
+            base_coord = dirty.coords[base_coord_index];
+        } else if(coord_type === 'virtual') {
+            base_coord = dirty.virtual_coords[base_coord_index];
+        }
+
+        // If there's no block direction, try the base coord. Otherwise we will have already tried the base coord
+        if(block_directions.length < 1) {
+            if(placing_type === 'player') {
+                let can_place_result = await player.canPlace(dirty, coord_type, base_coord, placing_index);
+
+                if(can_place_result === true) {
+                    return base_coord_index;
+                }
+
+            } else if(placing_type === 'object') {
+                let can_place_result = await game_object.canPlace(dirty, coord_type, base_coord,  {'object_index': placing_index } );
+
+                if(can_place_result === true) {
+                    return base_coord_index;
+                }
+            } else if(placing_type === 'object_type') {
+                let can_place_result = await game_object.canPlace(dirty, coord_type, base_coord,  {'object_type_id': dirty.object_types[placing_index].id } );
+                
+                if(can_place_result === true) {
+                    return base_coord_index;
+                }
+            }
+        }
+
+        // left
+        if(!block_directions.includes('left')) {
+
+            await map.getCoordNeighbor(dirty, coord_type, base_coord_index, 'left');
+
+
+            if(base_coord.left_coord_index !== -1) {
+    
+                let left_coord = {};
+    
+                if(coord_type === 'ship') {
+                    left_coord = dirty.ship_coords[dirty.ship_coords[base_coord_index].left_coord_index];
+                } else if(coord_type === 'planet') {
+                    left_coord = dirty.planet_coords[dirty.planet_coords[base_coord_index].left_coord_index];
+                } else if(coord_type === 'galaxy') {
+                    left_coord = dirty.coords[dirty.coords[base_coord_index].left_coord_index];
+                } else if(coord_type === 'virtual') {
+                    left_coord = dirty.virtual_coords[dirty.virtual_coords[base_coord_index].left_coord_index];
+                }
+    
+    
+                if(placing_type === 'player') {
+                    let can_place_result = await player.canPlace(dirty, coord_type, left_coord, placing_index);
+    
+                    if(can_place_result === true) {
+                        return base_coord.left_coord_index;
+                    }
+                } else if(placing_type === 'object') {
+                    let can_place_result = await game_object.canPlace(dirty, coord_type, left_coord,  {'object_index': placing_index } );
+    
+                    if(can_place_result === true) {
+                        return base_coord.left_coord_index;
+                    }
+                } else if(placing_type === 'object_type') {
+                    let can_place_result = await game_object.canPlace(dirty, coord_type, left_coord,  {'object_type_id': dirty.object_types[placing_index].id } );
+                    
+                    if(can_place_result === true) {
+                        console.log("Can place result was true");
+                        return base_coord.left_coord_index;
+                    }
+                }
+                
+            }
+        }
+        
+
+        //right
+        if(!block_directions.includes('right')) {
+            await map.getCoordNeighbor(dirty, coord_type, base_coord_index, 'right');
+
+            let right_coord = {};
+    
+            if(coord_type === 'ship') {
+                right_coord = dirty.ship_coords[dirty.ship_coords[base_coord_index].right_coord_index];
+            } else if(coord_type === 'planet') {
+                right_coord = dirty.planet_coords[dirty.planet_coords[base_coord_index].right_coord_index];
+            } else if(coord_type === 'galaxy') {
+                right_coord = dirty.coords[dirty.coords[base_coord_index].right_coord_index];
+            } else if(coord_type === 'virtual') {
+                right_coord = dirty.virtual_coords[dirty.virtual_coords[base_coord_index].right_coord_index];
+            }
+    
+    
+            if(placing_type === 'player') {
+                let can_place_result = await player.canPlace(dirty, coord_type, right_coord, placing_index);
+    
+                if(can_place_result === true) {
+                    return base_coord.right_coord_index;
+                }
+            } else if(placing_type === 'object') {
+                let can_place_result = await game_object.canPlace(dirty, coord_type, right_coord,  {'object_index': placing_index } );
+
+                if(can_place_result === true) {
+                    return base_coord.right_coord_index;
+                }
+            } else if(placing_type === 'object_type') {
+                let can_place_result = await game_object.canPlace(dirty, coord_type, right_coord,  {'object_type_id': dirty.object_types[placing_index].id } );
+                
+                if(can_place_result === true) {
+                    return base_coord.right_coord_index;
+                }
+            }
+        }
+        
+
+        // up
+        if(!block_directions.includes('up')) {
+            await map.getCoordNeighbor(dirty, coord_type, base_coord_index, 'up');
+
+            let up_coord = {};
+    
+            if(coord_type === 'ship') {
+                up_coord = dirty.ship_coords[dirty.ship_coords[base_coord_index].up_coord_index];
+            } else if(coord_type === 'planet') {
+                up_coord = dirty.planet_coords[dirty.planet_coords[base_coord_index].up_coord_index];
+            } else if(coord_type === 'galaxy') {
+                up_coord = dirty.coords[dirty.coords[base_coord_index].up_coord_index];
+            } else if(coord_type === 'virtual') {
+                up_coord = dirty.virtual_coords[dirty.virtual_coords[base_coord_index].up_coord_index];
+            }
+    
+    
+            if(placing_type === 'player') {
+                let can_place_result = await player.canPlace(dirty, coord_type, up_coord, placing_index);
+    
+                if(can_place_result === true) {
+                    return base_coord.up_coord_index;
+                }
+            } else if(placing_type === 'object') {
+                let can_place_result = await game_object.canPlace(dirty, coord_type, up_coord,  {'object_index': placing_index } );
+
+                if(can_place_result === true) {
+                    return base_coord.up_coord_index;
+                }
+            } else if(placing_type === 'object_type') {
+                let can_place_result = await game_object.canPlace(dirty, coord_type, up_coord,  {'object_type_id': dirty.object_types[placing_index].id } );
+                
+                if(can_place_result === true) {
+                    return base_coord.up_coord_index;
+                }
+            }
+        }
+        
+
+        // down
+        if(!block_directions.includes('down')) {
+            await map.getCoordNeighbor(dirty, coord_type, base_coord_index, 'down');
+
+            let down_coord = {};
+    
+            if(coord_type === 'ship') {
+                down_coord = dirty.ship_coords[dirty.ship_coords[base_coord_index].down_coord_index];
+            } else if(coord_type === 'planet') {
+                down_coord = dirty.planet_coords[dirty.planet_coords[base_coord_index].down_coord_index];
+            } else if(coord_type === 'galaxy') {
+                down_coord = dirty.coords[dirty.coords[base_coord_index].down_coord_index];
+            } else if(coord_type === 'virtual') {
+                down_coord = dirty.virtual_coords[dirty.virtual_coords[base_coord_index].down_coord_index];
+            }
+    
+    
+            if(placing_type === 'player') {
+                let can_place_result = await player.canPlace(dirty, coord_type, down_coord, placing_index);
+    
+                if(can_place_result === true) {
+                    return base_coord.down_coord_index;
+                }
+            } else if(placing_type === 'object') {
+                let can_place_result = await game_object.canPlace(dirty, coord_type, down_coord,  {'object_index': placing_index } );
+
+                if(can_place_result === true) {
+                    return base_coord.down_coord_index;
+                }
+            } else if(placing_type === 'object_type') {
+                let can_place_result = await game_object.canPlace(dirty, coord_type, down_coord,  {'object_type_id': dirty.object_types[placing_index].id } );
+                
+                if(can_place_result === true) {
+                    return base_coord.down_coord_index;
+                }
+            }
+        }
+        
+
+        //console.log("Didn't find a spot at base, left/right/up/down");
+
+        // Didn't find a coord, and we have some disance left we can go
+        if(distance_left > 0) {
+
+            //console.log("Going to new base coords. Distance left: " + distance_left);
+            console.log(block_directions);
+            let new_distance = distance_left - 1;
+
+            if(base_coord.left_coord_index !== -1 && !block_directions.includes('left')) {
+                console.log("left");
+                let new_block_directions = [...block_directions];
+                new_block_directions.push('right');
+                let found_coord_index = await getOpenCoordIndex(dirty, coord_type, base_coord.left_coord_index, placing_type, placing_index, new_distance, block_directions);
+                if(found_coord_index !== -1) {
+                    return found_coord_index;
+                }
+            }
+
+            //console.log("Done with left on Distance left: " + distance_left);
+            console.log(block_directions);
+
+            if(base_coord.right_coord_index !== -1 && !block_directions.includes('right')) {
+                //console.log("right");
+                let new_block_directions = [...block_directions];
+                new_block_directions.push('left');
+                let found_coord_index = await getOpenCoordIndex(dirty, coord_type, base_coord.right_coord_index, placing_type, placing_index, new_distance, block_directions);
+                if(found_coord_index !== -1) {
+                    return found_coord_index;
+                }
+            }
+
+            //console.log("Done with right on Distance left: " + distance_left);
+            console.log(block_directions);
+
+            if(base_coord.up_coord_index !== -1 && !block_directions.includes('up')) {
+                //console.log("up");
+                let new_block_directions = [...block_directions];
+                new_block_directions.push('down');
+                let found_coord_index = await getOpenCoordIndex(dirty, coord_type, base_coord.up_coord_index, placing_type, placing_index, new_distance, block_directions);
+                if(found_coord_index !== -1) {
+                    return found_coord_index;
+                }
+            }
+
+            if(base_coord.down_coord_index !== -1 && !block_directions.includes('down')) {
+                //console.log("down");
+
+                
+                let new_block_directions = [...block_directions];
+                new_block_directions.push('up');
+                let found_coord_index = await getOpenCoordIndex(dirty, coord_type, base_coord.down_coord_index, placing_type, placing_index, new_distance, block_directions);
+                if(found_coord_index !== -1) {
+                    return found_coord_index;
+                }
+            }
+        }
+
+
+        return -1;
+
+
+
+    } catch(error) {
+        log(chalk.red("Error in world.getOpenCoordIndex: " + error));
+        console.error(error);
+    }
+
+}
+
+exports.getOpenCoordIndex = getOpenCoordIndex;
 
 async function getPlayerCoordAndRoom(dirty, player_index) {
 
@@ -5270,55 +5548,113 @@ async function tickWaitingDrops(dirty) {
                 }
 
                 let place_around_data = {};
+                let coord_type = 'none';
+                let base_coord_index = -1;
+                let placing_index = -1;
+                let placing_type = 'none';
 
 
                 // 
                 if(typeof dirty.waiting_drops[i].planet_coord_index !== "undefined") {
                     place_around_data.planet_coord_index = dirty.waiting_drops[i].planet_coord_index;
+                    coord_type = 'planet';
+                    base_coord_index = dirty.waiting_drops[i].planet_coord_index;
                 }
 
                 if(typeof dirty.waiting_drops[i].ship_coord_index !== "undefined") {
                     place_around_data.ship_coord_index = dirty.waiting_drops[i].ship_coord_index;
+                    coord_type = 'ship';
+                    base_coord_index = dirty.waiting_drops[i].ship_coord_index;
+                }
+
+                if(typeof dirty.waiting_drops[i].coord_index !== "undefined") {
+                    place_around_data.coord_index = dirty.waiting_drops[i].coord_index;
+                    coord_type = 'galaxy';
+                    base_coord_index = dirty.waiting_drops[i].coord_index;
+                }
+
+                if(typeof dirty.waiting_drops[i].virtual_coord_index !== "undefined") {
+                    place_around_data.virtual_coord_index = dirty.waiting_drops[i].virtual_coord_index;
+                    coord_type = 'virtual';
+                    base_coord_index = dirty.waiting_drops[i].virtual_coord_index;
                 }
 
                 if(typeof dirty.waiting_drops[i].object_index !== "undefined") {
                     place_around_data.object_index = dirty.waiting_drops[i].object_index;
+                    placing_type = 'object';
+                    placing_index = dirty.waiting_drops[i].object_index;
                 }
 
                 if(typeof dirty.waiting_drops[i].object_type_id !== "undefined") {
                     place_around_data.object_type_id = dirty.waiting_drops[i].object_type_id;
+                    placing_type = 'object_type';
+                    placing_index = main.getObjectTypeIndex(dirty.waiting_drops[i].object_type_id);
+                
                 }
 
 
-                let placing_coord_index = await game_object.canPlaceAround(dirty, 2, place_around_data);
+                //console.time("gameobject.canPlaceAround");
+                //let old_placing_coord_index = await game_object.canPlaceAround(dirty, 2, place_around_data);
+                //console.timeEnd("gameobject.canPlaceAround");
+
+                //console.time("getOpenCoordIndex");
+                let placing_coord_index = await getOpenCoordIndex(dirty, coord_type, base_coord_index, placing_type, placing_index, 2);
+                //console.timeEnd("getOpenCoordIndex");
+
 
                 if(placing_coord_index !== -1) {
                     log(chalk.green("We found a coord where we can put our waiting drop!"));
 
                     let update_coord_data = {};
+                    let placing_coord = {};
 
-                    if(typeof dirty.waiting_drops[i].object_index !== "undefined") {
-                        update_coord_data.object_index = dirty.waiting_drops[i].object_index;
-                    }
-    
-                    if(typeof dirty.waiting_drops[i].object_type_id !== "undefined") {
-                        update_coord_data.object_type_id = dirty.waiting_drops[i].object_type_id;
-                    }
-
-                    if(dirty.waiting_drops[i].amount) {
-                        update_coord_data.amount = dirty.waiting_drops[i].amount;
-                    }
-
-
-                    if(typeof dirty.waiting_drops[i].planet_coord_index !== 'undefined') {
-                        console.log("Planet coord id: " + dirty.planet_coords[placing_coord_index].id);
-
+                    // Get our planet/ship/galaxy/virtual set
+                    if(coord_type === 'planet') {
+                        placing_coord = dirty.planet_coords[placing_coord_index];
                         update_coord_data.planet_coord_index = placing_coord_index;
                       
-                    } else if(typeof dirty.waiting_drops[i].ship_coord_index !== 'undefined') {
+                    } else if(coord_type === 'ship') {
+                        placing_coord = dirty.ship_coords[placing_coord_index];
                         update_coord_data.ship_coord_index = placing_coord_index;
                        
+                    } else if(coord_type === 'galaxy') {
+                        placing_coord = dirty.coords[placing_coord_index];
+                        update_coord_data.coord_index = placing_coord_index;
+                    } else if(coord_type === 'virtual') {
+                        placing_coord = dirty.virtual_coords[placing_coord_index];
+                        update_coord_data.virtual_coord_index = placing_coord_index;
                     }
+
+
+
+                    // It's possible that if we are dropping an object type, we returned a coord with that object type already on it, and we are 
+                    // only incrementing the amount of the coord
+                    let only_updating_amount = false;
+                    if(typeof dirty.waiting_drops[i].object_type_id !== "undefined" && placing_coord.object_type_id === dirty.waiting_drops[i].object_type_id) {
+                        console.log("Old coord amount: " + placing_coord.object_amount + " waiting drops amount: " + dirty.waiting_drops[i].amount);
+                        only_updating_amount = true;
+                        update_coord_data.amount = placing_coord.object_amount + dirty.waiting_drops[i].amount;
+                        console.log("update_coord_data.amount: " + update_coord_data.amount);
+
+                    }
+
+
+                    if(!only_updating_amount) {
+                        if(typeof dirty.waiting_drops[i].object_index !== "undefined") {
+                            update_coord_data.object_index = dirty.waiting_drops[i].object_index;
+                        }
+        
+                        if(typeof dirty.waiting_drops[i].object_type_id !== "undefined") {
+                            update_coord_data.object_type_id = dirty.waiting_drops[i].object_type_id;
+                        }
+    
+                        if(dirty.waiting_drops[i].amount) {
+                            update_coord_data.amount = dirty.waiting_drops[i].amount;
+                        }
+    
+                    }
+                   
+                    
                     console.log("Sending to updateCoordGeneric:");
                     console.log(update_coord_data);
 

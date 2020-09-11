@@ -21,7 +21,7 @@ Damage is per slot taken up (3 slots per arm)
 
 FREE
 
-    TIER 1 - Territe, Batteries, Chitin, Exoskeleton, Quick Matter (From Territe), AI Dust, Life Water (Complexity Tier: 4)
+    TIER 1 - Territe, Batteries, Exoskeleton, Quick Matter (From Territe), AI Dust, Life Water (Complexity Tier: 4), Silk Fragment, Living Wood Fragment
     Energy Sources: Battery
     Minimum Monster Damage: 1
     Complexity: 1-4
@@ -609,9 +609,10 @@ NPC SHIPS
 Light Sail Ship (Lighthugger?)
 Ramscoops. There is stuff in space. In the 'interstellar medium'. Would be neat to have ships
     slowly accrue some material if they are a certain type of ship
-Cutter
+
 Pinnace (Don't like how it sounds verbally. PENIS)
 Starliner
+Diligent-class tactical patrol/escort ship 
 
 Homestead ship
 Generation ship

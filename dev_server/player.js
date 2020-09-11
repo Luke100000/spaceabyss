@@ -173,6 +173,7 @@ exports.calculateMovementModifier = calculateMovementModifier;
  * @param {Object} coord
  * @param {number} player_index
  * @param {boolean=} show_output
+ * @returns {Promise<boolean>} 
  */
 async function canPlace(dirty, scope, coord, player_index, show_output = false) {
 

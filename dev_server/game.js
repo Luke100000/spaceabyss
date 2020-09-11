@@ -3682,11 +3682,234 @@ exports.eat = eat;
     }
     exports.getFloorTypes = getFloorTypes;
 
+    
+    // TODO I still absolutely hate how this function iterates over all the ship coords a billion times.
+    async function generateShipDamagedTiles(dirty, ship_index, being_repaired_coord_index = false) {
+        try {
+            //console.time("generateShipDamagedTiles");
 
+            let ship_type_index = main.getObjectTypeIndex(dirty.objects[ship_index].object_type_id);
+            if(ship_type_index === -1) {
+                return false;
+            }
+
+            let ship_linkers = dirty.ship_linkers.filter(linker => linker.ship_type_id === dirty.object_types[ship_type_index].id);
+            let ship_linker_count = ship_linkers.length;
+
+            //console.log("Calculating damaged tiles for ship type: " + dirty.object_types[ship_type_index].name + " with ship linker count: " + ship_linker_count);
+
+            let hp_per_tile = dirty.object_types[ship_type_index].hp / ship_linker_count;
+
+            //console.log("HP per tile: " + hp_per_tile);
+
+            let new_damaged_tile_count = 0;
+
+            // There's some damage, we aren't going to have a 0 result
+            if(dirty.objects[ship_index].current_hp !== dirty.object_types[ship_type_index].hp) {
+                new_damaged_tile_count = Math.ceil((dirty.object_types[ship_type_index].hp - dirty.objects[ship_index].current_hp) / hp_per_tile);
+            }
+
+            if(typeof dirty.objects[ship_index].damaged_coord_count === "undefined") {
+
+                let damaged_coord_count = 0;
+
+                for(let i = 0; i < dirty.ship_coords.length; i++) {
+
+                    // Coord exists and is for our ship - lets see if its damaged
+                    if(dirty.ship_coords[i] && dirty.ship_coords[i].ship_id === dirty.objects[ship_index].id) {
+
+                        let is_ship_wall_coord = false;
+                        // See if the wall is damaged
+                        if(dirty.ship_coords[i].object_type_id) {
+
+                            let object_type_index = main.getObjectTypeIndex(dirty.ship_coords[i].object_type_id);
+
+                            if(object_type_index !== -1) {
+
+                                if(dirty.object_types[object_type_index].repaired_object_type_id) {
+                                    damaged_coord_count++;
+                                    is_ship_wall_coord = true;
+                                }
+
+                                if(dirty.object_types[object_type_index].is_ship_wall) {
+                                    is_ship_wall_coord = true;
+                                }
+                                
+                            }
+                        }
+
+                        if(!is_ship_wall_coord) {
+                            let floor_type_index = main.getFloorTypeIndex(dirty.ship_coords[i].floor_type_id);
+                            if(floor_type_index !== -1 && dirty.floor_types[floor_type_index].repaired_floor_type_id) {
+                                damaged_coord_count++;
+                            }
+                        }
+                    }
+                }
+
+
+                dirty.objects[ship_index].damaged_coord_count = damaged_coord_count;
+
+            }
+
+            // Heal a tile
+            if(dirty.objects[ship_index].damaged_coord_count > new_damaged_tile_count) {
+
+
+                let coords_to_repair = dirty.objects[ship_index].damaged_coord_count - new_damaged_tile_count;
+
+                for(let i = 0; i < dirty.ship_coords.length && coords_to_repair > 0; i++) {
+
+                    let repaired_coord = false;
+
+                    // Coord exists and is for our ship - lets see if its damaged
+                    if(dirty.ship_coords[i] && dirty.ship_coords[i].ship_id === dirty.objects[ship_index].id) {
+
+                        let is_ship_wall_coord = false;
+                        // See if the wall is damaged
+                        if(dirty.ship_coords[i].object_type_id) {
+
+                            let object_type_index = main.getObjectTypeIndex(dirty.ship_coords[i].object_type_id);
+
+                            if(object_type_index !== -1) {
+
+                                if(dirty.object_types[object_type_index].is_ship_wall) {
+                                    is_ship_wall_coord = true;
+                                }
+
+                                // It's a wall we can heal
+                                if(dirty.object_types[object_type_index].repaired_object_type_id) {
+                                    dirty.ship_coords[i].object_type_id = dirty.object_types[object_type_index].repaired_object_type_id;
+                                    repaired_coord = true;
+                                    coords_to_repair--;
+                                    dirty.objects[ship_index].damaged_coord_count--;
+                                }
+
+                                
+                            }
+                        }
+
+                        if(!is_ship_wall_coord) {
+                            let floor_type_index = main.getFloorTypeIndex(dirty.ship_coords[i].floor_type_id);
+                            if(floor_type_index !== -1 && dirty.floor_types[floor_type_index].repaired_floor_type_id) {
+                                dirty.ship_coords[i].floor_type_id = dirty.floor_types[floor_type_index].repaired_floor_type_id;
+                                repaired_coord = true;
+                                coords_to_repair--;
+                                dirty.objects[ship_index].damaged_coord_count--;
+                            }
+                        }
+                    }
+
+                    if(repaired_coord) {
+
+                        dirty.ship_coords[i].is_damaged = false;
+                        dirty.ship_coords[i].has_change = true;
+
+                        // Send the updated coord info
+                        await world.sendShipCoordInfo(false, "ship_" + dirty.objects[ship_index].id, dirty, { 'ship_coord_index': i });
+
+                        // Remove any repairing linkers on this coord
+                        for(let r = 0; r < dirty.repairing_linkers.length; r++) {
+                            if(dirty.repairing_linkers[r] && dirty.repairing_linkers[r].ship_coord_id === dirty.ship_coords[i].id) {
+                                io.to(dirty.repairing_linkers[r].player_socket_id).emit('repairing_linker_info',
+                                { 'remove': true, 'repairing_linker': dirty.repairing_linkers[r] });
+
+                            delete dirty.repairing_linkers[r];
+                            }
+                        }
+                    }
+                }
+            }
+            // Damage a tile
+            else if(dirty.objects[ship_index].damaged_coord_count < new_damaged_tile_count) {
+
+                console.log("Going to try and damage a tile");
+                let coords_to_damage = new_damaged_tile_count - dirty.objects[ship_index].damaged_coord_count;
+
+                for(let i = 0; i < dirty.ship_coords.length && coords_to_damage > 0; i++) {
+
+                    let damaged_coord = false;
+
+                    // Coord exists and is for our ship - lets see if its damaged
+                    if(dirty.ship_coords[i] && dirty.ship_coords[i].ship_id === dirty.objects[ship_index].id) {
+
+                        let is_ship_wall_coord = false;
+                        // See if the wall is damaged
+                        if(dirty.ship_coords[i].object_type_id) {
+
+                            let object_type_index = main.getObjectTypeIndex(dirty.ship_coords[i].object_type_id);
+
+                            if(object_type_index !== -1) {
+
+                                if(dirty.object_types[object_type_index].is_ship_wall) {
+                                    console.log("On coord that is ship wall");
+                                    is_ship_wall_coord = true;
+
+                                    // see if there's an object type that repairs to us - then we can switch to that object type
+                                    let turns_into_object_type_index = dirty.object_types.findIndex(function(obj) { return obj && 
+                                        obj.repaired_object_type_id === dirty.object_types[object_type_index].id; });
+
+                                    if(turns_into_object_type_index !== -1) {
+                                        console.log("Changing wall to damaged type");
+                                        dirty.ship_coords[i].object_type_id = dirty.object_types[turns_into_object_type_index].id;
+                                        damaged_coord = true;
+                                        coords_to_damage--;
+                                        dirty.objects[ship_index].damaged_coord_count++;
+                                    } else {
+                                        console.log("No object type has repaired_object_type_id = " + dirty.object_types[object_type_index].id);
+                                    }
+                                }
+
+                        
+                            }
+                        }
+
+                        if(!is_ship_wall_coord) {
+
+                            let turns_into_floor_type_index = dirty.floor_types.findIndex(function(obj) { return obj && 
+                                obj.repaired_floor_type_id === dirty.ship_coords[i].floor_type_id; });
+
+                            if(turns_into_floor_type_index !== -1) {
+                                dirty.ship_coords[i].floor_type_id = dirty.floor_types[turns_into_floor_type_index].id;
+                                damaged_coord = true;
+                                coords_to_damage--;
+                                dirty.objects[ship_index].damaged_coord_count++;
+                            }
+
+                        }
+                    }
+
+                    if(damaged_coord) {
+
+                        dirty.ship_coords[i].is_damaged = true;
+                        dirty.ship_coords[i].has_change = true;
+
+                        // Send the updated coord info
+                        await world.sendShipCoordInfo(false, "ship_" + dirty.objects[ship_index].id, dirty, { 'ship_coord_index': i });
+
+                    }
+                }
+            }
+
+
+
+
+            //console.timeEnd("generateShipDamagedTiles");
+        } catch(error) {
+            log(chalk.red("Error in game.generateShipDamagedTiles:" + error));
+            console.error(error);
+        }
+    }
+
+    exports.generateShipDamagedTiles = generateShipDamagedTiles;
+    
+
+    /*
     // If a coord index has been passed in, any healing should be done on that coord of the ship
     async function generateShipDamagedTiles(dirty, ship_index, being_repaired_coord_index = false) {
 
         try {
+            console.time("generateShipDamagedTiles");
 
             let ship_type_index = main.getObjectTypeIndex(dirty.objects[ship_index].object_type_id);
             if(ship_type_index === -1) {
@@ -3799,7 +4022,7 @@ exports.eat = eat;
                 await world.sendShipCoordInfo(false, "ship_" + dirty.objects[ship_index].id, dirty, { 'ship_coord_index': damaging_coord_index });
             }
 
-
+            console.timeEnd("generateShipDamagedTiles");
 
 
 
@@ -3811,6 +4034,7 @@ exports.eat = eat;
     }
 
     exports.generateShipDamagedTiles = generateShipDamagedTiles;
+    */
 
 
     /*
@@ -5109,13 +5333,13 @@ exports.eat = eat;
 
                 
 
-                let player_index = await player.getIndex(dirty, {'player_id': socket.player_id});
+                let player_index = socket.player_index;
 
                 let spawn_monster_data = {};
 
                 let found_coord_index = -1;
 
-                if(dirty.players[player_index].planet_coord_id) {
+                if(dirty.players[socket.player_index].planet_coord_id) {
 
                     let coord_index = await main.getPlanetCoordIndex({'planet_coord_id': dirty.players[player_index].planet_coord_id });
 
@@ -5148,6 +5372,8 @@ exports.eat = eat;
 
                 } else if(dirty.players[player_index].ship_coord_id) {
 
+                    console.log("In ship");
+
 
                     let coord_index = await main.getShipCoordIndex({'ship_coord_id': dirty.players[player_index].ship_coord_id });
 
@@ -5170,7 +5396,7 @@ exports.eat = eat;
                                 if(checking_coord_index !== -1 && monster_can_place_result === true ) {
 
                                     found_coord_index = checking_coord_index;
-                                    spawn_monster_data.ship_coord_indesx = checking_coord_index;
+                                    spawn_monster_data.ship_coord_index = checking_coord_index;
                                 }
                             }
 
@@ -5818,13 +6044,15 @@ exports.eat = eat;
             let floor_type_index = -1;
             let ship_index = -1;
             let ship_type_index = -1;
-            let room = false;
+            let room = '';
+            let coord_type = 'none';
 
 
             // lets start figuring out what we are trying to repair. object, object type, floor type
             if(dirty.repairing_linkers[i].planet_coord_index) {
 
                 room = "planet_" + dirty.planet_coords[dirty.repairing_linkers[i].planet_coord_index].planet_id;
+                coord_type = 'planet';
 
                 if(dirty.planet_coords[dirty.repairing_linkers[i].planet_coord_index].object_type_id) {
                     object_type_index = main.getObjectTypeIndex(dirty.planet_coords[dirty.repairing_linkers[i].planet_coord_index].object_type_id);
@@ -5841,6 +6069,7 @@ exports.eat = eat;
             if(dirty.repairing_linkers[i].ship_coord_index) {
 
                 room = "ship_" + dirty.ship_coords[dirty.repairing_linkers[i].ship_coord_index].ship_id;
+                coord_type = 'ship';
 
                 if(dirty.ship_coords[dirty.repairing_linkers[i].ship_coord_index].object_type_id) {
                     object_type_index = main.getObjectTypeIndex(dirty.ship_coords[dirty.repairing_linkers[i].ship_coord_index].object_type_id);
@@ -5915,22 +6144,43 @@ exports.eat = eat;
 
 
             for(let al = 0; al < dirty.assembly_linkers.length; al++) {
-                if(repairing_type === 'object|object_type' && object_type_index !== -1 && dirty.assembly_linkers[al].required_for_object_type_id === dirty.object_types[object_type_index].id &&
-                    dirty.assembly_linkers[al].amount > most_amount) {
-                    most_assembly_linker_index = al;
-                    object_type_used_for_repair_id = dirty.assembly_linkers[al].object_type_id;
+
+
+
+                // if we're on a ship, and it's a ship wall, or just any floor on the ship, we are going to use what the ship is made of for the repair
+                if(coord_type === 'ship' && ( (object_type_index !== -1 && dirty.object_types[object_type_index].is_ship_wall) || floor_type_index !== -1) ) {
+
+
+                    if(dirty.assembly_linkers[al].required_for_object_type_id === dirty.object_types[ship_type_index].id && dirty.assembly_linkers[al].amount > most_amount) {
+                        most_assembly_linker_index = al;
+                        object_type_used_for_repair_id = dirty.assembly_linkers[al].object_type_id;
+                        most_amount = dirty.assembly_linkers[al].amount;
+                    }
+
+                } else {
+                    if(repairing_type === 'object|object_type' && object_type_index !== -1 && dirty.assembly_linkers[al].required_for_object_type_id === dirty.object_types[object_type_index].id &&
+                        dirty.assembly_linkers[al].amount > most_amount) {
+                        most_assembly_linker_index = al;
+                        object_type_used_for_repair_id = dirty.assembly_linkers[al].object_type_id;
+                        most_amount = dirty.assembly_linkers[al].amount;
+                    }
+
+
+
+                    if(repairing_type === 'floor' && floor_type_index !== -1 && dirty.assembly_linkers[al].required_for_floor_type_id === dirty.floor_types[floor_type_index].id &&
+                        dirty.assembly_linkers[al].amount > most_amount) {
+                        most_assembly_linker_index = al;
+                        object_type_used_for_repair_id = dirty.assembly_linkers[al].object_type_id;
+                        most_amount = dirty.assembly_linkers[al].amount;
+                    }
                 }
 
-                if(repairing_type === 'floor' && floor_type_index !== -1 && dirty.assembly_linkers[al].required_for_floor_type_id === dirty.floor_types[floor_type_index].id &&
-                    dirty.assembly_linkers[al].amount > most_amount) {
-                    most_assembly_linker_index = al;
-                    object_type_used_for_repair_id = dirty.assembly_linkers[al].object_type_id;
-                }
+                
             }
 
 
             let object_type_used_for_repair_index = main.getObjectTypeIndex(object_type_used_for_repair_id);
-            //console.log("We will use " + dirty.object_types[object_type_used_for_repair_index].name + " to repair this");
+            console.log("We will use " + dirty.object_types[object_type_used_for_repair_index].name + " to repair this");
 
             let inventory_item_index = dirty.inventory_items.findIndex(function(obj) { return obj &&
                 obj.player_id === dirty.repairing_linkers[i].player_id && obj.object_type_id === dirty.object_types[object_type_used_for_repair_index].id; });
@@ -6044,7 +6294,8 @@ exports.eat = eat;
 
             }
 
-            if(done_with_repair) {
+            // We should be removing the repairing linker in generateShipDamagedTiles function
+            if(done_with_repair && dirty.repairing_linkers[i]) {
                 io.sockets.connected[dirty.repairing_linkers[i].player_socket_id].emit('repairing_linker_info', {
                     'remove': true, 'repairing_linker': dirty.repairing_linkers[i] });
                 delete dirty.repairing_linkers[i];
@@ -7534,9 +7785,6 @@ exports.eat = eat;
                     if(hp_effect === 0) {
                         return false;
                     }
-
-                    console.log("Room is : " + room);
-
 
                     // Actually gonna be damaging the ship
                     if(room === "galaxy") {
@@ -10319,10 +10567,10 @@ exports.eat = eat;
             // Make sure the body isn't already equipped by someone
             // Bodies will often have a player_id since players will create them
             // So we need to check to see if a player has this body
-            console.log("Seeing if the body is already in use");
+            //console.log("Seeing if the body is already in use");
             let other_player_index = await player.getIndex(dirty, { 'body_id': dirty.objects[object_index].id });
 
-            console.log("Other player index: " + other_player_index);
+            //console.log("Other player index: " + other_player_index);
 
             // We have to check that no other player is using the body. This means grabbing from mysql.
             if(other_player_index !== -1 && other_player_index !== player_index) {

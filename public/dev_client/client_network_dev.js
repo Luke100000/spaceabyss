@@ -1023,6 +1023,7 @@ socket.on('market_linker_info', function(data) {
 
 // This should only be updates about mining 
 socket.on('mining_info', function(data) {
+    console.log("Got mining_info");
 
 
     let mining_linker_index = mining_linkers.findIndex(function(obj) { return obj && obj.id === data.mining_linker_id; });
@@ -1083,7 +1084,7 @@ socket.on('mining_info', function(data) {
 
 socket.on('mining_linker_info', function(data) {
 
-    //console.log("Got mining_linker_info with id : " + data.mining_linker.id);
+    console.log("Got mining_linker_info with id : " + data.mining_linker.id);
 
     let index = mining_linkers.findIndex(function(obj) { return obj && obj.id === data.mining_linker.id; });
 

@@ -777,8 +777,8 @@ const world = require('./world.js');
                 } else if(data.damage_source_type) {
                     damage_monster_data.damage_source_type = data.damage_source_type;
                     damage_monster_data.damage_types = [data.damage_type];
-                    console.log("Radius damage damaged monster. Damage type: " + data.damage_type);
-                    console.log(damage_monster_data.damage_types);
+                    //console.log("Radius damage damaged monster. Damage type: " + data.damage_type);
+                    //console.log(damage_monster_data.damage_types);
                     damage_monster_data.damage_source_id = data.damage_source_id;
 
                 }
@@ -1606,8 +1606,8 @@ const world = require('./world.js');
 
             let object_attack_profile = await calculateObjectAttack(dirty, attacking_object_index);
             let attack = object_attack_profile.damage_amount;
-            console.log("Got attack object damage types as: ");
-            console.log(object_attack_profile.damage_types);
+            //console.log("Got attack object damage types as: ");
+            //console.log(object_attack_profile.damage_types);
             let defense = await game_object.calculateDefense(dirty, defending_object_index);
 
             // For whatever reason, the object has no more attacking power (ships, batteries, etc). Remove the battle linker
@@ -1787,8 +1787,8 @@ const world = require('./world.js');
 
             let object_attack_profile = await calculateObjectAttack(dirty, attacking_object_index);
             let attack = object_attack_profile.damage_amount;
-            console.log("Got attack object damage types as: ");
-            console.log(object_attack_profile.damage_types);
+            //console.log("Got attack object damage types as: ");
+            //console.log(object_attack_profile.damage_types);
 
             // Woo complex planet defense calculation!
             let defense = 1;
@@ -2391,6 +2391,8 @@ const world = require('./world.js');
                 return false;
             }
 
+            let object_type_index = main.getObjectTypeIndex(dirty.objects[object_index].object_type_id);
+
             let player_body_index = await game_object.getIndex(dirty, dirty.players[player_index].body_id);
 
             if(player_body_index === -1) {
@@ -2454,7 +2456,11 @@ const world = require('./world.js');
                 'damage_types': player_attack_profile.damage_types,
                 'battle_linker': battle_linker, 'object_info': object_info, 'calculating_range': calculating_range });
 
-            await world.increasePlayerSkill(io.sockets.connected[battle_linker.socket_id], dirty, player_index, player_attack_profile.damage_types);
+
+            if(dirty.object_types[object_type_index].attack_strength >= 1) {
+                await world.increasePlayerSkill(io.sockets.connected[battle_linker.socket_id], dirty, player_index, player_attack_profile.damage_types);
+            }
+            
 
             decrementEquipmentLinkers(dirty, player_attack_profile, battle_linker.socket_id);
 

@@ -1879,7 +1879,7 @@ include('config.php');
 
             let broken_nanite_cluster_config = {
                 key: 'broken-nanite-cluster-animation',
-                frames: this.anims.generateFrameNumbers('broken-nanite-cluster', { start: 0, end: 3, first: 3 }),
+                frames: this.anims.generateFrameNumbers('broken-nanite-cluster', { start: 0, end: 2, first: 2 }),
                 frameRate: 2,
                 repeat: -1
             };
@@ -2818,7 +2818,7 @@ include('config.php');
 
                         if(next_move_index !== -1) {
                             //console.log("Found next move for our player!");
-                            movePlayerFlow(i, next_moves[next_move_index].destination_coord, 'update: next move');
+                            initiateMovePlayerFlow(i, next_moves[next_move_index].destination_coord, 'update: next move');
                             // we can safely keep the next moves array small, and don't have to worry about maintaining indexes
                             //delete next_moves[next_move_index];
                             next_moves.splice(next_move_index, 1);

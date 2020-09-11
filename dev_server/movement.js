@@ -3427,36 +3427,83 @@ const world = require('./world.js');
             if(ship_coord_index === -1) {
                 console.log("Did not find such a coord. Finding something on ship id: " + dirty.objects[ship_index].id + " where object_type_id == false");
 
-                for(let i = 0; i < dirty.ship_coords.length && ship_coord_index === -1; i++) {
+                if(typeof dirty.objects[ship_index].airlock_index === 'undefined') {
+                    log(chalk.yellow("Ship has undefined airlock index. Trying to get ship coords"));
+                    await main.getShipCoords(ship_index);
+                }
 
-                    if(dirty.ship_coords[i] && dirty.ship_coords[i].ship_id === dirty.objects[ship_index].id) {
+                // try and place around the airlock if the ship has one
+                if(typeof dirty.objects[ship_index].airlock_index !== 'undefined' && dirty.objects[ship_index].airlock_index !== -1) {
 
+                    console.log("Ship has an airlock: " + dirty.objects[ship_index].airlock_index);
 
-                        let can_place_result = await player.canPlace(dirty, 'ship', dirty.ship_coords[i], player_index);
+                    ship_coord_index = await world.getOpenCoordIndex(dirty, 'ship', dirty.objects[ship_index].airlock_index, 'player', player_index, 2);
+
+                    console.log("world.getOpenCoordIndex returned: " + ship_coord_index);
+
+                    // TODO I need to find a better way of doing this. Something like placeAround - base coord index, placing_width_height
+                    /*
+
+                    // try left
+                    await map.getCoordNeighbor(dirty, 'ship', dirty.objects[ship_index].airlock_index, 'left');
+                    if(dirty.ship_coords[dirty.objects[ship_index].airlock_index].left_coord_index !== -1) {
+                        let can_place_result = await player.canPlace(dirty, 'ship', dirty.ship_coords[dirty.ship_coords[dirty.objects[ship_index].airlock_index].left_coord_index], player_index);
 
                         if(can_place_result === true) {
-                            ship_coord_index = i;
+                            ship_coord_index = dirty.ship_coords[dirty.objects[ship_index].airlock_index].left_coord_index;
+                            console.log("Using ship coord find near airlock");
                         }
-
-                        /*
-                        Removed in favor of using player.canPlace. Leaving for an update or two just incase I notice some changes. 0.1.17
-                        // If there's nothing there, we can place the player
-                        if(!dirty.ship_coords[i].object_type_id && !dirty.ship_coords[i].player_id && !dirty.ship_coords[i].monster_id && 
-                            !dirty.ship_coords[i].npc_id) {
-                            ship_coord_index = i;
-                        } else if(dirty.ship_coords[i].object_type_id) {
-
-                            // See if this is something we can walk on
-                            let coord_object_type_index = main.getObjectTypeIndex(dirty.ship_coords[i].object_type_id);
-                            if(coord_object_type_index !== -1 && dirty.object_types[coord_object_type_index].can_walk_on) {
-                                ship_coord_index = i;
-                            }
-
-                        }
-                        */
-
                     }
 
+                    // try right
+                    if(ship_coord_index === -1) {
+                        await map.getCoordNeighbor(dirty, 'ship', dirty.objects[ship_index].airlock_index, 'right');
+                        if(dirty.ship_coords[dirty.objects[ship_index].airlock_index].right_coord_index !== -1) {
+                            let can_place_result = await player.canPlace(dirty, 'ship', dirty.ship_coords[dirty.ship_coords[dirty.objects[ship_index].airlock_index].right_coord_index], player_index);
+
+                            if(can_place_result === true) {
+                                ship_coord_index = dirty.ship_coords[dirty.objects[ship_index].airlock_index].right_coord_index;
+                                console.log("Using ship coord find near airlock");
+                            }
+                        }
+                    }
+                    */
+
+                } 
+                // otherwise, we just try and place anywhere
+                else {
+
+                    for(let i = 0; i < dirty.ship_coords.length && ship_coord_index === -1; i++) {
+
+                        if(dirty.ship_coords[i] && dirty.ship_coords[i].ship_id === dirty.objects[ship_index].id) {
+    
+    
+                            let can_place_result = await player.canPlace(dirty, 'ship', dirty.ship_coords[i], player_index);
+    
+                            if(can_place_result === true) {
+                                ship_coord_index = i;
+                            }
+    
+                            /*
+                            Removed in favor of using player.canPlace. Leaving for an update or two just incase I notice some changes. 0.1.17
+                            // If there's nothing there, we can place the player
+                            if(!dirty.ship_coords[i].object_type_id && !dirty.ship_coords[i].player_id && !dirty.ship_coords[i].monster_id && 
+                                !dirty.ship_coords[i].npc_id) {
+                                ship_coord_index = i;
+                            } else if(dirty.ship_coords[i].object_type_id) {
+    
+                                // See if this is something we can walk on
+                                let coord_object_type_index = main.getObjectTypeIndex(dirty.ship_coords[i].object_type_id);
+                                if(coord_object_type_index !== -1 && dirty.object_types[coord_object_type_index].can_walk_on) {
+                                    ship_coord_index = i;
+                                }
+    
+                            }
+                            */
+    
+                        }
+    
+                    }
                 }
 
 

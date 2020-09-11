@@ -14,6 +14,9 @@ const helper = require('./helper.js');
 
 
 // Given a coordinate, find out if there is a neighbor coord adjacent
+/**
+ * @returns {Promise<number>}
+ */
 async function getCoordNeighbor(dirty, coord_type, coord_index, direction) {
 
     try {

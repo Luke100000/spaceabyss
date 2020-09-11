@@ -63,6 +63,15 @@ function addEffect(data) {
 
                 effect_sprite_index = e;
 
+                // and lets just make sure data for this previous spite is reset
+                effect_sprites[e].player_id = false;
+                effect_sprites[e].monster_id = false;
+                effect_sprites[e].object_id = false;
+                effect_sprites[e].planet_id = false;
+                effect_sprites[e].npc_id = false;
+                effect_sprites[e].rotation = 0;
+                effect_sprites[effect_sprite_index].setOrigin(.5,.5);
+
                 if(debug_effects) {
                     console.log("Found an invisible effect sprite we can re-use");
                 }
@@ -106,6 +115,7 @@ function addEffect(data) {
         }
 
         if(data.player_id) {
+            //console.log("Giving effect sprite player_id");
             effect_sprites[effect_sprite_index].player_id = data.player_id;
         }
 
@@ -192,7 +202,6 @@ function addEffect(data) {
             new_texture_key = 'repairing-effect';
             new_texture_animation_key = 'repairing-effect-animation';
             data.x += 32;
-            data.y += 32;
         } else if(data.damage_types[i] === 'salvaging') {
             new_texture_key = 'salvaging-effect';
             new_texture_animation_key = 'salvaging-effect-animation';
@@ -210,6 +219,9 @@ function addEffect(data) {
             return false;
         }
 
+
+        console.log("Rotation: " + effect_sprites[effect_sprite_index].rotation);
+        console.log("data.x,data.y: " + data.x + "," + data.y);
 
         effect_sprites[effect_sprite_index].effect_type = effect_type;
 
@@ -436,6 +448,9 @@ function updateEffectSprites(moved_type, moved_index) {
             // Player that is the beam source moved
             if(moved_type === 'player' && effect_sprites[i].damage_source_type === 'player' && effect_sprites[i].damage_source_id === players[moved_index].id) {
 
+                //console.log("Player that is beam source moved");
+                //console.log("Updating beam x,y from: " + effect_sprites[i].x + "," + effect_sprites[i].y + " to: " + players[moved_index].sprite.x + "," + players[moved_index].sprite.y);
+
                 effect_needs_update = true;
                 effect_sprites[i].x = players[moved_index].sprite.x;
                 effect_sprites[i].y = players[moved_index].sprite.y;
@@ -446,6 +461,8 @@ function updateEffectSprites(moved_type, moved_index) {
 
             // Player that is the beam destination moved
             if(moved_type === 'player' && effect_sprites[i].player_id === players[moved_index].id) {
+
+                console.log("Updating effect where player is the destination");
                 effect_needs_update = true;
                 effect_sprites[i].destination_x = players[moved_index].sprite.x;
                 effect_sprites[i].destination_y = players[moved_index].sprite.y;
@@ -490,6 +507,8 @@ function updateEffectSprites(moved_type, moved_index) {
                 effect_sprites[i].displayWidth = distance;
 
                 effect_sprites[i].rotation = angle_between;
+
+                //console.log("updated sprite to distance: " + effect_sprites[i].displayWidth + " angle: " + effect_sprites[i].rotation);
     
             }
 

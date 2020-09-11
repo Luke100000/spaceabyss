@@ -53,7 +53,6 @@ HACKING
 
 HEAT
         Hull Welder
-            Plasma Torch
                 Heat Lance ( inferno core required to make )
 
                     Flamethrower *RANGE* (inferno cores required as well )
