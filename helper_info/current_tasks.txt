@@ -4,24 +4,22 @@ CURRENT GAMEPLAY TEST:
 
 DOING NOW:
 
+    Make sure the desert cruiser wreck shows up properly
+
+    The updated portal system is a mess at the moment. 
+
+        1. Need a portal that is the image of the wreck/mouth etc
+        2. Need an exit portal that can be different image/object type
+        3. Need the interior (spawning a ship)
+
+        So for our Desert Cruiser Wreck we need:
+            1. Portal Object Type called Desert Cruiser Wreck
+            2. Portal Object Type called Desert Cruiser Wreck Exit
+            3. Ship Object Type called Desert Cruiser Wreck Interior
+            
+            4. Event called Desert Cruiser Wreck.
 
 
-    Could have a monster looking portal (still an object type) as an event. Basically make a portal, but it looks like a huge monster mouth. Transports you to 'inside the monster' (Could just be a ship in the code )
-    To add this we would need an is_portal attribute on OBJECT TYPES so there are multiple possible portals.
-
-    Would spawn a ship, and we would just not add that ship to any coords. Things like this would probably be at risk of being deleted
-        at some point, so would add another attribute to object types can_be_nowhere. I suppose :p This would also work for the great ship.
-        Stuff like: https://images.gemquery.com/254/content_2549852.jpg for the object type. 2x2 tiles.
-
-    So the actual steps:
-        1. Spawn a ship, don't add it to any coord. The ship should have a portal on it somewhere.
-        2. Spawn another portal somewhere on a planet. Make sure they are linked. Some neat event space now!
-
-
-    I keep coming back to The Great Nomad growing things. 
-
-
-    Did a stupid and added the BURSTER as a monster BUSTER. Switch all BUSTER to BURSTER
 
 
     Hacking view
@@ -39,8 +37,6 @@ DOING NOW:
     Switch to body could have the option to not transfer your inventory over to the new body. Wouldn't be bad to have 
         that option. Players could fully setup bodies ahead of time.
 
-
-    See if HP numbers when changing bodies is wacky. It feels wacky.
 
 
     see if I can get someone to make a trailer on fivr
@@ -76,6 +72,10 @@ DOING NOW:
 
         Implementation Idea #2:
             Just have a text list of things on the website. 
+
+        Could let the player give themselves tasks too
+
+        'obtain 10 batteries'
 
 
 

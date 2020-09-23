@@ -1816,7 +1816,14 @@ async function createPlanetCoord(socket, dirty, data) {
 }
 
 
-async function createShipCoord(dirty, ship_index, linker) {
+/**
+ * @param {Object} dirty
+ * @param {number} ship_index
+ * @param {Object} linker
+ * @param {Object=} data
+ * @param {number=} data.spawned_event_id
+ */
+async function createShipCoord(dirty, ship_index, linker, data = {}) {
 
     try {
         let sql = "";
@@ -1869,7 +1876,12 @@ async function createShipCoord(dirty, ship_index, linker) {
         if (linker_object_type_index !== -1 && dirty.object_types[linker_object_type_index].assembled_as_object) {
 
             // Gotta spawn an object!
-            let new_object_id = await insertObjectType(false, dirty, { 'object_type_id': dirty.object_types[linker_object_type_index].id });
+            let spawn_object_data = {'object_type_id': dirty.object_types[linker_object_type_index].id};
+            if(typeof data.spawned_event_id !== 'undefined') {
+                spawn_object_data.spawned_event_id = data.spawned_event_id;
+            }
+
+            let new_object_id = await insertObjectType(false, dirty, spawn_object_data);
             let new_object_index = await game_object.getIndex(dirty, new_object_id);
 
 
@@ -2624,7 +2636,13 @@ function cellSimulationStep(old_map, x_size, y_size, starting_x_offset, starting
 }
 
 
-async function generateShip(dirty, ship_index) {
+/**
+ * @param {Object} dirty
+ * @param {number} ship_index
+ * @param {Object=} data
+ * @param {number=} data.spawned_event_index
+ */
+async function generateShip(dirty, ship_index, data = {}) {
     try {
 
         // lets get the ship linkers
@@ -2632,7 +2650,7 @@ async function generateShip(dirty, ship_index) {
 
         for (let linker of ship_linkers) {
 
-            await createShipCoord(dirty, ship_index, linker);
+            await createShipCoord(dirty, ship_index, linker, data);
 
         }
     } catch (error) {
@@ -3281,7 +3299,7 @@ async function increasePlayerSkill(socket, dirty, player_index, skill_types) {
     try {
 
         //console.log("In world.increasePlayerSkill. Skill types: ");
-        console.log(skill_types);
+        //console.log(skill_types);
 
         for (let i = 0; i < skill_types.length; i++) {
 
@@ -3462,6 +3480,15 @@ exports.increasePlayerSkill = increasePlayerSkill;
 // object_type_id   |   player_id   |   npc_id   |   spawned_event_id
 // in an effort to specialize this function we only take in the object_type_id, insert it, and return the new object.
 // associating with coords is done elsewhere
+/**
+ * @param {Object} socket
+ * @param {Object} dirty
+ * @param {Object} data
+ * @param {number} data.object_type_id
+ * @param {number=} data.player_id
+ * @param {number=} data.npc_id
+ * @param {number=} data.spawned_event_id
+ */
 async function insertObjectType(socket, dirty, data) {
     try {
 
@@ -3556,7 +3583,12 @@ async function insertObjectType(socket, dirty, data) {
         }
 
         if (dirty.object_types[object_type_index].is_ship) {
-            await generateShip(dirty, object_index);
+
+            let generate_ship_data = {};
+            if(typeof data.spawned_event_id !== 'undefined') {
+                generate_ship_data.spawned_event_id = data.spawned_event_id;
+            }
+            await generateShip(dirty, object_index, generate_ship_data);
 
             if (dirty.object_types[object_type_index].needs_engines) {
                 await attachShipEngines(dirty, object_index);
@@ -5538,8 +5570,8 @@ async function tickWaitingDrops(dirty) {
         for(let i = 0; i < dirty.waiting_drops.length; i++) {
 
             if(dirty.waiting_drops[i]) {
-                console.log("Have waiting drop!");
-                console.log(dirty.waiting_drops[i]);
+                //console.log("Have waiting drop!");
+                //console.log(dirty.waiting_drops[i]);
 
                 if(typeof dirty.waiting_drops[i].object_type_id !== 'undefined' && helper.isFalse(dirty.waiting_drops[i].object_type_id)) {
                     log(chalk.yellow("INVALID WAITING LINKER!"));

@@ -521,7 +521,7 @@ async function damage(dirty, data) {
             }
 
             //console.log("Calling deleteMonster with monster index: " + data.monster_index);
-            await deleteMonster(dirty, { 'monster_index': data.monster_index, 'reason': 'battle', 'battle_linker': data.battle_linker });
+            await deleteMonster(dirty, data.monster_index, { 'reason': 'battle', 'battle_linker': data.battle_linker });
             //console.log("Done with deleteMonster");
 
         } else {
@@ -550,29 +550,29 @@ async function damage(dirty, data) {
 exports.damage = damage;
 
 // monster_index   |   reason   |   skip_check_spawned_event
-async function deleteMonster(dirty, data) {
+/**
+ * @param {Object} dirty
+ * @param {number} monster_index
+ * @param {Object} data
+ * @param {String=} data.reason
+ * @param {boolean=} data.skip_check_spawned_event
+ * @param {Object=} data.battle_linker
+ */
+async function deleteMonster(dirty, monster_index, data = {}) {
 
     try {
 
         //console.log("In deleteMonster");
 
-        if(typeof data.monster_index === "undefined") {
-            console.log("No data.monster_index");
+        if(!dirty.monsters[monster_index]) {
+            log(chalk.yellow("Could not find the monster we are deleting. Monster index: " + monster_index));
             return false;
         }
 
-        if(!dirty.monsters[data.monster_index]) {
-            log(chalk.yellow("Could not find the monster we are deleting. Monster index: " + data.monster_index));
-            return false;
-        }
-
-        if(!data.reason) {
-            data.reason = false;
-        }
 
         //log(chalk.yellow("MONSTER IS DEAD"));
 
-        let monster_type_index = dirty.monster_types.findIndex(function(obj) { return obj && obj.id === dirty.monsters[data.monster_index].monster_type_id; });
+        let monster_type_index = dirty.monster_types.findIndex(function(obj) { return obj && obj.id === dirty.monsters[monster_index].monster_type_id; });
 
 
         if(monster_type_index === -1) {
@@ -580,7 +580,7 @@ async function deleteMonster(dirty, data) {
             return false;
         }
 
-        let monster_info = await getCoordAndRoom(dirty, data.monster_index);
+        let monster_info = await getCoordAndRoom(dirty, monster_index);
 
 
         // If the monster is associate with a coord, remove it from that coord
@@ -601,7 +601,7 @@ async function deleteMonster(dirty, data) {
             if(monster_info.scope === 'galaxy') {
 
                 for(let g = 0; g < dirty.coords.length; g++) {
-                    if(dirty.coords[g] && dirty.coords[g].belongs_to_monster_id === dirty.monsters[data.monster_index].id) {
+                    if(dirty.coords[g] && dirty.coords[g].belongs_to_monster_id === dirty.monsters[monster_index].id) {
                         await main.updateCoordGeneric(false, { 'coord_index': g, 'belongs_to_monster_id': false });
                     }
                 }
@@ -609,7 +609,7 @@ async function deleteMonster(dirty, data) {
             } else if(monster_info.scope === 'planet') {
 
                 for(let p = 0; p < dirty.planet_coords.length; p++) {
-                    if(dirty.planet_coords[p] && dirty.planet_coords[p].belongs_to_monster_id === dirty.monsters[data.monster_index].id) {
+                    if(dirty.planet_coords[p] && dirty.planet_coords[p].belongs_to_monster_id === dirty.monsters[monster_index].id) {
                         await main.updateCoordGeneric(false, { 'planet_coord_index': p, 'belongs_to_monster_id': false });
                     }
                 }
@@ -617,7 +617,7 @@ async function deleteMonster(dirty, data) {
             } else if(monster_info.scope === 'ship') {
 
                 for(let s = 0; s < dirty.ship_coords.length; s++) {
-                    if(dirty.ship_coords[s] && dirty.ship_coords[s].belongs_to_monster_id === dirty.monsters[data.monster_index].id) {
+                    if(dirty.ship_coords[s] && dirty.ship_coords[s].belongs_to_monster_id === dirty.monsters[monster_index].id) {
                         await main.updateCoordGeneric(false, { 'ship_coord_index': s, 'belongs_to_monster_id': false });
                     }
                 }
@@ -630,7 +630,7 @@ async function deleteMonster(dirty, data) {
         }
 
 
-        world.removeBattleLinkers(dirty, {'monster_id': dirty.monsters[data.monster_index].id });
+        world.removeBattleLinkers(dirty, {'monster_id': dirty.monsters[monster_index].id });
 
 
 
@@ -679,26 +679,26 @@ async function deleteMonster(dirty, data) {
         //dirty.monsters[monster_index].is_dead = true;
         //dirty.monsters[monsteR_index].has_change = true;
 
-        let monster_id = dirty.monsters[data.monster_index].id;
+        let monster_id = dirty.monsters[monster_index].id;
 
 
         // If a planet coord spawned the monster, we cam update that to false
         //console.log("Going to set spawned monster id to false");
-        let spawned_monster_planet_coord_index = await main.getPlanetCoordIndex({'spawned_monster_id': dirty.monsters[data.monster_index].id });
+        let spawned_monster_planet_coord_index = await main.getPlanetCoordIndex({'spawned_monster_id': dirty.monsters[monster_index].id });
         if(spawned_monster_planet_coord_index !== -1) {
             dirty.planet_coords[spawned_monster_planet_coord_index].spawned_monster_id = false;
             dirty.planet_coords[spawned_monster_planet_coord_index].has_change = true;
         }
 
         let check_spawned_event_id = 0;
-        if(dirty.monsters[data.monster_index].spawned_event_id) {
-            check_spawned_event_id = dirty.monsters[data.monster_index].spawned_event_id;
+        if(dirty.monsters[monster_index].spawned_event_id) {
+            check_spawned_event_id = dirty.monsters[monster_index].spawned_event_id;
         }
 
         // Trying to not await due to time delay from MySQL
-        (pool.query("DELETE FROM monsters WHERE id = ?", [dirty.monsters[data.monster_index].id]));
+        (pool.query("DELETE FROM monsters WHERE id = ?", [dirty.monsters[monster_index].id]));
 
-        delete dirty.monsters[data.monster_index];
+        delete dirty.monsters[monster_index];
 
 
 
@@ -747,7 +747,7 @@ async function deleteMonster(dirty, data) {
 
         }
 
-        if(check_spawned_event_id !== 0 && !data.skip_check_spawned_event) {
+        if(check_spawned_event_id !== 0 && typeof data.skip_check_spawned_event !== 'undefined') {
             console.log("Monster was part of a spawned event");
             await game.checkSpawnedEvent(dirty, check_spawned_event_id);
         }
@@ -762,6 +762,37 @@ async function deleteMonster(dirty, data) {
 }
 
 exports.deleteMonster = deleteMonster;
+
+
+async function fix(dirty, monster_index) {
+
+    try {
+
+        console.log("Server thinks it needs to fix monster id: " + dirty.monsters[monster_index].id);
+
+        if(!dirty.monsters[monster_index].room) {
+            await getCoordAndRoom(dirty, monster_index);
+
+            // The coord we are supposed to be on doesn't exist!
+            if(!dirty.monsters[monster_index].room) {
+
+                if(dirty.monsters[monster_index].ship_coord_id) {
+                    console.log("Monster's ship_coord doesn't seem to exist anymore");
+                    deleteMonster(dirty, monster_index);
+
+                }
+
+            }
+
+        }
+
+    } catch(error) {
+        log(chalk.red("Error in monster.fix: " + error));
+        console.error(error);
+    }
+}
+
+exports.fix = fix;
 
 
 async function getCoordAndRoom(dirty, monster_index) {
@@ -805,6 +836,11 @@ async function getCoordAndRoom(dirty, monster_index) {
                 scope = "ship";
                 coord = dirty.ship_coords[coord_index];
             }
+        }
+
+        // Monsters should all have a room attribute
+        if(dirty.monsters[monster_index].room !== room) {
+            dirty.monsters[monster_index].room = room;
         }
 
         return { 'room': room, 'coord_index': coord_index, 'coord': coord, 'scope': scope };
@@ -1260,7 +1296,7 @@ async function move(dirty, i, data) {
 
 
         if( new_coord_index === -1 && (new_x === -1 || new_y === -1) ) {
-            log(chalk.yellow("-1 for new_x or new_y, and no new coord index"));
+            //log(chalk.yellow("-1 for new_x or new_y, and no new coord index"));
             return false;
         }
 
@@ -1761,6 +1797,7 @@ module.exports = {
     canPlace,
     damage,
     deleteMonster,
+    fix,
     getCoordAndRoom,
     move
 }

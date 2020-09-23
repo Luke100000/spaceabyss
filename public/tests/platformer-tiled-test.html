@@ -1,0 +1,109 @@
+
+
+<script src='phaser-3.24.1.js'></script>
+
+
+<script>
+
+const config = {
+  type: Phaser.AUTO, // Which renderer to use
+  width: 800, // Canvas width in pixels
+  height: 600, // Canvas height in pixels
+  parent: "game-container", // ID of the DOM element to add the canvas to
+  physics: {
+        default: 'arcade',
+        arcade: {
+            gravity: { y: 500 },
+            // working
+            debug: true
+        }
+  },
+  scene: {
+    preload: preload,
+    create: create,
+    update: update,
+    render: render
+  }
+};
+
+const game = new Phaser.Game(config);
+var player = {};
+var cursors;
+var max_right_velocity = 200;
+var max_left_velocity = -200;
+
+function preload() {
+  // Runs once, loads up assets like images and audio
+  this.load.image("tiles", "cavesofgallet_tiles-64x64.png");
+  this.load.tilemapTiledJSON("map", "tiledtest.json");
+
+  this.load.spritesheet('slaver', 'https://space.alphacoders.com/slaver.png', { 'frameWidth': 64, 'frameHeight': 64, 'endFrame': 4 });
+}
+
+function create() {
+  // Runs once, after all assets in preload are loaded
+    const map = this.make.tilemap({ key: "map" });
+    const tileset = map.addTilesetImage("cavesofgallet_tiles-64x64", "tiles");
+    const worldLayer = map.createStaticLayer("World", tileset, 0, 0);
+    worldLayer.setCollisionByExclusion([-1]);
+
+    const camera = this.cameras.main;
+    camera.setBounds(0, 0, map.widthInPixels, map.heightInPixels);
+
+    // Adding a normal sprite
+    //player.sprite = this.add.sprite(400, 100, 'slaver');
+
+    // Adding a sprite with physics
+    player.sprite = this.physics.add.sprite(400, 100, 'slaver');
+    player.sprite.debugShowVelocity = true;
+    this.physics.add.collider(worldLayer, player.sprite);
+    camera.startFollow(player.sprite);
+
+    cursors = this.input.keyboard.createCursorKeys();
+
+}
+
+function update(time, delta) {
+
+    if(cursors.left.isDown) {
+        
+
+        if(player.sprite.body.velocity.x > max_left_velocity) {
+            player.sprite.body.setVelocityX(player.sprite.body.velocity.x - 6);
+        }
+        
+    } 
+    // bleed off velocity
+    else if(player.sprite.body.velocity.x < 0) {
+        player.sprite.body.velocity.x++;
+
+    }
+
+    if(cursors.right.isDown) {
+        console.log("Player velocity x: " + player.sprite.body.velocity.x);
+        if( player.sprite.body.velocity.x < max_right_velocity) {
+            player.sprite.body.setVelocityX(player.sprite.body.velocity.x + 6);
+        }
+    }
+    // bleed off velocity
+    else if(player.sprite.body.velocity.x > 0) {
+      player.sprite.body.velocity.x--;
+    }
+
+    if ( (cursors.space.isDown || cursors.up.isDown) && player.sprite.body.onFloor())
+    {
+        player.sprite.body.setVelocityY(-500); // jump up
+    }
+
+    
+
+
+}
+
+
+// not working
+function render() {
+  game.debug.spriteInfo(player.sprite, 32, 32);
+}
+
+</script>

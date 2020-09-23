@@ -28,6 +28,8 @@ game.processAdminChatMessage
 /tickEvents
 /tickspawners
 /tickthegreatnomad
+
+# Notes: will only update ships that are in memory
 /updateshiptype OBJECT_TYPE_ID
 /warptoazureplanet PLAYER_ID
 

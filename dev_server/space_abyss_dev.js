@@ -586,7 +586,7 @@ inits.init(2, async function(callback) {
 
                     // The monster's planet coord LITERALLY does not exist
                     log(chalk.yellow("Deleting monster id: " + dirty.monsters[i].id));
-                    await monster.deleteMonster(dirty, { 'monster_index': i });
+                    await monster.deleteMonster(dirty, i);
                 }
             } else if(dirty.monsters[i].ship_coord_id) {
                 let ship_coord_index = await getShipCoordIndex({ 'ship_coord_id': dirty.monsters[i].ship_coord_id });
@@ -1444,7 +1444,7 @@ io.sockets.on('connection', function (socket) {
 
     socket.on('attack_stop_data', function (data) {
 
-        console.log("Got attack_stop_data:");
+        //console.log("Got attack_stop_data:");
         //console.log(data);
         battle.attackStop(socket, dirty, data);
     });
@@ -2291,7 +2291,7 @@ async function getMonsterIndex(monster_id) {
 
                                 // The monster's planet coord LITERALLY does not exist
                                 log(chalk.yellow("Deleting monster id: " + dirty.monsters[monster_index].id));
-                                await monster.deleteMonster(dirty, { 'monster_index': monster_index });
+                                await monster.deleteMonster(dirty, monster_index);
 
                             }
                         } else if(dirty.monsters[monster_index].ship_coord_id) {
@@ -2820,10 +2820,15 @@ async function loginPlayer(socket, dirty, data) {
 
             if(ship_coord_index !== -1) {
 
+                // make sure the ship is loaded into memory
+                let ship_index = await game_object.getIndex(dirty, dirty.ship_coords[ship_coord_index].ship_id);
+
 
                 let can_place_result = await player.canPlace(dirty, 'ship', dirty.ship_coords[ship_coord_index], player_index);
 
                 if(can_place_result === true) {
+
+                    
 
                     // Setting the room before we send out all the info
                     starting_view = 'ship';
@@ -3788,7 +3793,7 @@ async function getPlanetCoordIndex(data) {
                     if(data.tile_x < underground_x_offset || data.tile_y < underground_y_offset ||
                         data.tile_x >= dirty.planets[planet_index].x_size_under + underground_x_offset || 
                         data.tile_y >= dirty.planets[planet_index].y_size_under + underground_y_offset) {
-                            console.log("Returning -1 on getPlanetCoordIndex. Underground was out of bounds");
+                            //console.log("Returning -1 on getPlanetCoordIndex. Underground was out of bounds");
                             return -1;
                         }
 

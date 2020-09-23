@@ -1,3 +1,35 @@
+## [0.2.2] - 2020-09-23
+
+
+### Added
+- Object Types now have two additional properties - is_portal and attaches_to_object_type_id. This lets different object types be portals, and lets the look 
+of the enterance/exit be different.
+- Event linkers now have a spawns_off_grid property. Events can be created that will spawn something (right now ships with portals in them) off grid to make extra 
+caves and areas to explore beyond the default planet makeup
+- Added Desert Cave #1 event
+- Burster spawning on Desert Planet
+- Corrosive Goo
+- Vooard spawning on Desert Planet
+- Water Ship
+- Living Wood Ship
+- Coral Bloom
+- Coral Fragment
+- Silk Ship
+- Increased Bionic Crab hp, exp, and damage
+- Increased Sea Urchin hp, exp, and damage
+- Increased Jellyfish hp, exp, and damage
+- Decreased Laser Rifle damage from 10 to 6
+- Decreased Laser Gun damage from 5 to 2
+
+### Fixed
+- Monsters and players showing up in the wrong view
+- Ships wouldn't load into memory if not owned by a player unless a player saw that ship in space.
+
+
+### Changed
+- Expanded The Great Nomad
+
+
 ## [0.2.1] - 2020-09-11
 
 ### Added
@@ -15,6 +47,14 @@
 - Burster Monster
 - Observer Monster
 
+### Fixed
+- Multiple beam fixes. Mining beams would sometimes disappear, or laser beams would show up at the wrong destination (looked like monsters were attacking each other)
+- Additional effect fixes. Resetting things like rotation and sprite origin for a re-used sprite.
+- Broken Nanite Cluster Animation having an empty frame.
+- Slerm Milk can now be picked up.
+- Admin ability to spawn monsters on ships wasn't working. This really only applies to testing monsters.
+- Bug with monsters moving on ships. Turns out the ship coords were never actually saving that a monster was on them.
+
 
 ### Changed
 - Players will no longer get a skill increase for attacking objects that don't attack back (doors, walls, etc)
@@ -26,14 +66,6 @@
 - Started up The Great Nomad moving in and out of the galaxy
 - Increased pod health from 10 to 30. Pods were insta-dying in the area around the sun. I think it was too confusing for new players.
 
-### Fixed
-- Multiple beam fixes. Mining beams would sometimes disappear, or laser beams would show up at the wrong destination (looked like monsters were attacking each other)
-- Additional effect fixes. Resetting things like rotation and sprite origin for a re-used sprite.
-- Broken Nanite Cluster Animation having an empty frame.
-- Slerm Milk can now be picked up.
-- Admin ability to spawn monsters on ships wasn't working. This really only applies to testing monsters.
-- Bug with monsters moving on ships. Turns out the ship coords were never actually saving that a monster was on them.
-
 ## [0.2.0] - 2020-08-29
 
 
@@ -41,6 +73,11 @@
 - Energy Blade
 - Consumables for Slerm player body types
 - Players now have the ability to move up stairs they are currently on. Right Click -> Move Up Stairs
+
+### Fixed
+- Bug with trying to add an adjacent index back if the adjacent coord was not found
+- Bug with pathfinding going out of bounds of the grid when we fail to find a path, and then try to find paths around it
+- Mutliple other bugs with pathfinding, as well as efficiency changes
 
 ### Changed
 - Warmind spawning removed from level -7 of machine worlds
@@ -58,11 +95,6 @@ Removed Battery drop of Warminds. Changed Power Cell drop for Warminds from Rare
 - Basic planet movement now uses neighbor indexes. We also send the player's updated information before sending the additional off screen coords
 - DDrone hacking defense modifier changed from -4 to -3
 - Warmind hacking defense modifier changed from 0 to -3
-
-### Fixed
-- Bug with trying to add an adjacent index back if the adjacent coord was not found
-- Bug with pathfinding going out of bounds of the grid when we fail to find a path, and then try to find paths around it
-- Mutliple other bugs with pathfinding, as well as efficiency changes
 
 
 ## [0.1.28] - 2020-08-20

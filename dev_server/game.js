@@ -403,9 +403,9 @@ const world = require('./world.js');
 
     /**
      *
-     * @param socket
-     * @param dirty
-     * @param object_id
+     * @param {Object} socket
+     * @param {Object} dirty
+     * @param {number} object_index
      * @param {Object} data
      * @param {number=} data.planet_coord_index
      * @param {number=} data.ship_coord_index
@@ -417,14 +417,18 @@ const world = require('./world.js');
 
             log(chalk.green("Attempting to place portal!"));
 
+            let object_type_index = main.getObjectTypeIndex(dirty.objects[object_index].object_type_id);
 
-            if(data.planet_coord_index) {
+            console.log("Portal type: " + dirty.object_types[object_type_index].name);
+
+
+            if(typeof data.planet_coord_index !== "undefined") {
 
                 await main.updateCoordGeneric(socket, { 'planet_coord_index': data.planet_coord_index,
                     'object_index': object_index });
 
 
-            } else if(data.ship_coord_index) {
+            } else if(typeof data.ship_coord_index !== "undefined") {
 
                 await main.updateCoordGeneric(socket, { 'ship_coord_index': data.ship_coord_index,
                     'object_index': object_index });
@@ -432,10 +436,91 @@ const world = require('./world.js');
 
             }
 
-            let unattached_portal_index = dirty.objects.findIndex(function(obj) { return obj &&
-                obj.player_id === dirty.players[socket.player_index].id && obj.object_type_id === 47 && !obj.attached_to_id && obj.id !== dirty.objects[object_index].id; });
+            let unattached_portal_index = -1;
+
+            // If our portal object has a player_id, we will try and link based on that
+            if(helper.notFalse(dirty.objects[object_index].player_id)) {
+                console.log("Portal has a player id. Trying to match based on object type and player id");
+                unattached_portal_index = dirty.objects.findIndex(function(obj) { return obj && obj.player_id === dirty.players[socket.player_index].id && 
+                    obj.object_type_id === dirty.object_types[object_type_index].attaches_to_object_type_id && !obj.attached_to_id && obj.id !== dirty.objects[object_index].id; });
+
+            } 
+            // Otherwise, it's possible that our object has a spawned_event_id, and we can try to link based on that
+            else if(dirty.objects[object_index].spawned_event_id) {
+                console.log("Portal has a spawned event id!");
+                unattached_portal_index = dirty.objects.findIndex(function(obj) { return obj && obj.spawned_event_id === dirty.objects[object_index].spawned_event_id && 
+                    obj.object_type_id === dirty.object_types[object_type_index].attaches_to_object_type_id && !obj.attached_to_id && obj.id !== dirty.objects[object_index].id; });
+            }
+
+
+            // If there are display linkers, we would add those in now
+            // see if the object type has display linkers that aren't only visual (takes up space)
+            let display_linkers = dirty.object_type_display_linkers.filter(linker =>
+                linker.object_type_id === dirty.object_types[object_type_index].id && !linker.only_visual);
+
+            // This object will take up multiple tiles of space
+            if(display_linkers.length > 0) {
+
+                console.log("Portal has display linkers");
+
+                let origin_coord;
+                if(typeof data.planet_coord_index !== 'undefined') {
+                    origin_coord = dirty.planet_coords[data.planet_coord_index];
+                } else if(typeof data.ship_coord_index !== 'undefined') {
+                    origin_coord = dirty.ship_coords[data.ship_coord_index];
+                }
+
+                display_linkers.forEach(await async function(linker) {
+
+                    // our coord. Already did it
+                    if(linker.position_x === origin_coord.tile_x && linker.position_y === origin_coord.tile_y) {
+
+                    } else {
+
+                        console.log("On non-origin display linker");
+                        // get the coord that the display linker is about
+                        let tile_x = origin_coord.tile_x + linker.position_x;
+                        let tile_y = origin_coord.tile_y + linker.position_y;
+
+                        let placing_coord_index = -1;
+                        if(typeof data.planet_coord_index !== 'undefined') {
+                            placing_coord_index = await main.getPlanetCoordIndex({ 'planet_id': origin_coord.planet_id,
+                                'planet_level': origin_coord.level, 'tile_x': tile_x, 'tile_y': tile_y });
+                        } else if(typeof data.ship_coord_index !== 'undefined') {
+                            placing_coord_index = await main.getShipCoordIndex({ 'ship_id': origin_coord.ship_id,
+                                'level': origin_coord.level,
+                                'tile_x': tile_x, 'tile_y': tile_y });
+                        }
+
+                        if(placing_coord_index !== -1) {
+                            let update_data = {};
+
+                            if(typeof data.planet_coord_index !== 'undefined') {
+                                update_data.planet_coord_index = placing_coord_index;
+                            } else if(typeof data.ship_coord_index !== 'undefined') {
+                                update_data.ship_coord_index = placing_coord_index;
+                            }
+
+                            if(tile_x === origin_coord.tile_x && tile_y === origin_coord.tile_y) {
+                                update_data.object_index = object_index;
+                            } else {
+                                update_data.belongs_to_object_id = dirty.objects[object_index].id;
+                            }
+
+                            await main.updateCoordGeneric(socket, update_data);
+
+                        }
+                    }
+
+                  
+
+                });
+
+            } 
+
 
             if(unattached_portal_index === -1) {
+                log(chalk.yellow("Could not find an unattached portal!!"));
                 return;
             }
 
@@ -449,6 +534,10 @@ const world = require('./world.js');
 
             await game_object.sendInfo(socket, false, dirty, object_index, 'game.placePortal');
             await game_object.sendInfo(socket, false, dirty, unattached_portal_index, 'game.placePortal');
+
+
+            
+
 
             console.log("Finished in game.addPortal");
 
@@ -2234,7 +2323,7 @@ const world = require('./world.js');
                     if(dirty.planet_coords[i].monster_id) {
                         let monster_index = await main.getMonsterIndex(dirty.planet_coords[i].monster_id);
                         if(monster_index !== -1) {
-                            await monster.deleteMonster(dirty, { 'monster_index': monster_index });
+                            await monster.deleteMonster(dirty, monster_index);
                         }
 
                     }
@@ -3431,12 +3520,12 @@ exports.eat = eat;
 
                     spawned_event_id = dirty.monsters[data.monster_index].spawned_event_id;
 
-                    let delete_monster_data = { 'monster_index': data.monster_index };
+                    let delete_monster_data = {};
                     if(helper.notFalse(dirty.monsters[data.monster_index].spawned_event_id)) {
                         delete_monster_data.skip_check_spawned_event = true;
                     }
 
-                    await monster.deleteMonster(dirty, delete_monster_data);
+                    await monster.deleteMonster(dirty, data.monster_index, delete_monster_data);
                 }
 
 
@@ -4475,7 +4564,7 @@ exports.eat = eat;
             if(dirty.planet_coords[data.planet_coord_index].monster_id) {
                 let monster_index = await main.getMonsterIndex(dirty.planet_coords[data.planet_coord_index].monster_id);
                 if(monster_index !== -1) {
-                    await monster.deleteMonster(dirty, { 'monster_index': monster_index });
+                    await monster.deleteMonster(dirty, monster_index);
                 }
 
             }
@@ -5641,7 +5730,7 @@ exports.eat = eat;
                 await event.tickSpawning(dirty);
                 await event.tickSpawnedEvents(dirty);
             } else if(data.message.includes("/updateshiptype ")) {
-                console.log("Was spawn object message");
+                console.log("Was updateshiptype message");
                 let split = data.message.split(" ");
 
                 let object_type_id = split[1];
@@ -6826,8 +6915,8 @@ exports.eat = eat;
             let autopilot_index = dirty.autopilots.push({ 'id': uuid(), 'player_id': socket.player_id, 'destination_tile_x': parseInt(destination_tile_x),
                 'destination_tile_y': parseInt(destination_tile_y) }) - 1;
 
-            console.log("Pushed autopilot: ");
-            console.log(dirty.autopilots[autopilot_index]);
+            //console.log("Pushed autopilot: ");
+            //console.log(dirty.autopilots[autopilot_index]);
 
         } catch(error) {
             log(chalk.red("Error in game.setAutopilotDestination: " + error));
@@ -8503,10 +8592,13 @@ exports.eat = eat;
 
 
                     if(!dirty.monsters[i].room) {
-                        log(chalk.yellow("Monster doesn't have a room somehow"));
+                        log(chalk.yellow("Monster id: " + dirty.monsters[i].id + " doesn't have a room somehow. Lets try and grab it."));
+                        await monster.fix(dirty, i);
 
                         // Lets grab it!
                         console.log("planet_coord_id: " + dirty.monsters[i].planet_coord_id + " ship coord id: " + dirty.monsters[i].ship_coord_id);
+
+
                     }
 
                     if(room_keys.includes(dirty.monsters[i].room)) {
@@ -9081,7 +9173,7 @@ exports.eat = eat;
 
                             let chosen_linker = monster_type_spawn_linkers[Math.floor(Math.random()*monster_type_spawn_linkers.length)];
 
-                            console.log("Chose spawn linker id: " + chosen_linker.id);
+                            //console.log("Chose spawn linker id: " + chosen_linker.id);
 
                             if(chosen_linker.ticks_required > 1) {
                                 dirty.monsters[i].current_spawn_linker_id = chosen_linker.id;

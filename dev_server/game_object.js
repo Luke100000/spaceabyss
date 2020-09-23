@@ -605,7 +605,7 @@ async function deleteObject(dirty, data) {
         await main.getObjectInventory(dirty.objects[data.object_index].id);
 
         for(let inventory_item of dirty.inventory_items) {
-            if(inventory_item && inventory_item.owned_by_object_id === dirty.objects[data.object_index].id) {
+            if(inventory_item && dirty.objects[data.object_index] && inventory_item.owned_by_object_id === dirty.objects[data.object_index].id) {
                 await inventory.removeFromInventory(false, dirty, { 'inventory_item_id': inventory_item.id, 'amount': inventory_item.amount });
             }
         }
@@ -977,8 +977,8 @@ async function place(socket, dirty, data) {
 
     try {
 
-        //log(chalk.cyan("In game_object.place with data: "));
-        //console.log(data);
+        log(chalk.cyan("In game_object.place with data: "));
+        console.log(data);
 
         let object_index = -1;
 
@@ -1004,8 +1004,8 @@ async function place(socket, dirty, data) {
             return false;
         }
 
-        // PORTAL
-        if(dirty.objects[object_index].object_type_id === 47) {
+        // PORTAL    
+        if(dirty.object_types[object_type_index].is_portal) {
             let place_portal_data = { };
 
             if(data.planet_coord_index) {
@@ -1678,9 +1678,6 @@ async function updateType(dirty, object_type_id) {
 
             if(dirty.objects[s]) {
 
-                if(dirty.objects[s].id > 86422) {
-                    console.log("Checking object id: " + dirty.objects[s].id + " object_type_id: " + dirty.objects[s].object_type_id);
-                }
                 
                 if(dirty.objects[s].object_type_id === dirty.object_types[object_type_index].id) {
                     console.log("Ship id: " + dirty.objects[s].id + " is the ship type we are updating");

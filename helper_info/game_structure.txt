@@ -42,7 +42,7 @@ FREE
             Defense (player armor): 3
             Armor Types: Exodium, Living Wood, Slerm/(Bubble)
 
-                TIER 4 - Refined Exodium, Power Cells, AI Fragments (18), AI (22), Inferno Core, Jelly
+                TIER 4 - Refined Exodium, Power Cells, AI Fragments (18), AI (22), Inferno Core, Jelly, Corrosive Goo
                 Minimum Monster Damage: 30
                 Complexity: 18-22
                 Damage: Melee 5, Range 3
@@ -557,8 +557,11 @@ Pod (DRAWN)
                     Cruiser (medium)
                         Dreadnought ( have image idea ) (medium)
                         Battlecruiser (medium)
-                            Nova-class Battlecruiser (medium)
-                                Supercruiser (medium)
+
+                            Heavy Cruiser (medium)
+
+                                Nova-class Battlecruiser (medium)
+                                    Supercruiser (medium/large)
 
             Living Wood Ship (small)
 

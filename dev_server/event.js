@@ -39,7 +39,7 @@ async function deleteSpawnedEvent(dirty, spawned_event_index) {
         // Remove spawned monsters - We skip the check spawned event check because... WE ARE ALREADY DELETING THE SPAWNED EVENT!
         for(let i = 0; i < dirty.monsters.length; i++) {
             if(dirty.monsters[i] && dirty.monsters[i].spawned_event_id === dirty.spawned_events[spawned_event_index].id) {
-                await monster.deleteMonster(dirty, { 'monster_index': i, 'reason': 'Deleting Spawned Event', 'skip_check_spawned_event': true });
+                await monster.deleteMonster(dirty, i, { 'reason': 'Deleting Spawned Event', 'skip_check_spawned_event': true });
             }
         }
 
@@ -406,156 +406,166 @@ async function spawn(dirty, event_index, data) {
 
 
         for(let event_linker of event_linkers) {
-            let tile_x = origin_tile_x + event_linker.position_x;
-            let tile_y = origin_tile_y + event_linker.position_y;
-            let tile_level = 0;
-            if(event_scope === 'planet') {
-                tile_level = origin_planet_level + event_linker.level;
-            } else if(event_scope === 'ship') {
-                tile_level = origin_ship_level + event_linker.level;
-            }
 
-
-            // If the event linker has a object, make sure we can place an object there
-
-            let checking_coord_index = -1;
-            let checking_coord = false;
-            if(event_scope === 'planet') {
-                let planet_coord_data = { 'planet_id': dirty.planets[planet_index].id,
-                    'planet_level': tile_level, 'tile_x': tile_x, 'tile_y': tile_y };
-                    
-                // I think this is OK here - but it doesn't make multi level events suddenly work
-                if(tile_level > 0) {
-                    planet_coord_data.can_insert = true;
+            // we don't have to check an event linker if it's spawn_off_grid parameter is set to true
+            // We spawn something like a ship off grid if it's being portaled into
+            if(helper.isFalse(event_linker.spawns_off_grid)) {
+                let tile_x = origin_tile_x + event_linker.position_x;
+                let tile_y = origin_tile_y + event_linker.position_y;
+                let tile_level = 0;
+                if(event_scope === 'planet') {
+                    tile_level = origin_planet_level + event_linker.level;
+                } else if(event_scope === 'ship') {
+                    tile_level = origin_ship_level + event_linker.level;
                 }
-
-                if(debug_event_ids.indexOf(dirty.events[event_index].id) !== -1) {
-                    //console.log("Data going into getPlanetCoordIndex:");
-                    //console.log(planet_coord_data);
+    
+    
+                // If the event linker has a object, make sure we can place an object there
+    
+                let checking_coord_index = -1;
+                let checking_coord = false;
+                if(event_scope === 'planet') {
+                    let planet_coord_data = { 'planet_id': dirty.planets[planet_index].id,
+                        'planet_level': tile_level, 'tile_x': tile_x, 'tile_y': tile_y };
+                        
+                    // I think this is OK here - but it doesn't make multi level events suddenly work
+                    if(tile_level > 0) {
+                        planet_coord_data.can_insert = true;
+                    }
+    
+                    if(debug_event_ids.indexOf(dirty.events[event_index].id) !== -1) {
+                        //console.log("Data going into getPlanetCoordIndex:");
+                        //console.log(planet_coord_data);
+                    }
+    
+                    checking_coord_index = await main.getPlanetCoordIndex(planet_coord_data);
+    
+                    if(checking_coord_index === -1) {
+                        log(chalk.yellow("Could not find the coord we are checking"));
+                        console.log(planet_coord_data);
+                        return false;
+                    }
+                } else if(event_scope === 'ship') {
+    
+                    checking_coord_index = await main.getShipCoordIndex({
+                        'ship_id': dirty.ship_coords[data.ship_coord_index].ship_id,
+                        'level': tile_level, 'tile_x': tile_x, 'tile_y': tile_y
+                    });
+                } else if(event_scope === 'galaxy') {
+                    checking_coord_index = await main.getCoordIndex({ 'tile_x': tile_x, 'tile_y': tile_y });
                 }
-
-                checking_coord_index = await main.getPlanetCoordIndex(planet_coord_data);
-
+    
                 if(checking_coord_index === -1) {
-                    log(chalk.yellow("Could not find the coord we are checking"));
-                    console.log(planet_coord_data);
-                    return false;
-                }
-            } else if(event_scope === 'ship') {
-
-                checking_coord_index = await main.getShipCoordIndex({
-                    'ship_id': dirty.ship_coords[data.ship_coord_index].ship_id,
-                    'level': tile_level, 'tile_x': tile_x, 'tile_y': tile_y
-                });
-            } else if(event_scope === 'galaxy') {
-                checking_coord_index = await main.getCoordIndex({ 'tile_x': tile_x, 'tile_y': tile_y });
-            }
-
-            if(checking_coord_index === -1) {
-                can_spawn = false;
-
-                if(debug_event_ids.indexOf(dirty.events[event_index].id) !== -1) {
-                    log(chalk.yellow("Was unable to find the coord to check. tile_x,tile_y: " + tile_x + "," + tile_y));
-                }
-
-                return false;
-
-            }
-
-
-            if(event_scope === 'planet') {
-                checking_coord = dirty.planet_coords[checking_coord_index];
-            } else if(event_scope === 'ship') {
-                checking_coord = dirty.ship_coords[checking_coord_index];
-            } else if(event_scope === 'galaxy') {
-                checking_coord = dirty.coords[checking_coord_index];
-            }
-
-
-            let can_place_object_result = false;
-            if(event_linker.object_type_id) {
-
-                if(debug_event_ids.indexOf(dirty.events[event_index].id) !== -1) {
-                    log(chalk.yellow("Going to check to see if we can place an object on a coord with floor_type_id: " + checking_coord.floor_type_id));
-                }
-
-                can_place_object_result = await game_object.canPlace(dirty, event_scope, checking_coord,
-                    { 'object_type_id': event_linker.object_type_id });
-            }
-
-
-            if(event_linker.object_type_id && can_place_object_result === false) {
-                can_spawn = false;
-                if(debug_event_ids.indexOf(dirty.events[event_index].id) !== -1 && event_scope === 'planet') {
-                    log(chalk.yellow("Couldn't put an object type on coord at " +
-                        dirty.planet_coords[checking_coord_index].tile_x + "," + dirty.planet_coords[checking_coord_index].tile_y))
-                }
-
-            } else {
-
-
-                if(event_linker.object_type_id && debug_event_ids.indexOf(dirty.events[event_index].id) !== -1 ) {
-                    console.log("Looks like we can place there. can_place_object_result: " + can_place_object_result);
-                }
-
-                if(event_linker.object_type_id && checking_coord.floor_type_id === 26) {
-                    log(chalk.red("game_object.canPlace should NOT have returned true on this coord"));
                     can_spawn = false;
+    
+                    if(debug_event_ids.indexOf(dirty.events[event_index].id) !== -1) {
+                        log(chalk.yellow("Was unable to find the coord to check. tile_x,tile_y: " + tile_x + "," + tile_y));
+                    }
+    
+                    return false;
+    
                 }
-
-            }
-
-
-
-            let can_place_floor_result = false;
-            if(helper.notFalse(event_linker.floor_type_id)) {
-
+    
+    
+                if(event_scope === 'planet') {
+                    checking_coord = dirty.planet_coords[checking_coord_index];
+                } else if(event_scope === 'ship') {
+                    checking_coord = dirty.ship_coords[checking_coord_index];
+                } else if(event_scope === 'galaxy') {
+                    checking_coord = dirty.coords[checking_coord_index];
+                }
+    
+    
+                let can_place_object_result = false;
+                if(event_linker.object_type_id) {
+    
+                    if(debug_event_ids.indexOf(dirty.events[event_index].id) !== -1) {
+                        log(chalk.yellow("Going to check to see if we can place an object on a coord with floor_type_id: " + checking_coord.floor_type_id));
+                    }
+    
+                    can_place_object_result = await game_object.canPlace(dirty, event_scope, checking_coord,
+                        { 'object_type_id': event_linker.object_type_id });
+                }
+    
+    
+                if(event_linker.object_type_id && can_place_object_result === false) {
+                    can_spawn = false;
+                    if(debug_event_ids.indexOf(dirty.events[event_index].id) !== -1 && event_scope === 'planet') {
+                        log(chalk.yellow("Couldn't put an object type on coord at " +
+                            dirty.planet_coords[checking_coord_index].tile_x + "," + dirty.planet_coords[checking_coord_index].tile_y))
+                    }
+    
+                } else {
+    
+    
+                    if(event_linker.object_type_id && debug_event_ids.indexOf(dirty.events[event_index].id) !== -1 ) {
+                        console.log("Looks like we can place there. can_place_object_result: " + can_place_object_result);
+                    }
+    
+                    if(event_linker.object_type_id && checking_coord.floor_type_id === 26) {
+                        log(chalk.red("game_object.canPlace should NOT have returned true on this coord"));
+                        can_spawn = false;
+                    }
+    
+                }
+    
+    
+    
+                let can_place_floor_result = false;
+                if(helper.notFalse(event_linker.floor_type_id)) {
+    
+                    if(debug_event_ids.indexOf(dirty.events[event_index].id) !== -1) {
+                        console.log("Event linker has a floor_type_id: " + event_linker.floor_type_id);
+                    }
+    
+                    can_place_floor_result = await main.canPlaceFloor({ 'scope': event_scope, 'coord': checking_coord,
+                        'floor_type_id': event_linker.floor_type_id });
+    
+                } else if(event_linker.floor_type_class) {
+    
+                    if(debug_event_ids.indexOf(dirty.events[event_index].id) !== -1) {
+                        console.log("Event linker has a floor_type_class");
+                    }
+    
+                    can_place_floor_result = await main.canPlaceFloor({ 'scope': event_scope, 'coord': checking_coord,
+                        'floor_type_class': event_linker.floor_type_class });
+    
+                }
+    
+                if(event_linker.floor_type_id && can_place_floor_result === false) {
+                    can_spawn = false;
+                    if(debug_event_ids.indexOf(dirty.events[event_index].id) !== -1) {
+                        log(chalk.yellow("Couldn't put floor on coord at " +
+                            checking_coord.tile_x + "," + checking_coord.tile_y))
+                    }
+    
+    
+                }
+    
+                let can_place_monster_result = false;
+                if(event_linker.monster_type_id) {
+    
+                    let place_monster_data = { 'monster_type_id': event_linker.monster_type_id };
+                    if(event_linker.floor_type_id) {
+                        place_monster_data.event_provides_floor = true;
+                    }
+    
+                    can_place_monster_result = await monster.canPlace(dirty, event_scope,checking_coord, place_monster_data);
+    
+                }
+    
+                if(event_linker.monster_type_id && can_place_monster_result === false) {
+                    can_spawn = false;
+                    if(debug_event_ids.indexOf(dirty.events[event_index].id) !== -1) {
+                        log(chalk.yellow("Couldn't put monster type on coord at " +
+                            dirty.planet_coords[checking_coord_index].tile_x + "," + dirty.planet_coords[checking_coord_index].tile_y))
+                    }
+                }
+            } else {
                 if(debug_event_ids.indexOf(dirty.events[event_index].id) !== -1) {
-                    console.log("Event linker has a floor_type_id: " + event_linker.floor_type_id);
+                    console.log("Skipped seeing if we can place this linker. spawns_off_grid is true");
                 }
-
-                can_place_floor_result = await main.canPlaceFloor({ 'scope': event_scope, 'coord': checking_coord,
-                    'floor_type_id': event_linker.floor_type_id });
-
-            } else if(event_linker.floor_type_class) {
-
-                if(debug_event_ids.indexOf(dirty.events[event_index].id) !== -1) {
-                    console.log("Event linker has a floor_type_class");
-                }
-
-                can_place_floor_result = await main.canPlaceFloor({ 'scope': event_scope, 'coord': checking_coord,
-                    'floor_type_class': event_linker.floor_type_class });
-
-            }
-
-            if(event_linker.floor_type_id && can_place_floor_result === false) {
-                can_spawn = false;
-                if(debug_event_ids.indexOf(dirty.events[event_index].id) !== -1) {
-                    log(chalk.yellow("Couldn't put floor on coord at " +
-                        checking_coord.tile_x + "," + checking_coord.tile_y))
-                }
-
-
-            }
-
-            let can_place_monster_result = false;
-            if(event_linker.monster_type_id) {
-
-                let place_monster_data = { 'monster_type_id': event_linker.monster_type_id };
-                if(event_linker.floor_type_id) {
-                    place_monster_data.event_provides_floor = true;
-                }
-
-                can_place_monster_result = await monster.canPlace(dirty, event_scope,checking_coord, place_monster_data);
-
-            }
-
-            if(event_linker.monster_type_id && can_place_monster_result === false) {
-                can_spawn = false;
-                if(debug_event_ids.indexOf(dirty.events[event_index].id) !== -1) {
-                    log(chalk.yellow("Couldn't put monster type on coord at " +
-                        dirty.planet_coords[checking_coord_index].tile_x + "," + dirty.planet_coords[checking_coord_index].tile_y))
-                }
+                
             }
 
         }
@@ -575,7 +585,7 @@ async function spawn(dirty, event_index, data) {
         }
 
 
-        // Lets add an event linker
+        // Lets add a spawned event
         let sql = "";
         let inserts = "";
         if(event_scope === 'planet') {
@@ -607,6 +617,7 @@ async function spawn(dirty, event_index, data) {
 
         //console.log("Inserted spawned event");
 
+        // Now that we've inserted the spawned event, we can insert each of the event linkers
         event_linkers.forEach(await async function(event_linker) {
 
             try {
@@ -650,6 +661,8 @@ async function spawn(dirty, event_index, data) {
 
                     let new_object_index = await game_object.getIndex(dirty, new_object_id);
 
+                    
+
                     if(new_object_index === -1) {
                         log(chalk.yellow("Was unable to get object index from object id: " + new_object_id + " in event.spawn"));
                         return false;
@@ -658,22 +671,37 @@ async function spawn(dirty, event_index, data) {
                     console.log("Created new object id: " + dirty.objects[new_object_index].id +
                         " with spawned_event_id: " + dirty.objects[new_object_index].spawned_event_id);
 
-                    if(event_scope === 'planet') {
-                        await game_object.place(false, dirty, { 'object_index': new_object_index,
-                            'planet_coord_index': linker_coord_index });
-
-                        console.log("Object's planet_coord_id: " + dirty.objects[new_object_index].planet_coord_id);
-                    } else if(event_scope === 'ship') {
-                        await game_object.place(false, dirty, { 'object_index': new_object_index,
-                            'ship_coord_index': linker_coord_index });
-
-                        console.log("Object's ship_coord_id: " + dirty.objects[new_object_index].ship_coord_id);
-                    } else if(event_scope === 'galaxy') {
-                        await game_object.place(false, dirty, { 'object_index': new_object_index,
-                            'coord_index': linker_coord_index });
-
-                        console.log("Object's coord_id: " + dirty.objects[new_object_index].coord_id);
+                    if(debug_event_ids.indexOf(dirty.events[event_index].id) !== -1) {
+                        console.log("Linker spawns_off_grid is: " + event_linker.spawns_off_grid);
                     }
+
+                    if(helper.isFalse(event_linker.spawns_off_grid)) {
+                        
+                        if(event_scope === 'planet') {
+                            await game_object.place(false, dirty, { 'object_index': new_object_index,
+                                'planet_coord_index': linker_coord_index });
+
+                            console.log("Object's planet_coord_id: " + dirty.objects[new_object_index].planet_coord_id);
+                        } else if(event_scope === 'ship') {
+                            await game_object.place(false, dirty, { 'object_index': new_object_index,
+                                'ship_coord_index': linker_coord_index });
+
+                            console.log("Object's ship_coord_id: " + dirty.objects[new_object_index].ship_coord_id);
+                        } else if(event_scope === 'galaxy') {
+                            await game_object.place(false, dirty, { 'object_index': new_object_index,
+                                'coord_index': linker_coord_index });
+
+                            console.log("Object's coord_id: " + dirty.objects[new_object_index].coord_id);
+                        }
+                    } else {
+
+                        if(debug_event_ids.indexOf(dirty.events[event_index].id) !== -1) {
+                            console.log("Skipped adding this linker to a coordinate. spawns_off_grid is true");
+                        }
+                        
+                    }
+
+                    
 
 
                     /*

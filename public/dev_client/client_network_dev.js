@@ -1270,7 +1270,7 @@ socket.on('monster_info', function(data) {
 
 
         // Monster moved on a ship
-        if(monsters[monster_index].ship_coord_id && monsters[monster_index].ship_coord_id !== data.monster.ship_coord_id) {
+        if(should_draw_result && monsters[monster_index].ship_coord_id && monsters[monster_index].ship_coord_id !== data.monster.ship_coord_id) {
             //console.log("Monster is on a new ship coord id. old: " + monsters[monster_index].ship_coord_id +
             //    " new: " + data.monster.ship_coord_id);
 
@@ -3249,6 +3249,26 @@ socket.on('view_change_data', function(data) {
     });
     npcs = [];
 
+    // Same idea with monsters
+    monsters.forEach(function(monster) {
+        if(monster.sprite) {
+            monster.sprite.destroy();
+            monster.sprite = false;
+        }
+    });
+    monsters = [];
+
+    // Pretty sure we can do the same with players
+    players.forEach(function(player, i) {
+        if(player.id !== client_player_id) {
+            if(player.sprite) {
+                player.sprite.destroy();
+            }
+
+            delete players[i];
+        }
+    });
+
     if(data.view === 'galaxy') {
 
         on_planet = false;
@@ -3265,26 +3285,12 @@ socket.on('view_change_data', function(data) {
         current_view = 'galaxy';
 
         battle_linkers = [];
-        monsters.forEach(function(monster) {
-            if(monster.sprite) {
-                monster.sprite.destroy();
-                monster.sprite = false;
-            }
-        });
-        monsters = [];
+
 
 
         planet_coords = [];
 
-        players.forEach(function(player, i) {
-            if(player.id !== client_player_id) {
-                if(player.sprite) {
-                    player.sprite.destroy();
-                }
 
-                delete players[i];
-            }
-        });
 
         ship_coords = [];
 

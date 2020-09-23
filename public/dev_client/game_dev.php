@@ -860,14 +860,23 @@ include('config.php');
             this.load.spritesheet('player-lancer', 'https://space.alphacoders.com/lancer-animated.png',
                 { 'frameWidth': 64, 'frameHeight': 64, endFrame: 12 });
 
+            this.load.spritesheet('player-living-wood-ship', 'https://space.alphacoders.com/living-wood-ship-animated.png',
+                { 'frameWidth': 64, 'frameHeight': 64, endFrame: 8 });
+
             this.load.spritesheet('player-mining-ship', 'https://space.alphacoders.com/mining-ship-animated.png',
                 { 'frameWidth': 64, 'frameHeight': 64, endFrame: 16 });
 
             this.load.spritesheet('player-royal-cruiser', 'https://space.alphacoders.com/royal-cruiser-animated.png',
                 { 'frameWidth': 64, 'frameHeight': 128, endFrame: 2 });
 
+            this.load.spritesheet('player-silk-ship', 'https://space.alphacoders.com/silk-ship-animated.png',
+                { 'frameWidth': 64, 'frameHeight': 64, endFrame: 4 });
+
             this.load.spritesheet('player-space-station', 'https://space.alphacoders.com/space-station-animated.png',
                 { 'frameWidth': 96, 'frameHeight': 96, endFrame: 12});
+
+            this.load.spritesheet('player-water-ship', 'https://space.alphacoders.com/water-ship-animated.png',
+                { 'frameWidth': 64, 'frameHeight': 64, endFrame: 6});
 
             // MONSTER SPRITESHEETS - end frame is total frame count
             this.load.spritesheet('acid-fiend', 'https://space.alphacoders.com/acid-fiend.png',
@@ -1459,6 +1468,16 @@ include('config.php');
 
             this.anims.create(player_lancer_down_config);
 
+
+            // LIVING WOOD SHIP
+            let player_living_wood_ship_config = {
+                key: 'player-living-wood-ship-animation',
+                frames: this.anims.generateFrameNumbers('player-living-wood-ship', { start: 0, end: 7, first: 7 }),
+                frameRate: 2,
+                repeat: -1
+            };
+            this.anims.create(player_living_wood_ship_config);
+
             // PLAYER MINING SHIP
 
             let player_mining_ship_left_config = {
@@ -1543,11 +1562,6 @@ include('config.php');
                 repeat: -1
             };
             this.anims.create(player_manufacturing_down_config);
-
-
-
-
-
 
             // PLAYER MLM
 
@@ -1710,9 +1724,7 @@ include('config.php');
 
 
 
-          
-
-
+    
             // PLAYER RUEL
 
             let player_ruel_idle_config = {
@@ -1798,6 +1810,16 @@ include('config.php');
             this.anims.create(player_shuttle_down_config);
 
 
+            // SILK SHIP
+            let player_silk_ship_config = {
+                key: 'player-silk-ship-animation',
+                frames: this.anims.generateFrameNumbers('player-silk-ship', { start: 0, end: 3, first: 3 }),
+                frameRate: 2,
+                repeat: -1
+            };
+            this.anims.create(player_silk_ship_config);
+
+            // SPACE STATION
             let player_space_station_config = {
                 key: 'player-space-station-animation',
                 frames: this.anims.generateFrameNumbers('player-space-station', { start: 0, end: 11, first: 11 }),
@@ -1805,6 +1827,17 @@ include('config.php');
                 repeat: -1
             };
             this.anims.create(player_space_station_config);
+
+
+            // WATER SHIP
+            let player_water_ship_config = {
+                key: 'player-water-ship-animation',
+                frames: this.anims.generateFrameNumbers('player-water-ship', { start: 0, end: 5, first: 5 }),
+                frameRate: 2,
+                repeat: -1
+            };
+            this.anims.create(player_water_ship_config);
+
 
 
 

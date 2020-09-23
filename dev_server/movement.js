@@ -1166,7 +1166,8 @@ const world = require('./world.js');
             }
 
 
-            if (dirty.planet_coords[planet_coord_index].object_type_id === 47) {
+            // PORTALS!!!!
+            if (dirty.planet_coords[planet_coord_index].object_type_id && dirty.object_types[object_type_index].is_portal) {
 
                 await moveThroughPortal(socket, dirty, dirty.planet_coords[planet_coord_index].object_id);
 
@@ -2001,7 +2002,8 @@ const world = require('./world.js');
                 object_type_index = main.getObjectTypeIndex(dirty.ship_coords[ship_coord_index].object_type_id);
             }
 
-            if (dirty.ship_coords[ship_coord_index].object_type_id === 47) {
+            // PORTALS!!!!
+            if (dirty.ship_coords[ship_coord_index].object_type_id && dirty.object_types[object_type_index].is_portal) {
 
                 await moveThroughPortal(socket, dirty, dirty.ship_coords[ship_coord_index].object_id);
 
@@ -2646,8 +2648,8 @@ const world = require('./world.js');
             }
 
             let moving_to_coord_index = -1;
-            let temp_coord = false;
-            let moving_to_scope = false;
+            let temp_coord = {};
+            let moving_to_scope = '';
             // If there's already a player on the end portal, we can't move
             if(dirty.objects[attached_index].planet_coord_id) {
                 moving_to_coord_index = await main.getPlanetCoordIndex({ 'planet_coord_id': dirty.objects[attached_index].planet_coord_id });
@@ -2704,6 +2706,7 @@ const world = require('./world.js');
 
                 dirty.players[player_index].planet_coord_id = temp_coord.id;
                 dirty.players[player_index].ship_coord_id = false;
+                dirty.players[player_index].previous_ship_coord_id = false;
                 dirty.players[player_index].coord_id = false;
                 dirty.players[player_index].has_change = true;
                 await player.sendInfo(socket, "planet_" + temp_coord.planet_id, dirty, dirty.players[player_index].id);
@@ -2719,9 +2722,10 @@ const world = require('./world.js');
 
                 main.updateCoordGeneric(socket, { 'ship_coord_index': moving_to_coord_index, 'player_id': socket.player_id });
 
-                dirty.players[player_index].planet_coord_id = temp_coord.id;
+                dirty.players[player_index].ship_coord_id = temp_coord.id;
                 dirty.players[player_index].coord_id = false;
                 dirty.players[player_index].planet_coord_id = false;
+                dirty.players[player_index].previous_planet_coord_id = false;
                 dirty.players[player_index].has_change = true;
                 await player.sendInfo(socket, "ship_" + dirty.ship_coords[moving_to_coord_index].ship_id, dirty, dirty.players[player_index].id);
 

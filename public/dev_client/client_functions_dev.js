@@ -752,6 +752,8 @@ function createMonsterSprite(monster_index) {
         return false;
     }
 
+    let monster_sprite_index = monster_sprites.findIndex(function(obj) { return obj && obj.monster_type_id === monsters[monster_index].monster_type_id; });
+
     new_texture_key = urlName(monster_types[monster_type_index].name);
     new_texture_animation_key = new_texture_key + "-animation";
     //console.log("Setting texture/animation to: " + new_texture_key + " , " + new_texture_animation_key);
@@ -775,6 +777,17 @@ function createMonsterSprite(monster_index) {
             if (new_texture_key === "robot-janitor") {
                 monsters[monster_index].sprite_y_offset = -6;
             }
+
+            if(monster_sprite_index !== -1) {
+                if(typeof monster_sprites[monster_sprite_index].x_offset !== 'undefined') {
+                    monsters[monster_index].sprite_x_offset = monster_sprites[monster_sprite_index].x_offset;
+                }
+    
+                if(typeof monster_sprites[monster_sprite_index].y_offset !== 'undefined') {
+                    monsters[monster_index].sprite_y_offset = monster_sprites[monster_sprite_index].y_offset;
+                }
+            }
+            
 
             if (monster_info.coord) {
                 monsters[monster_index].sprite.x = monster_info.coord.tile_x * tile_size + tile_size / 2 + monsters[monster_index].sprite_x_offset;
@@ -936,6 +949,9 @@ function createPlayerSprite(player_index) {
         } else if(objects[ship_index].object_type_id === 296) {
             new_texture_key = 'player-lancer';
             new_texture_animation_key = 'player-lancer-down-animation';
+        } else if(objects[ship_index].object_type_id === 387) {
+            new_texture_key = 'player-living-wood-ship';
+            new_texture_animation_key = 'player-living-wood-ship-animation';
         } else if (objects[ship_index].object_type_id === 239) {
             new_texture_key = 'player-mining-ship';
             new_texture_animation_key = 'player-mining-ship-down-animation';
@@ -962,11 +978,13 @@ function createPlayerSprite(player_index) {
             new_texture_animation_key = 'player-royal-cruiser-animation';
             new_movement_display = 'flip';
             new_sprite_y_offset = 32;
-        } else if(objects[ship_index].object_type_id === 339) {
-            new_texture_key = 'player-fighter';
-            new_texture_animation_key = 'player-fighter-down-animation';
+        }  else if(objects[ship_index].object_type_id === 369) {
+            new_texture_key = 'player-silk-ship';
+            new_texture_animation_key = 'player-silk-ship-animation';
+        } else if(objects[ship_index].object_type_id === 381) {
+            new_texture_key = 'player-water-ship';
+            new_texture_animation_key = 'player-water-ship-animation';
         }
-
         else {
             // DEFAULT!!!!!!!
             console.log("%c Using Default Ship Display", log_warning);
@@ -5904,25 +5922,26 @@ function checkForClientMove(time, tile_x = false, tile_y = false) {
 
 
 var monster_sprites = [];
-monster_sprites.push({ 'key': 'algae-king', 'monster_type_id': 113, 'planet_type_id': 16, 'frame_width': 64, 'frame_height': 64, 'frame_count': 4, 'frame_rate': 8 });
-monster_sprites.push({ 'key': 'bionic-crab', 'monster_type_id': 105, 'planet_type_id': 34, 'frame_width': 64, 'frame_height': 64, 'frame_count': 9, 'frame_rate': 8 });
-monster_sprites.push({ 'key': 'blossomtis', 'monster_type_id': 116, 'planet_type_id': 29, 'frame_width': 64, 'frame_height': 64, 'frame_count': 4, 'frame_rate': 8 });
-monster_sprites.push({ 'key': 'burger-drone', 'monster_type_id': 118, 'planet_type_id': 30, 'frame_width': 64, 'frame_height': 64, 'frame_count': 23, 'frame_rate': 8 });
-monster_sprites.push({ 'key': 'buster', 'monster_type_id': 124, 'planet_type_id': 7, 'frame_width': 64, 'frame_height': 64, 'frame_count': 11, 'frame_rate': 8 });
-monster_sprites.push({ 'key': 'cherree', 'monster_type_id': 117, 'planet_type_id': 29, 'frame_width': 64, 'frame_height': 64, 'frame_count': 3, 'frame_rate': 8 });
-monster_sprites.push({ 'key': 'construction-worker', 'monster_type_id': 112, 'planet_type_id': 30, 'frame_width': 64, 'frame_height': 66, 'frame_count': 7, 'frame_rate': 8 });
-monster_sprites.push({ 'key': 'frost-spider', 'monster_type_id': 114, 'planet_type_id': 11, 'frame_width': 64, 'frame_height': 64, 'frame_count': 3, 'frame_rate': 8 });
-monster_sprites.push({ 'key': 'gang-smasher', 'monster_type_id': 111, 'planet_type_id': 30, 'frame_width': 64, 'frame_height': 68, 'frame_count': 8, 'frame_rate': 8 });
-monster_sprites.push({ 'key': 'gang-gunner', 'monster_type_id': 110, 'planet_type_id': 30, 'frame_width': 64, 'frame_height': 66, 'frame_count': 9, 'frame_rate': 8 });
-monster_sprites.push({ 'key': 'gang-boss', 'monster_type_id': 109, 'planet_type_id': 30, 'frame_width': 64, 'frame_height': 82, 'frame_count': 7, 'frame_rate': 8 });
-monster_sprites.push({ 'key': 'jellyfish', 'monster_type_id': 108, 'planet_type_id': 34, 'frame_width': 64, 'frame_height': 64, 'frame_count': 8, 'frame_rate': 8 });
-monster_sprites.push({ 'key': 'observer', 'monster_type_id': 121, 'ship_type_id': 351, 'frame_width': 64, 'frame_height': 64, 'frame_count': 5, 'frame_rate': 8 });
-monster_sprites.push({ 'key': 'sea-urchin', 'monster_type_id': 106, 'planet_type_id': 34, 'frame_width': 64, 'frame_height': 64, 'frame_count': 12, 'frame_rate': 8 });
-monster_sprites.push({ 'key': 'take-out-drone', 'monster_type_id': 119, 'planet_type_id': 30, 'frame_width': 64, 'frame_height': 64, 'frame_count': 24, 'frame_rate': 8 });
-monster_sprites.push({ 'key': 'trae', 'planet_type_id': 29, 'frame_width': 104, 'frame_height': 104, 'frame_count': 10, 'frame_rate': 6 });
-monster_sprites.push({ 'key': 'trae-seedling', 'planet_type_id': 29, 'frame_width': 72, 'frame_height': 72, 'frame_count': 6, 'frame_rate': 8 });
-monster_sprites.push({ 'key': 'trae-sproutling', 'planet_type_id': 29, 'frame_width': 64, 'frame_height': 64, 'frame_count': 5, 'frame_rate': 8 });
-monster_sprites.push({ 'key': 'widden', 'monster_type_id': 42, 'ship_type_id': 352, 'frame_width': 64, 'frame_height': 64, 'frame_count': 3, 'frame_rate': 4 });
+monster_sprites.push({ 'key': 'algae-king',             'monster_type_id': 113, 'planet_type_id': 16, 'frame_width': 64, 'frame_height': 64, 'frame_count': 4, 'frame_rate': 8 });
+monster_sprites.push({ 'key': 'bionic-crab',            'monster_type_id': 105, 'planet_type_id': 34, 'frame_width': 64, 'frame_height': 64, 'frame_count': 9, 'frame_rate': 8 });
+monster_sprites.push({ 'key': 'blossomtis',             'monster_type_id': 116, 'planet_type_id': 29, 'frame_width': 64, 'frame_height': 64, 'frame_count': 4, 'frame_rate': 8 });
+monster_sprites.push({ 'key': 'burger-drone',           'monster_type_id': 118, 'planet_type_id': 30, 'frame_width': 64, 'frame_height': 64, 'frame_count': 23, 'frame_rate': 8 });
+monster_sprites.push({ 'key': 'burster',                'monster_type_id': 120, 'planet_type_id': 7, 'frame_width': 64, 'frame_height': 64, 'frame_count': 11, 'frame_rate': 8 });
+monster_sprites.push({ 'key': 'cherree',                'monster_type_id': 117, 'planet_type_id': 29, 'frame_width': 64, 'frame_height': 64, 'frame_count': 3, 'frame_rate': 8 });
+monster_sprites.push({ 'key': 'construction-worker',    'monster_type_id': 112, 'planet_type_id': 30, 'frame_width': 64, 'frame_height': 66, 'frame_count': 7, 'frame_rate': 8 });
+monster_sprites.push({ 'key': 'frost-spider',           'monster_type_id': 114, 'planet_type_id': 11, 'frame_width': 64, 'frame_height': 64, 'frame_count': 3, 'frame_rate': 8 });
+monster_sprites.push({ 'key': 'gang-smasher',           'monster_type_id': 111, 'planet_type_id': 30, 'frame_width': 64, 'frame_height': 68, 'frame_count': 8, 'frame_rate': 8 });
+monster_sprites.push({ 'key': 'gang-gunner',            'monster_type_id': 110, 'planet_type_id': 30, 'frame_width': 64, 'frame_height': 66, 'frame_count': 9, 'frame_rate': 8 });
+monster_sprites.push({ 'key': 'gang-boss',              'monster_type_id': 109, 'planet_type_id': 30, 'frame_width': 64, 'frame_height': 82, 'frame_count': 7, 'frame_rate': 8 });
+monster_sprites.push({ 'key': 'jellyfish',              'monster_type_id': 108, 'planet_type_id': 34, 'frame_width': 64, 'frame_height': 64, 'frame_count': 8, 'frame_rate': 8 });
+monster_sprites.push({ 'key': 'observer',               'monster_type_id': 121, 'ship_type_id': 351, 'frame_width': 64, 'frame_height': 64, 'frame_count': 5, 'frame_rate': 8 });
+monster_sprites.push({ 'key': 'sea-urchin',             'monster_type_id': 106, 'planet_type_id': 34, 'frame_width': 64, 'frame_height': 64, 'frame_count': 12, 'frame_rate': 8 });
+monster_sprites.push({ 'key': 'take-out-drone',         'monster_type_id': 119, 'planet_type_id': 30, 'frame_width': 64, 'frame_height': 64, 'frame_count': 24, 'frame_rate': 8 });
+monster_sprites.push({ 'key': 'trae',                   'monster_type_id': 44, 'planet_type_id': 29, 'frame_width': 104, 'frame_height': 104, 'frame_count': 10, 'frame_rate': 6 });
+monster_sprites.push({ 'key': 'trae-seedling',          'monster_type_id': 48, 'planet_type_id': 29, 'frame_width': 72, 'frame_height': 72, 'frame_count': 6, 'frame_rate': 8 });
+monster_sprites.push({ 'key': 'trae-sproutling',        'monster_type_id': 101, 'planet_type_id': 29, 'frame_width': 64, 'frame_height': 64, 'frame_count': 5, 'frame_rate': 8 });
+monster_sprites.push({ 'key': 'vooard',                 'monster_type_id': 123, 'planet_type_id': 7, 'frame_width': 156, 'frame_height': 126, 'frame_count': 14, 'frame_rate': 10, 'x_offset': 0, 'y_offset': 0 });
+monster_sprites.push({ 'key': 'widden',                 'monster_type_id': 42, 'ship_type_id': 352, 'frame_width': 64, 'frame_height': 64, 'frame_count': 3, 'frame_rate': 4 });
 
 // Not sure how to do it more efficiently than just calculate the new and old level for... every skill!
 function checkLevelIncrease(old_player_data, new_player_data) {
