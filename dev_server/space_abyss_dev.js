@@ -1844,7 +1844,15 @@ io.sockets.on('connection', function (socket) {
     });
 
     socket.on('switch_body_data', function(data) {
-        game.switchBody(socket, dirty, data);
+
+        if(typeof data.object_id === 'undefined') {
+            log(chalk.yellow("No object id sent into switch_body"));
+            return false;
+        }
+
+        let new_body_id = parseInt(data.object_id);
+        let move_inventory = helper.cleanStringInput(data.move_inventory);
+        game.switchBody(socket, dirty, new_body_id, move_inventory);
     });
 
     socket.on('switch_ship_data', async function(data) {
@@ -2578,15 +2586,22 @@ async function loginPlayer(socket, dirty, data) {
 
         // we need to convert the password to the 'node' version.
         let user_pass_php = rows[0].password;
-        let user_password_node_version =  user_pass_php.substr(0,2) + 'a' + user_pass_php.substr(3);
+        let user_password_node_version = user_pass_php.replace(/^\$2y(.+)$/i, '$2a$1');
+        //let user_password_node_version =  user_pass_php.substr(0,2) + 'a' + user_pass_php.substr(3);
 
         console.log("user_pass_php: " + user_pass_php);
         console.log("user_password_node_version: " + user_password_node_version);
         console.log("modified_trying_password: " + modified_trying_password);
 
-        
 
         let login_success = false;
+
+        if(!bcrypt.compareSync(trying_password, user_password_node_version)) {
+            console.log("Invalid login info - new");
+        } else {
+            login_success = true;
+        }
+
 
         if(!bcrypt.compareSync(modified_trying_password, user_password_node_version)) {
             console.log("Invalid login info - normal");
@@ -4546,8 +4561,8 @@ async function writeDirty(show_output = false) {
     for(let i = 0; i < dirty.inventory_items.length; i++) {
         if(dirty.inventory_items[i] && dirty.inventory_items[i].has_change) {
             //console.log("Inventory item id: " + dirty.inventory_items[i].id + " new amount: " + dirty.inventory_items[i].amount);
-            let sql = "UPDATE inventory_items SET amount = ? WHERE id = ?";
-            let inserts = [dirty.inventory_items[i].amount, dirty.inventory_items[i].id];
+            let sql = "UPDATE inventory_items SET amount = ?, body_id = ? WHERE id = ?";
+            let inserts = [dirty.inventory_items[i].amount, dirty.inventory_items[i].body_id, dirty.inventory_items[i].id];
             pool.query(sql, inserts, function(err, result) {
                 if(err) throw err;
             });

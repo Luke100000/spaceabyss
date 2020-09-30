@@ -1,3 +1,38 @@
+## [0.2.3] - 2020-09-30
+
+
+### Added
+- Milk Slerm Egg
+- Milk Slerm Eggs can grow into Milk Slerms
+- Milk Slerms can drop Milk Slerm Eggs
+- When you switch bodies, you now have the option of moving your inventory with you, or leaving it on the previous body. This lets players setup bodies 
+with different sets of inventory based what tasks they want that body to accomplish.
+- Slerm Berry Egg
+- Slerm Berry Egg as potential drop from Slerm Berry Tree
+- Vooard now drops AI Dust
+- Icer Pistol
+- Diamond
+- Diamond Deposit
+- Diamond Armor - chest/body, legs, and helmet
+- Diamond Asteroid
+- Slerm Armor - chest/body, legs, and helmet
+- Rare Inferno Core drop to AI Forge
+
+
+### Fixed
+- The body of an inventory item was not being updated after the creation of the inventory item
+- Display for plasma skill
+- Game file index for Corrosive Goo
+
+### Changed
+- Slerm Berries no longer have the potential to spawn things. This didn't work anyway since Slerm Berries stack. Replaced this functionality with a Slerm Berry Egg object.
+- Voonita spawn levels from 0 to -3 to 0 to -1
+- Scrapslog spawning from rare to common
+- Desert Cruiser Wreck will now de-spawn after about a day and a half
+- Updated sprite for Hull Welder
+- Updated image for Coral Bloom and Coral Fragment
+- Added a spawn to The Great Nomad
+
 ## [0.2.2] - 2020-09-23
 
 

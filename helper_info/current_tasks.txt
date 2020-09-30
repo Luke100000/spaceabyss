@@ -4,21 +4,39 @@ CURRENT GAMEPLAY TEST:
 
 DOING NOW:
 
-    Make sure the desert cruiser wreck shows up properly
+        make sure password recovery works
+        google forms + newsletter
 
-    The updated portal system is a mess at the moment. 
+        players have a hard time with tasks. What do I do? I don't want to create a quest system around this - but I would like to offer helpful ideas:
 
-        1. Need a portal that is the image of the wreck/mouth etc
-        2. Need an exit portal that can be different image/object type
-        3. Need the interior (spawning a ship)
+        1. Build and Algae Vat and get Blue Algae from it (But it spawns Algae... not blue Algae? )
+        2. Become an Octopus!!
+        3. Fully Research Algae and ...
+        4. Build a Shuttle
+        5. Have a body with two Mimetic Arms
 
-        So for our Desert Cruiser Wreck we need:
-            1. Portal Object Type called Desert Cruiser Wreck
-            2. Portal Object Type called Desert Cruiser Wreck Exit
-            3. Ship Object Type called Desert Cruiser Wreck Interior
-            
-            4. Event called Desert Cruiser Wreck.
 
+        Implementation Idea #1:
+            achievments table (player_id, object_type_id, monster_type_id)
+            achievement_linkers table (player_id, achievement id)
+
+        Implementation Idea #2:
+            Just have a text list of things on the website. 
+
+        Could let the player give themselves tasks too
+
+        'obtain 10 batteries'
+
+
+    make sure the bug ship event still works in some capacity
+
+
+    Some admin way to view lost bodies....
+
+
+
+
+    Test Slerm Armor on Inferno Planet!
 
 
 
@@ -32,11 +50,6 @@ DOING NOW:
 
 
     Work on sending out a newsletter with a google form questionaire. See what people like/dislike so far
-
-
-    Switch to body could have the option to not transfer your inventory over to the new body. Wouldn't be bad to have 
-        that option. Players could fully setup bodies ahead of time.
-
 
 
     see if I can get someone to make a trailer on fivr
@@ -57,25 +70,7 @@ DOING NOW:
         SURGICALLY IMPLANT A KNIFE IN YOUR HEAD
         etc
 
-    players have a hard time with tasks. What do I do? I don't want to create a quest system around this - but I would like to offer helpful ideas:
 
-        1. Build and Algae Vat and get Blue Algae from it (But it spawns Algae... not blue Algae? )
-        2. Become an Octopus!!
-        3. Fully Research Algae and ...
-        4. Build a Shuttle
-        5. Have a body with two Mimetic Arms
-
-
-        Implementation Idea #1:
-            achievments table (player_id, object_type_id, monster_type_id)
-            achievement_linkers table (player_id, achievement id)
-
-        Implementation Idea #2:
-            Just have a text list of things on the website. 
-
-        Could let the player give themselves tasks too
-
-        'obtain 10 batteries'
 
 
 

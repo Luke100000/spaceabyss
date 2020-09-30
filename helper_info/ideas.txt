@@ -39,23 +39,6 @@ I really just don't know if I want an Exodium knife... I feel like I want to get
 
 
 
-    great ship (the great nomad!)
-        need warning before 
-        world.tickNomad
-
-
-
-
-Think of content for Jovian planets and the moons around them
-Think of content for Archipelago planets
-Think of content for traps
-
-
-
-Objects that get better with age. Kind of like wine. Kids were watching a show and they ate 1,000 year old eggs.
-
-Eventually want to make water something more than... nothing. Tail instead of legs on a body if you wanted
-
 
 
 
@@ -1112,7 +1095,7 @@ The idea that a massive ship or planet gathers mass as it moves through space. E
     Tritium bomb
 
 Monsters that spawn meat slowly. Regens. Could have something that you harvest/cut on, and takes a bit to regenerate the
-    mass. I also want milk slerm to produce slerm milk.
+    mass.
 
 
 Have an event that spawns a small area of machine farmland ( created/machine-farm-plant.ase ) and have a large farming machine monster
@@ -1249,7 +1232,7 @@ The idea of uplifing something via genetic manipulation.
     Could tie into the surgery skill I guess. In Sundiver, they are doing it with dolphins. 
     Not sure if I would want it to be done with npcs or monsters. If monsters, could initially
      use it to create something that is a source of food/buffs. Finding alien eggs on a wrecked 
-     p. Genetically modifying the egg towarsd food production/chemical production. Could have 
+     ship. Genetically modifying the egg towarsd food production/chemical production. Could have 
      the aliens bugs -> aligne meat bugs that generate meat. Alien chmical bugs create a useful
       stimulant. Would also lay eggs which you could take further down the path.
 
@@ -1326,7 +1309,6 @@ Plasma storms on the sun
 Rare chance to find new bodies in hypersleep chambers when exploring derelict ships
 Candy floss
 
-Ice and slerm milk - ice sleem (ice cream)
 
 Could have a place you go to after you die. A death bar, or death area.
 Conglomerate
@@ -1604,7 +1586,7 @@ Alone from The Great Ship. Liquid body that tends to present itself as solid. Ch
 
 Body powered by a quasar smaller than an atom. Enclosed in magnetic envelope
 
-SIngle speck of degenerated matter
+Single speck of degenerated matter
 
 Worm with a white hot head used to bore through crystal
 
@@ -1727,10 +1709,6 @@ Need a moveObjectFlow or something for asteroids and such I suppose?
 
 Could do a hyperdiamond body TIER 8 - can be resistant to acid
 
-
-I think it would be neat if there was the option to just take some of what something spawned
-    With the Milk Slerm, you could take one or two, and it could generate more, but if you took all,
-        it would de-spawn.
 
 
 Have something like a geothermal well that can be put on any planet - and produces stored energy (batteries?)

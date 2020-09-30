@@ -4127,6 +4127,8 @@ exports.eat = eat;
 
 
     /*
+    NOT USING THIS ANYMORE!!!!
+    INSTEAD HAVE IT SPAWN THE THING AFTER SEVERAL TICKS (SEE KICK PLANT)
     async function growObject(dirty, object_id) {
         try {
 
@@ -6954,7 +6956,7 @@ exports.eat = eat;
 
                     if(race_eating_index === -1) {
                         log(chalk.yellow("That body cannot eat that!"));
-                        if(player_socket) {
+                        if(helper.notFalse(player_socket)) {
                             player_socket.emit('addiction_linker_info', { 'remove': true, 'addiction_linker': dirty.addiction_linkers[i] });
                         }
                         await (pool.query("DELETE FROM addiction_linkers WHERE id = ?", [dirty.addiction_linkers[i].id] ));
@@ -6981,7 +6983,7 @@ exports.eat = eat;
 
                             dirty.addiction_linkers[i].tick_count++;
 
-                            if(player_socket) {
+                            if(helper.notFalse(player_socket)) {
                                 player_socket.emit('addiction_linker_info', { 'addiction_linker': dirty.addiction_linkers[i] });
                             }
 
@@ -7004,7 +7006,7 @@ exports.eat = eat;
                                     dirty.players[player_index].current_hp = new_player_hp;
                                     dirty.players[player_index].has_change = true;
 
-                                    if(player_socket) {
+                                    if(helper.notFalse(player_socket)) {
                                         player_socket.emit('damaged_data', {
                                             'player_id': dirty.players[player_index].id, 'damage_amount': addiction_damage_amount, 'was_damaged_type': 'hp',
                                             'damage_types': ['addiction']
@@ -7021,7 +7023,7 @@ exports.eat = eat;
                     // We can remove the addiction linker
                     else {
 
-                        if(player_socket) {
+                        if(helper.notFalse(player_socket)) {
                             player_socket.emit('addiction_linker_info', { 'remove': true, 'addiction_linker': dirty.addiction_linkers[i] });
                         }
                         await (pool.query("DELETE FROM addiction_linkers WHERE id = ?", [dirty.addiction_linkers[i].id] ));
@@ -9732,7 +9734,7 @@ exports.eat = eat;
 
             socket.emit('chat', { 'message': socket.player_name + ' planted ' + dirty.object_types[object_type_index].name});
 
-            let remove_inventory_data = { 'player_id': socket.player_id, 'removing_object_type_id': dirty.inventory_items[inventory_item_index].object_type_id,
+            let remove_inventory_data = { 'player_id': socket.player_id, 'inventory_item_id': dirty.inventory_items[inventory_item_index].id,
                 'amount': 1 };
             await inventory.removeFromInventory(socket, dirty, remove_inventory_data);
 
@@ -10613,7 +10615,7 @@ exports.eat = eat;
 
 
     // Will move the player from the current body to the other one. Old body will stay where it was as an object on the tile
-    async function switchBody(socket, dirty, data) {
+    async function switchBody(socket, dirty, new_body_id, move_inventory) {
         try {
 
             log(chalk.green("Player is switching bodies"));
@@ -10626,7 +10628,7 @@ exports.eat = eat;
             let player_index = socket.player_index;
 
 
-            let object_index = await game_object.getIndex(dirty, parseInt(data.object_id));
+            let object_index = await game_object.getIndex(dirty, new_body_id);
             let old_body_index = await game_object.getIndex(dirty, dirty.players[socket.player_index].body_id);
 
             if(object_index === -1 || old_body_index === -1) {
@@ -10654,6 +10656,11 @@ exports.eat = eat;
                 if(can_interact_result === false) {
                     body_switch_allowed = false;
                 }
+            }
+
+            if(new_body_coord_index === -1) {
+                log(chalk.yellow("Could not find coord for the body we are switching to. odd..."));
+                return false;
             }
 
             // Make sure the body isn't already equipped by someone
@@ -10763,6 +10770,23 @@ exports.eat = eat;
 
             // get the new equipment linkers
             await player.getEquipment(dirty, dirty.players[player_index].body_id);
+
+            // move inventory if the player wanted to
+            console.log("move_inventory: " + move_inventory);
+            if(move_inventory === 'yes') {
+                console.log("Moving inventory too!");
+
+                for(let i = 0; i < dirty.inventory_items.length; i++) {
+                    if(dirty.inventory_items[i] && dirty.inventory_items[i].player_id === dirty.players[player_index].id && dirty.inventory_items[i].body_id === old_body_id) {
+                        dirty.inventory_items[i].body_id = new_body_id;
+                        dirty.inventory_items[i].has_change = true;
+                        inventory.sendInventoryItem(socket, dirty, i);
+                    }
+                }
+
+            } else {
+                console.log("Not moving inventory");
+            }
 
             // gotta re-calculate stats
             await calculatePlayerStats(socket, dirty);

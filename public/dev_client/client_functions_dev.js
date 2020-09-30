@@ -2160,7 +2160,7 @@ function generatePlayerInfoDisplay() {
 
 
     // PLASMA
-    html_string += "Piercing: " + players[client_player_index].plasma_skill_points;
+    html_string += "Plasma: " + players[client_player_index].plasma_skill_points;
     // lets start doing some client side level stuff just to see how it shows
     let plasma_level = 1 + Math.floor(level_modifier * Math.sqrt(players[client_player_index].plasma_skill_points));
 
@@ -4154,6 +4154,10 @@ function generateInventoryDisplay() {
     inventory_items.forEach(function (inventory_item, i) {
         // Only use our inventory items for the main display
         if (inventory_item.player_id !== player_id) {
+            return false;
+        }
+
+        if(inventory_item.body_id !== players[client_player_index].body_id) {
             return false;
         }
 
@@ -9343,8 +9347,10 @@ function showClickMenuObject(coord) {
     // Switch Body Options
     if (object_types[object_type_index].race_id) {
         $('#click_menu').append("<button id='switchbody_" + objects[object_index].id +
-            "' class='button is-warning is-small'>Switch To Body</button>");
+            "_nomove' move_inventory='no' class='button is-warning is-small'>Switch To Body</button>");
 
+        $('#click_menu').append("<button id='switchbody_" + objects[object_index].id +
+            "_yesmove' move_inventory='yes' class='button is-warning is-small'>Switch to Body and Move Inventory</button>");
     }
 
 
@@ -10530,6 +10536,7 @@ function updatePlayerClient(data) {
 
         players[client_player_index].body_id = parseInt(data.player.body_id);
         createPlayerSprite(client_player_index);
+        generateInventoryDisplay();
 
 
         if (current_view === 'planet') {

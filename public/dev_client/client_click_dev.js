@@ -1225,7 +1225,11 @@ $(document).on('click', 'button', function () {
 
     if(split_name[0] === 'switchbody') {
         console.log("player is switching bodies");
-        socket.emit('switch_body_data', { 'object_id': split_name[1] });
+
+
+        let move_inventory = $('#' + clicked_id).attr('move_inventory');
+        socket.emit('switch_body_data', { 'object_id': split_name[1], 'move_inventory': move_inventory });
+
 
         $('#click_menu').empty();
         $('#click_menu').hide();

@@ -72,3 +72,17 @@ COMPLEXITY
 TIMINGS | SERVER SPEED
     As of 8/17/2019:
     -2 to +2 planet coord search currently takes <3ms
+
+
+Our portal system (advanced stuff!)
+    1. Need a portal that is the image of the wreck/mouth etc
+    2. Need an exit portal that can be different image/object type
+    3. Need the interior (spawning a ship)
+
+    So for our Desert Cruiser Wreck we need:
+        1. Portal Object Type called Desert Cruiser Wreck
+        2. Portal Object Type called Desert Cruiser Wreck Exit
+        3. Ship Object Type called Desert Cruiser Wreck Interior
+        
+        4. Event called Desert Cruiser Wreck.
+

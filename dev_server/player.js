@@ -747,6 +747,9 @@ exports.getEquipment = getEquipment;
  * @param {Object} dirty
  * @param {Object} data
  * @param {number=} data.player_id
+ * @param {number=} data.body_id
+ * @param {String=} data.name
+ * @param {String=} data.source
  */
 async function getIndex(dirty, data) {
 
@@ -754,12 +757,11 @@ async function getIndex(dirty, data) {
         //console.log("In player.getIndex");
 
         if(!data.source) {
-            data.source = false;
+            data.source = '';
         }
 
         // Looking up via id, and the id is malformed
         if(data.player_id) {
-            data.player_id = parseInt(data.player_id);
 
             if(isNaN(data.player_id)) {
                 log(chalk.yellow("Player id was NaN. Source: " + data.source));
@@ -770,7 +772,6 @@ async function getIndex(dirty, data) {
         }
 
         if(data.body_id) {
-            data.body_id = parseInt(data.body_id);
 
             if(isNaN(data.body_id)) {
                 log(chalk.yellow("Body id was NaN. Source: " + data.source));
@@ -862,7 +863,7 @@ async function getIndex(dirty, data) {
                         await getEquipment(dirty, dirty.players[player_index].body_id);
                     }
 
-                    await getInventory(dirty, dirty.players[player_index].id);
+                    await getInventory(dirty, player_index);
                     await getResearchLinkers(dirty, dirty.players[player_index].id);
                     await getRelationshipLinkers(dirty, dirty.players[player_index].id);
                     await getShips(dirty, player_index);
@@ -890,14 +891,14 @@ async function getIndex(dirty, data) {
 exports.getIndex = getIndex;
 
 
-
-async function getInventory(dirty, player_id) {
+// 
+async function getInventory(dirty, player_index) {
 
     //console.log("In player.getInventory");
 
     try {
         let [rows, fields] = await (pool.query("SELECT * FROM inventory_items WHERE inventory_items.player_id = ?",
-            [player_id]));
+            [dirty.players[player_index].id]));
 
         if(rows[0]) {
             for(let i = 0; i < rows.length; i++) {
@@ -912,6 +913,14 @@ async function getInventory(dirty, player_id) {
                     let new_inventory_item_index = dirty.inventory_items.push(inventory_item) - 1;
                     world.processInventoryItem(dirty, new_inventory_item_index);
                     //console.log("Added that player id: " + inventory_item.player_id + " has inventory object type id: " + inventory_item.object_type_id);
+
+                    if(!dirty.inventory_items[new_inventory_item_index].body_id) {
+                        console.log("Inventory item of player has no body id. Lets set one!");
+                        dirty.inventory_items[new_inventory_item_index].body_id = dirty.players[player_index].body_id;
+                        dirty.inventory_items[new_inventory_item_index].has_change = true;
+                        
+
+                    }
                 }
 
             }

@@ -839,6 +839,10 @@ socket.on('inventory_item_info', function(data) {
             if(inventory_item.amount !== inventory_items[inventory_index].amount) {
                 inventory_items[inventory_index].amount = inventory_item.amount;
             }
+
+            if(inventory_item.body_id !== inventory_items[inventory_index].body_id) {
+                inventory_items[inventory_index].body_id = inventory_item.body_id;
+            }
         }
 
     }
