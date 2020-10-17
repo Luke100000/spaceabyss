@@ -9,6 +9,7 @@ const log = console.log;
 const game_object = require('./game_object.js');
 const helper = require('./helper.js');
 const main = require('./space_abyss' + process.env.FILE_SUFFIX + '.js');
+const npc = require('./npc.js');
 const player = require('./player.js');
 const world = require('./world.js');
 
@@ -44,6 +45,8 @@ async function addToInventory(socket, dirty, data) {
         let owner_object_index = -1;
         let npc_index = -1;
         let player_index = -1;
+        let inventory_item_index = -1;
+        let sending_to_room = "";
 
         if(data.adding_to_type === 'object') {
             owner_object_index = await game_object.getIndex(dirty, data.adding_to_id);
@@ -53,8 +56,17 @@ async function addToInventory(socket, dirty, data) {
                 return false;
             }
         } else if(data.adding_to_type === 'npc') {
-            npc_index = await main.getNpcIndex(data.adding_to_id);
+            npc_index = await npc.getIndex(dirty, data.adding_to_id);
+
+            if(npc_index !== -1) {
+                sending_to_room = dirty.npcs[npc_index].room;
+            } else {
+                console.log("Failed to get the npc in dirty");
+            }
         }
+
+
+        
 
         // I could potentiall use socket.player_index here - HOWEVER - I might be sending in a valid socket when
         // an admin does something - not sure. I have to check all instances of addToInventory to see if I should 
@@ -111,7 +123,13 @@ async function addToInventory(socket, dirty, data) {
                 game_object.sendInfo(socket, false, dirty, object_index);
 
                 // and send the new inventory item to the socket that took it
-                sendInventoryItem(socket, dirty, new_inventory_item_index, 'take');
+
+                let sending_to_room = "";
+                if(npc_index !== -1) {
+                    sending_to_room = dirty.npcs[npc_index].room;
+                }
+
+                sendInventoryItem(socket, sending_to_room, dirty, new_inventory_item_index, 'take');
                 console.log("Sent new inventory item to socket");
 
 
@@ -120,7 +138,7 @@ async function addToInventory(socket, dirty, data) {
 
         } else if(data.object_type_id) {
 
-            let inventory_item_index = -1;
+
 
             // lets see if we have an inventory item index
             if(data.adding_to_type === 'player') {
@@ -138,7 +156,9 @@ async function addToInventory(socket, dirty, data) {
                 dirty.inventory_items[inventory_item_index].amount += data.amount;
                 dirty.inventory_items[inventory_item_index].has_change = true;
 
-                sendInventoryItem(socket, dirty, inventory_item_index, 'take');
+
+
+                sendInventoryItem(socket, sending_to_room, dirty, inventory_item_index, 'take');
             } else {
 
                 // need to add it
@@ -166,10 +186,10 @@ async function addToInventory(socket, dirty, data) {
                 if(rows[0]) {
                     let adding_inventory_item = rows[0];
                     adding_inventory_item.has_change = false;
-                    let new_inventory_item_index = dirty.inventory_items.push(adding_inventory_item) - 1;
-                    world.processInventoryItem(dirty, new_inventory_item_index);
+                    inventory_item_index = dirty.inventory_items.push(adding_inventory_item) - 1;
+                    world.processInventoryItem(dirty, inventory_item_index);
 
-                    sendInventoryItem(socket, dirty, new_inventory_item_index, 'take');
+                    sendInventoryItem(socket, sending_to_room, dirty, inventory_item_index, 'take');
                 }
             }
 
@@ -177,7 +197,7 @@ async function addToInventory(socket, dirty, data) {
 
         } else if(data.floor_type_id) {
 
-            let inventory_item_index = -1;
+            inventory_item_index = -1;
 
             if(data.adding_to_type === 'player') {
                 inventory_item_index = dirty.inventory_items.findIndex(function (obj) {
@@ -195,7 +215,7 @@ async function addToInventory(socket, dirty, data) {
                 dirty.inventory_items[inventory_item_index].amount += data.amount;
                 dirty.inventory_items[inventory_item_index].has_change = true;
 
-                sendInventoryItem(socket, dirty, inventory_item_index, 'take');
+                sendInventoryItem(socket, sending_to_room, dirty, inventory_item_index, 'take');
             } else {
 
                 let sql = "";
@@ -226,7 +246,7 @@ async function addToInventory(socket, dirty, data) {
                     let new_inventory_item_index = dirty.inventory_items.push(adding_inventory_item) - 1;
                     world.processInventoryItem(dirty, new_inventory_item_index);
 
-                    sendInventoryItem(socket, dirty, new_inventory_item_index, 'take');
+                    sendInventoryItem(socket, sending_to_room, dirty, new_inventory_item_index, 'take');
                 }
 
             }
@@ -251,12 +271,33 @@ async function addToInventory(socket, dirty, data) {
 
 
         } else if(data.adding_to_type === 'npc' && npc_index !== -1) {
+
+            //console.log("NPC added something to its inventory");
             if(!dirty.npcs[npc_index].has_inventory) {
                 dirty.npcs[npc_index].has_inventory = true;
                 dirty.npcs[npc_index].has_change = true;
-
-                await world.sendNpcInfo(false, "planet_" + dirty.npcs[npc_index].planet_id, dirty, dirty.npcs[npc_index].id);
             }
+
+             // and we set the price based on how many we have
+             if(inventory_item_index !== -1 && dirty.inventory_items[inventory_item_index].object_type_id !== 74) {
+                let price = Math.ceil(1000 / dirty.inventory_items[inventory_item_index].amount);
+                //console.log("Setting price of npc's inventory item to: " + price);
+                dirty.inventory_items[inventory_item_index].price = price;
+                dirty.inventory_items[inventory_item_index].has_change = true;
+            } else {
+
+                if(inventory_item_index === -1) {
+                    console.log("inventory_item_index was -1");
+                }
+
+                if(dirty.inventory_items[inventory_item_index].object_type_id === 74) {
+                    console.log("was credits, not setting a price.");
+                }
+
+            }
+
+
+            await world.sendNpcInfo(false, "planet_" + dirty.npcs[npc_index].planet_id, dirty, dirty.npcs[npc_index].id);
         }
 
     } catch(error) {
@@ -677,7 +718,7 @@ async function sendInventory(socket, room, dirty, type, type_id) {
 exports.sendInventory = sendInventory;
 
 // For sending one inventory_item
-function sendInventoryItem(socket, dirty, inventory_item_index, action) {
+function sendInventoryItem(socket, room, dirty, inventory_item_index, action) {
 
     try {
         //console.log("Sending inventory item to socket with player id: " + socket.player_id);
@@ -693,6 +734,10 @@ function sendInventoryItem(socket, dirty, inventory_item_index, action) {
 
             if(helper.notFalse(socket)) {
                 socket.emit('inventory_item_info', { 'inventory_item': dirty.inventory_items[inventory_item_index] });
+            }
+
+            if(helper.notFalse(room)) {
+                io.to(room).emit('inventory_item_info', { 'inventory_item': dirty.inventory_items[inventory_item_index] });
             }
             
         }
@@ -794,7 +839,7 @@ async function transferInventory(socket, dirty, data) {
         let npc_index = -1;
         // we are giving this item to an npc
         if(data.npc_id) {
-            npc_index = await main.getNpcIndex(data.npc_id);
+            npc_index = await npc.getIndex(dirty, data.npc_id);
 
             if(npc_index === -1) {
                 console.log("Was unable to get the npc");

@@ -10,14 +10,17 @@ const log = console.log;
 
 
 const battle = require('./battle.js');
+const event = require('./event.js');
 const game = require('./game.js');
 const game_object = require('./game_object.js');
 const helper = require('./helper.js');
 const main = require('./space_abyss' + process.env.FILE_SUFFIX + '.js');
 const map = require('./map.js');
 const monster = require('./monster.js');
+const npc = require('./npc.js');
 const planet = require('./planet.js');
 const player = require('./player.js');
+
 
 
 /*
@@ -163,7 +166,7 @@ async function addBattleLinker(socket, dirty, data) {
         // Make sure this player can actually be attacked right now
         // Can't attack npcs in their pod in space
         if (data.being_attacked_type === 'npc') {
-            being_attacked_index = await main.getNpcIndex(data.being_attacked_id);
+            being_attacked_index = await npc.getIndex(dirty, data.being_attacked_id);
             if (dirty.npcs[being_attacked_index].coord_id && !dirty.npcs[being_attacked_index].ship_id) {
                 console.log("No attacking npcs in pods");
                 return false;
@@ -358,7 +361,7 @@ exports.addObjectToShipCoord = addObjectToShipCoord;
 
 
 
-async function addPlayerLog(dirty, player_index, message) {
+async function addPlayerLog(dirty, player_index, message, data = {}) {
 
     try {
         console.log("In world.addPlayerLog");
@@ -374,6 +377,29 @@ async function addPlayerLog(dirty, player_index, message) {
         let inserts = [player_id, message, dirty.galaxies[0].month, dirty.galaxies[0].year];
 
         let [result] = await (pool.query(sql, inserts));
+
+        let new_player_log_id = result.insertId;
+
+        if(data.ship_id) {
+            let sql = "UPDATE player_logs SET ship_id = ? WHERE id = ?";
+            let inserts = [data.ship_id, new_player_log_id];
+    
+            let [result] = await (pool.query(sql, inserts));
+        }
+
+        if(data.planet_id) {
+            let sql = "UPDATE player_logs SET planet_id = ? WHERE id = ?";
+            let inserts = [data.planet_id, new_player_log_id];
+    
+            let [result] = await (pool.query(sql, inserts));
+        }
+
+        if(data.event_id) {
+            let sql = "UPDATE player_logs SET event_id = ? WHERE id = ?";
+            let inserts = [data.event_id, new_player_log_id];
+    
+            let [result] = await (pool.query(sql, inserts));
+        }
 
         console.log("Done in world.addPlayerLog");
 
@@ -780,7 +806,7 @@ async function aiAttack(dirty, data) {
         }
 
 
-        spawnMonster(dirty, spawn_monster_type_id, spawn_monster_data);
+        monster.spawn(dirty, spawn_monster_type_id, spawn_monster_data);
 
 
 
@@ -1870,7 +1896,7 @@ async function createShipCoord(dirty, ship_index, linker, data = {}) {
             }
 
 
-            await spawnMonster(dirty, spawned_monster_type_id, spawn_data);
+            await monster.spawn(dirty, spawned_monster_type_id, spawn_data);
         }
 
         if (linker_object_type_index !== -1 && dirty.object_types[linker_object_type_index].assembled_as_object) {
@@ -2111,6 +2137,7 @@ async function getNpcCoordAndRoom(dirty, npc_index) {
         return { 'room': room, 'coord_index': coord_index, 'coord': coord, 'scope': scope };
     } catch (error) {
         log(chalk.red("Error in world.getNpcCoordAndRoom: " + error));
+        console.error(error);
     }
 
 }
@@ -3953,7 +3980,7 @@ async function reloadEvent(dirty, event_id) {
     try {
 
         // Step 1: Purge this event
-        let event_index = main.getEventIndex(event_id);
+        let event_index = event.getIndex(dirty, event_id);
 
         if (event_index === -1) {
             console.log("Event not found");
@@ -4316,99 +4343,11 @@ async function sendMarketData(socket, dirty) {
 
 exports.sendMarketData = sendMarketData;
 
-// monster_index   OR   monster_id
-async function sendMonsterInfo(socket, room, dirty, data) {
-
-    try {
-        let monster_index = -1;
-
-        if (data.monster_index) {
-            monster_index = data.monster_index;
-        } else if (data.monster_id) {
-            monster_index = await main.getMonsterIndex(data.monster_id);
-        }
-
-        if (monster_index !== -1) {
-            if (socket) {
-                socket.emit('monster_info', { 'monster': dirty.monsters[monster_index] });
-            }
-
-            if (room) {
-                io.to(room).emit('monster_info', { 'monster': dirty.monsters[monster_index] });
-            }
-
-        }
-        // No monster there - let the client know to remove it. We can only do that if we were
-        // sent in an ID rather than an index
-        else if (data.monster_id) {
-
-            if (socket) {
-                socket.emit('monster_info', { 'remove': true, 'monster': { 'id': data.monster_id } });
-            }
-
-            if (room) {
-                io.to(room).emit('monster_info', { 'remove': true, 'monster': { 'id': data.monster_id } });
-            }
-
-            // since the monster doesn't exist anymore, we want to make sure that no coords have this monster
-            let planet_coord_index = dirty.planet_coords.findIndex(function (obj) { return obj && obj.monster_id === data.monster_id; });
-            if (planet_coord_index !== -1) {
-                log(chalk.yellow("Planet coord had a monster id: " + data.monster_id + " that no longer exists"));
-                main.updateCoordGeneric(false, { 'planet_coord_index': planet_coord_index, 'monster_id': false });
-            }
-
-            let ship_coord_index = dirty.ship_coords.findIndex(function (obj) { return obj && obj.monster_id === data.monster_id; });
-            if (ship_coord_index !== -1) {
-                log(chalk.yellow("Ship coord had a monster id: " + data.monster_id + " that no longer exists"));
-                main.updateCoordGeneric(false, { 'ship_coord_index': ship_coord_index, 'monster_id': false });
-            }
-
-        }
-    } catch (error) {
-        log(chalk.red("Error in world.sendMonsterInfo: " + error));
-    }
-
-
-}
-
-exports.sendMonsterInfo = sendMonsterInfo;
-
-
-/* Just want to make sure we aren't missing something from this function in the new one
-async function sendMonsterInfo(socket, dirty, monster_id) {
-
-    try {
-        let monster_index = await main.getMonsterIndex(monster_id);
-
-        if(monster_index !== -1) {
-            socket.emit('monster_info', { 'monster': dirty.monsters[monster_index] });
-        } else {
-            console.log("Sending remove monster " + monster_id + " to player");
-            socket.emit('monster_info', {'monster_id': monster_id, 'remove': true});
-
-            // if a planet coord still has this monster id, lets remove that as well
-            let planet_coord_index = dirty.planet_coords.findIndex(function (obj) { return obj && obj.monster_id === monster_id; });
-            if(planet_coord_index !== -1) {
-                dirty.planet_coords[planet_coord_index].monster_id = false;
-                dirty.planet_coords[planet_coord_index].has_change = true;
-            }
-        }
-
-    } catch(error) {
-        log(chalk.red("Error in game.sendMonsterInfo:" + error));
-    }
-
-
-
-}
-
-exports.sendMonsterInfo = sendMonsterInfo;
-*/
 
 async function sendNpcInfo(socket, room, dirty, npc_id) {
 
     try {
-        let npc_index = await main.getNpcIndex(npc_id);
+        let npc_index = await npc.getIndex(dirty, npc_id);
 
         if (npc_index === -1) {
             console.log("Sending remove npc " + npc_id + " to player");
@@ -5062,14 +5001,14 @@ async function spawnAdjacent(dirty, data) {
 
 
         } else if (data.spawning_type === 'monster') {
-            let spawn_monster_data = { 'monster_type_id': data.spawning_type_id };
+            let spawn_monster_data = { };
             if (data.scope === 'planet') {
-                spawn_monster_data.planet_coord_idnex = placing_coord_index;
+                spawn_monster_data.planet_coord_index = placing_coord_index;
             } else if (data.scope === 'ship') {
                 spawn_monster_data.ship_coord_index = placing_coord_index;
             }
 
-            await spawnMonster(dirty, spawn_monster_data);
+            await monster.spawn(dirty, data.spawning_type_id, spawn_monster_data);
 
             return true;
 
@@ -5173,197 +5112,7 @@ exports.spawnGalaxyObjects = spawnGalaxyObjects;
  */
 
 
-/**
- *
- * @param dirty
- * @param {number} monster_type_id
- * @param {Object} data
- * @param {number=} data.planet_coord_id
- * @param {number=} data.planet_coord_index
- * @param {number=} data.ship_coord_id
- * @param {number=} data.ship_coord_index
- * @param {number=} data.coord_id
- * @param {number=} data.coord_index
- * @param {number=} data.spawned_event_id
- * @param {string=} data.attack_on_spawn_type
- * @param {number=} data.attack_on_spawn_id
- * @param {number=} data.ai_id
- * @returns {Promise<boolean>}
- */
-async function spawnMonster(dirty, monster_type_id, data) {
 
-    try {
-
-        let coord_index = -1;
-        let scope = 'planet';
-        let placing_coord;
-
-        // PLANET
-        if (data.planet_coord_id) {
-            coord_index = await main.getPlanetCoordIndex({ 'planet_coord_id': data.planet_coord_id });
-            placing_coord = dirty.planet_coords[coord_index];
-        } else if (data.planet_coord_index) {
-            coord_index = data.planet_coord_index;
-            placing_coord = dirty.planet_coords[coord_index];
-        }
-        // SHIP
-        else if (data.ship_coord_id) {
-            coord_index = await main.getShipCoordIndex({ 'ship_coord_id': data.ship_coord_id });
-            scope = 'ship';
-            placing_coord = dirty.ship_coords[coord_index];
-        } else if (data.ship_coord_index) {
-            coord_index = data.ship_coord_index;
-            scope = 'ship';
-            placing_coord = dirty.ship_coords[coord_index];
-        }
-        // GALAXY
-        else if (data.coord_id) {
-            coord_index = await main.getCoordIndex({ 'coord_id': data.ship_coord_id });
-            scope = 'galaxy';
-            placing_coord = dirty.coords[coord_index];
-        } else if (data.coord_index) {
-            coord_index = data.coord_index;
-            scope = 'galaxy';
-            placing_coord = dirty.coords[coord_index];
-        }
-
-        let monster_type_index = main.getMonsterTypeIndex(monster_type_id);
-
-        if (coord_index === -1 || monster_type_index === -1) {
-
-            if(coord_index === -1) {
-                log(chalk.yellow("Could not spawn monster - did not find coord"));
-            }
-
-            if(monster_type_index === -1) {
-                log(chalk.yellow("Could not spawn monster - did not find monster type id: " + monster_type_id));
-            }
-            
-            return false;
-        }
-
-        let spawned_event_id = 0;
-        if (data.spawned_event_id) {
-            spawned_event_id = data.spawned_event_id;
-        }
-
-        let can_place_monster_result = await monster.canPlace(dirty, scope, placing_coord, { 'monster_type_id': monster_type_id });
-
-        if (can_place_monster_result !== true) {
-            return false;
-        }
-
-        let sql = "";
-        let inserts = [];
-        let room = "";
-
-        if (scope === 'planet') {
-
-
-            sql = "INSERT INTO monsters(monster_type_id, type, exp, current_hp, max_hp, attack_strength, planet_id, planet_level, planet_coord_id, spawned_event_id) VALUES(?,?,?,?,?,?,?,?,?,?)";
-            inserts = [dirty.monster_types[monster_type_index].id, dirty.monster_types[monster_type_index].name, dirty.monster_types[monster_type_index].exp,
-            dirty.monster_types[monster_type_index].hp, dirty.monster_types[monster_type_index].hp, dirty.monster_types[monster_type_index].attack_strength,
-            dirty.planet_coords[coord_index].planet_id, dirty.planet_coords[coord_index].level, dirty.planet_coords[coord_index].id, spawned_event_id];
-
-
-
-            room = "planet_" + dirty.planet_coords[coord_index].planet_id;
-
-
-        } else if (scope === 'ship') {
-
-            sql = "INSERT INTO monsters(monster_type_id, type, exp, current_hp, max_hp, attack_strength, ship_id, ship_coord_id, spawned_event_id) VALUES(?,?,?,?,?,?,?,?,?)";
-            inserts = [dirty.monster_types[monster_type_index].id, dirty.monster_types[monster_type_index].name, dirty.monster_types[monster_type_index].exp,
-            dirty.monster_types[monster_type_index].hp, dirty.monster_types[monster_type_index].hp, dirty.monster_types[monster_type_index].attack_strength,
-            dirty.ship_coords[coord_index].ship_id, dirty.ship_coords[coord_index].id, spawned_event_id];
-
-            room = "ship_" + dirty.ship_coords[coord_index].ship_id;
-
-        } else if (scope === 'galaxy') {
-
-            console.log("Spawning in galaxy");
-
-            sql = "INSERT INTO monsters(monster_type_id, type, exp, current_hp, max_hp, attack_strength, coord_id, spawned_event_id) VALUES(?,?,?,?,?,?,?,?)";
-            inserts = [dirty.monster_types[monster_type_index].id, dirty.monster_types[monster_type_index].name, dirty.monster_types[monster_type_index].exp,
-            dirty.monster_types[monster_type_index].hp, dirty.monster_types[monster_type_index].hp, dirty.monster_types[monster_type_index].attack_strength,
-            dirty.coords[coord_index].id, spawned_event_id];
-
-            room = "galaxy";
-        }
-
-
-
-
-
-        let [result] = await (pool.query(sql, inserts));
-        //pool.query(monster_sql, monster_inserts, function(err, result) {
-
-
-        //console.log("Inserted monster");
-
-        let new_monster_id = result.insertId;
-        let new_monster_index = await main.getMonsterIndex(new_monster_id);
-        //console.log("Got new monster id: " + new_monster_id);
-
-        if (scope === 'planet') {
-            await main.updateCoordGeneric(false, {
-                'planet_coord_index': coord_index, 'monster_id': new_monster_id,
-                'spawned_monster_id': new_monster_id
-            });
-        } else if (scope === 'ship') {
-            await main.updateCoordGeneric(false, { 'ship_coord_index': coord_index, 'monster_id': new_monster_id });
-        } else if (scope === 'galaxy') {
-            await main.updateCoordGeneric(false, { 'coord_index': coord_index, 'monster_id': new_monster_id });
-        }
-
-        await sendMonsterInfo(false, room, dirty, { 'monster_id': new_monster_id });
-
-        // and if the monster has a larger width/height, add in the belongs to stuff
-        if (dirty.monster_types[monster_type_index].movement_tile_width > 1 ||
-            dirty.monster_types[monster_type_index].movement_tile_height > 1) {
-            console.log("This is a large monster. Adding the belongs_to_monster_id stuff");
-            // Try just moving it where it currently is?
-            // TODO. I think if we changed game.moveMonster to accept a specific destination coord, we could do it that way
-            // Then we don't need placeMonster and moveMonster - just moveMonster!
-        }
-
-
-        // Sometimes monsters are spawned to automatically attack a player
-        if (data.attack_on_spawn_id && data.attack_on_spawn_type) {
-            console.log("Monster was spawned to attack " + data.attack_on_spawn_type + " id " + data.attack_on_spawn_id);
-
-            let battle_linker_data = {
-                'attacking_id': new_monster_id, 'attacking_type': 'monster',
-                'being_attacked_id': data.attack_on_spawn_id, 'being_attacked_type': data.attack_on_spawn_type
-            };
-            await addBattleLinker(false, dirty, battle_linker_data);
-
-            // I THINK this is where the ai daemon stuff will always show up
-            if (data.attack_on_spawn_type === 'player' &&
-                (dirty.monster_types[monster_type_index].id === 33 || dirty.monster_types[monster_type_index].id === 57)) {
-                log(chalk.yellow("AI THING SPAWNED CHECK"));
-
-                // get the player socket
-                let being_attacked_player_index = await player.getIndex(dirty, { 'player_id': data.attack_on_spawn_id });
-                if (being_attacked_player_index !== -1) {
-                    let being_attacked_player_socket = getPlayerSocket(dirty, being_attacked_player_index);
-                    if (being_attacked_player_socket) {
-                        being_attacked_player_socket.emit('chat', { 'message': "You have violated the rules of the ruling AI.", 'scope': 'local', 'is_important': true });
-                    }
-                }
-
-
-            }
-        }
-
-    } catch (error) {
-        log(chalk.red("Error in world.spawnMonster: " + error));
-        console.error(error);
-    }
-
-}
-
-exports.spawnMonster = spawnMonster;
 
 
 
@@ -5557,6 +5306,112 @@ async function tickNomad(dirty, admin_command = false) {
 }
 
 exports.tickNomad = tickNomad;
+
+
+
+/**
+ * @param {Object} dirty
+ * @param {number} force_event_id
+ * 
+ */
+async function tickStorytellers(dirty, force_event_id = 0) {
+
+    try {
+
+
+
+        console.log("in tickStorytellers");
+        for(let i = 0; i < dirty.storytellers.length; i++) {
+
+            if(helper.isFalse(dirty.storytellers[i].current_spawned_event_id)) {
+
+                console.log("Going to try and spawn the next story event");
+
+                // If there's no current spawned event, randomly choose a good/bad one!
+                let rand_chance = helper.getRandomIntInclusive(1,100);
+                if(rand_chance < 4 || force_event_id) {
+
+                    let difficulty_ceiling = dirty.storytellers[i].previous_difficulty;
+                    let difficulty_floor = dirty.storytellers[i].previous_difficulty;
+
+                    // If the previous event took a long time for players to remove, we can tick difficulty down a bit
+                    if(dirty.storytellers[i].previous_event_ticks > 100) {
+
+                    } 
+                    // Previous event was taken out fast, we can move difficulty up
+                    else {
+
+                    }
+
+
+
+                    let possible_events = dirty.events.filter(event_filter => event_filter.difficulty === 10);
+                    if(possible_events.length > 0) {
+
+                        let chosen_event = possible_events[Math.floor(Math.random()*possible_events.length)];
+
+                        let event_index = event.getIndex(dirty, chosen_event.id);
+
+                        let chosen_planet_index = helper.getRandomIntInclusive(0, dirty.planets.length - 1);
+
+                        if(dirty.planets[chosen_planet_index]) {
+                            console.log("Storyller is going to try to spawn event " + dirty.events[event_index].name + " on planet id: " + dirty.planets[chosen_planet_index].id);
+                            let spawned_event_index = await event.spawn(dirty, event_index, { 'planet_id': dirty.planets[chosen_planet_index].id });
+
+                            console.log("spawned_event_index:");
+                            console.log(spawned_event_index);
+
+                            if(spawned_event_index === -1) {
+                                console.log("Looks like the event failed to spawn");
+                            } else {
+                                dirty.storytellers[i].current_spawned_event_id = dirty.spawned_events[spawned_event_index].id;
+                                dirty.storytellers[i].current_event_ticks = 0;
+                                dirty.storytellers[i].has_change = true;
+
+                                let planet_type_index = main.getPlanetTypeIndex(dirty.planets[chosen_planet_index].planet_type_id);
+                                // add a player log!!
+                                addPlayerLog(dirty, -1, "The " + dirty.planet_types[planet_type_index].name + " planet " + dirty.planets[chosen_planet_index].name + " is being attacked by bugs",
+                                    { 'planet_id': dirty.planets[chosen_planet_index].id, 'event_id': chosen_event.id });
+                            }
+                        } else {
+                            console.log("Was unable to pick a planet. chosen_planet_index: " + chosen_planet_index);
+                        }
+
+                        
+        
+                    } else {
+                        console.log("No possible events");
+                    }
+
+
+
+
+                    
+                }
+
+            } else {
+                console.log("Ticking current event");
+
+                dirty.storytellers[i].current_event_ticks++;
+                dirty.storytellers[i].has_change = true;
+            }
+
+
+
+
+        }
+        
+    } catch(error) {
+        log(chalk.red("Error in world.tickStorytellers: " + error));
+        console.error(error);
+    }
+
+
+
+}
+
+exports.tickStorytellers = tickStorytellers;
+
 
 
 // Waiting drops will either have an object_index, or an object_type_id. Waiting drops will also either have a planet_coord_index, or a ship_coord_index

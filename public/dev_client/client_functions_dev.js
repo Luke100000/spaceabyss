@@ -1208,6 +1208,31 @@ function destroyPlayerSprite(player) {
     player.destination_y = false;
 }
 
+
+function displayClickNpc(npc_id) {
+
+
+    let adding_html = "";
+
+
+    let npc_index = getNpcIndex(npc_id);
+
+    if(npc_index === -1) {
+        socket.emit('request_npc_info', { 'npc_id': npc_id });
+        adding_html += "A NPC";
+        return;
+    }
+
+
+    adding_html += npcs[npc_index].name + " ( A NPC )";
+
+    if(debug_mode) {
+        adding_html += " ID: " + npcs[npc_index].id;
+    }
+
+    $('#coord_data').append(adding_html + "<br>");
+}
+
 function displayClickObject(object_id) {
     let object_index = objects.findIndex(function (obj) { return obj && obj.id === object_id; });
 
@@ -1445,15 +1470,15 @@ function drawCoord(type, coord) {
             let other_player_index = players.findIndex(function (obj) { return obj && obj.ship_id === coord.object_id; });
 
             if (other_player_index !== -1) {
-                console.log("Object is other player's ship");
+                //console.log("Object is other player's ship");
 
                 // Doesn't hurt to check and see if we draw the player here
                 if(shouldDraw(client_player_info.coord, coord)) {
-                    console.log("Creating other player sprite!");
+                    //console.log("Creating other player sprite!");
                     createPlayerSprite(other_player_index);
                 } else {
 
-                    console.log("Not in a spot we should draw");
+                    //console.log("Other player's ship is not in a spot we should draw");
 
                 }
                 draw_object = false;
@@ -3075,16 +3100,9 @@ function pointerDownDesktop(pointer, pointerTileX, pointerTileY) {
 
 
             if (temp_coord.npc_id) {
-                $('#coord_data').append("NPC id: " + temp_coord.npc_id + "<br>");
 
-                let npc_index = npcs.findIndex(function (obj) { return obj && obj.id === temp_coord.npc_id; });
-
-                if (npc_index !== -1) {
-                    $('#coord_data').append("Current structure: " + npcs[npc_index].current_structure_type_id + "<br>");
-                    $('#coord_data').append("Dream structure: " + npcs[npc_index].dream_structure_type_id + "<br>");
-                } else {
-                    $('#coord_data').append("Not found in npcs");
-                }
+                displayClickNpc(temp_coord.npc_id);
+               
 
             }
 
@@ -3987,6 +4005,7 @@ function generateEquipmentDisplay() {
     equipment_layout_string += "<div id='equipment_body_type' class='player_equipment'><strong>Body Type</strong></div>";
     equipment_layout_string += "<div id='equipment_skins' class='player_equipment'><strong>Skins Purchased</strong></div>";
     equipment_layout_string += "</div>";
+    
 
 
     equipment_linkers.forEach(function (equipment_linker) {
@@ -4458,6 +4477,7 @@ function generateManagementOptionsDisplay() {
     html_string += " <button class='button is-info' id='showshipoptions'>Ships</button> ";
     html_string += " <button class='button is-info' id='showobjectoptions'>Objects</button> ";
     html_string += " <button class='button is-info' id='showmarketoptions'>Market</button> ";
+    html_string += " <button class='button is-success' id='showtaskoptions'>Tasks</button> ";
     html_string += "</div></div>";
 
     $('#management_options').empty();
@@ -5016,6 +5036,75 @@ function generateShipManagementDisplay() {
 
     $('#ship_management').empty();
     $('#ship_management').append(html_string);
+}
+
+
+function generateTaskDisplay() {
+
+    if (!$("#task_management").is(":visible")) {
+        return false;
+    }
+
+    if (client_player_index === -1) {
+        return false;
+    }
+
+    console.log("In generateTaskDisplay");
+
+    use_tasks = localStorage.getItem('use_tasks');
+
+
+    
+
+    $('#task_management').empty();
+
+    let html_string = "";
+    html_string += "<div class='message is-info message-inline'><div class='message-body'>";
+
+    // Lets try a close button
+    html_string += "Not sure what you CAN do? Tasks are a way of guiding you to explore features of Space Abyss!<br><br>";
+
+    if(!use_tasks){
+        html_string += "<button id='activatetasks' class='button is-success'>Activate Our Task System</button><br><br>";
+    }
+    
+
+    html_string += "<strong>Tasks:</strong><br>";
+    for(let i = 0; i < tasks.length; i++) {
+
+
+        // see if the task is completed
+        let completed_task = localStorage.getItem("task_" + tasks[i].id);
+
+        if(completed_task) {
+            html_string += "<span class='tag is-success'>" + tasks[i].name + " <i class='fad fa-check-circle'></i></span>";
+        } else {
+            html_string += tasks[i].name;
+
+
+            if(use_tasks) {
+                html_string += ": " + tasks[i].description;
+            }
+        }
+
+        
+        html_string += "<br>";
+    }
+
+
+    html_string += "<br><strong>NOTE:</strong> Tasks are meant to be helpful, and are only stored on your local browser. " +
+        " So don't get too attached to the idea of having them all marked as complete.";
+
+
+    html_string += "</div></div>";
+
+
+    $('#click_menu').empty();
+    $('#click_menu').hide();
+
+    $('#task_management').append(html_string);
+
+
 }
 
 //  data:   coord_id   OR   (   tile_x   |   tile_y   )
@@ -8124,7 +8213,7 @@ function setPlayerMoveDelay(player_index) {
 function shouldDraw(base_coord, other_coord, source = false, debug = false) {
 
 
-    let debug_other_coord_ids = [442333];
+    let debug_other_coord_ids = [];
     if (!base_coord) {
         if (debug_other_coord_ids.indexOf(other_coord.id) !== -1) {
             console.log("No base coord in shouldDraw. source: " + source);
@@ -8154,6 +8243,11 @@ function shouldDraw(base_coord, other_coord, source = false, debug = false) {
 
     // galaxy - neither has a planet id and ship id
     if (!base_coord.planet_id && !base_coord.ship_id && !other_coord.planet_id && !other_coord.ship_id) {
+        return true;
+    }
+
+    // Some npcs won't actually have ships - and we just draw a pod for them in space.
+    if(!base_coord.planet_id && !base_coord.ship_id && other_coord.npc_id) {
         return true;
     }
 
@@ -8687,7 +8781,35 @@ function showClickMenuNpc(coord) {
             }
         }
     } else {
-        $('#click_menu').append("<br>" + npcs[npc_index].name + " has no desires");
+        $('#click_menu').append("<br>" + npcs[npc_index].name + " has no desires<br>");
+    }
+
+    // and buying inventory
+    let npc_inventory_item_count = 0;
+    for(let i = 0; i < inventory_items.length; i++) {
+        if(typeof inventory_items[i] && inventory_items[i].npc_id !== 'undefined' &&  inventory_items[i].npc_id === npcs[npc_index].id) {
+            npc_inventory_item_count++;
+
+            if(inventory_items[i].price) {
+
+                let inventory_object_type_index = getObjectTypeIndex(inventory_items[i].object_type_id);
+
+                $('#click_menu').append("<img style='width:28px;'" +
+                " src='https://space.alphacoders.com/" + urlName(object_types[inventory_object_type_index].name) + ".png'>" +
+                "<button class='button is-small' id='buy_" + inventory_items[i].id + "' npc_id='" + npcs[npc_index].id + "' " +
+                " inventory_item_id='" + inventory_items[i].id + "'>Buy $" + inventory_items[i].price + "</button><br>");
+            } else {
+
+
+                
+            }
+        }
+    }
+
+    if(debug_mode) {
+        if(npc_inventory_item_count === 0) {
+            $('#click_menu').append("<br>No inventory items");
+        }               
     }
 
 

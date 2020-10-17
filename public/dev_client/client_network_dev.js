@@ -1,3 +1,5 @@
+
+
 socket.on('addiction_linker_info', function(data) {
 
     if(!data.addiction_linker) {
@@ -663,6 +665,17 @@ socket.on('equipment_linker_info', function(data) {
     generateEquipmentDisplay();
 
 
+
+    if(use_tasks) {
+        let matched_equipment_count = 0;
+        for(let i = 0; i < tasks.length; i++) {
+            if(tasks[i].check_location === 'equipment' && tasks[i].check_id === equipment_linkers[equipment_linker_index].object_type_id) {
+                localStorage.setItem("task_" + tasks[i].id, true);
+                generateTaskDisplay();
+            }
+        }
+    }
+
 });
 
 
@@ -843,6 +856,29 @@ socket.on('inventory_item_info', function(data) {
             if(inventory_item.body_id !== inventory_items[inventory_index].body_id) {
                 inventory_items[inventory_index].body_id = inventory_item.body_id;
             }
+
+            if(inventory_item.price !== inventory_items[inventory_index].price) {
+                inventory_items[inventory_index].price - inventory_item.price;
+            }
+        }
+
+
+        // Our task system!
+        if(use_tasks) {
+            for(let i = 0; i < tasks.length; i++) {
+                //console.log("Checking against task:");
+                //console.log(tasks[i]);
+                if(tasks[i].check_location === 'inventory') {
+                    if(tasks[i].check_type === 'object_type' && inventory_items[inventory_index].object_type_id && 
+                    tasks[i].check_id === inventory_items[inventory_index].object_type_id) {
+                        if(inventory_items[inventory_index].amount >= tasks[i].check_amount) {
+                            console.log("Setting task as complete!");
+                            localStorage.setItem("task_" + tasks[i].id, true);
+                            generateTaskDisplay();
+                        }
+                    }
+                }
+            }
         }
 
     }
@@ -975,6 +1011,8 @@ socket.on('login_data', function(data) {
         redrawMap();
 
         socket.emit('request_skin_purchase_linker_data');
+
+        use_tasks = localStorage.getItem('use_tasks');
 
     } else {
         $('#login_status').append("<span style='color:red;'>Login Failed</span>");
@@ -1520,7 +1558,7 @@ socket.on('npc_info', function(data) {
                 redrawBars();
             }
         } else {
-            //console.log("Not drawing this one right now");
+            console.log("Not drawing this npc right now");
 
         }
     } else {
@@ -1982,7 +2020,7 @@ socket.on('object_info', function(data) {
 
         // has_spawned_object change
         if(objects[object_index].has_spawned_object !== data.object.has_spawned_object) {
-            console.log("has_spawned_object changed");
+            //console.log("has_spawned_object changed");
             redraw_object = true;
         }
 
@@ -2517,6 +2555,16 @@ socket.on('player_info', function(data) {
             // Only re-generate the inventory display if this was us moving!
             if(client_player_id && data.player.id === client_player_id) {
                 generateInventoryDisplay();
+
+                // Check for a task that matches a body switch
+                if(use_tasks) {
+                    let body_index = getObjectIndex(players[player_index].body_id);
+                    for(let i = 0; i < tasks.length; i++) {
+                        if(tasks[i].check_location === 'body' && tasks[i].check_id === objects[body_index].object_type_id) {
+                            localStorage.setItem("task_" + tasks[i].id, true);
+                        }
+                    }
+                }
             }
 
             setPlayerMoveDelay(player_index);
@@ -2544,6 +2592,18 @@ socket.on('player_info', function(data) {
             setPlayerMoveDelay(player_index);
 
             //showPlayer(players[player_index]);
+
+            if(client_player_id && data.player_id === client_player_id) {
+                // Check for a task that matches a body switch
+                if(use_tasks) {
+                    let ship_index = getObjectIndex(players[player_index].ship_id);
+                    for(let i = 0; i < tasks.length; i++) {
+                        if(tasks[i].check_location === 'ship' && tasks[i].check_id === objects[ship_index].object_type_id) {
+                            localStorage.setItem("task_" + tasks[i].id, true);
+                        }
+                    }
+                }
+            }
         }
 
 
@@ -2694,11 +2754,24 @@ socket.on('player_research_linker_info', function(data) {
 
     if(player_research_linker_index === -1) {
 
-        player_research_linkers.push(data.player_research_linker);
+        player_research_linker_index = player_research_linkers.push(data.player_research_linker) - 1;
 
     } else {
 
         player_research_linkers[player_research_linker_index] = data.player_research_linker;
+    }
+
+
+    if(use_tasks) {
+
+        let research_object_type_index = getObjectTypeIndex(player_research_linkers[player_research_linker_index].object_type_id);
+        for(let i = 0; i < tasks.length; i++) {
+            if(tasks[i].check_location === 'research' && tasks[i].check_type === 'object_type' && tasks[i].check_id === object_types[research_object_type_index].id &&
+                player_research_linkers[player_research_linker_index].researches_completed >= object_types[research_object_type_index].research_times_required) {
+                    localStorage.setItem("task_" + tasks[i].id, true);
+                    generateTaskDisplay();
+                }
+        }
     }
 
 

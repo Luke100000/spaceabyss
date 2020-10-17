@@ -154,6 +154,13 @@ $(document).on('click', 'button', function () {
 
     }
 
+    if(split_name[0] === 'activatetasks') {
+        localStorage.setItem('use_tasks', true);
+
+        console.log("Using local storage?");
+
+        generateTaskDisplay();
+    }
 
     // Adding a planet or ship coord to an area
     if(split_name[0] === 'addtoarea') {
@@ -642,7 +649,6 @@ $(document).on('click', 'button', function () {
 
 
         $('#click_menu').append("<a target='_blank' class='button is-success is-small' href='https://space.alphacoders.com/site/tutorial'>View Our Tutorial!</a><br>");
-
 
         // Go through recent failure messages
         for(let i = recent_failure_messages.length - 1; i > recent_failure_messages.length - 10; i--) {
@@ -1197,6 +1203,21 @@ $(document).on('click', 'button', function () {
         } else {
             $('#ship_management').show();
             generateShipManagementDisplay();
+        }
+
+
+    }
+
+    if(split_name[0] === 'showtaskoptions') {
+
+        if($("#task_management").is(":visible")) {
+            $("#task_management").hide();
+            $("#task_management").empty();
+
+
+        } else {
+            $('#task_management').show();
+            generateTaskDisplay();
         }
 
 

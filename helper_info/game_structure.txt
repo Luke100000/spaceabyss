@@ -14,7 +14,19 @@ SPRITE SIZES:
 Standard Player is: 32x32
 A decent 'large object' size is 24x24 (asteroids)
 A decent size for producing/manufacturing objects is 26x26
-Small monster: 20x20 (process, rat, something else small), medium monster 22x22
+22x22
+    medium monster 
+20x20
+    small monster (process, rat, something else small)
+    pistol type weapons
+18x18
+    small objects (eggs)
+
+wide:
+    28x18 (rifles and such)
+
+
+Something really small, like an egg: 18x18
 
 
 Damage is per slot taken up (3 slots per arm)

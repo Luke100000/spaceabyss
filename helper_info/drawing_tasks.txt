@@ -2,32 +2,7 @@
 ** THINGS I'M SENDING FERNANDO'S WAY **
 ***************************************
 
-
-
-Keratin Plating Armor
-
-
-diamond battery
-
-
-chem blaster (look in object types for images)
-jelly rod (look in object types for images)
-
-
-voon egg
-all the other eggs
-
-
-silk ship
-silk floor
-silk wall
-
-Volt Rifle
-
-
-acid player body
-heat player body
-
+bug spawner
 
 
 ***************************

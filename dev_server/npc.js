@@ -1,3 +1,11 @@
+/*
+    npcActions is our main function
+        It's called from space_abyss.js
+
+        From there, we either:
+            A) set a task for the NPC if it doesn't have one
+            B) perform a set task
+*/
 var io_handler = require('./io.js');
 var io = io_handler.io;
 var database = require('./database.js');
@@ -11,8 +19,10 @@ const game_object = require('./game_object.js');
 const helper = require('./helper.js');
 const inventory = require('./inventory.js');
 const main = require('./space_abyss' + process.env.FILE_SUFFIX + '.js');
+const map = require('./map.js');
 const movement = require('./movement.js');
 const world = require('./world.js');
+const planet = require('./planet.js');
 
 
     // Actions specific to the bugAttack NPC job
@@ -37,7 +47,7 @@ const world = require('./world.js');
                     obj.planet_id === chosen_planet.id; });
 
                 if(chosen_planet_coord_index === -1) {
-                    console.log("Could not find the coord the planet is on");
+                    console.log("Could not find the coord the planet is on to bug attack it");
                     return false;
                 }
 
@@ -51,6 +61,10 @@ const world = require('./world.js');
                     'destination_tile_y': destination_tile_y, 'destination_planet_id': chosen_planet.id });
 
                 log(chalk.cyan("Destination set! Poor planet!"));
+
+                let chosen_planet_type_index = main.getPlanetTypeIndex(chosen_planet.planet_type_id);
+
+                world.addPlayerLog(dirty, -1, dirty.npcs[npc_index].name + " is attacking the " + dirty.planet_types[chosen_planet_type_index].name + " planet " + chosen_planet.name);
             }
             /******************** WITHOUT STRUCTURE, ON A PLANET **********************/
             else {
@@ -65,37 +79,112 @@ const world = require('./world.js');
 
                 }
 
-                // Go through the -1 to +1 seeing if there's a coord with spawns_monster_type_id that we haven't taken over yet
-                for(let x = dirty.planet_coords[npc_coord_index].tile_x - 1; x <= dirty.planet_coords[npc_coord_index].tile_x + 1; x++) {
-                    for(let y = dirty.planet_coords[npc_coord_index].tile_y - 1; y <= dirty.planet_coords[npc_coord_index].tile_y + 1; y++) {
-                        let planet_coord_index = await main.getPlanetCoordIndex({ 'planet_id': dirty.planet_coords[npc_coord_index].planet_id,
-                            'planet_level': dirty.planet_coords[npc_coord_index].level, 'tile_x': x, 'tile_y': y });
 
-                        if(planet_coord_index !== -1) {
-                            if(dirty.planet_coords[planet_coord_index].spawns_monster_type_id) {
-                                console.log("NPC found a coord that spawns a monster");
+                // small chance to create a bug spawner
+                let rand_bug_spawner = helper.getRandomIntInclusive(1,100);
 
-                                // Lets cap it, if it's not already capped
+                if(rand_bug_spawner < 10) {
 
-                                if(dirty.planet_coords[planet_coord_index].object_type_id !== 262) {
-                                    let insert_object_type_data = { 'object_type_id': 262,
-                                        'npc_id': dirty.npcs[npc_index].id };
-                                    let new_object_id = await world.insertObjectType(false, dirty, insert_object_type_data);
-                                    let new_object_index = await game_object.getIndex(dirty, new_object_id);
+                    let placed_bug_spawner = false;
 
-                                    await game_object.place(false, dirty, { 'object_index': new_object_index,
-                                        'planet_coord_index': planet_coord_index });
-                                }
+                    // left
+                    await map.getCoordNeighbor(dirty, 'planet', npc_coord_index, 'left');
 
+                    if(dirty.planet_coords[npc_coord_index].left_coord_index !== -1) {
+
+                        let can_place_result = await game_object.canPlace(dirty, 'planet', dirty.planet_coords[dirty.planet_coords[npc_coord_index].left_coord_index], { 'object_type_id': 262 });
+                        if(can_place_result) {
+
+                            placed_bug_spawner = true;
+
+                            let insert_object_type_data = { 'object_type_id': 262,
+                                'npc_id': dirty.npcs[npc_index].id };
+                            let new_object_id = await world.insertObjectType(false, dirty, insert_object_type_data);
+                            let new_object_index = await game_object.getIndex(dirty, new_object_id);
+
+                            await game_object.place(false, dirty, { 'object_index': new_object_index,
+                                'planet_coord_index': dirty.planet_coords[npc_coord_index].left_coord_index });
+                            
+                        }
+                    }
+                
+
+                    // right
+                    if(!placed_bug_spawner) {
+                        await map.getCoordNeighbor(dirty, 'planet', npc_coord_index, 'right');
+
+                        if(dirty.planet_coords[npc_coord_index].right_coord_index !== -1) {
+
+                            let can_place_result = await game_object.canPlace(dirty, 'planet', dirty.planet_coords[dirty.planet_coords[npc_coord_index].right_coord_index], { 'object_type_id': 262 });
+
+                            if(can_place_result) {
+    
+                                placed_bug_spawner = true;
+    
+                                let insert_object_type_data = { 'object_type_id': 262,
+                                    'npc_id': dirty.npcs[npc_index].id };
+                                let new_object_id = await world.insertObjectType(false, dirty, insert_object_type_data);
+                                let new_object_index = await game_object.getIndex(dirty, new_object_id);
+    
+                                await game_object.place(false, dirty, { 'object_index': new_object_index,
+                                    'planet_coord_index': dirty.planet_coords[npc_coord_index].right_coord_index });
+                                
                             }
                         }
                     }
+
+                    // up
+                    if(!placed_bug_spawner) {
+                        await map.getCoordNeighbor(dirty, 'planet', npc_coord_index, 'up');
+
+                        if(dirty.planet_coords[npc_coord_index].up_coord_index !== -1) {
+
+                            let can_place_result = await game_object.canPlace(dirty, 'planet', dirty.planet_coords[dirty.planet_coords[npc_coord_index].up_coord_index], { 'object_type_id': 262 });
+
+                            if(can_place_result) {
+    
+                                placed_bug_spawner = true;
+    
+                                let insert_object_type_data = { 'object_type_id': 262,
+                                    'npc_id': dirty.npcs[npc_index].id };
+                                let new_object_id = await world.insertObjectType(false, dirty, insert_object_type_data);
+                                let new_object_index = await game_object.getIndex(dirty, new_object_id);
+    
+                                await game_object.place(false, dirty, { 'object_index': new_object_index,
+                                    'planet_coord_index': dirty.planet_coords[npc_coord_index].up_coord_index });
+                                
+                            }
+                        }
+                    }
+
+                    //down
+                    if(!placed_bug_spawner) {
+                        await map.getCoordNeighbor(dirty, 'planet', npc_coord_index, 'down');
+
+                        if(dirty.planet_coords[npc_coord_index].down_coord_index !== -1) {
+
+                            let can_place_result = await game_object.canPlace(dirty, 'planet', dirty.planet_coords[dirty.planet_coords[npc_coord_index].down_coord_index], { 'object_type_id': 262 });
+                            if(can_place_result) {
+    
+                                placed_bug_spawner = true;
+    
+                                let insert_object_type_data = { 'object_type_id': 262,
+                                    'npc_id': dirty.npcs[npc_index].id };
+                                let new_object_id = await world.insertObjectType(false, dirty, insert_object_type_data);
+                                let new_object_index = await game_object.getIndex(dirty, new_object_id);
+    
+                                await game_object.place(false, dirty, { 'object_index': new_object_index,
+                                    'planet_coord_index': dirty.planet_coords[npc_coord_index].down_coord_index });
+                                
+                            }
+                        }
+                    }
+
+
                 }
 
                 // and randomly move
-                moveRandom(dirty, npc_index);
-
-
+                moveRandom(dirty, npc_index, npc_coord_index);
 
             }
         } catch(error) {
@@ -188,6 +277,249 @@ const world = require('./world.js');
     exports.canBuildStrcuture = canBuildStructure;
 
 
+
+    async function canPlace(dirty, scope, coord, npc_id, task_index = -1) {
+        try {
+    
+            // Right now NPCs can only take up a single tile, but it's possible they follow monsters and players in the future
+            let checking_coords = [];
+    
+            checking_coords.push(coord);
+            for(let checking_coord of checking_coords) {
+                if(checking_coord.floor_type_id) {
+                    let floor_type_index = main.getFloorTypeIndex(checking_coord.floor_type_id);
+    
+                    if(floor_type_index !== -1) {
+                        if(!dirty.floor_types[floor_type_index].can_walk_on) {
+                            console.log("Returning false on " + checking_coord.tile_x + "," + checking_coord.tile_y + " can't walk on floor");
+                            return false;
+                        }
+                    }
+                }
+    
+                if(checking_coord.monster_id || checking_coord.belongs_to_monster_id) {
+                    console.log("Returning false on " + checking_coord.tile_x + "," + checking_coord.tile_y + " monster");
+                    return false;
+                }
+    
+    
+    
+                if(checking_coord.npc_id && checking_coord.npc_id !== npc_id) {
+                    return false;
+                }
+    
+                // We have a base object type here - no object/belongs object
+                if(checking_coord.object_type_id && !checking_coord.object_id && !checking_coord.belongs_to_object_id) {
+                    let object_type_index = main.getObjectTypeIndex(checking_coord.object_type_id);
+    
+                    if(object_type_index !== -1) {
+                        if(!dirty.object_types[object_type_index].can_walk_on) {
+                            console.log("Checking coord id: " + checking_coord.id + " scope: " + scope);
+                            console.log("Returning false on " + checking_coord.tile_x + "," + checking_coord.tile_y + " not walkable object");
+                            //log(chalk.yellow("Blocked by object_type_id"));
+                            return false;
+                        }
+                    }
+                }
+    
+                // We have a base object type here - no object/belongs object
+                if(checking_coord.object_type_id && !checking_coord.object_id && !checking_coord.belongs_to_object_id) {
+                    let object_type_index = main.getObjectTypeIndex(checking_coord.object_type_id);
+    
+                    if(object_type_index !== -1) {
+                        if(!dirty.object_types[object_type_index].can_walk_on) {
+                            console.log("Checking coord id: " + checking_coord.id + " scope: " + scope);
+                            console.log("Returning false on " + checking_coord.tile_x + "," + checking_coord.tile_y + " not walkable object");
+                            //log(chalk.yellow("Blocked by object_type_id"));
+                            return false;
+                        }
+                    }
+                }
+    
+                if(checking_coord.object_id || checking_coord.belongs_to_object_id) {
+    
+    
+                    let object_index = -1;
+                    if(checking_coord.object_id) {
+                        object_index = await game_object.getIndex(dirty, checking_coord.object_id);
+                    } else if(checking_coord.belongs_to_object_id) {
+                        object_index = await game_object.getIndex(dirty, checking_coord.belongs_to_object_id);
+                    }
+    
+                    if(object_index !== -1) {
+                        let object_type_index = main.getObjectTypeIndex(dirty.objects[object_index].object_type_id);
+                        if(!dirty.object_types[object_type_index].can_walk_on) {
+                            //console.log("Returning false on object we can't walk on");
+                            return false;
+                        }
+                    }
+                }
+    
+                if(checking_coord.player_id || checking_coord.belongs_to_player_id) {
+                    //console.log("Returning false due to player");
+                    return false;
+                }
+    
+                if( (checking_coord.planet_id || checking_coord.belongs_to_planet_id) && scope === 'galaxy') {
+    
+                    if(task_index !== -1) {
+                        //console.log("npc task index sent in: " + task_index);
+    
+    
+                        if(dirty.npc_tasks[task_index]) {
+                            //console.log(dirty.npc_tasks[task_index]);
+                        } else {
+                            log(chalk.yellow("Can't find that npc_task...."));
+                        }
+                    }
+    
+                    // If we have a task with a destination_planet_id, we can land on that that. Not others
+                    if(task_index !== -1 && dirty.npc_tasks[task_index] && (dirty.npc_tasks[task_index].destination_planet_id === checking_coord.planet_id ||
+                        dirty.npc_tasks[task_index].destination_planet_id === checking_coord.belongs_to_planet_id )) {
+                        // They found the planet they were looking for!
+                    } else {
+                        console.log("Returning false on " + checking_coord.tile_x + "," + checking_coord.tile_y + " planet");
+                        return false;
+                    }
+    
+    
+                }
+            }
+    
+            return true;
+    
+        } catch(error) {
+            log(chalk.red("Error in npc.canPlace: " + error));
+            console.error(error);
+        }
+    }
+    
+    module.exports.canPlace = canPlace;
+
+    /**
+     * @param {Object} dirty
+     * @param {number} npc_index
+     * @param {number} damage_amount
+     * @param {Object} data
+     * @param {Object} data.battle_linker
+     * @param {Object} data.npc_info
+     * @param {number} data.calculating_range
+     */
+    async function damage(dirty, npc_index, damage_amount, data) {
+        try {
+
+            console.log("In npc.damage");
+
+            let new_npc_hp = dirty.npcs[npc_index].current_hp - damage_amount;
+            //console.log("Calculated new_npc_hp as: " + new_npc_hp + " have calculating_range as: " + data.calculating_range);
+
+            // send new npc info to the room
+            io.to(data.npc_info.room).emit('damaged_data',
+                {'npc_id': dirty.npcs[npc_index].id, 'damage_amount': damage_amount, 'was_damaged_type': 'hp',
+                    'damage_source_type': data.battle_linker.attacking_type, 'damage_source_id': data.battle_linker.attacking_id,
+                    'calculating_range': data.calculating_range });
+
+
+            if (new_npc_hp <= 0) {
+
+                console.log("Npc is killed");
+
+                await deleteNpc(dirty, dirty.npcs[npc_index].id);
+
+            } else {
+                //console.log("npc not dead yet");
+
+                if(isNaN(new_npc_hp)) {
+                    log(chalk.red("We tried setting the npc's current hp to a NaN value: " + new_npc_hp));
+                } else {
+                    dirty.npcs[data.npc_index].current_hp = new_npc_hp;
+                    dirty.npcs[data.npc_index].has_change = true;
+                }
+
+
+
+            }
+
+        } catch(error) {
+            log(chalk.red("Error in npc.damage: " + error));
+            console.error(error);
+        }
+    }
+
+    exports.damage = damage;
+
+
+    // We use the npc_id instead of npc_index since if things went wrong maybe we don't actually have the NPC anymore but
+    // they are still on planet coords
+    async function deleteNpc(dirty, npc_id) {
+
+        try {
+
+            let npc_index = await getIndex(dirty, npc_id);
+
+            if(npc_index === -1) {
+                log(chalk.yellow("Looks like that npc is already deleted"));
+                return;
+            }
+
+            let npc_info = await world.getNpcCoordAndRoom(dirty, npc_index);
+
+
+            // make sure there isn't a planet coord with it still on there
+            let planet_coord_index = dirty.planet_coords.findIndex(function(obj) { return obj && obj.npc_id === npc_id; });
+            if(planet_coord_index !== -1) {
+
+                let planet_coord_data = { 'planet_coord_index': planet_coord_index, 'npc_id': false };
+                await main.updateCoordGeneric(false, planet_coord_data);
+            }
+
+            // Or a galaxy coord
+            let coord_index = dirty.coords.findIndex(function(obj) { return obj && obj.npc_id === npc_id; });
+            if(coord_index !== -1) {
+                await main.updateCoordGeneric(false, { 'coord_index': coord_index, 'npc_id': false, 'object_id': false });
+            }
+
+            // Or a ship coord
+            let ship_coord_index = dirty.ship_coords.findIndex(function(obj) { return obj && obj.npc_id === npc_id; });
+            if(ship_coord_index !== -1) {
+                await main.updateCoordGeneric(false, { 'ship_coord_index': ship_coord_index, 'npc_id': false });
+            }
+
+
+            // delete any inventory items this had
+            await getInventory(dirty, npc_id);
+
+            dirty.inventory_items.forEach(function(inventory_item, i) {
+                if(inventory_item.npc_id === npc_id) {
+                    inventory.removeFromInventory(false, dirty, { 'inventory_item_id': inventory_item.id, 'amount': inventory_item.amount });
+                }
+            });
+
+            io.to(npc_info.room).emit('npc_info', {'npc': dirty.npcs[npc_index], 'remove': true });
+
+
+            
+
+            await (pool.query("DELETE FROM npcs WHERE id = ?", [dirty.npcs[npc_index].id]));
+
+
+            delete dirty.npcs[npc_index];
+
+
+
+
+        } catch(error) {
+            log(chalk.red("Error in npc.deleteNpc: " + error));
+            console.error(error);
+        }
+
+
+
+    }
+
+    exports.deleteNpc = deleteNpc;
+
+
     // Actions specific to the bugAttack NPC job
     async function doctorCode(dirty, npc_index) {
         try {
@@ -210,7 +542,7 @@ const world = require('./world.js');
                     obj.planet_id === chosen_planet.id; });
 
                 if(chosen_planet_coord_index === -1) {
-                    console.log("Could not find the coord the planet is on");
+                    console.log("Could not find the coord the planet is on for doctor");
                     return false;
                 }
 
@@ -240,56 +572,261 @@ const world = require('./world.js');
         }
     }
 
-
-    async function moveRandom(dirty, npc_index) {
+    /*
+        Idea of a forager is to go around planets, collecting stuff.
+        Three basic states:
+            1. Not on a planet. Lets go to a planet
+            2. On a planet, lets walk around and try harvesting things
+            3. Tired of this planet? Lets go to a new one
+    */
+    async function foragerSetTask(dirty, npc_index) {
         try {
 
-            let coord_index = await main.getPlanetCoordIndex({ 'planet_coord_id': dirty.npcs[npc_index].planet_coord_id });
+            //console.log("In foragerSetTask for npc id: " + dirty.npcs[npc_index].id + " " + dirty.npcs[npc_index].name);
+
+            if(!dirty.npcs[npc_index].planet_coord_id) {
+
+                console.log("Npc doesn't have a planet_coord_id yet");
+
+                // For starters, we are going to limit this NPC type to the Azure, Desert, and Machine planets
+
+                let possible_planets = dirty.planets.filter(planet_filter => planet_filter.planet_type_id === 7 || 
+                    planet_filter.planet_type_id === 16 || planet_filter.planet_type_id === 19);
+
+                let chosen_planet = possible_planets[Math.floor(Math.random()*possible_planets.length)];
+
+                if(!chosen_planet) {
+                    log(chalk.yellow("No valid planets in memory"));
+                    return false;
+                }
+
+                // Lets find a galaxy coord around the planet to park our bug ship next to
+                let chosen_planet_coord_index = dirty.coords.findIndex(function(obj) { return obj &&
+                    obj.planet_id === chosen_planet.id; });
+
+                if(chosen_planet_coord_index === -1) {
+                    console.log("Could not find the coord the planet is on for forager");
+                    return false;
+                }
+
+                dirty.npc_tasks.push({ 'npc_id': dirty.npcs[npc_index].id, 'destination_tile_x': dirty.coords[chosen_planet_coord_index].tile_x,
+                    'destination_tile_y': dirty.coords[chosen_planet_coord_index].tile_y, 'destination_planet_id': chosen_planet.id });
+                console.log("npc is travelling to planet id: " + chosen_planet.id);
+            }
+            // Actions on a planet
+            else {
+
+                //console.log("Npc is on a planet");
+
+                let npc_coord_index = await main.getPlanetCoordIndex({ 'planet_coord_id': dirty.npcs[npc_index].planet_coord_id });
+
+                if(npc_coord_index === -1) {
+                    log(chalk.yellow("Could not get planet coord index for the npc"));
+                    return false;
+
+                }
+
+                // TINY chance to want to leave the planet
+                let rand_leave_planet = helper.getRandomIntInclusive(1,1000);
+                if(rand_leave_planet < 5) {
+                    dirty.npc_tasks.push({ 'npc_id': dirty.npcs[npc_index].id, 'action': 'leave_planet' });
+                    console.log("Forager npc wants to leave the planet");
+                    return;
+                }
+
+                // Otherwise, we're going to see if we can harvest from the tiles around us, and then randomly move
+                await map.getCoordNeighbor(dirty, 'planet', npc_coord_index, 'left');
+                if(dirty.planet_coords[npc_coord_index].left_coord_index !== -1) {
+                    npcPickUp(dirty, npc_index, dirty.planet_coords[npc_coord_index].left_coord_index);
+                }
+
+                await map.getCoordNeighbor(dirty, 'planet', npc_coord_index, 'right');
+                if(dirty.planet_coords[npc_coord_index].right_coord_index !== -1) {
+                    npcPickUp(dirty, npc_index, dirty.planet_coords[npc_coord_index].right_coord_index);
+                }
+
+
+                await map.getCoordNeighbor(dirty, 'planet', npc_coord_index, 'up');
+                if(dirty.planet_coords[npc_coord_index].up_coord_index !== -1) {
+                    npcPickUp(dirty, npc_index, dirty.planet_coords[npc_coord_index].up_coord_index);
+                }
+
+                await map.getCoordNeighbor(dirty, 'planet', npc_coord_index, 'up');
+                if(dirty.planet_coords[npc_coord_index].up_coord_index !== -1) {
+                    npcPickUp(dirty, npc_index, dirty.planet_coords[npc_coord_index].up_coord_index);
+                }
+
+                moveRandom(dirty, npc_index, npc_coord_index);
+
+                //console.log("Forager is doing default actions");
+
+            }
+
+
+        } catch(error) {
+            log(chalk.red("Error in npc.foragerSetTask: " + error));
+            console.error(error);
+        }
+    }
+
+
+
+    async function getIndex(dirty, npc_id) {
+        try {
+    
+            npc_id = parseInt(npc_id);
+            let npc_index = dirty.npcs.findIndex(function(obj) { return obj && obj.id === npc_id; });
+    
+            if(npc_index === -1) {
+    
+                try {
+                    let [rows, fields] = await (pool.query("SELECT * FROM npcs WHERE id = ?",
+                        [npc_id]));
+    
+                    if(rows[0]) {
+                        let npc = rows[0];
+                        npc.has_change = false;
+                        console.log("Adding npc id: " + npc.id + " name: " + npc.name);
+                        npc_index = dirty.npcs.push(npc) - 1;
+    
+    
+    
+                        if(npc.has_inventory) {
+                            await getInventory(dirty, dirty.npcs[npc_index].id);
+                        }
+    
+                    }
+                } catch(error) {
+                    console.error("Unable to get npc from database: " + error);
+                }
+    
+            }
+    
+            if(npc_index !== -1 && (typeof dirty.npcs[npc_index].room === 'undefined' || helper.isFalse(dirty.npcs[npc_index].room))) {
+                //console.log("Setting initial room for npc");
+    
+                if(dirty.npcs[npc_index].planet_coord_id) {
+    
+                    let planet_coord_index = await main.getPlanetCoordIndex({ 'planet_coord_id': dirty.npcs[npc_index].planet_coord_id });
+                    if(planet_coord_index !== -1) {
+                        dirty.npcs[npc_index].room = "planet_" + dirty.planet_coords[planet_coord_index].planet_id;
+                    }
+                } else if(dirty.npcs[npc_index].ship_coord_id) {
+    
+                    let ship_coord_index = await main.getShipCoordIndex({ 'ship_coord_id': dirty.npcs[npc_index].ship_coord_id });
+                    if(ship_coord_index !== -1) {
+                        dirty.npcs[npc_index].room = "ship_" + dirty.ship_coords[ship_coord_index].ship_id;
+                    }
+    
+                } else if(dirty.npcs[npc_index].coord_id) {
+                    
+                    dirty.npcs[npc_index].room = "galaxy";
+                    
+                }
+    
+            }
+    
+            //console.log("Returning npc index");
+            return npc_index;
+        } catch(error) {
+            log(chalk.red("Error in npc.getIndex: " + error));
+            console.error(error);
+        }
+    
+    
+    }
+    
+    exports.getIndex = getIndex;
+
+
+    async function getInventory(dirty, npc_id) {
+        try {
+            let [rows, fields] = await (pool.query("SELECT * FROM inventory_items WHERE inventory_items.npc_id = ?",
+                [npc_id]));
+    
+            if(rows[0]) {
+                for(let i = 0; i < rows.length; i++) {
+                    let inventory_item = rows[i];
+    
+                    // see if we already have the equipment linker, if not, add it
+                    let ii_index = dirty.inventory_items.findIndex(function(obj) { return obj && obj.id === parseInt(inventory_item.id) });
+                    if(ii_index === -1) {
+                        console.log("Adding object inventory item id: " + inventory_item.id);
+                        inventory_item.has_change = false;
+                        let inventory_item_index = dirty.inventory_items.push(inventory_item) - 1;
+                        world.processInventoryItem(dirty, inventory_item_index);
+                        console.log("Added that npc id: " + inventory_item.npc_id + " has inventory object type id: " + inventory_item.object_type_id);
+    
+    
+                    }
+    
+                }
+            }
+        } catch(error) {
+            log(chalk.red("Error in npc.getInventory: " + error));
+            console.error(error);
+        }
+    
+    }
+    
+
+
+    async function moveRandom(dirty, npc_index, coord_index = -1) {
+        try {
+
+
+            // No coord_index passed in, lets grab one
+            if(coord_index === -1) {
+                coord_index = await main.getPlanetCoordIndex({ 'planet_coord_id': dirty.npcs[npc_index].planet_coord_id });
+            }
+            
 
             if(coord_index === -1) {
                 log(chalk.yellow("Could not get the planet coord that the npc is on. planet_coord_id: " + dirty.npcs[npc_index].planet_coord_id));
                 return false;
             }
+
             // MOVE
+            let random_move = helper.getRandomIntInclusive(1,4);
 
-            let move_direction = Math.random();
-            let up_or_down = Math.random();
-            let random_x_change = 0;
-            let random_y_change = 0;
 
-            if (move_direction > .50) {
-                move_direction = 'x';
-
-                if (up_or_down > .50) {
-                    random_x_change = 1;
-                } else {
-                    random_x_change = -1;
+            // left
+            if(random_move === 1) {
+                await map.getCoordNeighbor(dirty, 'planet', coord_index, 'left');
+                if(dirty.planet_coords[coord_index].left_coord_index !== -1) {
+                    // We check if we can place IN the movePlanetNpc function
+                    await movement.movePlanetNpc(dirty, npc_index, false, dirty.planet_coords[coord_index].left_coord_index);
                 }
+            }
+            // right
+            else if(random_move === 2) {
+                await map.getCoordNeighbor(dirty, 'planet', coord_index, 'right');
+                if(dirty.planet_coords[coord_index].right_coord_index !== -1) {
+                    // We check if we can place IN the movePlanetNpc function
+                    await movement.movePlanetNpc(dirty, npc_index, false, dirty.planet_coords[coord_index].right_coord_index);
 
-            } else {
-                move_direction = 'y';
+                }
+            }
+            // up
+            else if(random_move === 3) {
+                await map.getCoordNeighbor(dirty, 'planet', coord_index, 'up');
+                if(dirty.planet_coords[coord_index].up_coord_index !== -1) {
+                    // We check if we can place IN the movePlanetNpc function
+                    await movement.movePlanetNpc(dirty, npc_index, false, dirty.planet_coords[coord_index].up_coord_index);
 
-                if (up_or_down > .50) {
-                    random_y_change = 1;
-                } else {
-                    random_y_change = -1;
+                }
+            }
+            // down
+            else if(random_move === 4) {
+                await map.getCoordNeighbor(dirty, 'planet', coord_index, 'down');
+                if(dirty.planet_coords[coord_index].down_coord_index !== -1) {
+                    // We check if we can place IN the movePlanetNpc function
+                    await movement.movePlanetNpc(dirty, npc_index, false, dirty.planet_coords[coord_index].down_coord_index);
+
                 }
             }
 
-            let new_npc_x = dirty.planet_coords[coord_index].tile_x + random_x_change;
-            let new_npc_y = dirty.planet_coords[coord_index].tile_y + random_y_change;
 
-            // lets get the new potential planet coord and see if they can move there
-            let new_coord_data = {
-                'planet_id': dirty.planet_coords[coord_index].planet_id,
-                'planet_level': dirty.planet_coords[coord_index].level, 'tile_x': new_npc_x,
-                'tile_y': new_npc_y
-            };
-            let new_coord_index = await main.getPlanetCoordIndex(new_coord_data);
-
-            if(new_coord_index !== -1) {
-                await movement.movePlanetNpc(dirty, npc_index, false, new_coord_index);
-            }
         } catch(error) {
             log(chalk.red("Error in npc.moveRandom: " + error));
             console.error(error);
@@ -305,13 +842,14 @@ const world = require('./world.js');
             //console.log("In npc.npcActions");
 
             // We want a certain number of npcs in our world
-            let total_npc_count = 3;
+            let total_npc_count = 0;
 
+            // Filtering this way so we aren't counting dead npcs
             let current_npcs = dirty.npcs.filter(n => n);
 
             if(current_npcs.length < total_npc_count) {
                 console.log("Not enough npcs. Spawning one");
-                await spawnNpc(dirty);
+                await spawn(dirty);
             }
 
 
@@ -357,13 +895,15 @@ const world = require('./world.js');
 
 
                 } catch(error) {
-                    log(chalk.red("Error in game.npcActions -> npc: " + error));
+                    log(chalk.red("Error in npc.npcActions -> npc: " + error));
+                    console.error(error);
                 }
             });
 
 
         } catch(error) {
-            log(chalk.red("Error in game.npcActions: " + error));
+            log(chalk.red("Error in npc.npcActions: " + error));
+            console.error(error);
         }
     }
 
@@ -401,7 +941,7 @@ const world = require('./world.js');
                 let adding_to_data = { 'adding_to_type': 'npc', 'adding_to_id': dirty.npcs[npc_index].id,
                     'object_type_id': dirty.spawn_linkers[spawn_linker_index].spawns_object_type_id, 'amount':dirty.spawn_linkers[spawn_linker_index].spawns_amount };
 
-                await inventory.addToInventory(socket, dirty, adding_to_data);
+                await inventory.addToInventory({}, dirty, adding_to_data);
 
                 dirty.objects[object_index].has_spawned_object = false;
                 dirty.objects[object_index].has_change = true;
@@ -413,7 +953,9 @@ const world = require('./world.js');
                 dirty.npcs[npc_index].farming_skill_points++;
                 dirty.npcs[npc_index].has_change = true;
 
-            } else if(dirty.object_types[object_type_index].can_pick_up) {
+                console.log("Npc id: " + dirty.npcs[npc_index].id + " harvested a spawned object");
+
+            } else if(object_type_index !== -1 && dirty.object_types[object_type_index].can_pick_up) {
 
 
                 if(dirty.planet_coords[coord_index].object_id) {
@@ -427,11 +969,12 @@ const world = require('./world.js');
                     let adding_to_data = { 'adding_to_type': 'npc', 'adding_to_id': dirty.npcs[npc_index].id,
                         'object_type_id': dirty.planet_coords[coord_index].object_type_id, 'amount':dirty.planet_coords[coord_index].object_amount };
 
-                    await inventory.addToInventory(socket, dirty, adding_to_data);
+                    await inventory.addToInventory({}, dirty, adding_to_data);
 
                     await main.updateCoordGeneric(false, { 'planet_coord_index': coord_index, 'object_id': false, 'object_type_id': false });
                 }
 
+                //console.log("Npc id: " + dirty.npcs[npc_index].id + " picked up something");
 
             }
 
@@ -446,6 +989,15 @@ const world = require('./world.js');
     exports.npcPickUp = npcPickUp;
 
 
+    /*
+        Task list:
+            eat
+            escape
+            leave_planet
+            default action there's a destination_tile_x/y
+
+
+    */
     async function performNpcTask(dirty, npc_index, task_index) {
         try {
 
@@ -482,12 +1034,15 @@ const world = require('./world.js');
                 log(chalk.cyan("NPC is trying to escape!"));
 
                 if(dirty.npcs[npc_index].current_hp * 2 > dirty.npcs[npc_index].max_hp) {
-
+                    // TODO
                 }
+            } else if(dirty.npc_tasks[task_index].action === 'leave_planet') {
+                await movement.switchToGalaxyNpc(dirty, npc_index);
+                delete dirty.npc_tasks[task_index];
             }
             // Move towards our destination
             else if(dirty.npc_tasks[task_index].destination_tile_x) {
-                console.log("Npc has a destination. tile_x,tile_y: " + dirty.npc_tasks[task_index].destination_tile_x + " " + dirty.npc_tasks[task_index].destination_tile_y);
+                //console.log("Npc has a destination. tile_x,tile_y: " + dirty.npc_tasks[task_index].destination_tile_x + " " + dirty.npc_tasks[task_index].destination_tile_y);
 
                 // Npc is currently moving around the galaxy
                 if(dirty.npcs[npc_index].coord_id) {
@@ -538,8 +1093,8 @@ const world = require('./world.js');
 
                     } else {
                         if(x_difference !== 0) {
-                            console.log("Current tile x: " + dirty.coords[npc_coord_index].tile_x +
-                                " Destination tile x: " + dirty.npc_tasks[task_index].destination_tile_x);
+                            //console.log("Current tile x: " + dirty.coords[npc_coord_index].tile_x +
+                            //    " Destination tile x: " + dirty.npc_tasks[task_index].destination_tile_x);
                             if(dirty.coords[npc_coord_index].tile_x > dirty.npc_tasks[task_index].destination_tile_x) {
 
                                 next_tile_x--;
@@ -548,7 +1103,7 @@ const world = require('./world.js');
                                 next_tile_x++;
                             }
 
-                            console.log("not at destination x. Trying to get coord at x,y: " + next_tile_x + "," + next_tile_y);
+                            //console.log("not at destination x. Trying to get coord at x,y: " + next_tile_x + "," + next_tile_y);
 
                             next_coord_index = await main.getCoordIndex({ 'tile_x': next_tile_x, 'tile_y': next_tile_y });
                             if(next_coord_index !== -1) {
@@ -563,15 +1118,15 @@ const world = require('./world.js');
 
 
                         if(y_difference !== 0) {
-                            console.log("Current tile y: " + dirty.coords[npc_coord_index].tile_y +
-                                " Destination tile y: " + dirty.npc_tasks[task_index].destination_tile_y);
+                            //console.log("Current tile y: " + dirty.coords[npc_coord_index].tile_y +
+                            //    " Destination tile y: " + dirty.npc_tasks[task_index].destination_tile_y);
                             if(dirty.coords[npc_coord_index].tile_y > dirty.npc_tasks[task_index].destination_tile_y) {
                                 next_tile_y--;
                             } else {
                                 next_tile_y++;
                             }
 
-                            console.log("not at destination y. Trying to get coord at x,y: " + next_tile_x + "," + next_tile_y);
+                            //console.log("not at destination y. Trying to get coord at x,y: " + next_tile_x + "," + next_tile_y);
 
                             next_coord_index = await main.getCoordIndex({ 'tile_x': next_tile_x, 'tile_y': next_tile_y });
                             if(next_coord_index !== -1) {
@@ -584,12 +1139,12 @@ const world = require('./world.js');
                     let found_move = false;
                     for(let possible_move of possible_next_moves) {
 
-                        let can_place_result = await main.canPlaceNpc('galaxy', dirty.coords[possible_move.coord_index], dirty.npcs[npc_index].id, task_index);
+                        let can_place_result = await canPlace(dirty, 'galaxy', dirty.coords[possible_move.coord_index], dirty.npcs[npc_index].id, task_index);
                         if(can_place_result) {
                             found_move = true;
                             await movement.moveGalaxyNpc(dirty, npc_index, task_index, possible_move.coord_index);
                         } else {
-                            console.log("False on canPlaceNpc");
+                            console.log("False on canPlace in NPC");
                         }
                     }
 
@@ -643,7 +1198,8 @@ const world = require('./world.js');
                     // For now with npcs, we're just going to skip the whole spaceport thing for launching
                     if(dirty.npc_tasks[task_index].destination_planet_id) {
                         console.log("NPC needs to launch from the planet!");
-                        await movement.switchToGalaxyNpc(dirty, npc_index, task_index);
+                        await movement.switchToGalaxyNpc(dirty, npc_index);
+                        delete dirty.npc_tasks[task_index];
                     } else {
                         console.log("Npc is moving on planet");
 
@@ -717,12 +1273,12 @@ const world = require('./world.js');
                         let found_move = false;
                         for(let possible_move of possible_next_moves) {
 
-                            let can_place_result = await main.canPlaceNpc('planet', dirty.planet_coords[possible_move.coord_index], 'npc', dirty.npcs[npc_index].id);
+                            let can_place_result = await canPlace(dirty, 'planet', dirty.planet_coords[possible_move.coord_index], 'npc', dirty.npcs[npc_index].id);
                             if(can_place_result) {
                                 found_move = true;
                                 await movement.movePlanetNpc(dirty, npc_index, task_index, possible_move.coord_index);
                             } else {
-                                console.log("False on canPlaceNpc");
+                                console.log("False on npc.canPlace");
                             }
                         }
 
@@ -841,63 +1397,21 @@ const world = require('./world.js');
                     }
                 }
 
-                // Can't do tickStructure here either due to placeObject
-                //await tickStructure(dirty, npc_index);
 
-                /*
-                let able_to_follow_dream = false;
-                // see if they have a dream structure, and if the requirement for it is met
-                if(dirty.npcs[npc_index].dream_structure_type_id) {
+                await game.tickStructure(dirty, npc_index);
 
-
-                    let met_requirements = await metStructureRequirements(dirty, npc_index);
-
-                    if(met_requirements) {
-                        log(chalk.green("NPC id: " + dirty.npcs[npc_index].id + " met requirements to build dream structure"));
-                        able_to_follow_dream = true;
-
-                        // Step 1: delete any objects that they own
-                        dirty.objects.forEach(function(obj, i) {
-                            if(obj.npc_id === dirty.npcs[npc_index].id) {
-                                console.log("NPC owns object id: " + obj.id);
-                                deleteObject(dirty, { 'object_index': i });
-                            }
-                        });
-
-                        // set their current structure to the dream structure
-                        dirty.npcs[npc_index].current_structure_type_id = dirty.npcs[npc_index].dream_structure_type_id;
-                        dirty.npcs[npc_index].dream_structure_type_id = false;
-                        dirty.npcs[npc_index].current_structure_type_is_built = false;
-                        dirty.npcs[npc_index].has_change = true;
-                        await world.sendNpcInfo(false, "planet_" + dirty.npcs[npc_index].planet_id, dirty, dirty.npcs[npc_index].id);
-                        // TODO MULTI LEVEL DREAMS
-                    } else {
-                        console.log("NPC did not meet requirements to build dream structure yet");
-                    }
-                }
-
-                if(!able_to_follow_dream) {
-                    // otherwise they continue with their current structure.
-                    // Npc already has a structure. They tend to it
-                    //console.log("NPC already has structure. Now they tend to it");
-
-                }
-
-                */
             }
             /************************** NPC DOESN'T HAVE A STRUCTURE *****************************/
             else {
 
                 if(dirty.npcs[npc_index].current_job_id === 3) {
                     doctorCode(dirty, npc_index);
-                }
-                // If we are a bug attack job, and we don't have a planet coord id, lets find a random planet to attack
-                if(dirty.npcs[npc_index].current_job_id === 5) {
+                } else if(dirty.npcs[npc_index].current_job_id === 5) {
                     bugAttackCode(dirty, npc_index);
-
-
                 } else if(dirty.npcs[npc_index].current_job_id === 6) {
                     slaverCode(dirty, npc_index);
+                } else if(dirty.npcs[npc_index].current_job_id === 7) {
+                    foragerSetTask(dirty, npc_index);
                 }
             }
 
@@ -945,7 +1459,7 @@ const world = require('./world.js');
                                     obj.planet_id === dirty.planets[slaver_planet_index].id; });
 
                                 if(coord_index === -1) {
-                                    console.log("Could not find the coord the planet is on");
+                                    console.log("Could not find the coord the planet is on slaver");
                                     return false;
                                 }
 
@@ -993,7 +1507,7 @@ const world = require('./world.js');
                         obj.planet_id === chosen_planet.id; });
 
                     if(chosen_planet_coord_index === -1) {
-                        console.log("Could not find the coord the planet is on");
+                        console.log("Could not find the coord the planet is on slaver2");
                         return false;
                     }
 
@@ -1026,7 +1540,7 @@ const world = require('./world.js');
                             if(planet_coord_index !== -1) {
                                 if(dirty.planet_coords[planet_coord_index].npc_id && dirty.planet_coords[planet_coord_index].npc_id !== dirty.npcs[npc_index].id) {
                                     log(chalk.green("Slaver found a potential victim"));
-                                    let being_enslaved_npc_index = await main.getNpcIndex(dirty.planet_coords[planet_coord_index].npc_id);
+                                    let being_enslaved_npc_index = await getIndex(dirty, dirty.planet_coords[planet_coord_index].npc_id);
                                     if(being_enslaved_npc_index !== -1) {
                                         world.enslave(false, dirty, { 'slaver_npc_index': npc_index, 'being_enslaved_npc_index': being_enslaved_npc_index });
                                     }
@@ -1056,7 +1570,7 @@ const world = require('./world.js');
 
 
     // In data: npc_job_id
-    async function spawnNpc(dirty, data = false) {
+    async function spawn(dirty, data = false) {
         try {
 
             log(chalk.green("\n Spawning NPC"));
@@ -1109,7 +1623,7 @@ const world = require('./world.js');
             let new_id = result.insertId;
 
             //console.log("Got new npc id: " + new_id);
-            let npc_index = await main.getNpcIndex(new_id);
+            let npc_index = await getIndex(dirty, new_id);
 
             if(npc_index === -1) {
                 log(chalk.yellow("Was unable to get npc index for npc id: " + new_id));
@@ -1170,7 +1684,7 @@ const world = require('./world.js');
 
                 let coord_data = { 'tile_x': random_x, 'tile_y': random_y};
                 let coord_index = await main.getCoordIndex(coord_data);
-                let can_place = await main.canPlaceNpc('galaxy', dirty.coords[coord_index], dirty.npcs[npc_index].id) ;
+                let can_place = await canPlace(dirty, 'galaxy', dirty.coords[coord_index], dirty.npcs[npc_index].id) ;
                 if(can_place) {
                     console.log("Found galaxy coord to place npc on! (index: " + coord_index + " id: " +
                         dirty.coords[coord_index].id + " tile_x: " + dirty.coords[coord_index].tile_x +
@@ -1194,11 +1708,12 @@ const world = require('./world.js');
 
 
         } catch(error) {
-            log(chalk.red("Error in game.spawnNpc: " + error));
+            log(chalk.red("Error in npc.spawn: " + error));
+            console.error(error);
         }
     }
 
-    exports.spawnNpc = spawnNpc;
+    exports.spawn = spawn;
 
     async function tickNpcSkills(dirty) {
 
@@ -1366,7 +1881,7 @@ const world = require('./world.js');
                                             if (total_distance < closest_distance) {
 
                                                 let coord_index = await main.getPlanetCoordIndex({'planet_coord_id': coord.id});
-                                                let can_place_npc = await main.canPlaceNpc('planet', dirty.planet_coords[coord_index], dirty.npcs[npc_index].id);
+                                                let can_place_npc = await canPlace(dirty, 'planet', dirty.planet_coords[coord_index], dirty.npcs[npc_index].id);
                                                 if (can_place_npc) {
                                                     closest_coord_index = coord_index;
                                                     closest_distance = total_distance;
@@ -1534,17 +2049,12 @@ const world = require('./world.js');
                 if (can_build_result === true) {
 
 
-                    // We can't put buildStructure in npc.js because it's going to be placing objects, which requires
-                    // TONS of game functions - So we set a temporary in memory flag, can_build_structure
-                    dirty.npcs[npc_index].can_build_structure = true;
-                    return;
 
-                    /*
-                    await buildStructure(dirty, npc_index, structure_linkers);
-
+                    await game.buildStructure(dirty, { 'npc_index': npc_index, 'structure_type_id': dirty.npcs[npc_index].current_structure_type_id });
                     dirty.npcs[npc_index].current_structure_type_is_built = true;
                     dirty.npcs[npc_index].has_change = true;
-                    */
+                    return;
+
 
                 } else {
                     console.log("But we can't build there. Moving randomly");
@@ -1564,6 +2074,11 @@ const world = require('./world.js');
     }
 
     module.exports = {
+        canPlace,
+        damage,
+        deleteNpc,
+        getIndex,
         npcActions,
+        spawn,
         tickNpcSkills
     }

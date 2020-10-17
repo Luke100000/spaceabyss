@@ -1,3 +1,27 @@
+## [0.2.4] - 2020-10-17
+
+
+### Added
+- A task system. The idea with this system is to help players that don't enjoy the organic discovery inherent in the Space Abyss sandbox style environment.
+- Forager NPC job. Will go around to different planets, harvest things, and will sell them to players.
+- Bug Attack NPC job. Will travel to a planet and royally screw it up
+- Admin warp to npc
+- Events can spawn NPCs
+- Acid flies now drop Exodium (there isn't a super relevant tier 3 drop for them, so this will at least be useful)
+- Player logs (they're kind of almost event/galaxy logs now) can have a ship_id or planet_id attached to them
+
+### Fixed
+- Blue Algae can now be picked up
+- Wrecks and Zuran Cruiser Wrecks weren't spawning properly in the galaxy
+- Desert Storm floor tile
+- Admin spawning objects
+- Only active events will spawn in the galaxy
+- You can now move onto a portal from any tile that it is on, not just the base tile
+- Events will now listen to the planet HP requirements to spawn
+
+### Changed
+- Lots of updates to the NPC system code
+
 ## [0.2.3] - 2020-09-30
 
 

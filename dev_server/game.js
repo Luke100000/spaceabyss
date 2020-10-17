@@ -299,7 +299,8 @@ const world = require('./world.js');
                 io.emit('chat', {'scope': 'global',
                     'message': dirty.players[player_index].name + " has conquered the planet " + dirty.planets[planet_index].name });
 
-                await world.addPlayerLog(dirty, player_index, dirty.players[player_index].name + " has taken over planet " + dirty.planets[planet_index].name);
+                await world.addPlayerLog(dirty, player_index, dirty.players[player_index].name + " has taken over planet " + dirty.planets[planet_index].name, 
+                    { 'planet_id': dirty.planets[planet_index].id });
             } else if(data.ship_coord_index) {
                 await main.updateCoordGeneric(socket, { 'ship_coord_index': data.ship_coord_index, 'object_index': object_index });
 
@@ -318,7 +319,8 @@ const world = require('./world.js');
                 // planet.sendInfo doesn't yet support global sends
                 io.emit('object_info', { 'object': dirty.objects[ship_index] });
                 io.emit('chat', {'scope': 'global', 'message': dirty.players[player_index].name + " has conquered a ship" });
-                world.addPlayerLog(dirty, player_index, dirty.players[player_index].name + " has taken over ship " + dirty.objects[ship_index].name );
+                world.addPlayerLog(dirty, player_index, dirty.players[player_index].name + " has taken over ship " + dirty.objects[ship_index].name, 
+                { 'ship_id': dirty.objects[ship_index].id } );
             }
         } catch(error) {
             log(chalk.red("Error in game.placeAI: " + error));
@@ -1450,7 +1452,8 @@ const world = require('./world.js');
                         // TODO I think we need a damage type
                         player.damage(dirty, { 'player_index': socket.player_index, 'damage_amount': 50})
                     } else if(typeof data.npc_index !== 'undefined') {
-                        damageNpc(dirty, { 'npc_index': data.npc_index, 'damage_amount': 50 });
+                        // TODO not sure what we are doing here - and 99% positive it isn't working
+                        npc.damage(dirty, data.npc_index, 50, {});
                     }
 
                     input_paid = true;
@@ -1823,52 +1826,6 @@ const world = require('./world.js');
 
 
 
-
-    //   npc_index   |   damage_amount   |   battle_linker   |   npc_info   |   calculating_range
-    async function damageNpc(dirty, data) {
-        try {
-
-            console.log("In game.damageNpc");
-
-            let new_npc_hp = dirty.npcs[data.npc_index].current_hp - data.damage_amount;
-            //console.log("Calculated new_npc_hp as: " + new_npc_hp + " have calculating_range as: " + data.calculating_range);
-
-            // send new npc info to the room
-            io.to(data.npc_info.room).emit('damaged_data',
-                {'npc_id': dirty.npcs[data.npc_index].id, 'damage_amount': data.damage_amount, 'was_damaged_type': 'hp',
-                    'damage_source_type': data.battle_linker.attacking_type, 'damage_source_id': data.battle_linker.attacking_id,
-                    'calculating_range': data.calculating_range });
-
-
-            if (new_npc_hp <= 0) {
-
-                console.log("Npc is killed");
-
-                await deleteNpc(dirty, dirty.npcs[data.npc_index].id);
-
-            } else {
-                //console.log("npc not dead yet");
-
-                if(isNaN(new_npc_hp)) {
-                    log(chalk.red("We tried setting the npc's current hp to a NaN value: " + new_npc_hp));
-                } else {
-                    dirty.npcs[data.npc_index].current_hp = new_npc_hp;
-                    dirty.npcs[data.npc_index].has_change = true;
-                }
-
-
-
-            }
-
-        } catch(error) {
-            log(chalk.red("Error in game.damageNpc: " + error));
-        }
-    }
-
-    exports.damageNpc = damageNpc;
-
-
-
     //      planet_index   |   damage_amount   |   battle_linker (OPTIONAL)   |   planet_info   |   calculating_range (OPTIONAL)
     //      reason   |   damage_types   |   damage_source_type   |   damage_source_id
     async function damagePlanet(dirty, data) {
@@ -1936,8 +1893,7 @@ const world = require('./world.js');
             for(let i = 0; i < dirty.monsters.length; i++) {
 
                 if(dirty.monsters[i] && dirty.monsters[i].monster_type_id === dirty.monster_types[monster_type_index].id) {
-                    await monster.damage(dirty, { 'monster_index': i,
-                        'damage_amount': dirty.monster_types[monster_type_index].decay_rate, 'damage_source_type': 'decay',
+                    await monster.damage(dirty, i, dirty.monster_types[monster_type_index].decay_rate, { 'damage_source_type': 'decay',
                         'damage_types': ['decay'] });
                 }
 
@@ -2049,7 +2005,7 @@ const world = require('./world.js');
 
                                     await main.updateCoordGeneric(false, { 'planet_coord_index': i, 'object_type_id': false });
 
-                                    world.spawnMonster(dirty, drop_linker.dropped_monster_type_id,
+                                    monster.spawn(dirty, drop_linker.dropped_monster_type_id,
                                         { 'planet_coord_id': dirty.planet_coords[i].id });
 
 
@@ -2075,74 +2031,6 @@ const world = require('./world.js');
             console.error(error);
         }
     }
-
-
-    // We use the npc_id instead of npc_index since if things went wrong maybe we don't actually have the NPC anymore but
-    // they are still on planet coords
-    async function deleteNpc(dirty, npc_id) {
-
-        try {
-
-            let npc_index = await main.getNpcIndex(npc_id);
-
-            if(npc_index === -1) {
-                log(chalk.yellow("Looks like that npc is already deleted"));
-                return;
-            }
-
-            let npc_info = await world.getNpcCoordAndRoom(dirty, npc_index);
-
-
-            // make sure there isn't a planet coord with it still on there
-            let planet_coord_index = dirty.planet_coords.findIndex(function(obj) { return obj && obj.npc_id === npc_id; });
-            if(planet_coord_index !== -1) {
-
-                let planet_coord_data = { 'planet_coord_index': planet_coord_index, 'npc_id': false };
-                await main.updateCoordGeneric(false, planet_coord_data);
-            }
-
-            // Or a galaxy coord
-            let coord_index = dirty.coords.findIndex(function(obj) { return obj && obj.npc_id === npc_id; });
-            if(coord_index !== -1) {
-                await main.updateCoordGeneric(false, { 'coord_index': coord_index, 'npc_id': false, 'object_id': false });
-            }
-
-            // Or a ship coord
-            let ship_coord_index = dirty.ship_coords.findIndex(function(obj) { return obj && obj.npc_id === npc_id; });
-            if(ship_coord_index !== -1) {
-                await main.updateCoordGeneric(false, { 'ship_coord_index': ship_coord_index, 'npc_id': false });
-            }
-
-
-            // delete any inventory items this had
-            await main.getNpcInventory(npc_id);
-
-            dirty.inventory_items.forEach(function(inventory_item, i) {
-                if(inventory_item.npc_id === npc_id) {
-                    inventory.removeFromInventory(false, dirty, { 'inventory_item_id': inventory_item.id, 'amount': inventory_item.amount });
-                }
-            });
-
-            io.to(npc_info.room).emit('npc_info', {'npc': dirty.npcs[npc_index], 'remove': true });
-
-            await (pool.query("DELETE FROM npcs WHERE id = ?", [dirty.npcs[npc_index].id]));
-
-
-
-            delete dirty.npcs[npc_index];
-
-
-
-
-        } catch(error) {
-            log(chalk.red("Error in game.deleteNpc: " + error));
-        }
-
-
-
-    }
-
-    exports.deleteNpc = deleteNpc;
 
 
     // We use the npc_id instead of npc_index since if things went wrong maybe we don't actually have the NPC anymore but
@@ -2315,7 +2203,7 @@ const world = require('./world.js');
 
                     // Npcs die
                     if(dirty.planet_coords[i].npc_id) {
-                        await deleteNpc(dirty, dirty.planet_coords[i].npc_id);
+                        await npc.deleteNpc(dirty, dirty.planet_coords[i].npc_id);
                     }
 
 
@@ -2395,7 +2283,7 @@ async function eat(socket, dirty, data) {
         if(typeof data.npc_index !== 'undefined') {
             npc_index = data.npc_index;
         } else {
-            console.log("Player is eating from inventory item id: " + data.inventory_item_id);
+            //console.log("Player is eating from inventory item id: " + data.inventory_item_id);
         }
 
 
@@ -3217,7 +3105,7 @@ exports.eat = eat;
                 }
 
                 let surgery_level = 1;
-                let npc_index = await main.getNpcIndex(dirty.objects[auto_doc_index].npc_id);
+                let npc_index = await npc.getIndex(dirty, dirty.objects[auto_doc_index].npc_id);
 
                 if(dirty.objects[auto_doc_index].npc_id) {
 
@@ -3479,7 +3367,7 @@ exports.eat = eat;
                     dirty.monsters[data.monster_index].current_spawn_linker_id = dirty.spawn_linkers[data.spawn_linker_index].id;
                     dirty.monsters[data.monster_index].has_change = true;
 
-                    await world.sendMonsterInfo(false, spawner_info.room, dirty, data.monster_index);
+                    await monster.sendInfo(false, spawner_info.room, dirty, data.monster_index);
                 }
 
             } else if(dirty.spawn_linkers[data.spawn_linker_index].spawns_location === 'adjacent') {
@@ -3561,7 +3449,7 @@ exports.eat = eat;
                         spawn_monster_data.coord_index = spawner_info.coord_index;
                     }
 
-                    await world.spawnMonster(dirty, dirty.spawn_linkers[data.spawn_linker_index].spawns_monster_type_id, spawn_monster_data);
+                    await monster.spawn(dirty, dirty.spawn_linkers[data.spawn_linker_index].spawns_monster_type_id, spawn_monster_data);
                 }
 
                 // Spawning an object where we were
@@ -4489,7 +4377,7 @@ exports.eat = eat;
             }
 
 
-            let event_index = main.getEventIndex(dirty.spawned_events[spawned_event_index].event_id);
+            let event_index = event.getIndex(dirty, dirty.spawned_events[spawned_event_index].event_id);
 
 
             console.log("Event despawn condition: " + dirty.events[event_index].despawn_condition);
@@ -4928,7 +4816,7 @@ exports.eat = eat;
                 let npc_id = split[1];
                 console.log("Admin is deleting npc id: " + npc_id);
 
-                let npc_index = await main.getNpcIndex(npc_id);
+                let npc_index = await npc.getIndex(dirty, npc_id);
 
                 if(npc_index === -1) {
                     log(chalk.yellow("Could not find that npc"));
@@ -4936,7 +4824,7 @@ exports.eat = eat;
                 }
 
 
-                await deleteNpc(dirty, dirty.npcs[npc_index].id);
+                await npc.deleteNpc(dirty, dirty.npcs[npc_index].id);
 
 
 
@@ -5363,7 +5251,7 @@ exports.eat = eat;
                 let event_id = split[3];
                 console.log("Spawning event id: " + event_id + " on coord type: " + coord_type + " coord id: " + coord_id);
 
-                let event_index = main.getEventIndex(event_id);
+                let event_index = event.getIndex(dirty, event_id);
 
                 if(event_index === -1) {
                     console.log("Could not find event id: " + event_id);
@@ -5538,8 +5426,8 @@ exports.eat = eat;
                 }
 
 
-                console.log("Going to call world.spawnMonster!");
-                await world.spawnMonster(dirty, dirty.monster_types[monster_type_index].id, spawn_monster_data);
+                console.log("Going to call monster.spawn!");
+                await monster.spawn(dirty, dirty.monster_types[monster_type_index].id, spawn_monster_data);
 
 
             }
@@ -5557,7 +5445,7 @@ exports.eat = eat;
 
                 console.log("Admin message to spawn npc with job: " + dirty.npc_jobs[npc_job_index].name);
 
-                await npc.spawnNpc(dirty, { 'npc_job_id': dirty.npc_jobs[npc_job_index].id });
+                await npc.spawn(dirty, { 'npc_job_id': dirty.npc_jobs[npc_job_index].id });
 
 
 
@@ -5663,7 +5551,7 @@ exports.eat = eat;
                                     'planet_level': dirty.planet_coords[coord_index].level, 'tile_x': x, 'tile_y': y });
 
                                 if(checking_coord_index !== -1 && await game_object.canPlace(dirty, 'planet', dirty.planet_coords[checking_coord_index],
-                                    { 'object_type_id': spawning_object_type_id })) {
+                                    { 'object_type_id': dirty.object_types[object_type_index].id })) {
 
                                     found_coord_index = checking_coord_index;
 
@@ -5731,6 +5619,11 @@ exports.eat = eat;
             } else if(data.message.includes("/tickEvents")) {
                 await event.tickSpawning(dirty);
                 await event.tickSpawnedEvents(dirty);
+            } else if(data.message.includes("/tickstorytellers")) {
+
+                let split = data.message.split(" ");
+                let forced_event_id = split[1];
+                await world.tickStorytellers(dirty, forced_event_id);
             } else if(data.message.includes("/updateshiptype ")) {
                 console.log("Was updateshiptype message");
                 let split = data.message.split(" ");
@@ -5752,6 +5645,15 @@ exports.eat = eat;
                 }
 
                 await movement.warpTo(socket, dirty, { 'player_index': player_index, 'warping_to': 'spaceport', 'planet_id': 6 });
+
+            } else if(data.message.includes("/warptonpc ")) {
+                console.log("Was warp to npc message");
+                let split = data.message.split(" ");
+
+                let npc_id = parseInt(split[1]);
+
+
+                await movement.warpTo(socket, dirty, { 'player_index': socket.player_index, 'warping_to': 'npc', 'warping_to_id': npc_id });
 
             }
 
@@ -7646,7 +7548,7 @@ exports.eat = eat;
                         body_type_index = main.getObjectTypeIndex(dirty.objects[body_index].object_type_id);
                     } else if(eating_linker.npc_id) {
                         console.log("Have eating linker for npc id: " + eating_linker.npc_id);
-                        npc_index = await main.getNpcIndex(eating_linker.npc_id);
+                        npc_index = await npc.getIndex(dirty, eating_linker.npc_id);
 
                         // Npc died!
                         if(npc_index === -1) {
@@ -9516,7 +9418,7 @@ exports.eat = eat;
                 dirty.monsters[monster_index].current_spawn_linker_id = false;
                 dirty.monsters[monster_index].has_change = true;
 
-                await world.sendMonsterInfo(false, player_info.room, dirty, { 'monster_index': monster_index });
+                await monster.sendInfo(false, player_info.room, dirty, { 'monster_index': monster_index });
 
                 dirty.players[socket.player_index].farming_skill_points++;
                 dirty.players[socket.player_index].has_change = true;
@@ -10780,7 +10682,7 @@ exports.eat = eat;
                     if(dirty.inventory_items[i] && dirty.inventory_items[i].player_id === dirty.players[player_index].id && dirty.inventory_items[i].body_id === old_body_id) {
                         dirty.inventory_items[i].body_id = new_body_id;
                         dirty.inventory_items[i].has_change = true;
-                        inventory.sendInventoryItem(socket, dirty, i);
+                        inventory.sendInventoryItem(socket, "", dirty, i);
                     }
                 }
 

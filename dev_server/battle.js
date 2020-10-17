@@ -12,6 +12,7 @@ const game_object = require('./game_object.js');
 const helper = require('./helper.js');
 const main = require('./space_abyss' + process.env.FILE_SUFFIX + '.js');
 const monster = require('./monster.js');
+const npc = require('./npc.js');
 const planet = require('./planet.js');
 const player = require('./player.js');
 const world = require('./world.js');
@@ -403,7 +404,7 @@ const world = require('./world.js');
                             }
 
                             if(need_to_add_type) {
-                                console.log("Pushing damage type: " + dirty.object_types[object_type_index].equip_skill);
+                                //console.log("Pushing damage type: " + dirty.object_types[object_type_index].equip_skill);
                                 damage_types.push(dirty.object_types[object_type_index].equip_skill);
                             }
 
@@ -740,7 +741,7 @@ const world = require('./world.js');
             if(being_damaged_monster_index !== -1) {
                 nothing_is_damaged = false;
 
-                console.log("Found monster to damage");
+                //console.log("Found monster to damage");
 
                 let ai_index = -1;
                 let ai_data = {};
@@ -769,8 +770,7 @@ const world = require('./world.js');
                     return;
                 }
 
-                let damage_monster_data = {'monster_index': being_damaged_monster_index,
-                    'damage_amount': data.damage_amount };
+                let damage_monster_data = {};
                 if(data.battle_linker) {
 
                     damage_monster_data.battle_linker = data.battle_linker;
@@ -782,7 +782,7 @@ const world = require('./world.js');
                     damage_monster_data.damage_source_id = data.damage_source_id;
 
                 }
-                await monster.damage(dirty, damage_monster_data);
+                await monster.damage(dirty, being_damaged_monster_index, data.damage_amount, damage_monster_data);
             }
 
 
@@ -848,7 +848,7 @@ const world = require('./world.js');
     async function decrementEquipmentLinkers(dirty, player_attack_profile, player_socket_id) {
         try {
             if(player_attack_profile.decrement_equipment_linker_ids.length > 0) {
-                console.log("Some equips are consumed on use");
+                //console.log("Some equips are consumed on use");
                 for(let i = 0; i < player_attack_profile.decrement_equipment_linker_ids.length; i++) {
 
                     let equipment_linker_index = await main.getEquipmentLinkerIndex({ 'equipment_linker_id': player_attack_profile.decrement_equipment_linker_ids[i] });
@@ -1231,7 +1231,7 @@ const world = require('./world.js');
     async function npcAttackMonster(dirty, battle_linker) {
         try {
 
-            let npc_index = await main.getNpcIndex(battle_linker.attacking_id);
+            let npc_index = await npc.getIndex(dirty, battle_linker.attacking_id);
             let monster_index = await main.getMonsterIndex(battle_linker.being_attacked_id);
 
             if(npc_index === -1) {
@@ -1304,7 +1304,7 @@ const world = require('./world.js');
 
             //console.log("Damage amount: " + damage_amount);
 
-            await monster.damage(dirty, { 'monster_index': monster_index, 'damage_amount': damage_amount,
+            await monster.damage(dirty, monster_index, damage_amount, {
                 'battle_linker': battle_linker, 'monster_info': monster_info, 'calculating_range': calculating_range });
 
 
@@ -1320,7 +1320,7 @@ const world = require('./world.js');
     async function npcAttackObject(dirty, battle_linker) {
         try {
 
-            let npc_index = await main.getNpcIndex(battle_linker.attacking_id);
+            let npc_index = await npc.getIndex(dirty, battle_linker.attacking_id);
             if(npc_index === -1) {
                 log(chalk.yellow("Could not find npc id: " + battle_linker.attacking_id));
                 world.removeBattleLinkers(dirty, { 'npc_id': battle_linker.attacking_id });
@@ -1437,13 +1437,13 @@ const world = require('./world.js');
                 return;
             }
 
-            let npc_index = await main.getNpcIndex(battle_linker.attacking_id);
+            let npc_index = await npc.getIndex(dirty, battle_linker.attacking_id);
             let player_index = await player.getIndex(dirty, { 'player_id': battle_linker.being_attacked_id });
 
             if(npc_index === -1) {
                 log(chalk.yellow("Could not find npc id: " + battle_linker.attacking_id));
                 world.removeBattleLinkers(dirty, { 'npc_id': battle_linker.attacking_id });
-                game.deleteNpc(dirty, battle_linker.attacking_id);
+                npc.deleteNpc(dirty, battle_linker.attacking_id);
                 return;
             }
 
@@ -2146,7 +2146,7 @@ const world = require('./world.js');
             //console.log("Sending damage types to game.damageMonster:");
             //console.log(player_attack_profile.damage_types);
 
-            await monster.damage(dirty, { 'monster_index': monster_index, 'damage_amount': damage_amount,
+            await monster.damage(dirty, monster_index, damage_amount, {
                 'damage_types': player_attack_profile.damage_types,
                 'battle_linker': battle_linker, 'monster_info': monster_info, 'calculating_range': calculating_range });
 
@@ -2238,7 +2238,7 @@ const world = require('./world.js');
             }
 
 
-            let npc_index = await main.getNpcIndex(battle_linker.being_attacked_id);
+            let npc_index = await npc.getIndex(dirty, battle_linker.being_attacked_id);
             let player_index = await player.getIndex(dirty, {'player_id':battle_linker.attacking_id});
 
             if(npc_index === -1) {
@@ -2323,8 +2323,14 @@ const world = require('./world.js');
 
             //console.log("Damage amount: " + damage_amount);
 
-            await game.damageNpc(dirty, { 'npc_index': npc_index, 'damage_amount': damage_amount,
-                'battle_linker': battle_linker, 'npc_info': npc_info, 'calculating_range': calculating_range });
+            // TODO I would like to eventually put this in npc.deleteNpc 
+            if(damage_amount > dirty.npcs[npc_index].current_hp) {
+                world.addPlayerLog(dirty, player_index, "The heroic " + dirty.players[player_index].name + " has defeated " + dirty.npcs[npc_index].name + " and saved the planet");
+            }
+
+            await npc.damage(dirty, npc_index, damage_amount,
+                { 'battle_linker': battle_linker, 'npc_info': npc_info, 'calculating_range': calculating_range });
+
 
 
 
@@ -2351,7 +2357,8 @@ const world = require('./world.js');
 
 
         } catch(error) {
-            log(chalk.red("Error in game.playerAttackNpc: " + error));
+            log(chalk.red("Error in battle.playerAttackNpc: " + error));
+            console.error(error);
         }
 
 
@@ -2621,7 +2628,7 @@ const world = require('./world.js');
             dirty.equipment_linkers[data.equipment_linker_index].amount -= data.amount;
 
             if(dirty.equipment_linkers[data.equipment_linker_index].amount > 0) {
-                console.log("Reduced equipment number");
+                //console.log("Reduced equipment number");
                 dirty.equipment_linkers[data.equipment_linker_index].has_change = true;
 
                 // Send the socket if we can

@@ -471,15 +471,6 @@ async function canPlace(dirty, scope, coord, player_index, show_output = false) 
                 return false;
             }
 
-            if(checking_coord.belongs_to_object_id && checking_coord.belongs_to_object_id !== dirty.players[player_index].body_id &&
-                checking_coord.belongs_to_object_id !== dirty.players[player_index].ship_id) {
-                if(show_output) {
-                    console.log("Returning false on " + checking_coord.tile_x + "," + checking_coord.tile_y + " belongs to other object");
-                }
-
-                return false;
-            }
-
             // We have to make sure that the player can interact with this area
             if(checking_coord.area_id) {
                 let area_index = await main.getAreaIndex(checking_coord.area_id);
@@ -822,7 +813,7 @@ async function getIndex(dirty, data) {
             if(rows[0]) {
                 let adding_player = rows[0];
                 adding_player.has_change = false;
-                console.log("Adding player id: " + adding_player.id + " name: " + adding_player.name);
+                //console.log("Adding player id: " + adding_player.id + " name: " + adding_player.name);
 
 
                 // Since the MySQL query is so slow - we could have added the player inbetween then and now. FINAL CHECK!
@@ -841,7 +832,7 @@ async function getIndex(dirty, data) {
                 */
 
                 if(player_index !== -1) {
-                    log(chalk.yellow("Looks like we already added the player"));
+                    //log(chalk.yellow("Looks like we already added the player"));
 
                     // We've already found the player in dirty - we were passed in a body id, and that player's body id doesn't
                     // match what mysql still had ( dirty data has changes that haven't been written yet )
@@ -855,8 +846,8 @@ async function getIndex(dirty, data) {
                     dirty.players[player_index].body_id = parseInt(dirty.players[player_index].body_id);
                     dirty.players[player_index].attacks_defended = 0;
 
-                    console.log("Testing!!! Player index on dirty is: " + player_index);
-                    console.log("Player name at dirty.players index " + player_index + " is....: " + dirty.players[player_index].name);
+                    //console.log("Testing!!! Player index on dirty is: " + player_index);
+                    //console.log("Player name at dirty.players index " + player_index + " is....: " + dirty.players[player_index].name);
 
                     // Brand new created player won't actually have a body when this is first called
                     if(dirty.players[player_index].body_id) {

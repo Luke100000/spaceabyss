@@ -28,10 +28,11 @@ game.processAdminChatMessage
 /tickEvents
 /tickspawners
 /tickthegreatnomad
-
+/tickstorytellers FORCED_EVENT_ID( for for none)
 # Notes: will only update ships that are in memory
 /updateshiptype OBJECT_TYPE_ID
 /warptoazureplanet PLAYER_ID
+/warptonpc NPC_ID
 
 
 

@@ -210,6 +210,7 @@ dirty.spawned_events = [];
 // dirty.ships = [];
 dirty.ship_coords = [];
 dirty.ship_linkers = [];
+dirty.storytellers = [];
 dirty.structures = [];
 dirty.trap_linkers = [];
 dirty.virtual_coords = [];
@@ -1125,6 +1126,20 @@ inits.init(function(callback) {
 });
 
 inits.init(function(callback) {
+    pool.query("SELECT * FROM storytellers", function(err, rows, fields) {
+        if(err) throw err;
+
+        if(rows[0]) {
+            dirty.storytellers = rows;
+        }
+
+        console.log("Loaded Storytellers Into Memory");
+
+        callback(null);
+    });
+});
+
+inits.init(function(callback) {
     pool.query("SELECT * FROM structures", function(err, rows, fields) {
         if(err) throw err;
 
@@ -1680,7 +1695,7 @@ io.sockets.on('connection', function (socket) {
     socket.on("request_monster_info", function(data) {
         if(socket.logged_in) {
             //console.log("In request_monster_info function. Client is requesting info for monster id: " + data.monster_id);
-            world.sendMonsterInfo(socket, false, dirty, { 'monster_id': data.monster_id });
+            monster.sendInfo(socket, false, dirty, { 'monster_id': data.monster_id });
         }
 
     });
@@ -2193,14 +2208,6 @@ async function getEquipmentLinkerIndex(data) {
 module.exports.getEquipmentLinkerIndex = getEquipmentLinkerIndex;
 
 
-function getEventIndex(event_id) {
-    return dirty.events.findIndex(function(obj) { return obj && obj.id === parseInt(event_id); });
-}
-
-module.exports.getEventIndex = getEventIndex;
-
-
-
 async function getInventoryItemIndex(inventory_item_id) {
     //console.log("In getInventoryItemIndex");
 
@@ -2350,46 +2357,6 @@ function getMonsterTypeIndex(monster_type_id) {
 
 module.exports.getMonsterTypeIndex = getMonsterTypeIndex;
 
-
-async function getNpcIndex(npc_id) {
-    try {
-
-        npc_id = parseInt(npc_id);
-        let npc_index = dirty.npcs.findIndex(function(obj) { return obj && obj.id === npc_id; });
-
-        if(npc_index === -1) {
-
-            try {
-                let [rows, fields] = await (pool.query("SELECT * FROM npcs WHERE id = ?",
-                    [npc_id]));
-
-                if(rows[0]) {
-                    let npc = rows[0];
-                    npc.has_change = false;
-                    console.log("Adding npc id: " + npc.id + " name: " + npc.name);
-                    npc_index = dirty.npcs.push(npc) - 1;
-
-                    if(npc.has_inventory) {
-                        await getNpcInventory(dirty.npcs[npc_index].id);
-                    }
-
-                }
-            } catch(error) {
-                console.error("Unable to get npc from database: " + error);
-            }
-
-        }
-
-        //console.log("Returning npc index");
-        return npc_index;
-    } catch(error) {
-        log(chalk.red("Error in getNpcIndex: " + error));
-    }
-
-
-}
-
-module.exports.getNpcIndex = getNpcIndex;
 
 
 
@@ -3303,123 +3270,6 @@ async function canPlace(scope, coord, placing_type, placing_id, data = false) {
 module.exports.canPlace = canPlace;
 
 
-async function canPlaceNpc(scope, coord, npc_id, task_index = -1) {
-    try {
-
-        // Right now NPCs can only take up a single tile, but it's possible they follow monsters and players in the future
-        let checking_coords = [];
-
-        checking_coords.push(coord);
-        for(let checking_coord of checking_coords) {
-            if(checking_coord.floor_type_id) {
-                let floor_type_index = getFloorTypeIndex(checking_coord.floor_type_id);
-
-                if(floor_type_index !== -1) {
-                    if(!dirty.floor_types[floor_type_index].can_walk_on) {
-                        console.log("Returning false on " + checking_coord.tile_x + "," + checking_coord.tile_y + " can't walk on floor");
-                        return false;
-                    }
-                }
-            }
-
-            if(checking_coord.monster_id || checking_coord.belongs_to_monster_id) {
-                console.log("Returning false on " + checking_coord.tile_x + "," + checking_coord.tile_y + " monster");
-                return false;
-            }
-
-
-
-            if(checking_coord.npc_id && checking_coord.npc_id !== npc_id) {
-                return false;
-            }
-
-            // We have a base object type here - no object/belongs object
-            if(checking_coord.object_type_id && !checking_coord.object_id && !checking_coord.belongs_to_object_id) {
-                let object_type_index = getObjectTypeIndex(checking_coord.object_type_id);
-
-                if(object_type_index !== -1) {
-                    if(!dirty.object_types[object_type_index].can_walk_on) {
-                        console.log("Checking coord id: " + checking_coord.id + " scope: " + scope);
-                        console.log("Returning false on " + checking_coord.tile_x + "," + checking_coord.tile_y + " not walkable object");
-                        //log(chalk.yellow("Blocked by object_type_id"));
-                        return false;
-                    }
-                }
-            }
-
-            // We have a base object type here - no object/belongs object
-            if(checking_coord.object_type_id && !checking_coord.object_id && !checking_coord.belongs_to_object_id) {
-                let object_type_index = getObjectTypeIndex(checking_coord.object_type_id);
-
-                if(object_type_index !== -1) {
-                    if(!dirty.object_types[object_type_index].can_walk_on) {
-                        console.log("Checking coord id: " + checking_coord.id + " scope: " + scope);
-                        console.log("Returning false on " + checking_coord.tile_x + "," + checking_coord.tile_y + " not walkable object");
-                        //log(chalk.yellow("Blocked by object_type_id"));
-                        return false;
-                    }
-                }
-            }
-
-            if(checking_coord.object_id || checking_coord.belongs_to_object_id) {
-
-
-                let object_index = -1;
-                if(checking_coord.object_id) {
-                    object_index = await game_object.getIndex(dirty, checking_coord.object_id);
-                } else if(checking_coord.belongs_to_object_id) {
-                    object_index = await game_object.getIndex(dirty, checking_coord.belongs_to_object_id);
-                }
-
-                if(object_index !== -1) {
-                    let object_type_index = getObjectTypeIndex(dirty.objects[object_index].object_type_id);
-                    if(!dirty.object_types[object_type_index].can_walk_on) {
-                        console.log("Returning false on object we can't walk on");
-                        return false;
-                    }
-                }
-            }
-
-            if(checking_coord.player_id || checking_coord.belongs_to_player_id) {
-                console.log("Returning false due to player");
-                return false;
-            }
-
-            if( (checking_coord.planet_id || checking_coord.belongs_to_planet_id) && scope === 'galaxy') {
-
-                if(task_index !== -1) {
-                    //console.log("npc task index sent in: " + task_index);
-
-
-                    if(dirty.npc_tasks[task_index]) {
-                        //console.log(dirty.npc_tasks[task_index]);
-                    } else {
-                        log(chalk.yellow("Can't find that npc_task...."));
-                    }
-                }
-
-                // If we have a task with a destination_planet_id, we can land on that that. Not others
-                if(task_index !== -1 && dirty.npc_tasks[task_index] && (dirty.npc_tasks[task_index].destination_planet_id === checking_coord.planet_id ||
-                    dirty.npc_tasks[task_index].destination_planet_id === checking_coord.belongs_to_planet_id )) {
-                    // They found the planet they were looking for!
-                } else {
-                    console.log("Returning false on " + checking_coord.tile_x + "," + checking_coord.tile_y + " planet");
-                    return false;
-                }
-
-
-            }
-        }
-
-        return true;
-
-    } catch(error) {
-        log(chalk.red("Error in main.canPlaceNpc: " + error));
-    }
-}
-
-module.exports.canPlaceNpc = canPlaceNpc;
-
 
 // Removing battle linkers and the player from the coord they are on.
 // We keep the coord value in the player, so that when the player logs back on, we have a place to put them again.
@@ -3691,36 +3541,6 @@ function getFactionIndex(faction_id) {
 
 module.exports.getFactionIndex = getFactionIndex;
 
-async function getNpcInventory(npc_id) {
-    try {
-        let [rows, fields] = await (pool.query("SELECT * FROM inventory_items WHERE inventory_items.npc_id = ?",
-            [npc_id]));
-
-        if(rows[0]) {
-            for(let i = 0; i < rows.length; i++) {
-                let inventory_item = rows[i];
-
-                // see if we already have the equipment linker, if not, add it
-                let ii_index = dirty.inventory_items.findIndex(function(obj) { return obj && obj.id === parseInt(inventory_item.id) });
-                if(ii_index === -1) {
-                    console.log("Adding object inventory item id: " + inventory_item.id);
-                    inventory_item.has_change = false;
-                    let inventory_item_index = dirty.inventory_items.push(inventory_item) - 1;
-                    world.processInventoryItem(dirty, inventory_item_index);
-                    console.log("Added that npc id: " + inventory_item.npc_id + " has inventory object type id: " + inventory_item.object_type_id);
-
-
-                }
-
-            }
-        }
-    } catch(error) {
-        log(chalk.red("Error in getNpcInventory: " + error));
-    }
-
-}
-
-module.exports.getNpcInventory = getNpcInventory;
 
 //  data:   planet_coord_id   OR   (   planet_id   |   planet_level   |   tile_x   |   tile_y   ) OR spawned_monster_id
 //          can_insert
@@ -4150,7 +3970,7 @@ async function getShipCoords(ship_index) {
 
     try {
 
-        console.log("In getShipCoords");
+        //console.log("In getShipCoords");
         let [rows, fields] = await (pool.query("SELECT * FROM ship_coords WHERE ship_id = ?",
             [dirty.objects[ship_index].id]));
 
@@ -4176,7 +3996,7 @@ async function getShipCoords(ship_index) {
             }
 
             dirty.objects[ship_index].airlock_index = airlock_index;
-            log(chalk.magenta("Set airlock index for ship to: " + dirty.objects[ship_index].airlock_index));
+            //log(chalk.magenta("Set airlock index for ship to: " + dirty.objects[ship_index].airlock_index));
         } else {
             log(chalk.yellow("No ship coords for this ship"));
         }
@@ -4561,8 +4381,8 @@ async function writeDirty(show_output = false) {
     for(let i = 0; i < dirty.inventory_items.length; i++) {
         if(dirty.inventory_items[i] && dirty.inventory_items[i].has_change) {
             //console.log("Inventory item id: " + dirty.inventory_items[i].id + " new amount: " + dirty.inventory_items[i].amount);
-            let sql = "UPDATE inventory_items SET amount = ?, body_id = ? WHERE id = ?";
-            let inserts = [dirty.inventory_items[i].amount, dirty.inventory_items[i].body_id, dirty.inventory_items[i].id];
+            let sql = "UPDATE inventory_items SET amount = ?, body_id = ?, price = ? WHERE id = ?";
+            let inserts = [dirty.inventory_items[i].amount, dirty.inventory_items[i].body_id, dirty.inventory_items[i].price, dirty.inventory_items[i].id];
             pool.query(sql, inserts, function(err, result) {
                 if(err) throw err;
             });
@@ -4774,6 +4594,21 @@ async function writeDirty(show_output = false) {
 
     });
 
+    for(let i = 0; i < dirty.storytellers.length; i++) {
+        if(dirty.storytellers[i] && dirty.storytellers[i].has_change) {
+
+            let sql = "UPDATE storytellers SET current_event_ticks = ?, current_spawned_event_id = ?, previous_difficulty = ?, previous_event_ticks = ? WHERE id = ?";
+            let inserts = [dirty.storytellers[i].current_event_ticks, dirty.storytellers[i].current_spawned_event_id,
+                dirty.storytellers[i].previous_difficulty, dirty.storytellers[i].previous_event_ticks, dirty.storytellers[i].id];
+            pool.query(sql, inserts, function(err, result) {
+                if(err) throw err;
+            });
+
+            dirty.storytellers[i].has_change = false;
+
+        }
+    }
+
 }
 
 async function writePlayerDirty(writing_player, i, show_output = false) {
@@ -4850,7 +4685,7 @@ async function spawnMonsters(dirty) {
         planet_coords.forEach(await async function(planet_coord) {
 
             try {
-                await world.spawnMonster(dirty,  planet_coord.spawns_monster_type_id,{ 'planet_coord_id':planet_coord.id });
+                await monster.spawn(dirty,  planet_coord.spawns_monster_type_id,{ 'planet_coord_id':planet_coord.id });
             } catch(error) {
                 log(chalk.red("Error in spawnMonsters: " + error));
                 console.error(error);
@@ -4878,29 +4713,6 @@ module.exports.diff = diff;
 
 async function npcActions(dirty) {
     try {
-        //console.log("In npcActions");
-
-        // If one of our npcs can build a structure, we have to pop out and do it here since npc doesn't have game
-        // Same for ticking a structure - since we might end up having a clear spot and needing to tick it too
-        for(let i = 0; i < dirty.npcs.length; i++) {
-
-            if(dirty.npcs[i]) {
-                if(dirty.npcs[i] && dirty.npcs[i].can_build_structure) {
-
-                    await game.buildStructure(dirty, { 'npc_index': i, 'structure_type_id': dirty.npcs[i].current_structure_type_id });
-
-                    dirty.npcs[i].current_structure_type_is_built = true;
-                    dirty.npcs[i].can_build_structure = false;
-                    dirty.npcs[i].has_change = true;
-                }
-
-                if(dirty.npcs[i].current_structure_type_id && dirty.npcs[i].current_structure_type_is_built) {
-                    await game.tickStructure(dirty, i);
-
-                }
-            }
-
-        }
 
         await npc.npcActions(dirty);
     } catch(error) {
@@ -5218,6 +5030,10 @@ async function tickSalvaging(dirty) {
 
 }
 
+async function tickStorytellers(dirty) {
+    await world.tickStorytellers(dirty);
+}
+
 async function tickTraps(dirty) {
     await game.tickTraps(dirty);
 }
@@ -5288,7 +5104,7 @@ setInterval(tickWaitingDrops, 60000, dirty);
 // 300 seconds ( 5 minutes )
 setInterval(tickEvents, 300000, dirty);
 setInterval(tickGalaxyObjects, 300000, dirty);
-
+setInterval(tickStorytellers, 300000, dirty);
 setInterval(tickTraps, 300000, dirty);
 
 // 600 seconds ( 10 minutes )

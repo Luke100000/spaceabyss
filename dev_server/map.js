@@ -7,6 +7,7 @@ const log = console.log;
 
 
 const main = require('./space_abyss' + process.env.FILE_SUFFIX + '.js');
+const monster = require('./monster.js');
 const planet = require('./planet.js');
 const player = require('./player.js');
 const world = require('./world.js');
@@ -736,7 +737,7 @@ async function updateMapPlanet(socket, dirty) {
 
 
                     if(dirty.planet_coords[sending_coord_index].monster_id) {
-                        await world.sendMonsterInfo(socket, false, dirty, { 'monster_id': dirty.planet_coords[sending_coord_index].monster_id });
+                        await monster.sendInfo(socket, false, dirty, { 'monster_id': dirty.planet_coords[sending_coord_index].monster_id });
                         await world.checkMonsterBattleConditions(dirty, dirty.planet_coords[sending_coord_index].monster_id, 'player', socket.player_id, socket);
                     }
 
@@ -833,7 +834,7 @@ async function updateMapShip(socket, dirty) {
 
             
             if(dirty.ship_coords[i].monster_id) {
-                await world.sendMonsterInfo(socket, false, dirty, { 'monster_id': dirty.ship_coords[i].monster_id });
+                await monster.sendInfo(socket, false, dirty, { 'monster_id': dirty.ship_coords[i].monster_id });
                 await world.checkMonsterBattleConditions(dirty, dirty.ship_coords[i].monster_id, 'player', socket.player_id, socket);
             }
 

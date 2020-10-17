@@ -705,7 +705,7 @@ async function deleteObject(dirty, data) {
                         spawn_monster_data.coord_index = object_info.coord_index;
                     }
 
-                    await world.spawnMonster(dirty, drop_linker.dropped_monster_type_id, spawn_monster_data);
+                    await monster.spawn(dirty, drop_linker.dropped_monster_type_id, spawn_monster_data);
 
 
                 } else if(drop_linker.dropped_object_type_id) {
@@ -824,7 +824,7 @@ async function getIndex(dirty, object_id) {
                     if(dirty.object_types[object_type_index].is_ship) {
 
 
-                        log(chalk.cyan("Loading ship coords for object id: " + object.id));
+                        //log(chalk.cyan("Loading ship coords for object id: " + object.id));
 
                         await main.getShipCoords(object_index);
                         await world.attachShipEngines(dirty, object_index);
@@ -977,8 +977,8 @@ async function place(socket, dirty, data) {
 
     try {
 
-        log(chalk.cyan("In game_object.place with data: "));
-        console.log(data);
+        //log(chalk.cyan("In game_object.place with data: "));
+        //console.log(data);
 
         let object_index = -1;
 

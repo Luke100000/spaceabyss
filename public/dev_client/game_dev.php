@@ -476,9 +476,11 @@ include('config.php');
                 <i class="fad fa-vials fa-2x" class="main-icon"></i>
             </a>
 
+            <!--
             <a class="button is-default main-button" onclick="toggleRelationshipDisplay();">
                 <i class="fas fa-heartbeat fa-2x" class="main-icon"></i>
             </a>
+            -->
 
             <a class="button is-default main-button" onclick="toggleManagementOptionsDisplay();">
                 <i class="fas fa-tasks fa-2x" class="main-icon"></i>
@@ -528,6 +530,7 @@ include('config.php');
 
             <div id="object_management" style="display:none; margin-top:10px; margin-left:10px;"></div>
 
+
             <div id="ai_management" style="display:none; margin-top:10px; margin-left:10px;"></div>
 
             <div id="ship_management" style="display:none; margin-top:10px; margin-left:10px;"></div>
@@ -537,6 +540,8 @@ include('config.php');
             <div id="market" style="display:none;"></div>
 
             <div id="faction" class="white-text" style="display:none;"></div>
+
+            <div id="task_management" style="display:none; margin-top:10px; margin-left:10px;"></div>
 
             <div id="other_player_data">
 
@@ -779,6 +784,22 @@ include('config.php');
 
 
     var last_need_coord_data = Math.floor(new Date());
+
+
+    var tasks = [];
+    var use_tasks = false;
+    tasks.push({'id': 1, 'name': 'Collect Batteries', 'difficulty': 'beginner', 'description': 'Have 10 batteries in your inventory', 'check_location': 'inventory',
+        'check_type': 'object_type', 'check_id': 88, 'check_amount': 10});
+    tasks.push({'id': 2, 'name': 'Research Territe', 'difficulty': 'beginner', 'description': 'Fully research Territe', 'check_location': 'research',
+        'check_type': 'object_type', 'check_id': 124 });
+    tasks.push({'id': 3, 'name': 'Blue Algae', 'difficulty': 'intermediate', 'description': 'Harvest Blue Algae from an Algae Vat', 'check_location': 'inventory',
+        'check_type': 'object_type', 'check_id': 317, 'check_amount': 1 });
+    tasks.push({'id': 4, 'name': 'Become An Octopus', 'difficulty': 'advanced', 'description': 'Build an Octopus body and switch to it', 'check_location': 'body',
+        'check_type': 'object_type', 'check_id': 344 });
+    tasks.push({'id': 4, 'name': 'Build A Shuttle', 'difficulty': 'beginner', 'description': 'Build a Shuttle (space ship) and switch to it', 'check_location': 'ship',
+        'check_type': 'object_type', 'check_id': 233 });
+    tasks.push({'id': 4, 'name': 'Mimetic Arm', 'difficulty': 'advanced', 'description': 'Equip A Mimetic Arm', 'check_location': 'equipment',
+        'check_type': 'object_type', 'check_id': 230 });
 
 
 

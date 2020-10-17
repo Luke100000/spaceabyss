@@ -387,12 +387,22 @@ exports.canPlace = canPlace;
 
 
 
-//   data: monster_index   |   damage_amount   |   battle_linker   |   monster_info   |   calculating_range   |   damage_types
-//   damage_source_type   |   damage_source_id
-async function damage(dirty, data) {
+/**
+ * @param {Object} dirty
+ * @param {number} monster_index
+ * @param {number} damage_amount
+ * @param {Object} data
+ * @param {Array=} data.damage_types
+ * @param {Object=} data.battle_linker
+ * @param {Object=} data.monster_info
+ * @param {number=} data.calculating_range
+ * @param {String=} data.damage_source_type
+ * @param {number=} data.damage_source_id
+ */
+async function damage(dirty, monster_index, damage_amount, data) {
     try {
 
-        let monster_type_index = main.getMonsterTypeIndex(dirty.monsters[data.monster_index].monster_type_id);
+        let monster_type_index = main.getMonsterTypeIndex(dirty.monsters[monster_index].monster_type_id);
 
         if(monster_type_index === -1) {
             console.log("Couldn't find monster type");
@@ -401,19 +411,18 @@ async function damage(dirty, data) {
 
         // If we didn't pass in the monster info, grab it now
         if(!data.monster_info) {
-            data.monster_info = await getCoordAndRoom(dirty, data.monster_index);
+            data.monster_info = await getCoordAndRoom(dirty, monster_index);
         }
 
-        data.damage_amount = parseInt(data.damage_amount);
 
-        if(isNaN(data.damage_amount)) {
+        if(isNaN(damage_amount)) {
             log(chalk.yellow("Can't damage monster a NaN amount"));
             console.trace("Here's the culprit");
             return false;
         }
 
 
-        let new_monster_hp = dirty.monsters[data.monster_index].current_hp - data.damage_amount;
+        let new_monster_hp = dirty.monsters[monster_index].current_hp - damage_amount;
         //console.log("Calculated new_monster_hp as: " + new_monster_hp + " have calculating_range as: " + data.calculating_range);
 
         if(!data.damage_types) {
@@ -426,7 +435,7 @@ async function damage(dirty, data) {
         if(data.battle_linker) {
 
             io.to(data.monster_info.room).emit('damaged_data',
-                {'monster_id': dirty.monsters[data.monster_index].id, 'damage_amount': data.damage_amount, 'damage_types': data.damage_types,
+                {'monster_id': dirty.monsters[monster_index].id, 'damage_amount': damage_amount, 'damage_types': data.damage_types,
                     'was_damaged_type': 'hp',
                     'damage_source_type': data.battle_linker.attacking_type, 'damage_source_id': data.battle_linker.attacking_id,
                     'calculating_range': data.calculating_range });
@@ -437,12 +446,12 @@ async function damage(dirty, data) {
 
             if(data.damage_source_type === 'decay') {
                 io.to(data.monster_info.room).emit('damaged_data',
-                    {   'monster_id': dirty.monsters[data.monster_index].id, 'damage_amount': data.damage_amount,
+                    {   'monster_id': dirty.monsters[monster_index].id, 'damage_amount': damage_amount,
                         'damage_types': data.damage_types, 'was_damaged_type': 'hp',
                         'damage_source_type': data.damage_source_type });
             } else {
                 io.to(data.monster_info.room).emit('damaged_data',
-                    {   'monster_id': dirty.monsters[data.monster_index].id, 'damage_amount': data.damage_amount,
+                    {   'monster_id': dirty.monsters[monster_index].id, 'damage_amount': damage_amount,
                         'damage_types': data.damage_types, 'was_damaged_type': 'hp',
                         'damage_source_type': data.damage_source_type, 'damage_source_id': data.damage_source_id,
                         'calculating_range': data.calculating_range });
@@ -455,15 +464,15 @@ async function damage(dirty, data) {
                 // And the monster is going to be PISSED
 
 
-                console.log("Damage is not from a battle linker. Lets see if we can attack the source of the damage");
+                //console.log("Damage is not from a battle linker. Lets see if we can attack the source of the damage");
 
                 // If the monster isn't already attacking something, attack the damage source
                 let existing_battle_linker_index = dirty.battle_linkers.findIndex(function(obj) { return obj &&
-                    obj.attacking_id === dirty.monsters[data.monster_index].id && obj.attacking_type === 'monster' });
+                    obj.attacking_id === dirty.monsters[monster_index].id && obj.attacking_type === 'monster' });
 
                 if(existing_battle_linker_index === -1) {
                     let battle_linker_data = {
-                        'attacking_id': dirty.monsters[data.monster_index].id, 'attacking_type': 'monster',
+                        'attacking_id': dirty.monsters[monster_index].id, 'attacking_type': 'monster',
                         'being_attacked_id': data.damage_source_id, 'being_attacked_type': data.damage_source_type };
 
                     //console.log("Battle linker data: ");
@@ -504,7 +513,7 @@ async function damage(dirty, data) {
                     log(chalk.red("BIG ISSUE! Player just killed monster type id: " + dirty.monster_types[monster_type_index].id + " and has 0 exp!"));
                 }
 
-                await game.addKilledLinker(dirty.players[player_index].player_id, dirty.monsters[data.monster_index].monster_type_id);
+                await game.addKilledLinker(dirty.players[player_index].player_id, dirty.monsters[monster_index].monster_type_id);
 
                 //console.log("Should be calling game.checkExp");
                 game.checkExp(false, dirty, player_index, previous_exp);
@@ -518,10 +527,13 @@ async function damage(dirty, data) {
                         { 'type': 'race', 'type_index': race_index, 'change': -1 });
 
                 }
+
+                //let player_log_message = "";
+                //world.addPlayerLog(dirty, player_index, dirty.players[player_index].name + " killed a " + dirty.monster_types[monster_type_index].name);
             }
 
-            //console.log("Calling deleteMonster with monster index: " + data.monster_index);
-            await deleteMonster(dirty, data.monster_index, { 'reason': 'battle', 'battle_linker': data.battle_linker });
+            //console.log("Calling deleteMonster with monster index: " + monster_index);
+            await deleteMonster(dirty, monster_index, { 'reason': 'battle', 'battle_linker': data.battle_linker });
             //console.log("Done with deleteMonster");
 
         } else {
@@ -530,11 +542,11 @@ async function damage(dirty, data) {
             if(isNaN(new_monster_hp)) {
                 log(chalk.red("We tried setting the monster's current hp to a NaN value: " + new_monster_hp));
             } else {
-                dirty.monsters[data.monster_index].current_hp = new_monster_hp;
-                dirty.monsters[data.monster_index].has_change = true;
+                dirty.monsters[monster_index].current_hp = new_monster_hp;
+                dirty.monsters[monster_index].has_change = true;
 
                 // send the monster info to players in the room
-                io.to(data.monster_info.room).emit('monster_info', { 'monster': dirty.monsters[data.monster_index]});
+                io.to(data.monster_info.room).emit('monster_info', { 'monster': dirty.monsters[monster_index]});
             }
 
 
@@ -751,6 +763,7 @@ async function deleteMonster(dirty, monster_index, data = {}) {
             console.log("Monster was part of a spawned event");
             await game.checkSpawnedEvent(dirty, check_spawned_event_id);
         }
+
 
     } catch(error) {
         log(chalk.red("Error in monster.deleteMonster: " + error));
@@ -1791,6 +1804,265 @@ async function placeDrop(dirty, scope, drop_linker, coord_index) {
 
 }
 
+/**
+ * @param {Object} socket
+ * @param {String} room
+ * @param {Object} dirty
+ * @param {Object} data
+ * @param {number=} data.monster_index
+ * @param {number=} data.monster_id
+ * 
+ */
+async function sendInfo(socket, room, dirty, data) {
+
+    try {
+        let monster_index = -1;
+
+        if (data.monster_index) {
+            monster_index = data.monster_index;
+        } else if (data.monster_id) {
+            monster_index = await main.getMonsterIndex(data.monster_id);
+        }
+
+        if (monster_index !== -1) {
+            if (socket) {
+                socket.emit('monster_info', { 'monster': dirty.monsters[monster_index] });
+            }
+
+            if (room) {
+                io.to(room).emit('monster_info', { 'monster': dirty.monsters[monster_index] });
+            }
+
+        }
+        // No monster there - let the client know to remove it. We can only do that if we were
+        // sent in an ID rather than an index
+        else if (data.monster_id) {
+
+            if (helper.notFalse(socket)) {
+                socket.emit('monster_info', { 'remove': true, 'monster': { 'id': data.monster_id } });
+            }
+
+            if (helper.notFalse(room)) {
+                io.to(room).emit('monster_info', { 'remove': true, 'monster': { 'id': data.monster_id } });
+            }
+
+            // since the monster doesn't exist anymore, we want to make sure that no coords have this monster
+            let planet_coord_index = dirty.planet_coords.findIndex(function (obj) { return obj && obj.monster_id === data.monster_id; });
+            if (planet_coord_index !== -1) {
+                log(chalk.yellow("Planet coord had a monster id: " + data.monster_id + " that no longer exists"));
+                main.updateCoordGeneric(false, { 'planet_coord_index': planet_coord_index, 'monster_id': false });
+            }
+
+            let ship_coord_index = dirty.ship_coords.findIndex(function (obj) { return obj && obj.monster_id === data.monster_id; });
+            if (ship_coord_index !== -1) {
+                log(chalk.yellow("Ship coord had a monster id: " + data.monster_id + " that no longer exists"));
+                main.updateCoordGeneric(false, { 'ship_coord_index': ship_coord_index, 'monster_id': false });
+            }
+
+        }
+    } catch (error) {
+        log(chalk.red("Error in monster.sendInfo: " + error));
+        console.error(error);
+    }
+
+
+}
+
+exports.sendInfo = sendInfo;
+
+
+/**
+ *
+ * @param dirty
+ * @param {number} monster_type_id
+ * @param {Object} data
+ * @param {number=} data.planet_coord_id
+ * @param {number=} data.planet_coord_index
+ * @param {number=} data.ship_coord_id
+ * @param {number=} data.ship_coord_index
+ * @param {number=} data.coord_id
+ * @param {number=} data.coord_index
+ * @param {number=} data.spawned_event_id
+ * @param {string=} data.attack_on_spawn_type
+ * @param {number=} data.attack_on_spawn_id
+ * @param {number=} data.ai_id
+ * @returns {Promise<boolean>}
+ */
+async function spawn(dirty, monster_type_id, data) {
+
+    try {
+
+        let coord_index = -1;
+        let scope = 'planet';
+        let placing_coord;
+
+        // PLANET
+        if (data.planet_coord_id) {
+            coord_index = await main.getPlanetCoordIndex({ 'planet_coord_id': data.planet_coord_id });
+            placing_coord = dirty.planet_coords[coord_index];
+        } else if (data.planet_coord_index) {
+            coord_index = data.planet_coord_index;
+            placing_coord = dirty.planet_coords[coord_index];
+        }
+        // SHIP
+        else if (data.ship_coord_id) {
+            coord_index = await main.getShipCoordIndex({ 'ship_coord_id': data.ship_coord_id });
+            scope = 'ship';
+            placing_coord = dirty.ship_coords[coord_index];
+        } else if (data.ship_coord_index) {
+            coord_index = data.ship_coord_index;
+            scope = 'ship';
+            placing_coord = dirty.ship_coords[coord_index];
+        }
+        // GALAXY
+        else if (data.coord_id) {
+            coord_index = await main.getCoordIndex({ 'coord_id': data.ship_coord_id });
+            scope = 'galaxy';
+            placing_coord = dirty.coords[coord_index];
+        } else if (data.coord_index) {
+            coord_index = data.coord_index;
+            scope = 'galaxy';
+            placing_coord = dirty.coords[coord_index];
+        }
+
+        let monster_type_index = main.getMonsterTypeIndex(monster_type_id);
+
+        if (coord_index === -1 || monster_type_index === -1) {
+
+            if(coord_index === -1) {
+                log(chalk.yellow("Could not spawn monster - did not find coord"));
+            }
+
+            if(monster_type_index === -1) {
+                log(chalk.yellow("Could not spawn monster - did not find monster type id: " + monster_type_id));
+            }
+            
+            return false;
+        }
+
+        let spawned_event_id = 0;
+        if (data.spawned_event_id) {
+            spawned_event_id = data.spawned_event_id;
+        }
+
+        let can_place_monster_result = await canPlace(dirty, scope, placing_coord, { 'monster_type_id': monster_type_id });
+
+        if (can_place_monster_result !== true) {
+            return false;
+        }
+
+        let sql = "";
+        let inserts = [];
+        let room = "";
+
+        if (scope === 'planet') {
+
+
+            sql = "INSERT INTO monsters(monster_type_id, type, exp, current_hp, max_hp, attack_strength, planet_id, planet_level, planet_coord_id, spawned_event_id) VALUES(?,?,?,?,?,?,?,?,?,?)";
+            inserts = [dirty.monster_types[monster_type_index].id, dirty.monster_types[monster_type_index].name, dirty.monster_types[monster_type_index].exp,
+            dirty.monster_types[monster_type_index].hp, dirty.monster_types[monster_type_index].hp, dirty.monster_types[monster_type_index].attack_strength,
+            dirty.planet_coords[coord_index].planet_id, dirty.planet_coords[coord_index].level, dirty.planet_coords[coord_index].id, spawned_event_id];
+
+
+
+            room = "planet_" + dirty.planet_coords[coord_index].planet_id;
+
+
+        } else if (scope === 'ship') {
+
+            sql = "INSERT INTO monsters(monster_type_id, type, exp, current_hp, max_hp, attack_strength, ship_id, ship_coord_id, spawned_event_id) VALUES(?,?,?,?,?,?,?,?,?)";
+            inserts = [dirty.monster_types[monster_type_index].id, dirty.monster_types[monster_type_index].name, dirty.monster_types[monster_type_index].exp,
+            dirty.monster_types[monster_type_index].hp, dirty.monster_types[monster_type_index].hp, dirty.monster_types[monster_type_index].attack_strength,
+            dirty.ship_coords[coord_index].ship_id, dirty.ship_coords[coord_index].id, spawned_event_id];
+
+            room = "ship_" + dirty.ship_coords[coord_index].ship_id;
+
+        } else if (scope === 'galaxy') {
+
+            console.log("Spawning in galaxy");
+
+            sql = "INSERT INTO monsters(monster_type_id, type, exp, current_hp, max_hp, attack_strength, coord_id, spawned_event_id) VALUES(?,?,?,?,?,?,?,?)";
+            inserts = [dirty.monster_types[monster_type_index].id, dirty.monster_types[monster_type_index].name, dirty.monster_types[monster_type_index].exp,
+            dirty.monster_types[monster_type_index].hp, dirty.monster_types[monster_type_index].hp, dirty.monster_types[monster_type_index].attack_strength,
+            dirty.coords[coord_index].id, spawned_event_id];
+
+            room = "galaxy";
+        }
+
+
+
+
+
+        let [result] = await (pool.query(sql, inserts));
+        //pool.query(monster_sql, monster_inserts, function(err, result) {
+
+
+        //console.log("Inserted monster");
+
+        let new_monster_id = result.insertId;
+        let new_monster_index = await main.getMonsterIndex(new_monster_id);
+        //console.log("Got new monster id: " + new_monster_id);
+
+        if (scope === 'planet') {
+            await main.updateCoordGeneric(false, {
+                'planet_coord_index': coord_index, 'monster_id': new_monster_id,
+                'spawned_monster_id': new_monster_id
+            });
+        } else if (scope === 'ship') {
+            await main.updateCoordGeneric(false, { 'ship_coord_index': coord_index, 'monster_id': new_monster_id });
+        } else if (scope === 'galaxy') {
+            await main.updateCoordGeneric(false, { 'coord_index': coord_index, 'monster_id': new_monster_id });
+        }
+
+        await sendInfo(false, room, dirty, { 'monster_id': new_monster_id });
+
+        // and if the monster has a larger width/height, add in the belongs to stuff
+        if (dirty.monster_types[monster_type_index].movement_tile_width > 1 ||
+            dirty.monster_types[monster_type_index].movement_tile_height > 1) {
+            console.log("This is a large monster. Adding the belongs_to_monster_id stuff");
+            // Try just moving it where it currently is?
+            // TODO. I think if we changed game.moveMonster to accept a specific destination coord, we could do it that way
+            // Then we don't need placeMonster and moveMonster - just moveMonster!
+        }
+
+
+        // Sometimes monsters are spawned to automatically attack a player
+        if (data.attack_on_spawn_id && data.attack_on_spawn_type) {
+            console.log("Monster was spawned to attack " + data.attack_on_spawn_type + " id " + data.attack_on_spawn_id);
+
+            let battle_linker_data = {
+                'attacking_id': new_monster_id, 'attacking_type': 'monster',
+                'being_attacked_id': data.attack_on_spawn_id, 'being_attacked_type': data.attack_on_spawn_type
+            };
+            await world.addBattleLinker(false, dirty, battle_linker_data);
+
+            // I THINK this is where the ai daemon stuff will always show up
+            if (data.attack_on_spawn_type === 'player' &&
+                (dirty.monster_types[monster_type_index].id === 33 || dirty.monster_types[monster_type_index].id === 57)) {
+                log(chalk.yellow("AI THING SPAWNED CHECK"));
+
+                // get the player socket
+                let being_attacked_player_index = await player.getIndex(dirty, { 'player_id': data.attack_on_spawn_id });
+                if (being_attacked_player_index !== -1) {
+                    let being_attacked_player_socket = world.getPlayerSocket(dirty, being_attacked_player_index);
+                    if (being_attacked_player_socket) {
+                        being_attacked_player_socket.emit('chat', { 'message': "You have violated the rules of the ruling AI.", 'scope': 'local', 'is_important': true });
+                    }
+                }
+
+
+            }
+        }
+
+    } catch (error) {
+        log(chalk.red("Error in monster.spawn: " + error));
+        console.error(error);
+    }
+
+}
+
+exports.spawn = spawn;
+
 
 module.exports = {
     calculateDefense,
@@ -1799,5 +2071,7 @@ module.exports = {
     deleteMonster,
     fix,
     getCoordAndRoom,
-    move
+    move,
+    sendInfo,
+    spawn
 }

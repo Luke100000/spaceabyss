@@ -220,8 +220,8 @@ function addEffect(data) {
         }
 
 
-        console.log("Rotation: " + effect_sprites[effect_sprite_index].rotation);
-        console.log("data.x,data.y: " + data.x + "," + data.y);
+        //console.log("Rotation: " + effect_sprites[effect_sprite_index].rotation);
+        //console.log("data.x,data.y: " + data.x + "," + data.y);
 
         effect_sprites[effect_sprite_index].effect_type = effect_type;
 

@@ -11,8 +11,10 @@ const game_object = require('./game_object.js');
 const helper = require('./helper.js');
 const monster = require('./monster.js');
 const main = require('./space_abyss' + process.env.FILE_SUFFIX + '.js');
+const npc = require('./npc.js');
 const planet = require('./planet.js');
 const world = require('./world.js');
+
 
 
 
@@ -24,6 +26,8 @@ async function deleteSpawnedEvent(dirty, spawned_event_index) {
             log(chalk.yellow("Trying to delete a spawned event that we can't find!"));
             return false;
         }
+
+        let event_index = getIndex(dirty, dirty.spawned_events[spawned_event_index].event_id);
 
 
         //console.log("Despawning spawned event id: " + dirty.spawned_events[spawned_event_index].id);
@@ -38,7 +42,7 @@ async function deleteSpawnedEvent(dirty, spawned_event_index) {
 
         // Remove spawned monsters - We skip the check spawned event check because... WE ARE ALREADY DELETING THE SPAWNED EVENT!
         for(let i = 0; i < dirty.monsters.length; i++) {
-            if(dirty.monsters[i] && dirty.monsters[i].spawned_event_id === dirty.spawned_events[spawned_event_index].id) {
+            if(dirty.monsters[i] && dirty.spawned_events[spawned_event_index] && dirty.monsters[i].spawned_event_id === dirty.spawned_events[spawned_event_index].id) {
                 await monster.deleteMonster(dirty, i, { 'reason': 'Deleting Spawned Event', 'skip_check_spawned_event': true });
             }
         }
@@ -146,6 +150,22 @@ async function deleteSpawnedEvent(dirty, spawned_event_index) {
             }
         }
 
+
+        // See if this spawned event is associated with a storyteller, and if so, update the storyteller
+        for(let i = 0; i < dirty.storytellers.length; i++) {
+            if(dirty.storytellers[i].current_spawned_event_id === dirty.spawned_events[spawned_event_index].id) {
+
+                dirty.storytellers[i].current_spawned_event_id = 0;
+                dirty.storytellers[i].previous_event_ticks = dirty.storytellers[i].current_event_ticks;
+                dirty.storytellers[i].previous_difficulty = dirty.events[event_index].difficulty;
+                dirty.storytellers[i].current_event_ticks = 0;
+                dirty.storytellers[i].has_change = true;
+
+            }
+        }
+
+
+
         // and finally delete the spawned event
         await (pool.query("DELETE FROM spawned_events WHERE id = ?", [dirty.spawned_events[spawned_event_index].id]));
         delete dirty.spawned_events[spawned_event_index];
@@ -158,7 +178,13 @@ async function deleteSpawnedEvent(dirty, spawned_event_index) {
     }
 }
 
+exports.deleteSpawnedEvent = deleteSpawnedEvent;
 
+function getIndex(dirty, event_id) {
+    return dirty.events.findIndex(function(obj) { return obj && obj.id === parseInt(event_id); });
+}
+
+exports.getIndex = getIndex;
 
 /**
  *
@@ -169,7 +195,8 @@ async function deleteSpawnedEvent(dirty, spawned_event_index) {
  * @param {number=} data.planet_coord_index
  * @param {number=} data.ship_coord_index
  * @param {number=} data.coord_index
- * @returns {Promise<boolean>}
+ * @param {number=} data.planet_id
+ * @returns {Promise<number>} spawned_event_index
  */
 async function spawn(dirty, event_index, data) {
 
@@ -188,17 +215,19 @@ async function spawn(dirty, event_index, data) {
         let origin_planet_coord_id = 0;
         let origin_coord_index = -1;
         let event_scope = '';
+        let spawned_event_id = 0;
+        let spawned_event_index = -1;
 
 
         if(event_index === -1 || !dirty.events[event_index]) {
             log(chalk.yellow("Could not find event"));
-            return false;
+            return -1;
         }
 
         let event_linkers = dirty.event_linkers.filter(event_linker => event_linker.event_id === dirty.events[event_index].id);
         if(event_linkers.length === 0) {
             log(chalk.yellow("No linkers associated with event id: " + dirty.events[event_index].id));
-            return false;
+            return -1;
         }
 
         if(debug_event_ids.indexOf(dirty.events[event_index].id) !== -1) {
@@ -213,7 +242,7 @@ async function spawn(dirty, event_index, data) {
             planet_index = await planet.getIndex(dirty, { 'planet_id': data.planet_id, 'source': 'event.spawn' });
 
             if(planet_index === -1) {
-                return false;
+                return -1;
             }
 
             // find the planet_event_linker
@@ -223,7 +252,7 @@ async function spawn(dirty, event_index, data) {
 
             if(planet_event_linker_index === -1) {
                 log(chalk.yellow("Could not find planet event linker"));
-                return false;
+                return -1;
             }
 
             // Find possible planet coords where this can spawn at
@@ -281,7 +310,7 @@ async function spawn(dirty, event_index, data) {
 
             if(possible_planet_coords.length === 0) {
                 log(chalk.yellow("No possible planet coords for planet event " + dirty.events[event_index].name));
-                return false;
+                return -1;
             }
 
             let origin_planet_coord = possible_planet_coords[Math.floor(Math.random() * possible_planet_coords.length)];
@@ -311,7 +340,7 @@ async function spawn(dirty, event_index, data) {
 
             if(planet_event_linker_index === -1) {
                 log(chalk.yellow("Could not find planet event linker"));
-                return false;
+                return -1;
             }
 
 
@@ -341,7 +370,7 @@ async function spawn(dirty, event_index, data) {
 
         if(origin_tile_x === -1 || origin_tile_y === -1) {
             log(chalk.yellow("Could not find origin tile"));
-            return false;
+            return -1;
         }
 
 
@@ -377,7 +406,7 @@ async function spawn(dirty, event_index, data) {
                     log(chalk.yellow("Can't spawn. Planet is at limit. Found " + currently_spawned.length + " existing events of this type"));
                 }
 
-                return false;
+                return -1;
             }
 
             //console.log("Found " + currently_spawned.length + " of that event already on the planet");
@@ -398,7 +427,7 @@ async function spawn(dirty, event_index, data) {
                     log(chalk.yellow("Can't spawn. Galaxy is at limit. Found " + spawned_in_galaxy_count + " existing events of this type"));
                 }
 
-                return false;
+                return -1;
             }
 
         }
@@ -561,6 +590,21 @@ async function spawn(dirty, event_index, data) {
                             dirty.planet_coords[checking_coord_index].tile_x + "," + dirty.planet_coords[checking_coord_index].tile_y))
                     }
                 }
+
+
+                let can_place_npc_result = false;
+                if(event_linker.npc_job_id) {
+                    can_place_npc_result = await npc.canPlace(dirty, event_scope, checking_coord, 0);
+                }
+
+                if(event_linker.npc_job_id && can_place_npc_result === false) {
+                    can_spawn = false;
+                    if(debug_event_ids.indexOf(dirty.events[event_index].id) !== -1) {
+                        log(chalk.yellow("Couldn't put npc on coord at " +
+                            checking_coord.tile_x + "," + checking_coord.tile_y))
+                    }
+                }
+
             } else {
                 if(debug_event_ids.indexOf(dirty.events[event_index].id) !== -1) {
                     console.log("Skipped seeing if we can place this linker. spawns_off_grid is true");
@@ -576,7 +620,7 @@ async function spawn(dirty, event_index, data) {
                 log(chalk.yellow("Was unable to spawn the event"));
             }
 
-            return false;
+            return -1;
         }
 
 
@@ -603,8 +647,8 @@ async function spawn(dirty, event_index, data) {
 
         let [result] = await (pool.query(sql,inserts));
 
-        let spawned_event_id = result.insertId;
-        let spawned_event_index = -1;
+        spawned_event_id = result.insertId;
+
 
         let [rows, fields] = await (pool.query("SELECT * FROM spawned_events WHERE id = ?", [spawned_event_id]));
         if(rows[0]) {
@@ -780,8 +824,12 @@ async function spawn(dirty, event_index, data) {
                         log(chalk.red("CODE IT BOY!"));
                     }
 
-                    await world.spawnMonster(dirty, event_linker.monster_type_id, spawn_monster_data);
+                    await monster.spawn(dirty, event_linker.monster_type_id, spawn_monster_data);
 
+                }
+
+                if(event_linker.npc_job_id) {
+                    npc.spawn(dirty, event_linker.npc_job_id);
                 }
 
                 // If there's an hp effect, have it hurt non-event things at this spot
@@ -830,6 +878,9 @@ async function spawn(dirty, event_index, data) {
         });
 
 
+        return spawned_event_index;
+
+
     } catch(error) {
         log(chalk.red("Error in event.spawn: " + error));
         console.error(error);
@@ -838,6 +889,8 @@ async function spawn(dirty, event_index, data) {
 
 
 }
+
+exports.spawn = spawn;
 
 async function tickSpawnedEvents(dirty) {
 
@@ -877,6 +930,8 @@ async function tickSpawnedEvents(dirty) {
     }
 }
 
+exports.tickSpawnedEvents = tickSpawnedEvents;
+
 
 async function tickSpawning(dirty) {
 
@@ -894,6 +949,18 @@ async function tickSpawning(dirty) {
                     log(chalk.cyan("Spawning events for planet id: " + dirty.planets[i].id + " planet_type_id: " + dirty.planets[i].planet_type_id));
                 }
 
+
+                // Figure out the % HP the planet has
+
+                if(helper.isFalse(dirty.planets[i].current_hp)) {
+                    dirty.planets[i].current_hp = 1;
+                    dirty.planets[i].has_change = true;
+                }
+
+                let hp_percent = dirty.planets[i].current_hp / dirty.planets[i].max_hp * 100;
+
+                
+
                 // rarity roll for every planet
                 let rarity = helper.rarityRoll();
 
@@ -902,7 +969,8 @@ async function tickSpawning(dirty) {
                 }
 
                 let planet_event_linkers = dirty.planet_event_linkers.filter(planet_event_linker =>
-                    planet_event_linker.planet_type_id === dirty.planets[i].planet_type_id && planet_event_linker.rarity <= rarity);
+                    planet_event_linker.planet_type_id === dirty.planets[i].planet_type_id && planet_event_linker.rarity <= rarity &&
+                    planet_event_linker.minimum_planet_hp_percent <= hp_percent && planet_event_linker.maximum_planet_hp_percent >= hp_percent);
 
                 if(planet_event_linkers.length !== 0) {
 
@@ -940,7 +1008,7 @@ async function tickSpawning(dirty) {
         let galaxy_rarity = helper.rarityRoll();
 
         let galaxy_linkers = dirty.events.filter(event_filter =>
-            event_filter.spawns_in_galaxy && event_filter.rarity <= galaxy_rarity);
+            event_filter.spawns_in_galaxy && event_filter.rarity <= galaxy_rarity && event_filter.is_active);
 
         if(galaxy_linkers.length > 0) {
             let random_galaxy_event = galaxy_linkers[Math.floor(Math.random() * galaxy_linkers.length)];
@@ -974,13 +1042,5 @@ async function tickSpawning(dirty) {
 
 }
 
+exports.tickSpawning = tickSpawning;
 
-
-module.exports = {
-
-    deleteSpawnedEvent,
-    spawn,
-    tickSpawnedEvents,
-    tickSpawning
-
-}

@@ -4,36 +4,10 @@ CURRENT GAMEPLAY TEST:
 
 DOING NOW:
 
-        make sure password recovery works
-        google forms + newsletter
 
-        players have a hard time with tasks. What do I do? I don't want to create a quest system around this - but I would like to offer helpful ideas:
+    Eating linkers and addiction linkers should be based on the BODY not the player
 
-        1. Build and Algae Vat and get Blue Algae from it (But it spawns Algae... not blue Algae? )
-        2. Become an Octopus!!
-        3. Fully Research Algae and ...
-        4. Build a Shuttle
-        5. Have a body with two Mimetic Arms
-
-
-        Implementation Idea #1:
-            achievments table (player_id, object_type_id, monster_type_id)
-            achievement_linkers table (player_id, achievement id)
-
-        Implementation Idea #2:
-            Just have a text list of things on the website. 
-
-        Could let the player give themselves tasks too
-
-        'obtain 10 batteries'
-
-
-    make sure the bug ship event still works in some capacity
-
-
-    Some admin way to view lost bodies....
-
-
+    Some admin way to view lost things(starting with bodies)
 
 
     Test Slerm Armor on Inferno Planet!
@@ -48,8 +22,6 @@ DOING NOW:
 
     Doesn't look like the water walls are being damaged on the water ship
 
-
-    Work on sending out a newsletter with a google form questionaire. See what people like/dislike so far
 
 
     see if I can get someone to make a trailer on fivr

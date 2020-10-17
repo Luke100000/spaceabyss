@@ -1,7 +1,3 @@
-Maybe turn Slime Berry Tree into Slerm Berry Tree - and make the berries into Slerm Berries, which maybe grow into
-    a different type of slerm if they are dropped on like a ship or corporation world.
-
-
 Traps - I need to expand on this
 
 
@@ -12,3 +8,15 @@ Think of content for traps
 
 
 Objects that get better with age. Kind of like wine. Kids were watching a show and they ate 1,000 year old eggs.
+
+
+The Story of Space Abyss
+
+    Love the story that Rimworld generates. Love the story that Eve Online generates. I want Space Abyss to tell it's story.
+
+    I'm not actually sure I want to generate logs for each kill, at least as a start.
+        create a combat/event log when a monster is killed by a player
+
+    Things like The Great Nomad entering/exiting the galaxy, taking over planets/ships, bug attack events + who kills them are probably the priority. 
+
+    Storyteller using planet health, time to eradicate, etc for scaling

@@ -10,6 +10,8 @@ const game_object = require('./game_object.js');
 const helper = require('./helper.js');
 const main = require('./space_abyss' + process.env.FILE_SUFFIX + '.js');
 const map = require('./map.js');
+const monster = require('./monster.js');
+const npc = require('./npc.js');
 const planet = require('./planet.js');
 const player = require('./player.js');
 const world = require('./world.js');
@@ -953,7 +955,7 @@ const world = require('./world.js');
                     let rand_move = Math.random(1,10);
 
                     if(rand_move === 6) {
-                        let hrstart = new process.hrtime();
+                        //let hrstart = new process.hrtime();
                         let coord_index = await main.getCoordIndex({ 'coord_id': dirty.objects[i].coord_id });
 
                         if(coord_index === -1) {
@@ -1008,8 +1010,8 @@ const world = require('./world.js');
     
                         }
 
-                        let hrend = process.hrtime(hrstart);
-                        console.info('time to move ONE galaxy object (hr): %ds %dms', hrend[0], hrend[1] / 1000000);
+                        //let hrend = process.hrtime(hrstart);
+                        //console.info('time to move ONE galaxy object (hr): %ds %dms', hrend[0], hrend[1] / 1000000);
                     }
 
                 
@@ -1054,7 +1056,7 @@ const world = require('./world.js');
                 return;
             }
 
-            let can_place = await main.canPlaceNpc('galaxy', dirty.coords[coord_index], 'npc', dirty.npcs[npc_index].id);
+            let can_place = await npc.canPlace(dirty, 'galaxy', dirty.coords[coord_index], 'npc', dirty.npcs[npc_index].id);
 
             if(!can_place) {
                 console.log("Can't do the move - moveGalaxyNpc");
@@ -1082,6 +1084,7 @@ const world = require('./world.js');
 
         } catch(error) {
             log(chalk.red("Error in movement.moveGalaxyNpc: " + error));
+            console.error(error);
         }
     }
 
@@ -1157,11 +1160,13 @@ const world = require('./world.js');
             //let can_move_to = await main.canPlace('planet', dirty.planet_coords[planet_coord_index], 'player', dirty.players[player_index].id);
 
             if(!can_move_to) {
+                console.log("Can't move there");
                 return false;
             }
 
             let object_type_index = -1;
             if(dirty.planet_coords[planet_coord_index].object_type_id) {
+                //console.log("Got object type id");
                 object_type_index = main.getObjectTypeIndex(dirty.planet_coords[planet_coord_index].object_type_id);
             }
 
@@ -1169,7 +1174,16 @@ const world = require('./world.js');
             // PORTALS!!!!
             if (dirty.planet_coords[planet_coord_index].object_type_id && dirty.object_types[object_type_index].is_portal) {
 
-                await moveThroughPortal(socket, dirty, dirty.planet_coords[planet_coord_index].object_id);
+                console.log("Object type is portal");
+
+                let portal_id = 0;
+                if(dirty.planet_coords[planet_coord_index].object_id) {
+                    portal_id = dirty.planet_coords[planet_coord_index].object_id;
+                } else if(dirty.planet_coords[planet_coord_index].belongs_to_object_id) {
+                    portal_id = dirty.planet_coords[planet_coord_index].belongs_to_object_id;
+                }
+
+                await moveThroughPortal(socket, dirty, portal_id);
 
             }
             // HOLES
@@ -1500,7 +1514,7 @@ const world = require('./world.js');
 
 
                                 if(dirty.planet_coords[other_planet_coord_index].monster_id) {
-                                    await world.sendMonsterInfo(socket, false, dirty, { 'monster_id': dirty.planet_coords[other_planet_coord_index].monster_id });
+                                    await monster.sendInfo(socket, false, dirty, { 'monster_id': dirty.planet_coords[other_planet_coord_index].monster_id });
                                     await world.checkMonsterBattleConditions(dirty, dirty.planet_coords[other_planet_coord_index].monster_id, 'player', socket.player_id, socket);
                                 }
 
@@ -1624,10 +1638,10 @@ const world = require('./world.js');
             }
 
 
-            let can_place = await main.canPlaceNpc('planet', dirty.planet_coords[coord_index], 'npc', dirty.npcs[npc_index].id);
+            let can_place = await npc.canPlace(dirty, 'planet', dirty.planet_coords[coord_index], 'npc', dirty.npcs[npc_index].id);
 
             if(!can_place) {
-                console.log("Can't do the move - movePlanetNpc");
+                //console.log("Can't do the move - movePlanetNpc");
                 return false;
             }
 
@@ -2633,6 +2647,8 @@ const world = require('./world.js');
 
     async function moveThroughPortal(socket, dirty, portal_id) {
         try {
+
+            console.log("In moveThroughPortal");
             let portal_index = await game_object.getIndex(dirty, portal_id);
 
             if(portal_index === -1) {
@@ -3010,7 +3026,7 @@ const world = require('./world.js');
                 for(let coord of spaceport_coords) {
 
                     if(found_planet_coord_id === 0) {
-                        if(await main.canPlaceNpc('planet', coord, dirty.npcs[npc_index].id)) {
+                        if(await npc.canPlace(dirty, 'planet', coord, dirty.npcs[npc_index].id)) {
                             found_planet_coord_id = coord.id;
                         }
                     }
@@ -3019,8 +3035,7 @@ const world = require('./world.js');
             }
 
             if(found_planet_coord_id === 0) {
-                console.log("Looks like spaceport tiles are full");
-                socket.emit('chat', {'message': 'Spaceport is full', 'scope':'system'});
+                console.log("Looks like spaceport tiles are full for NPC");
                 return false;
             }
 
@@ -3032,7 +3047,7 @@ const world = require('./world.js');
             // Found it all - time for the updates!
             let previous_coord_index = await main.getCoordIndex({ 'coord_id': dirty.npcs[npc_index].coord_id });
             if(previous_coord_index !== -1) {
-                await main.updateCoordGeneric(socket, { 'coord_index': previous_coord_index, 'npc_id': false });
+                await main.updateCoordGeneric({}, { 'coord_index': previous_coord_index, 'npc_id': false });
             } else {
                 log(chalk.yellow("Failed finding the galaxy coord the npc used to be on: " + dirty.npcs[npc_index].coord_id ));
             }
@@ -3041,7 +3056,7 @@ const world = require('./world.js');
 
             console.log("Updated Coord");
 
-            await main.updateCoordGeneric(socket, { 'planet_coord_index': spaceport_index, 'npc_id': dirty.npcs[npc_index].id });
+            await main.updateCoordGeneric({}, { 'planet_coord_index': spaceport_index, 'npc_id': dirty.npcs[npc_index].id });
 
 
             dirty.npcs[npc_index].planet_coord_id = dirty.planet_coords[spaceport_index].id;
@@ -3057,6 +3072,7 @@ const world = require('./world.js');
             await world.sendNpcInfo(false, "planet_" + dirty.planet_coords[spaceport_index].planet_id, dirty, dirty.npcs[npc_index].id);
 
 
+            dirty.npcs[npc_index].room = "planet_" + dirty.planet_coords[spaceport_index].planet_id;
             return true;
 
         } catch(error) {
@@ -3114,7 +3130,7 @@ const world = require('./world.js');
                 let bottom_right_tile_x = dirty.coords[coord_index].tile_x + 3;
                 let bottom_right_tile_y = dirty.coords[coord_index].tile_y + 3;
                 let bottom_right_coord_index = await main.getCoordIndex({ 'tile_x': bottom_right_tile_x, 'tile_y': bottom_right_tile_y});
-                console.log("Bottom right coord index: " + bottom_right_coord_index);
+                //console.log("Bottom right coord index: " + bottom_right_coord_index);
                 potential_coord_indexes.push(bottom_right_coord_index);
 
                 let warp_to_coord_index = -1;
@@ -3123,7 +3139,7 @@ const world = require('./world.js');
                     if(potential_coord_indexes === -1 ) {
                         log(chalk.yellow("Invalid potential_coord_index"));
                     } else {
-                        console.log("Trying to warp to tile_x,tile_y: " + dirty.coords[coord_index].tile_x + "," + dirty.coords[coord_index].tile_y);
+                        //console.log("Trying to warp to tile_x,tile_y: " + dirty.coords[coord_index].tile_x + "," + dirty.coords[coord_index].tile_y);
                         warp_to_coord_index = await warpTo(socket, dirty, { 'player_index': player_index, 'warping_to': 'galaxy', 'base_coord_index': potential_coord_indexes[i] });
                     }
 
@@ -3375,6 +3391,11 @@ const world = require('./world.js');
                 let ship_coord_index = await main.getShipCoordIndex({ 'ship_coord_id': dirty.npcs[npc_index].ship_coord_id });
                 let ship_index = await game_object.getIndex(dirty, dirty.ship_coords[ship_coord_index].ship_id);
                 coord_index = await main.getCoordIndex({ 'coord_id': dirty.objects[ship_index].coord_id });
+            }
+
+            if(coord_index === -1) {
+                log(chalk.yellow("Failed to launch"));
+                return false;
             }
 
             await warpTo(false, dirty, { 'npc_index': npc_index, 'warping_to': 'galaxy', 'base_coord_index': coord_index });
@@ -3689,6 +3710,7 @@ const world = require('./world.js');
      * @param {number=} data.player_id
      * @param {number=} data.npc_id
      * @param {String} data.warping_to
+     * @param {number=} data.warping_to_id
      * @param {number=} data.planet_id
      * @param {number=} data.base_coord_index
      */
@@ -3724,7 +3746,7 @@ const world = require('./world.js');
                 npc_index = data.npc_index;
                 placing_type = 'npc';
             } else if(data.npc_id) {
-                npc_index = await main.getNpcIndex(data.npc_id);
+                npc_index = await npc.getIndex(dirty, data.npc_id);
 
                 if(npc_index === -1) {
                     log(chalk.yellow("Could not find npc"));
@@ -3775,12 +3797,12 @@ const world = require('./world.js');
                     
                         let can_place_result = false;
                         if(placing_type === 'player') {
-                            console.log("Seeing if we can place player there");
+                            //console.log("Seeing if we can place player there");
 
                             can_place_result = await player.canPlace(dirty, 'planet', dirty.planet_coords[i], player_index);
 
                         } else if(placing_type === 'npc') {
-                            can_place_result = await main.canPlaceNpc('planet', dirty.planet_coords[i], placing_id);
+                            can_place_result = await npc.canPlace(dirty, 'planet', dirty.planet_coords[i], placing_id);
                         }
 
                         if(can_place_result) {
@@ -3813,7 +3835,7 @@ const world = require('./world.js');
 
                             can_place_result = await player.canPlace(dirty, 'galaxy', dirty.coords[coord_index], player_index);
                         } else if(placing_type === 'npc') {
-                            can_place_result = await main.canPlaceNpc('galaxy', dirty.coords[coord_index], placing_id);
+                            can_place_result = await npc.canPlace(dirty, 'galaxy', dirty.coords[coord_index], placing_id);
                         }
 
                         if(can_place_result) {
@@ -3847,7 +3869,7 @@ const world = require('./world.js');
 
                                         can_place_result = await player.canPlace(dirty, 'galaxy', dirty.coords[coord_index], player_index);
                                     } else if(placing_type === 'npc') {
-                                        can_place_result = await main.canPlaceNpc('galaxy', dirty.coords[coord_index], placing_id);
+                                        can_place_result = await npc.canPlace(dirty, 'galaxy', dirty.coords[coord_index], placing_id);
                                     }
 
                                     if(can_place_result) {
@@ -3875,6 +3897,51 @@ const world = require('./world.js');
                 }
 
 
+
+            } else if(data.warping_to === 'npc') {
+
+                console.log("Warping to npc!!!");
+
+                let warping_to_npc_index = await npc.getIndex(dirty, data.warping_to_id);
+
+                if(warping_to_npc_index === -1) {
+                    log(chalk.yellow("Could not find the npc we are warping to"));
+                    return false;
+                }
+
+                // lets start looking at coords around the npc
+                if(dirty.npcs[warping_to_npc_index].planet_coord_id) {
+
+                    
+
+                    
+                    let base_coord_index = await main.getPlanetCoordIndex({ 'planet_coord_id': dirty.npcs[warping_to_npc_index].planet_coord_id });
+
+                    if(base_coord_index === -1) {
+                        log(chalk.yellow("Could not find the planet coord the npc is on"));
+                        return false;
+                    }
+
+                    console.time("warpToNpc");
+                    if(placing_type === 'player') {
+                        destination_coord_index = await world.getOpenCoordIndex(dirty, 'planet', base_coord_index, 'player', player_index, 2);
+                    } else if(placing_type === 'npc') {
+                        destination_coord_index = await world.getOpenCoordIndex(dirty, 'planet', base_coord_index, 'npc', npc_index);
+                    }
+                    console.timeEnd("warpToNpc");
+
+
+
+                    if(destination_coord_index !== -1) {
+                        placing_data.coord_index = destination_coord_index;
+                        new_room = "planet_" + dirty.planet_coords[base_coord_index].planet_id;
+                    }
+
+
+                } else {
+                    log(chalk.yellow("Havent' coded warping to npc in galaxy/ship yet"));
+                    return false;
+                }
 
             }
 
@@ -3972,15 +4039,27 @@ const world = require('./world.js');
                 placing_thing.coord_id = dirty.coords[destination_coord_index].id;
                 placing_thing.has_change = true;
 
-                socket.emit('view_change_data', { 'view': 'galaxy' });
+                if(helper.notFalse(socket)) {
+                    socket.emit('view_change_data', { 'view': 'galaxy' });
+                }
+                
             } else if(data.warping_to === 'spaceport') {
                 await main.updateCoordGeneric(socket, placing_data);
                 placing_thing.planet_coord_id = dirty.planet_coords[destination_coord_index].id;
                 placing_thing.has_change = true;
+                socket.emit('clear_map');
+                map.updateMap(socket, dirty);
 
+
+            } else if(data.warping_to === 'npc') {
+                await main.updateCoordGeneric(socket, placing_data);
+                placing_thing.planet_coord_id = dirty.planet_coords[destination_coord_index].id;
+                placing_thing.has_change = true;
+                socket.emit('clear_map');
+                map.updateMap(socket, dirty);
             }
 
-            if(old_room !== new_room && placing_socket) {
+            if(old_room !== new_room && helper.notFalse(placing_socket)) {
                 placing_socket.leave(old_room);
                 placing_socket.join(new_room);
             }
@@ -3993,6 +4072,9 @@ const world = require('./world.js');
                 io.to(old_room).emit('npc_info', { 'npc': placing_thing });
                 io.to(new_room).emit('npc_info', { 'npc': placing_thing });
             }
+
+            // Set the new room
+            placing_thing.room = new_room;
 
 
             return destination_coord_index;
@@ -4009,8 +4091,11 @@ const world = require('./world.js');
     module.exports = {
         move,
         moveGalaxy,
+        moveGalaxyNpc,
         moveGalaxyObjects,
+        movePlanetNpc,
         switchToGalaxy,
+        switchToGalaxyNpc,
         switchToPlanet,
         switchToShip,
         warpShipToAzurePlanet,
