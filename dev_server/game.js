@@ -5617,6 +5617,7 @@ exports.eat = eat;
             } else if(data.message.includes("/tickspawners")) {
                 await tickSpawners(dirty);
             } else if(data.message.includes("/tickEvents")) {
+                
                 await event.tickSpawning(dirty);
                 await event.tickSpawnedEvents(dirty);
             } else if(data.message.includes("/tickstorytellers")) {

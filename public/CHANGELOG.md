@@ -1,3 +1,15 @@
+## [0.2.5] - 2020-10-24
+
+### Added
+
+### Fixed
+- Various menus would still show all inventory items from all bodies a player has as being immediately usable. No more!
+- Quite a few events weren't spawning properly. The Water planet in particular was pretty barren. I should have drastically improved this.
+
+
+### Changed
+
+
 ## [0.2.4] - 2020-10-17
 
 

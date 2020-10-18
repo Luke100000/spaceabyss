@@ -308,8 +308,22 @@ async function spawn(dirty, event_index, data) {
 
 
 
+            // This is STUPID. 
             if(possible_planet_coords.length === 0) {
                 log(chalk.yellow("No possible planet coords for planet event " + dirty.events[event_index].name));
+
+                // Lets randomly grab some potentially appropriate coords
+                for(let i = 0; i < 4; i++) {
+
+                    let rand_planet_level = helper.getRandomIntInclusive(dirty.planet_event_linkers[planet_event_linker_index].lowest_planet_level,
+                        dirty.planet_event_linkers[planet_event_linker_index].highest_planet_level);
+                    let new_planet_coord_index = await main.getPlanetCoordIndex({ 'planet_id': dirty.planets[planet_index].id,
+                        'planet_level': rand_planet_level, 'tile_x': helper.getRandomIntInclusive(20, 40), 'tile_y': helper.getRandomIntInclusive(20,40)
+                    });
+                }
+
+                console.log("Grabbed some potential coords for next time");
+
                 return -1;
             }
 
@@ -993,8 +1007,15 @@ async function tickSpawning(dirty) {
                     }
 
                     if(event_index !== -1 && dirty.events[event_index].is_active) {
-                        //log(chalk.green("Going to spawn event " + dirty.events[event_index].name + " id: " + dirty.events[event_index].id + " on planet id: " + dirty.planets[i].id));
-                        await spawn(dirty, event_index, { 'planet_id': dirty.planets[i].id });
+                        if(dirty.planets[i].planet_type_id === debug_planet_type_id) {
+                            console.log("Going to try to spawn event " + dirty.events[event_index].name + " id: " + dirty.events[event_index].id + " on planet id: " + dirty.planets[i].id);
+                        }
+                        
+                        let spawning_result = await spawn(dirty, event_index, { 'planet_id': dirty.planets[i].id });
+
+                        if(dirty.planets[i].planet_type_id === debug_planet_type_id) {
+                            console.log("Spawning result: " + spawning_result);
+                        }
                     }
 
                 }

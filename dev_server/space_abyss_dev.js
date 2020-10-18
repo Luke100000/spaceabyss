@@ -901,6 +901,26 @@ inits.init(function(callback) {
     
 });
 
+
+// Load up our planets!
+inits.init(function(callback) {
+
+
+    pool.query("SELECT * FROM planets", function(err, rows, fields) {
+        if(err) throw err;
+
+        if(rows[0]) {
+            dirty.planets = rows;
+        }
+
+
+        callback(null);
+    });
+   
+    
+});
+
+
 inits.init(function(callback) {
     pool.query("SELECT * FROM planet_event_linkers", function(err, rows, fields) {
         if(err) throw err;
@@ -4836,7 +4856,9 @@ async function tickFood(dirty) {
 async function tickEvents(dirty) {
     try {
         //log(chalk.yellow("going to call event.tickSpawning"));
+        console.time("event.tickSpawning");
         await event.tickSpawning(dirty);
+        console.timeEnd("event.tickSpawning");
         await event.tickSpawnedEvents(dirty);
         //await game.tickEvents(dirty);
     } catch(error) {

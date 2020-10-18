@@ -3163,7 +3163,8 @@ function printAssemblyList(assembling_object = false, coord = false) {
 
 
     let player_can_build_something = false;
-    let player_inventory_items = inventory_items.filter(inventory_item => inventory_item.player_id === player_id);
+    let player_inventory_items = inventory_items.filter(inventory_item => inventory_item.player_id === player_id &&
+        inventory_item.body_id === players[client_player_index].body_id);
 
 
     /******************************************* BASIC ASSEMBLIES !!!!!!!!!!!!!!! ***********************************************/
@@ -3833,7 +3834,8 @@ function generateCanAssembleListDeprecated() {
     can_assemble_list = [];
 
     let player_can_build_something = false;
-    let player_inventory_items = inventory_items.filter(inventory_item => inventory_item.player_id === player_id);
+    let player_inventory_items = inventory_items.filter(inventory_item => inventory_item.player_id === player_id &&
+        inventory_item.body_id === players[client_player_index].body_id);
 
 
     for (let i = 0; i < object_types.length; i++) {
@@ -8349,7 +8351,8 @@ function showClickMenu(pointer) {
         }
     }
 
-    let player_inventory_items = inventory_items.filter(inventory_item => inventory_item.player_id === client_player_id);
+    let player_inventory_items = inventory_items.filter(inventory_item => inventory_item.player_id === client_player_id &&
+        inventory_item.body_id === players[client_player_index].body_id);
 
 
     // For most things we display, we want to have a coord
@@ -9166,7 +9169,8 @@ function showClickMenuObject(coord) {
     // Reason: We are going to do multiple tiers of things that can have inventory. Higher tiers will be 'smart' with rules
     if (object_types[object_type_index].can_have_inventory) {
         // let players put their stuff in
-        let player_inventory_items = inventory_items.filter(inventory_item => inventory_item.player_id === client_player_id);
+        let player_inventory_items = inventory_items.filter(inventory_item => inventory_item.player_id === client_player_id &&
+            inventory_item.body_id === players[client_player_index].body_id);
 
         player_inventory_items.forEach(function (inventory_item) {
             let object_type_index = object_types.findIndex(function (obj) { return obj && obj.id === inventory_item.object_type_id; });
@@ -9231,7 +9235,8 @@ function showClickMenuObject(coord) {
 
                 if (conversion_linker.input_type === "object_type") {
                     // let players put their stuff in and see what happens!
-                    let player_inventory_items = inventory_items.filter(inventory_item => inventory_item.player_id === client_player_id);
+                    let player_inventory_items = inventory_items.filter(inventory_item => inventory_item.player_id === client_player_id &&
+                        inventory_item.body_id === players[client_player_index].body_id);
 
                     player_inventory_items.forEach(function (inventory_item) {
                         let item_object_type_index = object_types.findIndex(function (obj) { return obj && obj.id === inventory_item.object_type_id; });
@@ -9311,7 +9316,8 @@ function showClickMenuObject(coord) {
         // Show a research menu
         shown_options = true;
 
-        let player_inventory_items = inventory_items.filter(inventory_item => inventory_item.player_id === client_player_id);
+        let player_inventory_items = inventory_items.filter(inventory_item => inventory_item.player_id === client_player_id &&
+            inventory_item.body_id === players[client_player_index].body_id);
 
         player_inventory_items.forEach(function (inventory_item) {
             let object_type_index = object_types.findIndex(function (obj) {

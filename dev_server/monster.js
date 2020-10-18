@@ -347,7 +347,9 @@ async function canPlace(dirty, scope, coord, data) {
 
             // Couldn't get the floor type of the coord - that's a false unless an event is creating that coord with a floor
             if(floor_type_index === -1 && typeof data.event_provides_floor === "undefined") {
-
+                if(dirty.monster_types[monster_type_index].id === debug_monster_type_id) {
+                    log(chalk.yellow("Can't place monsters on no floor if the placement doesn't provide a floor"));
+                }
                 return false;
             } else {
 
@@ -374,7 +376,7 @@ async function canPlace(dirty, scope, coord, data) {
         }
 
         if(debug_monster_type_id === monster_type_id) {
-            log(chalk.green("Returning true"));
+            log(chalk.green("Returning true in monster.canPlace on debug monster type id"));
         }
 
         return true;
