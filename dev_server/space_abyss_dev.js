@@ -2136,14 +2136,10 @@ async function getAreaIndex(area_id) {
             if(rows[0]) {
                 let area = rows[0];
                 area.has_change = false;
-                //console.log("Adding eating linker id: " + eating_linker.id + " to dirty");
                 area_index = dirty.areas.push(area) - 1;
-                //console.log("New eating_linker index: " + eating_linker_index);
 
                 // double sure the id is an int
                 dirty.areas[area_index].id = parseInt(dirty.areas[area_index].id);
-                //console.log("In getEatingLinkerIndex eating_object_type_id is : " + dirty.eating_linkers[eating_linker_index].eating_object_type_id);
-e
             }
         }
     }

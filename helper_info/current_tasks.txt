@@ -5,21 +5,10 @@ CURRENT GAMEPLAY TEST:
 DOING NOW:
 
 
-
-    So I get on the water planet.... and there's nothing there. 
-
-    Eating linkers and addiction linkers should be based on the BODY not the player
-
     Some admin way to view lost things(starting with bodies)
 
 
     Test Slerm Armor on Inferno Planet!
-
-
-    Make sure that when the server receives place_data that it takes into account whether the inventory
-        item is in the inventory of the player's current body. Currently players can do research, 
-        and place in from any of their bodies.
-
 
 
     Hacking view

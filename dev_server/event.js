@@ -857,8 +857,7 @@ async function spawn(dirty, event_index, data) {
                         if(object_index !== -1 && dirty.objects[object_index].spawned_event_id !== spawned_event_id) {
                             let object_info = await game_object.getCoordAndRoom(dirty, object_index);
 
-                            await game_object.damage(dirty, { 'object_index': object_index,
-                                'damage_amount': event_linker.hp_effect, 'object_info': object_info, 'reason': 'event' });
+                            await game_object.damage(dirty, object_index, event_linker.hp_effect, {'object_info': object_info, 'reason': 'event' });
                         }
                     }
                     else if(linker_coord.object_type_id) {

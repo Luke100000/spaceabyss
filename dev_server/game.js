@@ -1623,8 +1623,7 @@ const world = require('./world.js');
                 if(!success) {
                     let damage_amount = dirty.object_types[converter_object_type_index].complexity - farming_level;
 
-                    await game_object.damage(dirty, { 'object_index': converter_object_index, 'damage_amount': damage_amount,
-                        'object_info': converter_info });
+                    await game_object.damage(dirty, converter_object_index, damage_amount, { 'object_info': converter_info });
 
                     await game_object.sendInfo(false, converter_info.room, dirty, converter_object_index);
 
@@ -1957,8 +1956,7 @@ const world = require('./world.js');
                         let new_object_hp = dirty.objects[i].current_hp - hp_decay;
                         //console.log("Object is going from: " + dirty.objects[i].current_hp + " to " + new_object_hp);
 
-                        await game_object.damage(dirty, { 'object_index': i, 'damage_amount': hp_decay,
-                            'object_info': object_info, 'reason': 'decay' });
+                        await game_object.damage(dirty, i, hp_decay, {'object_info': object_info, 'reason': 'decay' });
 
                     }
 
@@ -6890,32 +6888,47 @@ exports.eat = eat;
                                 player_socket.emit('addiction_linker_info', { 'addiction_linker': dirty.addiction_linkers[i] });
                             }
 
-                            if(dirty.race_eating_linkers[race_eating_index].hp) {
-                                console.log("Reduced player hp due to addiction linker");
 
-                                // Something like poison will have -HP - we don't want poison to heal in this case.
+
+                            if(dirty.race_eating_linkers[race_eating_index].hp) {
+
+
                                 let addiction_damage_amount = addiction_linker.addiction_level * Math.abs(dirty.race_eating_linkers[race_eating_index].hp);
 
-                                let new_player_hp = dirty.players[player_index].current_hp - addiction_damage_amount;
+                                // Player has this body equippped
+                                if(dirty.players[player_index].body_id === addiction_linker.body_id) {
+                                    console.log("Reduced player hp due to addiction linker");
 
-                                if(new_player_hp <= 0) {
-
-                                    console.log("Calling player.kill from tickAddictions");
-                                    await player.kill(dirty, player_index);
-
-
-                                } else {
-                                    // update the current hp for the player and the player's socket
-                                    dirty.players[player_index].current_hp = new_player_hp;
-                                    dirty.players[player_index].has_change = true;
-
-                                    if(helper.notFalse(player_socket)) {
-                                        player_socket.emit('damaged_data', {
-                                            'player_id': dirty.players[player_index].id, 'damage_amount': addiction_damage_amount, 'was_damaged_type': 'hp',
-                                            'damage_types': ['addiction']
-                                        });
+                                    // Something like poison will have -HP - we don't want poison to heal in this case.
+                                    
+    
+                                    let new_player_hp = dirty.players[player_index].current_hp - addiction_damage_amount;
+    
+                                    if(new_player_hp <= 0) {
+    
+                                        console.log("Calling player.kill from tickAddictions");
+                                        await player.kill(dirty, player_index);
+    
+    
+                                    } else {
+                                        // update the current hp for the player and the player's socket
+                                        dirty.players[player_index].current_hp = new_player_hp;
+                                        dirty.players[player_index].has_change = true;
+    
+                                        if(helper.notFalse(player_socket)) {
+                                            player_socket.emit('damaged_data', {
+                                                'player_id': dirty.players[player_index].id, 'damage_amount': addiction_damage_amount, 'was_damaged_type': 'hp',
+                                                'damage_types': ['addiction']
+                                            });
+                                        }
                                     }
+                                } else {
+
+                                    let body_info = await game_object.getCoordAndRoom(dirty, body_index);
+                                    game_object.damage(dirty, body_index, addiction_damage_amount, { 'object_info': body_info });
+
                                 }
+                               
                             }
 
                         } else {
@@ -7584,8 +7597,10 @@ exports.eat = eat;
                         if(dirty.race_eating_linkers[race_linker_index].hp) {
 
 
+                            let player_info = await world.getPlayerCoordAndRoom(dirty, player_index);
 
-                            if(eating_linker.player_id) {
+                            // Player has the body that is eating this equipped
+                            if(eating_linker.player_id && dirty.players[player_index].body_id === eating_linker.body_id) {
                                 let new_hp = dirty.players[player_index].current_hp + dirty.race_eating_linkers[race_linker_index].hp;
 
                                 //console.log("New hp is: " + new_hp);
@@ -7596,7 +7611,7 @@ exports.eat = eat;
                                 dirty.players[player_index].current_hp = new_hp;
                                 dirty.players[player_index].has_change = true;
 
-                                let player_info = await world.getPlayerCoordAndRoom(dirty, player_index);
+                                
 
                                 if(player_info.room) {
                                     await player.sendInfo(socket, player_info.room, dirty, dirty.players[player_index].id);
@@ -7612,6 +7627,20 @@ exports.eat = eat;
                                         'damage_types': ['healing']
                                     });
                                 }
+
+                            } 
+                            // Player ate this, but has a different body now
+                            else if(eating_linker.player_id) {
+
+                                dirty.objects[body_index].current_hp += dirty.race_eating_linkers[race_linker_index].hp;
+
+                                if(dirty.objects[body_index].current_hp > dirty.object_types[body_type_index].hp) {
+                                    dirty.objects[body_index].current_hp = dirty.object_types[body_type_index].hp;
+                                    dirty.objects[body_index].has_change = true;
+                                }
+
+                                game_object.sendInfo(socket, player_info.room, dirty, body_index);
+
 
                             } else {
                                 let new_hp = dirty.npcs[npc_index].current_hp + dirty.race_eating_linkers[race_linker_index].hp;
@@ -8835,8 +8864,8 @@ exports.eat = eat;
                             dirty.objects[researcher_object_index].is_active = false;
                             await game_object.sendInfo(false, room, dirty, researcher_object_index);
 
-                            // extra skill point for a failed research
-                            dirty.players[player_index].researching_skill_points += 2;
+                            // We increase skill points by the complexity of the thing we failed at
+                            dirty.players[player_index].researching_skill_points += dirty.object_types[object_type_index].complexity;
                             dirty.players[player_index].has_change = true;
                         }
 

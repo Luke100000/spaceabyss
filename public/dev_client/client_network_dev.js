@@ -2555,6 +2555,7 @@ socket.on('player_info', function(data) {
             // Only re-generate the inventory display if this was us moving!
             if(client_player_id && data.player.id === client_player_id) {
                 generateInventoryDisplay();
+                generateEatingLinkerDisplay();
 
                 // Check for a task that matches a body switch
                 if(use_tasks) {

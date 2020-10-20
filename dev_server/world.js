@@ -4970,7 +4970,7 @@ async function spawnAdjacent(dirty, data) {
                     place_object_data.ship_coord_index = placing_coord_index;
                 }
 
-                await game_object.place(socket, dirty, place_object_data);
+                await game_object.place({}, dirty, place_object_data);
 
 
 
@@ -4994,7 +4994,7 @@ async function spawnAdjacent(dirty, data) {
 
                 }
 
-                await main.updateCoordGeneric(socket, update_coord_data);
+                await main.updateCoordGeneric({}, update_coord_data);
 
             }
 

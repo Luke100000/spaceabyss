@@ -1782,7 +1782,7 @@ function generateEatingLinkerDisplay() {
 
     let active_count = 0;
     for (let eating_linker of eating_linkers) {
-        if (eating_linker && eating_linker.player_id === client_player_id) {
+        if (eating_linker && eating_linker.player_id === players[client_player_index].id && eating_linker.body_id === players[client_player_index].body_id) {
             active_count++;
         }
     }

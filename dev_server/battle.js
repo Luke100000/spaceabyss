@@ -1007,7 +1007,7 @@ const world = require('./world.js');
 
             let damage_amount = monster_attack.damage_amount - defense;
 
-            await game_object.damage(dirty, { 'object_index': object_index, 'damage_amount': damage_amount,
+            await game_object.damage(dirty, object_index, damage_amount, {
             'damage_types': [monster_attack.damage_type],
             'battle_linker': battle_linker, 'object_info': object_info, 'calculating_range': calculating_range });
 
@@ -1414,7 +1414,7 @@ const world = require('./world.js');
             }
 
             // No AI - Do the attack/defense normally
-            await game_object.damage(dirty, { 'object_index': object_index, 'damage_amount': damage_amount,
+            await game_object.damage(dirty, object_index, damage_amount, {
                 'battle_linker': battle_linker, 'object_info': object_info, 'calculating_range': calculating_range });
 
 
@@ -1689,7 +1689,7 @@ const world = require('./world.js');
             }
 
             // No AI - Do the attack/defense normally
-            await game_object.damage(dirty, { 'object_index': defending_object_index, 'damage_amount': damage_amount,
+            await game_object.damage(dirty, defending_object_index, damage_amount, {
                 'battle_linker': battle_linker, 'object_info': defending_object_info, 'calculating_range': calculating_range,
                 'damage_types': object_attack_profile.damage_types,
                 'damage_source_type': 'object', 'damage_source_id': dirty.objects[attacking_object_index].id });
@@ -2459,7 +2459,7 @@ const world = require('./world.js');
             }
 
             // No AI - Do the attack/defense normally
-            await game_object.damage(dirty, { 'object_index': object_index, 'damage_amount': damage_amount,
+            await game_object.damage(dirty, object_index, damage_amount, {
                 'damage_types': player_attack_profile.damage_types,
                 'battle_linker': battle_linker, 'object_info': object_info, 'calculating_range': calculating_range });
 

@@ -388,22 +388,33 @@ exports.canPlaceAround = canPlaceAround;
 
 //      object_index   |   damage_amount   |   battle_linker (OPTIONAL)   |   object_info   |   calculating_range (OPTIONAL)
 //      reason   |   damage_types   |   damage_source_type   |   damage_source_id
-async function damage(dirty, data) {
+/**
+ * @param {Object} dirty
+ * @param {number} object_index
+ * @param {number} damage_amount
+ * @param {Object} data
+ * @param {Object} data.object_info
+ * @param {Array=} data.damage_types
+ * @param {Object=} data.battle_linker
+ * @param {number=} data.calculating_range
+ * @param {String=} data.reason
+ */
+async function damage(dirty, object_index, damage_amount, data) {
     try {
 
-        if(!data.damage_types) {
+        if(typeof data.damage_types === 'undefined') {
             data.damage_types = [];
         }
 
-        let object_type_index = main.getObjectTypeIndex(dirty.objects[data.object_index].object_type_id);
+        let object_type_index = main.getObjectTypeIndex(dirty.objects[object_index].object_type_id);
 
 
-        let new_object_hp = dirty.objects[data.object_index].current_hp - data.damage_amount;
+        let new_object_hp = dirty.objects[object_index].current_hp - damage_amount;
 
         // send new object info to the room
         if(data.battle_linker) {
             io.to(data.object_info.room).emit('damaged_data',
-                {'object_id': dirty.objects[data.object_index].id, 'damage_amount': data.damage_amount, 'was_damaged_type': 'hp',
+                {'object_id': dirty.objects[object_index].id, 'damage_amount': damage_amount, 'was_damaged_type': 'hp',
                     'damage_source_type': data.battle_linker.attacking_type, 'damage_source_id': data.battle_linker.attacking_id,
                     'damage_types': data.damage_types,
                     'calculating_range': data.calculating_range });
@@ -412,7 +423,7 @@ async function damage(dirty, data) {
         // We know the damage source type
         else if(data.damage_source_type) {
             io.to(data.object_info.room).emit('damaged_data',
-                {'object_id': dirty.objects[data.object_index].id, 'damage_amount': data.damage_amount, 'was_damaged_type': 'hp',
+                {'object_id': dirty.objects[object_index].id, 'damage_amount': damage_amount, 'was_damaged_type': 'hp',
                     'damage_source_type': data.damage_source_type, 'damage_source_id': data.damage_source_id,
                     'damage_types': data.damage_types,
                     'calculating_range': data.calculating_range });
@@ -420,7 +431,7 @@ async function damage(dirty, data) {
 
         else {
             io.to(data.object_info.room).emit('damaged_data',
-                {   'object_id': dirty.objects[data.object_index].id, 'damage_amount': data.damage_amount,
+                {   'object_id': dirty.objects[object_index].id, 'damage_amount': damage_amount,
                     'was_damaged_type': 'hp', 'damage_types': data.damage_types });
 
         }
@@ -430,9 +441,9 @@ async function damage(dirty, data) {
 
             console.log("Object is destroyed");
             if(data.battle_linker) {
-                await deleteObject(dirty, { 'object_index': data.object_index, 'reason': 'battle' });
+                await deleteObject(dirty, { 'object_index': object_index, 'reason': 'battle' });
             } else {
-                await deleteObject(dirty, { 'object_index': data.object_index, 'reason': 'decay' });
+                await deleteObject(dirty, { 'object_index': object_index, 'reason': 'decay' });
             }
 
 
@@ -440,18 +451,18 @@ async function damage(dirty, data) {
         } else {
             //console.log("object not dead yet");
 
-            dirty.objects[data.object_index].current_hp = new_object_hp;
-            dirty.objects[data.object_index].has_change = true;
-            await sendInfo(false, data.object_info.room, dirty, data.object_index);
+            dirty.objects[object_index].current_hp = new_object_hp;
+            dirty.objects[object_index].has_change = true;
+            await sendInfo({}, data.object_info.room, dirty, object_index);
 
             // If the object is a ship
             if(dirty.object_types[object_type_index].is_ship) {
-                await game.generateShipDamagedTiles(dirty, data.object_index);
+                await game.generateShipDamagedTiles(dirty, object_index);
             }
         }
 
     } catch(error) {
-        log(chalk.red("Error in game.damage: " + error));
+        log(chalk.red("Error in game_object.damage: " + error));
         console.error(error);
     }
 }
@@ -1501,7 +1512,7 @@ async function sendInfo(socket, room, dirty, object_index, source = '') {
         let object_type_index = main.getObjectTypeIndex(dirty.objects[object_index].object_type_id);
 
 
-        if(socket !== false) {
+        if(helper.notFalse(socket)) {
             socket.emit('object_info', { 'object': dirty.objects[object_index] });
         }
 
@@ -1519,7 +1530,7 @@ async function sendInfo(socket, room, dirty, object_index, source = '') {
                 //    " against object id: " + dirty.objects[object_index].id);
                 if(inventory_item.owned_by_object_id === dirty.objects[object_index].id) {
                     //log(chalk.cyan("Found an inventory item. ID: " + inventory_item.id));
-                    if(socket !== false) {
+                    if(helper.notFalse(socket)) {
                         //log(chalk.cyan("Sending inventory item id: " + dirty.inventory_items[i].id + " to socket"));
                         socket.emit('inventory_item_info', { 'inventory_item': dirty.inventory_items[i] });
                     } else if(room !== false) {
@@ -1537,7 +1548,7 @@ async function sendInfo(socket, room, dirty, object_index, source = '') {
 
             for(let i = 0; i < dirty.rules.length; i++) {
                 if(dirty.rules[i] && dirty.rules[i].object_id === dirty.objects[object_index].id) {
-                    if(socket !== false) {
+                    if(helper.notFalse(socket)) {
                         socket.emit('rule_info', { 'rule': dirty.rules[i] });
                     }
 

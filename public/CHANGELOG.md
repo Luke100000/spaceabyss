@@ -1,4 +1,18 @@
-## [0.2.5] - 2020-10-24
+## [0.2.6] - 2020-10-20
+
+
+### Fixed
+- Some spawning was looking for a socket that was never there and throwing errors. Now passing in an empty Object
+- Jelly should now stack properly all the time
+- Blue Algae should now stack properly all the time
+- Inventory items sometimes going to the wrong body
+
+### Changed
+- Eating and addiction linkers will now stick with the body they originally were on. This also gives players the ability to go from body to body, healing them up. 
+- Getting to the point of researching AI Fragments was INCREDIBLY difficult. Failures on researching weren't increasing skill fast enough. I'm now using the same
+system as with manufacturing. Increasing skill by the full complexity of the item on a failure.
+
+## [0.2.5] - 2020-10-17
 
 ### Added
 

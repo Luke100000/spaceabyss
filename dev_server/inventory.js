@@ -143,7 +143,7 @@ async function addToInventory(socket, dirty, data) {
             // lets see if we have an inventory item index
             if(data.adding_to_type === 'player') {
                 inventory_item_index = dirty.inventory_items.findIndex(function (obj) {
-                    return obj && obj.player_id === data.adding_to_id && obj.object_type_id === data.object_type_id; });
+                    return obj && obj.player_id === data.adding_to_id && obj.body_id === dirty.players[player_index].body_id && obj.object_type_id === data.object_type_id; });
             } else if(data.adding_to_type === 'npc') {
                 inventory_item_index = dirty.inventory_items.findIndex(function (obj) {
                     return obj && obj.npc_id === data.adding_to_id && obj.object_type_id === data.object_type_id; });
