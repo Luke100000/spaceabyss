@@ -1523,7 +1523,7 @@ function drawCoord(type, coord) {
     }
     else if (coord.object_type_id) {
 
-        mapAddObjectType(coord.object_type_id, coord.tile_x, coord.tile_y);
+        mapAddObjectType(coord, coord.tile_x, coord.tile_y);
     } else {
         map.putTileAt(-1, coord.tile_x, coord.tile_y, false, 'layer_object');
     }
@@ -5118,6 +5118,126 @@ function getCoordIndex(data) {
     }
 }
 
+function getCoordNeighbor(coord_type, coord_index, direction) {
+
+
+
+    let current_coord = {};
+
+    if(coord_type === 'ship') {
+        current_coord = ship_coords[coord_index];
+    } else if(coord_type === 'galaxy') {
+        current_coord = coords[coord_index];
+    } else if(coord_type === 'planet') {
+        current_coord = planet_coords[coord_index];
+    }
+
+    if(isFalse(current_coord)) {
+        console.log("Invalid coord sent in. " + coord_type + " index: " + coord_index);
+        return false;
+    }
+
+
+    // We do this on the server, but can't do this on the client. The client has imperfect information about 
+    // what tiles exist
+    /*
+    if(direction === 'down' && typeof current_coord.down_coord_index !== 'undefined') {
+        return current_coord.down_coord_index;
+    }
+
+    if(direction === 'up' && typeof current_coord.up_coord_index !== 'undefined') {
+        return current_coord.up_coord_index;
+    }
+
+    if(direction === 'left' && typeof current_coord.left_coord_index !== 'undefined') {
+        return current_coord.left_coord_index;
+    }
+
+    if(direction === 'right' && typeof current_coord.right_coord_index !== 'undefined') {
+        return current_coord.right_coord_index;
+    }
+    */
+
+    // We're going to have to find the index
+    let adjacent_coord_data = { 'tile_x': current_coord.tile_x, 'tile_y': current_coord.tile_y };
+
+    if(direction === 'down') {
+        adjacent_coord_data.tile_y++;
+    } else if(direction === 'up') {
+        adjacent_coord_data.tile_y--;
+    } else if(direction === 'left') {
+        adjacent_coord_data.tile_x--;
+    } else if(direction === 'right') {
+        adjacent_coord_data.tile_x++;
+    }
+
+
+    let adjacent_coord_index = -1;
+    if(coord_type === 'ship') {
+        adjacent_coord_data.ship_id = current_coord.ship_id;
+        adjacent_coord_data.level = current_coord.level;
+
+        adjacent_coord_index = getShipCoordIndex(adjacent_coord_data);
+    } else if(coord_type === 'planet') {
+        adjacent_coord_data.planet_id = current_coord.planet_id;
+        adjacent_coord_data.planet_level = current_coord.level;
+
+        adjacent_coord_index = getPlanetCoordIndex(adjacent_coord_data);
+    } else if(coord_type === 'galaxy') {
+        adjacent_coord_index = getCoordIndex(adjacent_coord_data);
+    }
+
+
+    if(direction === 'down') {
+        current_coord.down_coord_index = adjacent_coord_index;
+
+        if(current_coord.up_coord_index === "undefined") {
+            current_coord.up_coord_index = adjacent_coord_index;
+        }
+
+        if(adjacent_coord_index !== -1 && coord_type === 'ship' && typeof ship_coords[adjacent_coord_index].up_coord_index === "undefined") {
+            ship_coords[adjacent_coord_index].up_coord_index = coord_index;
+        } else if(adjacent_coord_index !== -1 && coord_type === 'planet' && typeof planet_coords[adjacent_coord_index].up_coord_index === "undefined") {
+            planet_coords[adjacent_coord_index].up_coord_index = coord_index;
+        } else if(adjacent_coord_index !== -1 && coord_type === 'galaxy' && typeof coords[adjacent_coord_index].up_coord_index === "undefined") {
+            coords[adjacent_coord_index].up_coord_index = coord_index;
+        }
+    } else if(direction === 'up') {
+        current_coord.up_coord_index = adjacent_coord_index;
+
+        if(adjacent_coord_index !== -1 && coord_type === 'ship' && typeof ship_coords[adjacent_coord_index].down_coord_index === "undefined") {
+            ship_coords[adjacent_coord_index].down_coord_index = coord_index;
+        } else if(adjacent_coord_index !== -1 && coord_type === 'planet' && typeof planet_coords[adjacent_coord_index].down_coord_index === "undefined") {
+            planet_coords[adjacent_coord_index].down_coord_index = coord_index;
+        } else if(adjacent_coord_index !== -1 && coord_type === 'galaxy' && typeof coords[adjacent_coord_index].down_coord_index === "undefined") {
+            coords[adjacent_coord_index].down_coord_index = coord_index;
+        }
+    } else if(direction === 'left') {
+        current_coord.left_coord_index = adjacent_coord_index;
+
+        if(adjacent_coord_index !== -1 && coord_type === 'ship' && typeof ship_coords[adjacent_coord_index].right_coord_index === "undefined") {
+            ship_coords[adjacent_coord_index].right_coord_index = coord_index;
+        } else if(adjacent_coord_index !== -1 && coord_type === 'planet' && typeof planet_coords[adjacent_coord_index].right_coord_index === "undefined") {
+            planet_coords[adjacent_coord_index].right_coord_index = coord_index;
+        } else if(adjacent_coord_index !== -1 && coord_type === 'galaxy' && typeof coords[adjacent_coord_index].right_coord_index === "undefined") {
+            coords[adjacent_coord_index].right_coord_index = coord_index;
+        }
+    } else if(direction === 'right') {
+        current_coord.right_coord_index = adjacent_coord_index;
+
+        if(adjacent_coord_index !== -1 && coord_type === 'ship' && typeof ship_coords[adjacent_coord_index].left_coord_index === "undefined") {
+            ship_coords[adjacent_coord_index].left_coord_index = coord_index;
+        } else if(adjacent_coord_index !== -1 && coord_type === 'planet' && typeof planet_coords[adjacent_coord_index].left_coord_index === "undefined") {
+            planet_coords[adjacent_coord_index].left_coord_index = coord_index;
+        } else if(adjacent_coord_index !== -1 && coord_type === 'galaxy' && typeof coords[adjacent_coord_index].left_coord_index === "undefined") {
+            coords[adjacent_coord_index].left_coord_index = coord_index;
+        }
+    }
+
+    return adjacent_coord_index;
+
+}
+
 function getFloorTypeIndex(floor_type_id) {
     return floor_types.findIndex(function (obj) { return obj && obj.id === parseInt(floor_type_id); });
 }
@@ -5269,12 +5389,19 @@ function mapAddFloor(floor_type_id, tile_x, tile_y, coord) {
 
 }
 
-function mapAddObjectType(object_type_id, tile_x, tile_y) {
+function mapAddObjectType(coord, tile_x, tile_y) {
+    object_type_id = coord.object_type_id;
     let object_type_index = object_types.findIndex(function (obj) { return obj && obj.id === parseInt(object_type_id); });
 
 
     if (object_type_index === -1) {
         return false;
+    }
+
+    if(object_types[object_type_index].is_wall) {
+        //console.log("Adding desert wall");
+        mapAddWall(coord, object_type_index, tile_x, tile_y);
+        return;
     }
 
     // we might have display linkers for this
@@ -5578,6 +5705,148 @@ function mapAddObject(object) {
         }
     }
 
+
+
+}
+
+function mapAddWall(coord, object_type_index, tile_x, tile_y) {
+
+    let debug_coord_id = 0;
+
+    if(coord.id === debug_coord_id) {
+        console.log("In mapAddWall for debug coord id: " + coord.id);
+    }
+
+
+    let coord_index = -1;
+    let scope = 'planet';
+    
+    if(coord.planet_id) {
+        coord_index = planet_coords.findIndex(function(obj) { return obj && obj.id === coord.id; });
+    } else if(coord.ship_id) {
+        scope = 'ship';
+        coord_index = ship_coords.findIndex(function(obj) { return obj && obj.id === coord.id; });
+    }
+
+    
+
+    if(coord_index === -1) {
+        console.log("Could not find the coord the wall is on");
+        return false;
+    }
+
+    // look for coords above or below us. If either has our index as -1, we have to update them as well
+
+    getCoordNeighbor(scope, coord_index, 'up');
+    getCoordNeighbor(scope, coord_index, 'down');
+
+    let wall_above = false;
+    let wall_below = false;
+
+
+    // There's a coord below
+    if(coord.down_coord_index !== -1) {
+
+        let down_coord = {};
+        if(scope === 'planet' && planet_coords[coord.down_coord_index]) {
+            down_coord = planet_coords[coord.down_coord_index];
+        } else if(scope === 'ship' && ship_coords[coord.down_coord_index]) {
+            down_coord = ship_coords[coord.down_coord_index];
+        }
+        if(notFalse(down_coord) && down_coord.object_type_id) {
+
+            let down_coord_object_type_index = getObjectTypeIndex(down_coord.object_type_id);
+    
+            if(object_types[down_coord_object_type_index].is_wall) {
+                wall_below = true;
+            }
+    
+    
+            // The coord below us didn't have correct information about what was above it
+            if(down_coord.up_coord_index === 'undefined' || down_coord.up_coord_index === -1 && 
+                object_types[down_coord_object_type_index].is_wall) {
+                //console.log("Coord below needs to be updated");
+                
+
+                mapAddWall(down_coord, down_coord_object_type_index, down_coord.tile_x, down_coord.tile_y);
+                
+                
+            }
+        }
+    }
+
+
+    // There's a coord above
+    if(coord.up_coord_index !== -1) {
+
+        let up_coord = {};
+        if(scope === 'planet' && planet_coords[coord.up_coord_index]) {
+            up_coord = planet_coords[coord.up_coord_index];
+        } else if(scope === 'ship' && ship_coords[coord.up_coord_index]) {
+            up_coord = ship_coords[coord.up_coord_index];
+        }
+
+        if(notFalse(up_coord) && up_coord.object_type_id) {
+            //console.log("There is a coord above");
+    
+            let up_coord_object_type_index = getObjectTypeIndex(up_coord.object_type_id);
+    
+            if(object_types[up_coord_object_type_index].is_wall) {
+                //console.log("It's a wall");
+                wall_above = true;
+            }
+    
+            // The coord above us didn't have correct information about what was below it
+            if(typeof up_coord.down_coord_index === 'undefined' || up_coord.down_coord_index === -1 && 
+                object_types[up_coord_object_type_index].is_wall) {
+                //console.log("Coord above needs to be updated");
+                
+    
+                mapAddWall(up_coord, up_coord_object_type_index, up_coord.tile_x, up_coord.tile_y);
+    
+                
+            }
+        }
+    }
+    
+
+
+    if(coord.id === debug_coord_id) {
+        console.log("Wall above: " + wall_above + " wall below: " + wall_below);
+    }
+
+    let above_display_linker_index = object_type_display_linkers.findIndex(function(obj) { return obj.object_type_id === object_types[object_type_index].id && 
+        obj.layer === 'layer_above'; });
+    let face_display_linker_index = object_type_display_linkers.findIndex(function(obj) { return obj.object_type_id === object_types[object_type_index].id && 
+        obj.layer === 'layer_object'; });
+
+    // and now us - if we have no wall below, just draw the face
+    if(!wall_below) {
+        if(coord.id === debug_coord_id) {
+            console.log("Coord id: " + coord.id + " Placed full face");
+            console.log("Placed object game file index: " + object_type_display_linkers[face_display_linker_index].game_file_index);
+        }
+
+        map.putTileAt(object_type_display_linkers[face_display_linker_index].game_file_index, coord.tile_x, coord.tile_y, false, 'layer_object');
+    } else if(wall_above) {
+        if(coord.id === debug_coord_id) {
+            console.log("Coord id: " + coord.id + " Placed full above tile");
+        }
+        map.putTileAt(object_type_display_linkers[above_display_linker_index].game_file_index, coord.tile_x, coord.tile_y, false, 'layer_above');
+    } else if(!wall_above && wall_below) {
+        map.putTileAt(object_type_display_linkers[above_display_linker_index].game_file_index, coord.tile_x, coord.tile_y, false, 'layer_above');
+    }
+    
+    if(!wall_above) {
+        //console.log("Placed 1/2 above tile");
+        if(coord.tile_y === 0) {
+            map.putTileAt(object_type_display_linkers[above_display_linker_index].game_file_index, coord.tile_x, coord.tile_y, false, 'layer_above');
+        } else {
+            map.putTileAt(object_type_display_linkers[above_display_linker_index].game_file_index + 1, coord.tile_x, coord.tile_y -1, false, 'layer_above');
+        }
+        
+    }
+    
 
 
 }
@@ -5938,11 +6207,10 @@ function checkForClientMove(time, tile_x = false, tile_y = false) {
             console.log("Move was denied");
         }
 
-        console.log("Move was denied");
 
         if(players[client_player_index].planet_coord_id) {
 
-            console.log("move failed on planet");
+            //console.log("move failed on planet");
 
             if(last_failed_move_coord_id === planet_coords[checking_coord_index].id && getRandomIntInclusive(1,30) === 3) {
                 addInfoNumber(players[client_player_index].sprite.x, players[client_player_index].sprite.y,
@@ -10141,6 +10409,77 @@ function submitPriceUpdate(inventory_item_id) {
 }
 
 
+function switchChat(new_chat_tab) {
+    if(new_chat_tab == 'local') {
+        current_chat = 'local';
+        $('#chat_global').hide();
+        $('#chatswitch_global').attr('disabled', false);
+        $('#chat_faction').hide();
+        $('#chatswitch_faction').attr('disabled', false);
+        $('#chat_local').show();
+        $('#chatswitch_local').attr('disabled', true);
+        $('#chat_system').hide();
+        $('#chatswitch_system').attr('disabled', false);
+
+        unread_local_messages = 0;
+
+        $('#chatswitch_local').text("Local");
+
+
+    } else if(new_chat_tab == 'global') {
+        current_chat = 'global';
+        $('#chat_local').hide();
+        $('#chatswitch_local').attr('disabled', false);
+        $('#chat_faction').hide();
+        $('#chatswitch_faction').attr('disabled', false);
+        $('#chat_global').show();
+        $('#chatswitch_global').attr('disabled', true);
+        $('#chat_system').hide();
+        $('#chatswitch_system').attr('disabled', false);
+
+        unread_global_messages = 0;
+
+        $('#chatswitch_global').text("Global");
+
+    } else if(new_chat_tab == 'faction') {
+        current_chat = 'faction';
+        $('#chat_local').hide();
+        $('#chatswitch_local').attr('disabled', false);
+        $('#chat_global').hide();
+        $('#chatswitch_global').attr('disabled', false);
+        $('#chat_faction').show();
+        $('#chatswitch_faction').attr('disabled', true);
+        $('#chat_system').hide();
+        $('#chatswitch_system').attr('disabled', false);
+
+        unread_faction_messages = 0;
+
+        $('#chatswitch_faction').text("Faction");
+    } else if(new_chat_tab == 'system') {
+        current_chat = 'system';
+        $('#chat_local').hide();
+        $('#chatswitch_local').attr('disabled', false);
+        $('#chat_global').hide();
+        $('#chatswitch_global').attr('disabled', false);
+        $('#chat_faction').hide();
+        $('#chatswitch_faction').attr('disabled', false);
+        $('#chat_system').show();
+        $('#chatswitch_system').attr('disabled', true);
+
+        unread_system_messages = 0;
+
+        $('#chatswitch_system').text("System");
+
+        let out = document.getElementById("chat_system");
+
+        out.scrollTop = out.scrollHeight - out.clientHeight;
+
+    }
+
+    $('#chat_message').focus();
+}
+
+
 function tileToPixel(tile_number) {
     return tile_number * tile_size;
 }
@@ -10796,6 +11135,29 @@ setInterval(function(){
             socket.emit('request_news');
         }
         
+    }
+
+}, 3000);
+
+
+
+setInterval(function() {
+
+    if(new_player_joined && notify_on_new_player) {
+
+        if(document.title === "New Player Joined!") {
+            document.title = "Space Abyss";
+        } else {
+            document.title = "New Player Joined!";
+        }
+
+        
+
+    }
+
+    if(!document.hidden && document.title === "New Player Joined!") {
+        document.title = "Space Abyss";
+        new_player_joined = false;
     }
 
 }, 3000);

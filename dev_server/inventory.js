@@ -540,12 +540,12 @@ exports.priceUpdate = priceUpdate;
 
 /**
  * 
- * @param {*} socket 
+ * @param {Object} socket 
  * @param {Object} dirty 
  * @param {Object} data 
  * @param {number} data.inventory_item_id
  * @param {number} data.amount
- * @param {number=} data.player_id
+ * @param {number=} data.player_index
  * @param {number=} data.object_id
  * @param {number=} data.removing_object_type_id
  */
@@ -563,11 +563,13 @@ async function removeFromInventory(socket, dirty, data) {
             //console.log("Was sent in inventory item id: " + inventory_item_id);
             inventory_item_index = await main.getInventoryItemIndex(inventory_item_id);
 
-        } else if (data.player_id) {
+        }  else if(typeof data.player_index !== 'undefined') {
             inventory_item_index = dirty.inventory_items.findIndex(function (obj) {
-                return obj && obj.player_id === data.player_id && obj.object_type_id === data.removing_object_type_id;
+                return obj && obj.player_id === dirty.players[data.player_index].id && obj.body_id === dirty.players[data.player_index].body_id && 
+                obj.object_type_id === data.removing_object_type_id;
             });
-
+            
+        
         } else if (data.object_id) {
             inventory_item_index = dirty.inventory_items.findIndex(function (obj) {
                 return obj && obj.object_id === data.object_id && obj.object_type_id === data.removing_object_type_id;
@@ -583,7 +585,7 @@ async function removeFromInventory(socket, dirty, data) {
         //    " amount: " + dirty.inventory_items[inventory_item_index].amount);
 
 
-        if (dirty.inventory_items[inventory_item_index].amount === data.amount) {
+        if (dirty.inventory_items[inventory_item_index].amount <= data.amount) {
             console.log("Deleting inventory item id: " + dirty.inventory_items[inventory_item_index].id);
 
             // We are trying/testing to not await for this - since the delete can take quite a bit of time

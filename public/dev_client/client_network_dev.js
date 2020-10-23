@@ -320,6 +320,12 @@ socket.on('chat', function(data){
         }
 
 
+        if(data.message.indexOf("entered the galaxy!") !== -1) {
+            console.log("New player joined");
+            new_player_joined = true;
+        }
+
+
     } else if(data.scope == 'faction') {
         $('#chat_faction').append($('<p>').text(data.message));
 
@@ -930,7 +936,7 @@ socket.on('login_data', function(data) {
         client_player_id = parseInt(data.player_id);
         $("#login_container").hide();
         $("#chat_container").show();
-
+        switchChat("global");
 
 
 
@@ -2323,6 +2329,26 @@ socket.on('planet_coord_info', function (data) {
             }
         }
 
+        let up_index = -2;
+        let down_index = -2;
+        if(typeof planet_coords[coord_index].up_coord_index !== 'undefined') {
+            up_index = planet_coords[coord_index].up_coord_index;
+        }
+
+        if(typeof planet_coords[coord_index].down_coord_index !== 'undefined') {
+            down_index = planet_coords[coord_index].down_coord_index;
+        }
+
+
+        planet_coords[coord_index] = data.planet_coord;
+
+        if(up_index !== -2) {
+            planet_coords[coord_index].up_coord_index = up_index;
+        }
+
+        if(down_index !== -2) {
+            planet_coords[coord_index].down_coord_index = down_index;
+        }
 
         // Only want to draw coords we should draw
         if(client_player_index === -1 || shouldDraw(client_player_info.coord, planet_coords[coord_index], 'planet_coord_info')) {
@@ -2334,7 +2360,7 @@ socket.on('planet_coord_info', function (data) {
             // So I'm testing just always drawing the coord here. Otherwise we could do an additional check to see if there
             // is nothing on the floor layer, and draw based on that or changes.
 
-            drawCoord('planet', data.planet_coord);
+            drawCoord('planet', planet_coords[coord_index]);
 
             /*
             if(planet_coords[coord_index].monster_id !== data.planet_coord.monster_id) {
@@ -2361,7 +2387,7 @@ socket.on('planet_coord_info', function (data) {
         }
 
 
-        planet_coords[coord_index] = data.planet_coord;
+
 
     }
 
@@ -2459,6 +2485,13 @@ socket.on('planet_type_display_linker_info', function(data) {
 socket.on('player_count_info', function(data) {
     $('#players_connected').empty();
     $('#players_connected').append(data.player_count + " Players Connected");
+
+    if(!sent_loney_player_message) {
+        sent_loney_player_message = true;
+        if(data.player_count <= 1) {
+            $('#chat_global').append($('<p>').text("If this chat isn't super active, hit us up on Discord https://discord.gg/FRF5sRR"));
+        }
+    }
 });
 
 socket.on('player_info', function(data) {

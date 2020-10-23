@@ -1,3 +1,23 @@
+## [0.2.7] - 2020-10-23
+
+
+### Added
+- Error message when trying to switch bodies from too far away
+- Global message when a player logs in. Eventually I'll turn this off, but I feel its important for community buildint at this stage of Space Abyss's development
+- Option to have your browser notify you when another player logs in.
+- Line of Sight for ranged weapons (only active on players for now )
+
+### Fixed
+- Inventory being taken from non active bodies while assembling 
+- Manufacturing Augment can now be assembled again - in the Augmentation Station
+
+
+### Changed
+- Default chat set to global
+- debug mode is using browser local storage instead of a cookie. The server doesn't need to know if you are using debug mode or not
+- The way walls are drawn. This should make them look better overall.
+
+
 ## [0.2.6] - 2020-10-20
 
 

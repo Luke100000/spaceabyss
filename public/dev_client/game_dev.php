@@ -7,10 +7,17 @@ include('config.php');
     // Get settings from cookies on the client
     var debug_mode = false;
     var mobile_mode = false;
+    var notify_on_new_player = false;
 
-    if (document.cookie.split(';').filter((item) => item.includes('debug_mode=1')).length) {
+    if (localStorage.getItem("debug") === "true") {
         debug_mode = true;
     }
+
+    if (localStorage.getItem("notify_on_new_player") === "true") {
+        notify_on_new_player = true;
+    }
+
+
 
 
 </script>
@@ -588,6 +595,9 @@ include('config.php');
                 <div id="debug_mode">
 
                 </div>
+                <div id="notify_on_new_player">
+
+                </div>
             </div>
 
         </div>
@@ -608,6 +618,12 @@ include('config.php');
         $('#debug_mode').append("Debug Mode True <button id=\"debug_mode\">Toggle Debug Mode</button>");
     } else {
         $('#debug_mode').append("Debug Mode False <button id=\"debug_mode\">Toggle Debug Mode</button>");
+    }
+
+    if(notify_on_new_player) {
+        $('#notify_on_new_player').append("Notify when new player joins: True <button id=\"notifynewplayer\">Set to False</button>");
+    } else {
+        $('#notify_on_new_player').append("Notify when new player joins: False <button id=\"notifynewplayer\">Set to True</button>");
     }
 
 </script>
@@ -734,6 +750,7 @@ include('config.php');
     var our_time;
     var map_needs_redraw = false;
     var need_to_place_player = true;
+    var new_player_joined = false;
     var player_id;
     var player;
     var player_health_bar;
@@ -747,6 +764,7 @@ include('config.php');
     var pointer_down_time = 0;
     var pointer_up_time = 10000;
     var moving_direction = false;
+    var sent_loney_player_message = false;
     var spaceport_display_needs_regeneration = false;
     var text_admin;
     var text_admin_time;
@@ -775,8 +793,8 @@ include('config.php');
     var damage_energies;
 
     var hp_bar_y_offset = 30;
-    var chat_mode = 'local';
-    $('#chatswitch_local').attr('disabled', true);
+    var chat_mode = 'global';
+    $('#chatswitch_global').attr('disabled', true);
     var unread_local_messages = 0;
     var unread_global_messages = 0;
     var unread_faction_messages = 0;

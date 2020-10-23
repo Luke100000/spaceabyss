@@ -2107,6 +2107,19 @@ const world = require('./world.js');
                 return false;
             }
 
+            // Gotta see if there is something that would be blocking us
+            if(calculating_range > 1) {
+                console.time("hasLineOfSight");
+                let has_line_of_sight = await game.hasLineOfSight(dirty, player_info.scope, player_info.coord_index, monster_info.coord_index);
+                console.timeEnd("hasLineOfSight");
+                if(!has_line_of_sight) {
+                    console.log("Something is blocking ranged line of sight. Removing battle linker");
+                    world.removeBattleLinkers(dirty, { 'battle_linker_id': battle_linker.id });
+                    return false;
+                }
+                
+            }
+
             let player_attack_profile = await calculatePlayerAttack(dirty, player_index, player_body_index, calculating_range);
 
             let attack = player_attack_profile.damage_amount;

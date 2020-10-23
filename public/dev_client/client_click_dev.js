@@ -324,148 +324,7 @@ $(document).on('click', 'button', function () {
     if(split_name[0] == 'chatswitch') {
 
 
-        /*
-        $('#chat').empty();
-
-        if(split_name[1] == 'local') {
-            current_chat = 'local';
-
-            chat_local.forEach(function(chat) {
-                $('#chat').append($('<p>').text(chat));
-            });
-
-            $('#chatswitch_global').attr('disabled', false);
-            $('#chatswitch_faction').attr('disabled', false);
-            $('#chatswitch_local').attr('disabled', true);
-            $('#chatswitch_system').attr('disabled', false);
-
-            unread_local_messages = 0;
-
-            $('#chatswitch_local').text("Local");
-
-
-        } else if(split_name[1] === 'global') {
-            current_chat = 'global';
-
-            chat_global.forEach( function(chat) {
-                $('#chat').append($('<p>').text(chat));
-            });
-
-            $('#chatswitch_local').attr('disabled', false);
-            $('#chatswitch_faction').attr('disabled', false);
-            $('#chatswitch_global').attr('disabled', true);
-            $('#chatswitch_system').attr('disabled', false);
-
-            unread_global_messages = 0;
-
-            $('#chatswitch_global').text("Global");
-
-        } else if(split_name[1] === 'faction') {
-            current_chat = 'faction';
-
-            chat_faction.forEach(function(chat) {
-                $('#chat').append($('<p>').text(chat));
-            });
-
-            $('#chatswitch_local').attr('disabled', false);
-            $('#chatswitch_global').attr('disabled', false);
-            $('#chatswitch_faction').attr('disabled', true);
-            $('#chatswitch_system').attr('disabled', false);
-
-            unread_faction_messages = 0;
-
-            $('#chatswitch_faction').text("Faction");
-        } else if(split_name[1] === 'system') {
-            current_chat = 'system';
-
-            chat_system.forEach(function(chat) {
-                $('#chat').append($('<p>').text(chat));
-            });
-
-            $('#chatswitch_local').attr('disabled', false);
-            $('#chatswitch_global').attr('disabled', false);
-            $('#chatswitch_faction').attr('disabled', false);
-            $('#chatswitch_system').attr('disabled', true);
-
-            unread_system_messages = 0;
-
-            $('#chatswitch_system').text("System");
-
-        }
-
-        let out = document.getElementById("chat");
-
-        out.scrollTop = out.scrollHeight - out.clientHeight;
-        */
-
-
-        if(split_name[1] == 'local') {
-            current_chat = 'local';
-            $('#chat_global').hide();
-            $('#chatswitch_global').attr('disabled', false);
-            $('#chat_faction').hide();
-            $('#chatswitch_faction').attr('disabled', false);
-            $('#chat_local').show();
-            $('#chatswitch_local').attr('disabled', true);
-            $('#chat_system').hide();
-            $('#chatswitch_system').attr('disabled', false);
-
-            unread_local_messages = 0;
-
-            $('#chatswitch_local').text("Local");
-
-
-        } else if(split_name[1] == 'global') {
-            current_chat = 'global';
-            $('#chat_local').hide();
-            $('#chatswitch_local').attr('disabled', false);
-            $('#chat_faction').hide();
-            $('#chatswitch_faction').attr('disabled', false);
-            $('#chat_global').show();
-            $('#chatswitch_global').attr('disabled', true);
-            $('#chat_system').hide();
-            $('#chatswitch_system').attr('disabled', false);
-
-            unread_global_messages = 0;
-
-            $('#chatswitch_global').text("Global");
-
-        } else if(split_name[1] == 'faction') {
-            current_chat = 'faction';
-            $('#chat_local').hide();
-            $('#chatswitch_local').attr('disabled', false);
-            $('#chat_global').hide();
-            $('#chatswitch_global').attr('disabled', false);
-            $('#chat_faction').show();
-            $('#chatswitch_faction').attr('disabled', true);
-            $('#chat_system').hide();
-            $('#chatswitch_system').attr('disabled', false);
-
-            unread_faction_messages = 0;
-
-            $('#chatswitch_faction').text("Faction");
-        } else if(split_name[1] == 'system') {
-            current_chat = 'system';
-            $('#chat_local').hide();
-            $('#chatswitch_local').attr('disabled', false);
-            $('#chat_global').hide();
-            $('#chatswitch_global').attr('disabled', false);
-            $('#chat_faction').hide();
-            $('#chatswitch_faction').attr('disabled', false);
-            $('#chat_system').show();
-            $('#chatswitch_system').attr('disabled', true);
-
-            unread_system_messages = 0;
-
-            $('#chatswitch_system').text("System");
-
-            let out = document.getElementById("chat_system");
-
-            out.scrollTop = out.scrollHeight - out.clientHeight;
-
-        }
-
-        $('#chat_message').focus();
+        switchChat(split_name[1]);
 
 
     }
@@ -510,15 +369,44 @@ $(document).on('click', 'button', function () {
     // Toggle debug mode
     if(split_name[0] === 'debug') {
 
+        console.log("debug mode click");
+
         $('#debug_mode').empty();
 
+        let current_debug_status = localStorage.getItem("debug");
+        console.log("current_debug_status:");
+        console.log(current_debug_status);
+
+        // localStorage only actually stores values as strings 
+        if(current_debug_status === null || current_debug_status === false || current_debug_status === "false") {
+
+
+            $('#debug_mode').append("Debug Mode True");
+            $('#debug_mode').append("<button id=\"debug_mode\">Toggle Debug Mode</button>");
+
+            localStorage.setItem("debug", true);
+            debug_mode = true;
+
+            console.log("Set debug_mode to true");
+        } else {
+
+            localStorage.setItem("debug", false);
+            debug_mode = false;
+
+
+            $('#debug_mode').append("Debug Mode False");
+            $('#debug_mode').append("<button id=\"debug_mode\">Toggle Debug Mode</button>");
+            console.log("Set debug_mode to false");
+        }
+
+
+        /* old cookie based - seeing if I like using localStorage more
         // turing it off
         if (document.cookie.split(';').filter((item) => item.includes('debug_mode=1')).length) {
             document.cookie = "debug_mode=0";
             //document.cookie = "debug_mode=0; max-age=31536000";
 
-            $('#debug_mode').append("Debug Mode False");
-            $('#debug_mode').append("<button id=\"debug_mode\">Toggle Debug Mode</button>");
+
             debug_mode = false;
             //console.log(document.cookie);
         }
@@ -527,11 +415,11 @@ $(document).on('click', 'button', function () {
 
             document.cookie = "debug_mode=1";
 
-            $('#debug_mode').append("Debug Mode True");
-            $('#debug_mode').append("<button id=\"debug_mode\">Toggle Debug Mode</button>");
+           
 
             debug_mode = true;
         }
+        */
     }
 
 
@@ -896,6 +784,31 @@ $(document).on('click', 'button', function () {
         socket.emit('move_data', { 'destination_coord_type': client_player_info.scope, 'destination_coord_id': client_player_info.coord.id, 'movement_direction': 'none' });
         $('#click_menu').empty();
         $('#click_menu').hide();
+    }
+
+
+    if(split_name[0] === "notifynewplayer") {
+        $('#notify_on_new_player').empty();
+
+        let current_notify_status = localStorage.getItem("notify_on_new_player");
+
+        if(current_notify_status === null || current_notify_status === false || current_notify_status === "false") {
+
+
+            $('#notify_on_new_player').append("Notify on new player True");
+            $('#notify_on_new_player').append("<button id=\"notifynewplayer\">Change to False</button>");
+
+            localStorage.setItem("notify_on_new_player", true);
+            notify_on_new_player = true;
+        } else {
+
+            localStorage.setItem("notify_on_new_player", false);
+            notify_on_new_player = false;
+
+
+            $('#notify_on_new_player').append("Notify on new player False");
+            $('#notify_on_new_player').append("<button id=\"notifynewplayer\">Change to True</button>");
+        }
     }
 
 

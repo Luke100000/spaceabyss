@@ -3035,6 +3035,10 @@ async function loginPlayer(socket, dirty, data) {
         }
 
 
+        io.emit('chat', { 'scope': 'global',
+             'message': "The player " + dirty.players[socket.player_index].name + " has entered the galaxy!"});
+
+
 
 
     } catch(error) {

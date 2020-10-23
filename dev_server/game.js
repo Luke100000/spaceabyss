@@ -826,7 +826,8 @@ const world = require('./world.js');
                         assembly_linker.required_for_object_type_id === dirty.object_types[object_type_index].id);
                     // each time we meet the requirement set, we can increment the potential max_amount
                     for(let i = 0; i < dirty.inventory_items.length; i++ ){
-                        if(dirty.inventory_items[i] && dirty.inventory_items[i].player_id === dirty.players[player_index].id) {
+                        if(dirty.inventory_items[i] && dirty.inventory_items[i].player_id === dirty.players[player_index].id && 
+                            dirty.inventory_items[i].body_id === dirty.players[player_index].body_id) {
 
                             for(assembly_linker of assembly_linkers) {
                                 if(dirty.inventory_items[i].object_type_id === assembly_linker.object_type_id) {
@@ -4215,6 +4216,7 @@ exports.eat = eat;
                     return true;
                 } else {
                     console.log("Too far away");
+                    return false;
                 }
 
 
@@ -4236,6 +4238,7 @@ exports.eat = eat;
                     return true;
                 } else {
                     console.log("Too far away");
+                    return false;
                 }
 
 
@@ -4257,6 +4260,179 @@ exports.eat = eat;
 
 
     }
+
+
+    async function hasLineOfSight(dirty, scope, starting_coord_index, destination_coord_index) {
+        try {
+
+
+            let blocked_line_of_sight = false;
+            let tiles_inspected = 0;
+            let done = false;
+            let destination_coord = {};
+
+            while(blocked_line_of_sight === false && tiles_inspected < 12 && done === false) {
+
+                let tile_x_difference = 0;
+                let tile_y_difference = 0;
+                let starting_coord = {};
+                
+
+                if(scope === 'planet') {
+
+                    starting_coord = dirty.planet_coords[starting_coord_index];
+                    if(helper.isFalse(destination_coord)) {
+                        destination_coord = dirty.planet_coords[destination_coord_index];
+                    }
+
+                    tile_x_difference = dirty.planet_coords[starting_coord_index].tile_x - dirty.planet_coords[destination_coord_index].tile_x;
+                    tile_y_difference = dirty.planet_coords[starting_coord_index].tile_y - dirty.planet_coords[destination_coord_index].tile_y;
+
+                } else if(scope === 'ship') {
+
+                    starting_coord = dirty.ship_coords[starting_coord_index];
+                    if(helper.isFalse(destination_coord)) {
+                        destination_coord = dirty.ship_coords[destination_coord_index];
+                    }
+
+                    tile_x_difference = dirty.ship_coords[starting_coord_index].tile_x - dirty.ship_coords[destination_coord_index].tile_x;
+                    tile_y_difference = dirty.ship_coords[starting_coord_index].tile_y - dirty.ship_coords[destination_coord_index].tile_y;
+                } else if(scope === 'galaxy') {
+
+                    starting_coord = dirty.coords[starting_coord_index];
+                    if(helper.isFalse(destination_coord)) {
+                        destination_coord = dirty.coords[destination_coord_index];
+                    }
+                    tile_x_difference = dirty.coords[starting_coord_index].tile_x - dirty.coords[destination_coord_index].tile_x;
+                    tile_y_difference = dirty.coords[starting_coord_index].tile_y - dirty.coords[destination_coord_index].tile_y;
+
+                }
+
+
+                let checking_coord = {};
+
+                // left or right
+                if(Math.abs(tile_x_difference) >= Math.abs(tile_y_difference)) {
+
+                    // left
+                    if(tile_x_difference > 1) {
+                        await map.getCoordNeighbor(dirty, scope, starting_coord_index, 'left');
+
+                        if(starting_coord.left_coord_index === -1) {
+                            blocked_line_of_sight = true;
+                            done = true;
+                        } else {
+
+                            if(scope === 'planet') {
+                                checking_coord = dirty.planet_coords[starting_coord.left_coord_index];
+                            } else if(scope === 'ship') {
+                                checking_coord = dirty.ship_coords[starting_coord.left_coord_index];
+                            } else if(scope === 'galaxy') {
+                                checking_coord = dirty.coords[starting_coord.left_coord_index];
+                            }
+
+                            starting_coord_index = starting_coord.left_coord_index;
+                        }
+                        
+                    } 
+                    // right
+                    else if(tile_x_difference < -1) {
+                        await map.getCoordNeighbor(dirty, scope, starting_coord_index, 'right');
+
+                        if(starting_coord.right_coord_index === -1) {
+                            blocked_line_of_sight = true;
+                            done = true;
+                        } else {
+
+                            if(scope === 'planet') {
+                                checking_coord = dirty.planet_coords[starting_coord.right_coord_index];
+                            } else if(scope === 'ship') {
+                                checking_coord = dirty.ship_coords[starting_coord.right_coord_index];
+                            } else if(scope === 'galaxy') {
+                                checking_coord = dirty.coords[starting_coord.right_coord_index];
+                            }
+
+                            starting_coord_index = starting_coord.right_coord_index;
+                        }
+                    }
+                } 
+                // up or down
+                else {
+
+                    // up
+                    if(tile_y_difference > 1) {
+                        await map.getCoordNeighbor(dirty, scope, starting_coord_index, 'up');
+
+                        if(starting_coord.up_coord_index === -1) {
+                            blocked_line_of_sight = true;
+                            done = true;
+                        } else {
+
+                            if(scope === 'planet') {
+                                checking_coord = dirty.planet_coords[starting_coord.up_coord_index];
+                            } else if(scope === 'ship') {
+                                checking_coord = dirty.ship_coords[starting_coord.up_coord_index];
+                            } else if(scope === 'galaxy') {
+                                checking_coord = dirty.coords[starting_coord.up_coord_index];
+                            }
+
+                            starting_coord_index = starting_coord.up_coord_index;
+                        }
+                    } 
+                    // down
+                    else if(tile_y_difference < 1) {
+                        await map.getCoordNeighbor(dirty, scope, starting_coord_index, 'down');
+
+                        if(starting_coord.down_coord_index === -1) {
+                            blocked_line_of_sight = true;
+                            done = true;
+                        } else {
+
+                            if(scope === 'planet') {
+                                checking_coord = dirty.planet_coords[starting_coord.down_coord_index];
+                            } else if(scope === 'ship') {
+                                checking_coord = dirty.ship_coords[starting_coord.down_coord_index];
+                            } else if(scope === 'galaxy') {
+                                checking_coord = dirty.coords[starting_coord.down_coord_index];
+                            }
+
+                            starting_coord_index = starting_coord.down_coord_index;
+                        }
+                    }
+
+
+                }
+
+
+                // The one condition we have for blocking (for now anyways) is an object we can't walk on
+                if(checking_coord.object_type_id) {
+                    let object_type_index = main.getObjectTypeIndex(checking_coord.object_type_id);
+
+                    if(!dirty.object_types[object_type_index].can_walk_on) {
+                        blocked_line_of_sight = true;
+                    }
+                }
+
+                tiles_inspected++;
+            }
+
+
+            if(blocked_line_of_sight) {
+                return false;
+            }
+
+            return true;
+
+
+        } catch(error){
+            log(chalk.red("Error in game.hasLineOfSight: " + error));
+            console.error(error);
+        }
+    }
+
+
+    exports.hasLineOfSight = hasLineOfSight;
+
 
     async function mine(socket, dirty, data) {
         try {
@@ -9666,7 +9842,7 @@ exports.eat = eat;
 
             socket.emit('chat', { 'message': socket.player_name + ' planted ' + dirty.object_types[object_type_index].name});
 
-            let remove_inventory_data = { 'player_id': socket.player_id, 'inventory_item_id': dirty.inventory_items[inventory_item_index].id,
+            let remove_inventory_data = { 'player_index': socket.player_index, 'inventory_item_id': dirty.inventory_items[inventory_item_index].id,
                 'amount': 1 };
             await inventory.removeFromInventory(socket, dirty, remove_inventory_data);
 
@@ -9872,7 +10048,7 @@ exports.eat = eat;
                     dirty.assembly_linkers[i].required_for_object_type_id === type_id) {
                     do_remove = true;
 
-                    let remove_inventory_data = { 'player_id': socket.player_id, 'removing_object_type_id': dirty.assembly_linkers[i].object_type_id,
+                    let remove_inventory_data = { 'player_index': socket.player_index, 'removing_object_type_id': dirty.assembly_linkers[i].object_type_id,
                         'amount': dirty.assembly_linkers[i].amount };
                     inventory.removeFromInventory(socket, dirty, remove_inventory_data);
                 }
@@ -9881,7 +10057,7 @@ exports.eat = eat;
                     dirty.assembly_linkers[i].required_for_floor_type_id === type_id) {
                     do_remove = true;
 
-                    let remove_inventory_data = { 'player_id': socket.player_id, 'removing_object_type_id': dirty.assembly_linkers[i].object_type_id,
+                    let remove_inventory_data = { 'player_index': socket.player_index, 'removing_object_type_id': dirty.assembly_linkers[i].object_type_id,
                         'amount': dirty.assembly_linkers[i].amount };
                     inventory.removeFromInventory(socket, dirty, remove_inventory_data);
                 }
@@ -10578,7 +10754,8 @@ exports.eat = eat;
                 new_body_coord_index = await main.getPlanetCoordIndex({ 'planet_coord_id': dirty.objects[object_index].planet_coord_id });
                 old_player_coord_index = await main.getPlanetCoordIndex({'planet_coord_id': dirty.players[player_index].planet_coord_id });
 
-                if(!await canInteract(socket, dirty, 'planet_coord', dirty.planet_coords[new_body_coord_index])) {
+                let can_interact_result = await canInteract(socket, dirty, 'planet_coord', dirty.planet_coords[new_body_coord_index]);
+                if(can_interact_result === false) {
                     body_switch_allowed = false;
                 }
             } else if(dirty.players[player_index].ship_coord_id) {
@@ -10609,9 +10786,14 @@ exports.eat = eat;
             }
 
             if(!body_switch_allowed) {
-                log(chalk.yellow("Body switch is not allowed. Body is being used by player id: " + dirty.players[other_player_index].id));
-                log(chalk.yellow("Their body id: " + dirty.players[other_player_index].body_id));
-                log(chalk.yellow("Our id: " + dirty.players[player_index].id + " body id: " + dirty.players[player_index].body_id));
+                if(other_player_index !== -1) {
+                    log(chalk.yellow("Body switch is not allowed. Body is being used by player id: " + dirty.players[other_player_index].id));
+                    log(chalk.yellow("Their body id: " + dirty.players[other_player_index].body_id));
+                    log(chalk.yellow("Our id: " + dirty.players[player_index].id + " body id: " + dirty.players[player_index].body_id));
+                } else {
+                    socket.emit('result_info', { 'status': 'failure', 'text': "Too far away" });
+                }
+                
                 return false;
             }
 
