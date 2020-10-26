@@ -2246,6 +2246,13 @@ const world = require('./world.js');
 
             await (pool.query("DELETE FROM planet_coords WHERE planet_id = ?", [dirty.planets[data.planet_index].id]));
 
+            // and delete any spawned events on this planet
+            for(let i = 0; i < dirty.spawned_events.length; i++) {
+                if(dirty.spawned_events[i] && dirty.spawned_events[i].planet_id === dirty.planet[data.planet_index].id) {
+                    await event.deleteSpawnedEvent(dirty, i);
+                }
+            }
+
             dirty.planets[data.planet_index].ai_id = false;
             dirty.planets[data.planet_index].player_id = false;
             dirty.planets[data.planet_index].has_change = true;
@@ -7212,7 +7219,7 @@ exports.eat = eat;
 
                     /************** ASSEMBLY IS FINISHED ********************/
 
-                    log(chalk.green("\nAssembly Finished"));
+                    //log(chalk.green("\nAssembly Finished"));
 
                     // We absolutely want the assembly to be deleted even if there are errors down the road. Making 700 ships is butt!
                     // Increment the amount completed
@@ -7295,7 +7302,7 @@ exports.eat = eat;
 
                         // If it was a food processer, we use the cooking skill
                         if(dirty.objects[assembler_object_index].object_type_id === 119) {
-                            log(chalk.cyan("Assembly finished in a food processor"));
+                            //log(chalk.cyan("Assembly finished in a food processor"));
                             dirty.players[player_index].cooking_skill_points++;
                         } else {
                             // Otherwise we use the manufacturing skill points

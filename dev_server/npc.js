@@ -953,7 +953,7 @@ const planet = require('./planet.js');
                 dirty.npcs[npc_index].farming_skill_points++;
                 dirty.npcs[npc_index].has_change = true;
 
-                console.log("Npc id: " + dirty.npcs[npc_index].id + " harvested a spawned object");
+                //console.log("Npc id: " + dirty.npcs[npc_index].id + " harvested a spawned object");
 
             } else if(object_type_index !== -1 && dirty.object_types[object_type_index].can_pick_up) {
 

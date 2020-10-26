@@ -5325,10 +5325,11 @@ async function tickStorytellers(dirty, force_event_id = 0) {
 
             if(helper.isFalse(dirty.storytellers[i].current_spawned_event_id)) {
 
-                console.log("Going to try and spawn the next story event");
+                console.log("No current spawned event");
 
                 // If there's no current spawned event, randomly choose a good/bad one!
                 let rand_chance = helper.getRandomIntInclusive(1,100);
+                console.log("Rand chance: " + rand_chance);
                 if(rand_chance < 4 || force_event_id) {
 
                     let difficulty_ceiling = dirty.storytellers[i].previous_difficulty;

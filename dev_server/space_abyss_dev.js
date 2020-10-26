@@ -483,6 +483,8 @@ inits.init(function(callback) {
     });
 });
 
+
+
 // Load Monster Types Into Memory
 inits.init(1, function(callback) {
 
@@ -865,21 +867,22 @@ inits.init(function(callback) {
 inits.init(1, function(callback) {
   
 
-    pool.query("SELECT * FROM planet_coords WHERE spawns_monster_type_id != false", function(err, rows, fields) {
+    pool.query("SELECT * FROM planet_coords", function(err, rows, fields) {
         if(err) throw err;
 
         if(rows[0]) {
             dirty.planet_coords = rows;
-            console.log("Loaded " + rows.length + " planet coords that spawn monsters");
+            console.log("Loaded " + rows.length + " planet coords");
         }
 
-        console.log("Loaded planet coords that spawn monsters into memory");
+        console.log("Loaded planet coords into memory");
 
         callback(null);
     });
    
 });
 
+/*
 // Load up planet coords that are > level 0
 inits.init(function(callback) {
 
@@ -900,6 +903,7 @@ inits.init(function(callback) {
    
     
 });
+*/
 
 
 // Load up our planets!
@@ -4867,6 +4871,18 @@ async function tickEvents(dirty) {
     }
 }
 
+async function tickRegularMonsterSpawns(dirty) {
+
+    try {
+
+        event.tickRegularMonsterSpawns(dirty);
+
+    } catch(error) {
+        log(chalk.red("Error in tickRegularMonsterSpawns: " + error));
+        console.error(error);
+    }
+}
+
 /*
 async function tickGrowths(dirty) {
     try {
@@ -5113,6 +5129,7 @@ setInterval(tickMonsterDecay, 30000, dirty);
 
 
 // 60 seconds
+setInterval(tickRegularMonsterSpawns, 60000, dirty);
 setInterval(tickWaitingDrops, 60000, dirty);
 
 

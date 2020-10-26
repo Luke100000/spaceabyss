@@ -3,7 +3,7 @@
 ***************************************
 
 bug spawner
-
+player body that eats trash (mass of moving maggots)
 
 ***************************
 ** GENERAL DRAWING IDEAS **

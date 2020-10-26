@@ -1,3 +1,19 @@
+## [0.2.8] - 2020-10-26
+
+### Added
+- More planet types that the initial storyteller event can spawn on
+
+### Fixed
+- Old spawned events will now be deleted when a planet is destroyed by an admin
+- Ice blocks not spawning on Frozen Planet
+- Lots of bugs with events spawning
+- Diamond asteroid display
+
+### Changed
+- All planet coords now load when the server starts up. There were too many issues with trying to selectively load planet coords at startup
+- Increased the chance of a successful monster spawn 
+- Increased the spawn rate of AI Dust Deposits on the main level of the desert planet
+
 ## [0.2.7] - 2020-10-23
 
 

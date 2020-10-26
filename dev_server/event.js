@@ -204,7 +204,7 @@ async function spawn(dirty, event_index, data) {
 
         
 
-        let debug_event_ids = [];
+        let debug_event_ids = [0];
 
         let planet_index = -1;
         let planet_event_linker_index = -1;
@@ -242,6 +242,9 @@ async function spawn(dirty, event_index, data) {
             planet_index = await planet.getIndex(dirty, { 'planet_id': data.planet_id, 'source': 'event.spawn' });
 
             if(planet_index === -1) {
+                if(debug_event_ids.indexOf(dirty.events[event_index].id) !== -1) {
+                    console.log("Could not get the planet this event is supposed to spawn on");
+                }
                 return -1;
             }
 
@@ -300,7 +303,8 @@ async function spawn(dirty, event_index, data) {
                 possible_planet_coords = dirty.planet_coords.filter(
                     planet_coord => planet_coord.planet_id === dirty.planets[planet_index].id &&
                         planet_coord.level <= dirty.planet_event_linkers[planet_event_linker_index].highest_planet_level &&
-                        planet_coord.level >= dirty.planet_event_linkers[planet_event_linker_index].lowest_planet_level
+                        planet_coord.level >= dirty.planet_event_linkers[planet_event_linker_index].lowest_planet_level &&
+                        !planet_coord.object_type_id
                 );
 
 
@@ -308,7 +312,9 @@ async function spawn(dirty, event_index, data) {
 
 
 
+            // I don't think we need this anymore, since we are now loading ALL planet coords when the server starts
             // This is STUPID. 
+            /*
             if(possible_planet_coords.length === 0) {
                 log(chalk.yellow("No possible planet coords for planet event " + dirty.events[event_index].name));
 
@@ -326,6 +332,7 @@ async function spawn(dirty, event_index, data) {
 
                 return -1;
             }
+            */
 
             let origin_planet_coord = possible_planet_coords[Math.floor(Math.random() * possible_planet_coords.length)];
             origin_planet_coord_id = origin_planet_coord.id;
@@ -726,8 +733,10 @@ async function spawn(dirty, event_index, data) {
                         return false;
                     }
 
-                    console.log("Created new object id: " + dirty.objects[new_object_index].id +
-                        " with spawned_event_id: " + dirty.objects[new_object_index].spawned_event_id);
+                    if(debug_event_ids.indexOf(dirty.events[event_index].id) !== -1) {
+                        console.log("Created new object id: " + dirty.objects[new_object_index].id +
+                            " with spawned_event_id: " + dirty.objects[new_object_index].spawned_event_id);
+                    }
 
                     if(debug_event_ids.indexOf(dirty.events[event_index].id) !== -1) {
                         console.log("Linker spawns_off_grid is: " + event_linker.spawns_off_grid);
@@ -739,17 +748,17 @@ async function spawn(dirty, event_index, data) {
                             await game_object.place(false, dirty, { 'object_index': new_object_index,
                                 'planet_coord_index': linker_coord_index });
 
-                            console.log("Object's planet_coord_id: " + dirty.objects[new_object_index].planet_coord_id);
+                            //console.log("Object's planet_coord_id: " + dirty.objects[new_object_index].planet_coord_id);
                         } else if(event_scope === 'ship') {
                             await game_object.place(false, dirty, { 'object_index': new_object_index,
                                 'ship_coord_index': linker_coord_index });
 
-                            console.log("Object's ship_coord_id: " + dirty.objects[new_object_index].ship_coord_id);
+                            //console.log("Object's ship_coord_id: " + dirty.objects[new_object_index].ship_coord_id);
                         } else if(event_scope === 'galaxy') {
                             await game_object.place(false, dirty, { 'object_index': new_object_index,
                                 'coord_index': linker_coord_index });
 
-                            console.log("Object's coord_id: " + dirty.objects[new_object_index].coord_id);
+                            //console.log("Object's coord_id: " + dirty.objects[new_object_index].coord_id);
                         }
                     } else {
 
@@ -905,6 +914,162 @@ async function spawn(dirty, event_index, data) {
 
 exports.spawn = spawn;
 
+async function spawnOnPlanet(dirty, i, debug_planet_type_id) {
+
+    try {
+        if(dirty.planets[i].planet_type_id === debug_planet_type_id) {
+            log(chalk.cyan("Spawning events for planet id: " + dirty.planets[i].id + " planet_type_id: " + dirty.planets[i].planet_type_id));
+        }
+
+
+        // Figure out the % HP the planet has
+
+        if(helper.isFalse(dirty.planets[i].current_hp)) {
+            dirty.planets[i].current_hp = 1;
+            dirty.planets[i].has_change = true;
+        }
+
+        let hp_percent = dirty.planets[i].current_hp / dirty.planets[i].max_hp * 100;
+
+        
+
+        // rarity roll for every planet
+        let rarity = helper.rarityRoll();
+
+        if(dirty.planets[i].planet_type_id === debug_planet_type_id) {
+            console.log("Rarity roll: " + rarity);
+        }
+
+        let planet_event_linkers = dirty.planet_event_linkers.filter(planet_event_linker =>
+            planet_event_linker.planet_type_id === dirty.planets[i].planet_type_id && planet_event_linker.rarity <= rarity &&
+            planet_event_linker.minimum_planet_hp_percent <= hp_percent && planet_event_linker.maximum_planet_hp_percent >= hp_percent);
+
+        if(planet_event_linkers.length !== 0) {
+
+            if(dirty.planets[i].planet_type_id === debug_planet_type_id) {
+                console.log("Have " + planet_event_linkers.length + " events for planet type id: " + dirty.planets[i].planet_type_id);
+                console.log(planet_event_linkers);
+            }
+
+            let random_planet_event_linker = planet_event_linkers[Math.floor(Math.random() * planet_event_linkers.length)];
+
+
+
+            // get the event
+            let event_index = dirty.events.findIndex(function(obj) { return obj && obj.id === random_planet_event_linker.event_id; });
+
+            if(event_index !== -1 && dirty.planets[i].planet_type_id === debug_planet_type_id) {
+                console.log("Randomly chose event id: " + dirty.events[event_index].id + " " + dirty.events[event_index].name);
+            } else if(dirty.planets[i].planet_type_id === debug_planet_type_id) {
+                log(chalk.yellow("Could not find that event. event id: " + random_planet_event_linker.event_id));
+            }
+
+            if(event_index !== -1 && dirty.events[event_index].is_active) {
+                if(dirty.planets[i].planet_type_id === debug_planet_type_id) {
+                    console.log("Going to try to spawn event " + dirty.events[event_index].name + " id: " + dirty.events[event_index].id + " on planet id: " + dirty.planets[i].id);
+                }
+                
+                let spawned_event_index = await spawn(dirty, event_index, { 'planet_id': dirty.planets[i].id });
+
+                if(dirty.planets[i].planet_type_id === debug_planet_type_id) {
+                    console.log("spawned_event_index: " + spawned_event_index);
+                }
+
+                if(spawned_event_index !== -1 && random_planet_event_linker.is_regular_monster_spawn) {
+                    dirty.planets[i].current_regular_monster_count++;
+                    console.log("Increased the regular monster count on planet id: " + dirty.planets[i].id + " to: " + dirty.planets[i].current_regular_monster_count);
+                } else if(random_planet_event_linker.is_regular_monster_spawn) {
+                    log(chalk.yellow("Linker is a regular monster spawn, but we did not increment the current_regular_monster_count. spawned_event_index: " + spawned_event_index));
+                }
+            }
+
+        }
+    } catch(error) {
+        log(chalk.red("Error in event.spawnOnPlanet: " + error));
+        console.error(error);
+    }
+}
+
+exports.spawnOnPlanet = spawnOnPlanet;
+
+
+async function tickRegularMonsterSpawns(dirty) {
+
+    try {
+
+
+        for(let i = 0; i < dirty.planets.length; i++) {
+            if(dirty.planets[i] && dirty.planets[i].planet_type_id !== 26) {
+
+                // Planets don't automatically come with any knowledge of the % of regular monster they are at
+                if(typeof dirty.planets[i].maximum_regular_monster_count === 'undefined') {
+                    let maximum_regular_monster_count = 0;
+                    let current_regular_monster_count = 0;
+
+                    for(let pe = 0; pe < dirty.planet_event_linkers.length; pe++) {
+                        if(dirty.planet_event_linkers[pe] && dirty.planet_event_linkers[pe].planet_type_id === dirty.planets[i].planet_type_id && 
+                            dirty.planet_event_linkers[pe].is_regular_monster_spawn) {
+
+
+                                maximum_regular_monster_count += dirty.planet_event_linkers[pe].limit_per_planet;
+
+                            }
+                    }
+
+                    dirty.planets[i].maximum_regular_monster_count = maximum_regular_monster_count;
+
+                    console.log("Set planet maximum_regular_monster_count to: " + dirty.planets[i].maximum_regular_monster_count);
+
+                    // gotta figure out a way to see how many monsters we have right now
+                    // most basic (but a little less than 100% accurate) is to just count the number of monsters on the planet
+                    for(let m = 0; m < dirty.monsters.length; m++) {
+
+                        if(dirty.monsters[m] && dirty.monsters[m].planet_coord_id) {
+                            if(typeof dirty.monsters[m].planet_coord_index === 'undefined') {
+
+                            }
+
+                            if(dirty.monsters[m].planet_coord_index !== -1) {
+                                if(dirty.planet_coords[dirty.monsters[m].planet_coord_index].planet_id === dirty.planets[i].id) {
+                                    current_regular_monster_count++;
+                                }
+                            }
+                        }
+
+                    }
+
+                    dirty.planets[i].current_regular_monster_count = current_regular_monster_count;
+                    console.log("planet currently has: " + current_regular_monster_count + " monsters");
+                }
+
+
+
+                if(dirty.planets[i].current_regular_monster_count * 2 < dirty.planets[i].maximum_regular_monster_count) {
+                    console.log("Planet id: " + dirty.planets[i].id + " is low on monsters ( " + dirty.planets[i].current_regular_monster_count + 
+                    "/" + dirty.planets[i].maximum_regular_monster_count + ") - lets spawn some FAST!!!");
+
+                    let spawn_count = 0;
+                    while(spawn_count < 5) {
+
+                        await spawnOnPlanet(dirty, i);
+                        spawn_count++;
+                    }
+                }
+                
+
+
+            }
+        }
+
+    } catch(error) {
+        log(chalk.red("Error in event.tickRegularMonsterSpawns: " + error));
+        console.error(error);
+    }
+
+}
+
+exports.tickRegularMonsterSpawns = tickRegularMonsterSpawns;
+
 async function tickSpawnedEvents(dirty) {
 
     try {
@@ -958,66 +1123,7 @@ async function tickSpawning(dirty) {
         for(let i = 0; i < dirty.planets.length; i++) {
             if(dirty.planets[i]) {
 
-                if(dirty.planets[i].planet_type_id === debug_planet_type_id) {
-                    log(chalk.cyan("Spawning events for planet id: " + dirty.planets[i].id + " planet_type_id: " + dirty.planets[i].planet_type_id));
-                }
-
-
-                // Figure out the % HP the planet has
-
-                if(helper.isFalse(dirty.planets[i].current_hp)) {
-                    dirty.planets[i].current_hp = 1;
-                    dirty.planets[i].has_change = true;
-                }
-
-                let hp_percent = dirty.planets[i].current_hp / dirty.planets[i].max_hp * 100;
-
-                
-
-                // rarity roll for every planet
-                let rarity = helper.rarityRoll();
-
-                if(dirty.planets[i].planet_type_id === debug_planet_type_id) {
-                    console.log("Rarity roll: " + rarity);
-                }
-
-                let planet_event_linkers = dirty.planet_event_linkers.filter(planet_event_linker =>
-                    planet_event_linker.planet_type_id === dirty.planets[i].planet_type_id && planet_event_linker.rarity <= rarity &&
-                    planet_event_linker.minimum_planet_hp_percent <= hp_percent && planet_event_linker.maximum_planet_hp_percent >= hp_percent);
-
-                if(planet_event_linkers.length !== 0) {
-
-                    if(dirty.planets[i].planet_type_id === debug_planet_type_id) {
-                        console.log("Have " + planet_event_linkers.length + " events for planet type id: " + dirty.planets[i].planet_type_id);
-                        console.log(planet_event_linkers);
-                    }
-
-                    let random_planet_event_linker = planet_event_linkers[Math.floor(Math.random() * planet_event_linkers.length)];
-
-
-
-                    // get the event
-                    let event_index = dirty.events.findIndex(function(obj) { return obj && obj.id === random_planet_event_linker.event_id; });
-
-                    if(event_index !== -1 && dirty.planets[i].planet_type_id === debug_planet_type_id) {
-                        console.log("Randomly chose event id: " + dirty.events[event_index].id + " " + dirty.events[event_index].name);
-                    } else if(dirty.planets[i].planet_type_id === debug_planet_type_id) {
-                        log(chalk.yellow("Could not find that event. event id: " + random_planet_event_linker.event_id));
-                    }
-
-                    if(event_index !== -1 && dirty.events[event_index].is_active) {
-                        if(dirty.planets[i].planet_type_id === debug_planet_type_id) {
-                            console.log("Going to try to spawn event " + dirty.events[event_index].name + " id: " + dirty.events[event_index].id + " on planet id: " + dirty.planets[i].id);
-                        }
-                        
-                        let spawning_result = await spawn(dirty, event_index, { 'planet_id': dirty.planets[i].id });
-
-                        if(dirty.planets[i].planet_type_id === debug_planet_type_id) {
-                            console.log("Spawning result: " + spawning_result);
-                        }
-                    }
-
-                }
+                spawnOnPlanet(dirty, i, debug_planet_type_id);
 
             }
         }

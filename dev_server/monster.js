@@ -587,6 +587,7 @@ async function deleteMonster(dirty, monster_index, data = {}) {
         //log(chalk.yellow("MONSTER IS DEAD"));
 
         let monster_type_index = dirty.monster_types.findIndex(function(obj) { return obj && obj.id === dirty.monsters[monster_index].monster_type_id; });
+        let planet_index = -1;
 
 
         if(monster_type_index === -1) {
@@ -597,11 +598,13 @@ async function deleteMonster(dirty, monster_index, data = {}) {
         let monster_info = await getCoordAndRoom(dirty, monster_index);
 
 
+
         // If the monster is associate with a coord, remove it from that coord
         if(monster_info.scope === 'galaxy') {
             await main.updateCoordGeneric(false, { 'coord_index': monster_info.coord_index, 'monster_id': false });
         } else if(monster_info.scope === 'planet') {
             await main.updateCoordGeneric(false, { 'planet_coord_index': monster_info.coord_index, 'monster_id': false });
+            planet_index = await planet.getIndex(dirty, { 'planet_id': monster_info.coord.planet_id });
         } else if(monster_info.scope === 'ship') {
             await main.updateCoordGeneric(false, { 'ship_coord_index': monster_info.coord_index, 'monster_id': false });
             console.log("Updated ship coord to no object_id");
@@ -698,6 +701,7 @@ async function deleteMonster(dirty, monster_index, data = {}) {
 
         // If a planet coord spawned the monster, we cam update that to false
         //console.log("Going to set spawned monster id to false");
+        // TODO I believe I can deprecate this - and in fact if I can't, I should do it differently
         let spawned_monster_planet_coord_index = await main.getPlanetCoordIndex({'spawned_monster_id': dirty.monsters[monster_index].id });
         if(spawned_monster_planet_coord_index !== -1) {
             dirty.planet_coords[spawned_monster_planet_coord_index].spawned_monster_id = false;
@@ -761,8 +765,24 @@ async function deleteMonster(dirty, monster_index, data = {}) {
 
         }
 
-        if(check_spawned_event_id !== 0 && typeof data.skip_check_spawned_event !== 'undefined') {
+        if(check_spawned_event_id !== 0 && typeof data.skip_check_spawned_event === 'undefined') {
             console.log("Monster was part of a spawned event");
+
+            let spawned_event_index = dirty.spawned_events.findIndex(function(obj) { return obj && obj.id === check_spawned_event_id; });
+            if(spawned_event_index !== -1 && planet_index !== -1) {
+                console.log("Have the information we need to see if we modify the regular monster count");
+                // We need to get the planet event linker to see if this was a regular monster spawn
+                let planet_event_linker_index = dirty.planet_event_linkers.findIndex(function(obj) { return obj && 
+                    obj.event_id === dirty.spawned_events[spawned_event_index].event_id && obj.planet_type_id === dirty.planets[planet_index].planet_type_id; });
+
+                if(planet_event_linker_index !== -1 && dirty.planet_event_linkers[planet_event_linker_index].is_regular_monster_spawn) {
+                    dirty.planets[planet_index].current_regular_monster_count--;
+                    console.log("Reduced the current regular monster count on planet to: " + dirty.planets[planet_index].current_regular_monster_count);
+
+                } else {
+                    console.log("Did not reduce planet's regular monster count");
+                }
+            }
             await game.checkSpawnedEvent(dirty, check_spawned_event_id);
         }
 

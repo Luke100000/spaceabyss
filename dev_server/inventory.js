@@ -693,7 +693,7 @@ async function sendInventory(socket, room, dirty, type, type_id) {
             inventory_items = dirty.inventory_items.filter(inventory_item => inventory_item.player_id === type_id);
 
         } else if(type === 'object') {
-            console.log("Sending object Inventory for object id " + type_id);
+            //console.log("Sending object Inventory for object id " + type_id);
             inventory_items = dirty.inventory_items.filter(inventory_item => inventory_item.owned_by_object_id === type_id);
         }
 
