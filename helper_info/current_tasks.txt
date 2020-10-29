@@ -4,18 +4,6 @@ CURRENT GAMEPLAY TEST:
 
 DOING NOW:
 
-    Better text for the bug spawn event
-    Warning on a planet where a negative storytelling event is happening
-
-    Works on fake ads////real ads?
-        In Space Abyss You Can....
-        BECOME AN OCTOPUS
-        SURGICALLY IMPLANT A KNIFE IN YOUR HEAD
-        etc
-
-        Need to make 'advertisements' nightcity.love as an example of fake sci fi advertisments
-
-
 
     maps not updating on autopilot
 

@@ -1,3 +1,15 @@
+## [0.2.9] - 2020-10-28
+
+
+### Fixed
+- M HP and M AT will now stack properly
+
+### Added
+- M Man - manufacturing boost created from moss.
+- Clients will now receive limited information about spawned events associated with the game's storyteller
+- Galaxy news messages when a player defeats a negative galactic event
+- Warnings are displayed on a planet's information if there is a dangerous galaxy event happening on the planet
+
 ## [0.2.8] - 2020-10-26
 
 ### Added

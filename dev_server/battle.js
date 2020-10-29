@@ -417,7 +417,7 @@ const world = require('./world.js');
                             }
 
                             if(dirty.object_types[object_type_index].is_consumed_on_attack) {
-                                log(chalk.cyan("Consuming attack item"));
+                                //log(chalk.cyan("Consuming attack item"));
                                 decrement_equipment_linker_ids.push(equipment_linker.id);
                             }
 
@@ -824,7 +824,7 @@ const world = require('./world.js');
 
             // We still want an explosion effect there because IT IS COOL BEANS
             if(nothing_is_damaged) {
-                console.log("Trying to add explosion effect to tile even with no damage!! FUN!");
+                //console.log("Trying to add explosion effect to tile even with no damage!! FUN!");
                 if(data.planet_coord_index) {
                     io.to(room).emit('damaged_data', {
                         'planet_coord_id': dirty.planet_coords[data.planet_coord_index].id, 'damage_amount': 0, 'damage_types': [data.damage_type]

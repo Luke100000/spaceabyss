@@ -3043,6 +3043,25 @@ async function loginPlayer(socket, dirty, data) {
              'message': "The player " + dirty.players[socket.player_index].name + " has entered the galaxy!"});
 
 
+        // If the storyteller has a current event, we can send that now
+        for(let i = 0; i < dirty.storytellers.length; i++) {
+            if(dirty.storytellers[i] && dirty.storytellers[i].current_spawned_event_id) {
+                console.log("Storyteller has a current_spawned_event_id");
+
+                let spawned_event_index = dirty.spawned_events.findIndex(function(obj) { return obj && obj.id === dirty.storytellers[i].current_spawned_event_id; });
+                if(spawned_event_index !== -1) {
+                    let event_index = event.getIndex(dirty, dirty.spawned_events[spawned_event_index].event_id);
+                    if(event_index !== -1) {
+                        io.emit('spawned_event_info', { 'spawned_event': dirty.spawned_events[spawned_event_index] });
+                        io.emit('event_info', { 'event': dirty.events[event_index] });
+                    }
+                    
+                }
+
+            }
+        }
+
+
 
 
     } catch(error) {

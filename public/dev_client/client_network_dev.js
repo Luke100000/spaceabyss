@@ -685,6 +685,16 @@ socket.on('equipment_linker_info', function(data) {
 });
 
 
+socket.on('event_info', function(data) {
+    console.log("Got event info");
+
+    let event_index = events.findIndex(function(obj) { return obj && obj.id === parseInt(data.event.id); });
+
+    if(event_index === -1) {
+        events.push(data.event);
+    }
+});
+
 socket.on('coord_info', function (data) {
 
     if(!data.coord) {
@@ -3331,6 +3341,17 @@ socket.on('stop_attack_data', function(data) {
     }
 
 
+});
+
+
+socket.on('spawned_event_info', function(data) {
+
+    console.log("Got spawned_event_info");
+    let spawned_event_index = spawned_events.findIndex(function(obj) { return obj && obj.id === parseInt(data.spawned_event.id); });
+
+    if(spawned_event_index === -1) {
+        spawned_events.push(data.spawned_event);
+    }
 });
 
 

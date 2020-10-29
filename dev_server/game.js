@@ -1331,7 +1331,7 @@ const world = require('./world.js');
 
 
         } else {
-            console.log("Player exp is not enough to level up. Current xp: " + dirty.players[player_index].exp);
+            //console.log("Player exp is not enough to level up. Current xp: " + dirty.players[player_index].exp);
         }
 
     }
@@ -4544,7 +4544,16 @@ exports.eat = eat;
 
 
     // Check to see if a spawned event should be deleted
-    async function checkSpawnedEvent(dirty, spawned_event_id) {
+    /**
+     * @param {Object} dirty
+     * @param {number} spawned_event_id
+     * @param {Object} data
+     * @param {String=} data.reason - (deleteobject, deletemonster)
+     * @param {String=} data.reason_type - Type that caused this to happen - usually player
+     * @param {number=} data.reason_id - ID of the 
+     * 
+     */
+    async function checkSpawnedEvent(dirty, spawned_event_id, data = {}) {
 
         try {
 
@@ -4590,7 +4599,20 @@ exports.eat = eat;
             //let spawned_event_index = dirty.spawned_events.findIndex(function(obj) { return obj && obj.id === spawned_event_id; });
 
             console.log("Deleting");
-            await event.deleteSpawnedEvent(dirty, spawned_event_index);
+
+            let delete_spawned_event_data = {};
+            if(typeof data.reason_type !== 'undefined') {
+                delete_spawned_event_data.reason_type = data.reason_type;
+            }
+
+            if(typeof data.reason_id !== 'undefined') {
+                delete_spawned_event_data.reason_id = data.reason_id;
+            }
+
+            console.log("delete_spawned_event_data:");
+            console.log(delete_spawned_event_data);
+
+            await event.deleteSpawnedEvent(dirty, spawned_event_index, delete_spawned_event_data);
 
             return;
 

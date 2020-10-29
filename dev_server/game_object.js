@@ -441,7 +441,7 @@ async function damage(dirty, object_index, damage_amount, data) {
 
             console.log("Object is destroyed");
             if(data.battle_linker) {
-                await deleteObject(dirty, { 'object_index': object_index, 'reason': 'battle' });
+                await deleteObject(dirty, { 'object_index': object_index, 'reason': 'battle', 'reason_type': 'player', 'reason_id': data.battle_linker.attacking_id });
             } else {
                 await deleteObject(dirty, { 'object_index': object_index, 'reason': 'decay' });
             }
@@ -477,6 +477,8 @@ exports.damage = damage;
  * @param {Object} data
  * @param {number} data.object_index
  * @param {string=} data.reason
+ * @param {string=} data.reason_type - (player/monster/etc)
+ * @param {number=} data.reason_id
  * @param {Boolean=} data.skip_check_spawned_event
  * @requires main, game
  * @returns {Promise<boolean>}
@@ -761,7 +763,15 @@ async function deleteObject(dirty, data) {
 
 
         if(check_spawned_event_id !== 0 && !data.skip_check_spawned_event) {
-            await game.checkSpawnedEvent(dirty, check_spawned_event_id);
+            let check_spawned_event_data = { 'reason': 'deleteobject' };
+            if(typeof data.reason_type !== 'undefined') {
+                check_spawned_event_data.reason_type = data.reason_type;
+            }
+
+            if(typeof data.reason_id !== 'undefined') {
+                check_spawned_event_data.reason_id = data.reason_id;
+            }
+            await game.checkSpawnedEvent(dirty, check_spawned_event_id, check_spawned_event_data);
         }
 
         //console.log("Done in game_object.deleteObject");

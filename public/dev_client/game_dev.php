@@ -674,6 +674,7 @@ include('config.php');
     var equipment_linkers = [];
     var corporations = [];
     var eating_linkers = [];
+    var events = [];
     var factions = [];
     var floor_types = [];
     var floor_type_assembly_linkers = [];
@@ -709,6 +710,7 @@ include('config.php');
     var salvaging_linkers = [];
     var ship_coords = [];
     var skin_purchase_linkers = [];
+    var spawned_events = [];
     var user_player_attacking = [];
 
     var animations;

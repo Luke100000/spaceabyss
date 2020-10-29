@@ -14,11 +14,19 @@ const main = require('./space_abyss' + process.env.FILE_SUFFIX + '.js');
 const npc = require('./npc.js');
 const planet = require('./planet.js');
 const world = require('./world.js');
+const player = require('./player.js');
 
 
 
 
-async function deleteSpawnedEvent(dirty, spawned_event_index) {
+/**
+ * @param {Object} dirty
+ * @param {number} spawned_event_index
+ * @param {Object=} data
+ * @param {String=} data.reason_type - type that caused this. Generally a player
+ * @param {String=} data.reason_id - id of the type (generally a player id)
+ */
+async function deleteSpawnedEvent(dirty, spawned_event_index, data = {}) {
 
     try {
 
@@ -151,9 +159,40 @@ async function deleteSpawnedEvent(dirty, spawned_event_index) {
         }
 
 
+        console.log("going to check if a storyteller is associated with spawned event id: " + dirty.spawned_events[spawned_event_index].id);
         // See if this spawned event is associated with a storyteller, and if so, update the storyteller
         for(let i = 0; i < dirty.storytellers.length; i++) {
             if(dirty.storytellers[i].current_spawned_event_id === dirty.spawned_events[spawned_event_index].id) {
+
+                console.log("The spawned event we are deleting is part of a storyteller!");
+
+                // If this event had a difficulty associated with it, we add a 'hero' player log
+                if(dirty.events[event_index].difficulty && typeof data.reason_type !== 'undefined' && data.reason_type === 'player') {
+
+                    
+                    let player_index = await player.getIndex(dirty, { 'player_id': data.reason_id });
+                    let player_log_data = { 'event_id': dirty.spawned_events[spawned_event_index].event_id};
+
+                    let message = "The heroic " + dirty.players[player_index].name ;
+
+                    if(dirty.spawned_events[spawned_event_index].planet_id) {
+                        let planet_index = await planet.getIndex(dirty, { 'planet_id': dirty.spawned_events[spawned_event_index].planet_id })
+                        if(planet_index !== -1) {
+                            message += " has saved the planet " + dirty.planets[planet_index].name;
+                            player_log_data.planet_id = dirty.planets[planet_index].id;
+                        }
+                    }
+
+                    if(dirty.spawned_events[spawned_event_index].event_id === 90) {
+                        message += " from the bugs!";
+                    }
+
+
+                    world.addPlayerLog(dirty, player_index, message, player_log_data);
+                    
+
+
+                }
 
                 dirty.storytellers[i].current_spawned_event_id = 0;
                 dirty.storytellers[i].previous_event_ticks = dirty.storytellers[i].current_event_ticks;
@@ -1018,7 +1057,7 @@ async function tickRegularMonsterSpawns(dirty) {
 
                     dirty.planets[i].maximum_regular_monster_count = maximum_regular_monster_count;
 
-                    console.log("Set planet maximum_regular_monster_count to: " + dirty.planets[i].maximum_regular_monster_count);
+                    //console.log("Set planet maximum_regular_monster_count to: " + dirty.planets[i].maximum_regular_monster_count);
 
                     // gotta figure out a way to see how many monsters we have right now
                     // most basic (but a little less than 100% accurate) is to just count the number of monsters on the planet
@@ -1039,7 +1078,7 @@ async function tickRegularMonsterSpawns(dirty) {
                     }
 
                     dirty.planets[i].current_regular_monster_count = current_regular_monster_count;
-                    console.log("planet currently has: " + current_regular_monster_count + " monsters");
+                    //console.log("planet currently has: " + current_regular_monster_count + " monsters");
                 }
 
 

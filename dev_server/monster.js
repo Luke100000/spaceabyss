@@ -535,7 +535,13 @@ async function damage(dirty, monster_index, damage_amount, data) {
             }
 
             //console.log("Calling deleteMonster with monster index: " + monster_index);
-            await deleteMonster(dirty, monster_index, { 'reason': 'battle', 'battle_linker': data.battle_linker });
+            if(data.battle_linker.attacking_type === 'player') {
+                await deleteMonster(dirty, monster_index, { 'reason': 'battle', 'battle_linker': data.battle_linker,
+                'reason_type': 'player', 'reason_id': data.battle_linker.attacking_id });
+            } else {
+                await deleteMonster(dirty, monster_index, { 'reason': 'battle', 'battle_linker': data.battle_linker });
+            }
+            
             //console.log("Done with deleteMonster");
 
         } else {
@@ -571,6 +577,8 @@ exports.damage = damage;
  * @param {String=} data.reason
  * @param {boolean=} data.skip_check_spawned_event
  * @param {Object=} data.battle_linker
+ * @param {String=} data.reason_type
+ * @param {number=} data.reason_id
  */
 async function deleteMonster(dirty, monster_index, data = {}) {
 
@@ -783,7 +791,17 @@ async function deleteMonster(dirty, monster_index, data = {}) {
                     console.log("Did not reduce planet's regular monster count");
                 }
             }
-            await game.checkSpawnedEvent(dirty, check_spawned_event_id);
+
+            let check_spawned_event_data = { 'reason': 'deletemonster' };
+            if(typeof data.reason_type !== 'undefined') {
+                check_spawned_event_data.reason_type = data.reason_type;
+            }
+
+            if(typeof data.reason_id !== 'undefined') {
+                check_spawned_event_data.reason_id = data.reason_id;
+            }
+
+            await game.checkSpawnedEvent(dirty, check_spawned_event_id, check_spawned_event_data);
         }
 
 

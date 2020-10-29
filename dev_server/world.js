@@ -361,6 +361,15 @@ exports.addObjectToShipCoord = addObjectToShipCoord;
 
 
 
+/**
+ * @param {Object} dirty
+ * @param {number} player_index
+ * @param {String} message
+ * @param {Object} data
+ * @param {number=} data.ship_id
+ * @param {number=} data.planet_id
+ * @param {number=} data.event_id
+ */
 async function addPlayerLog(dirty, player_index, message, data = {}) {
 
     try {
