@@ -1110,9 +1110,12 @@ async function attachShipEngines(dirty, ship_index) {
         let total_engine_power = 0;
 
 
+        let current_engine_energy = 0;
+        let max_engine_energy = 0;
 
         for (let i = 0; i < dirty.ship_coords.length; i++) {
-            if (dirty.ship_coords[i] && dirty.ship_coords[i].ship_id === dirty.objects[ship_index].id && engine_object_type_ids.indexOf(dirty.ship_coords[i].object_type_id) !== -1) {
+            if (dirty.ship_coords[i] && dirty.ship_coords[i].ship_id === dirty.objects[ship_index].id && 
+                engine_object_type_ids.indexOf(dirty.ship_coords[i].object_type_id) !== -1) {
 
                 let drive_index = await game_object.getIndex(dirty, dirty.ship_coords[i].object_id);
 
@@ -1123,6 +1126,8 @@ async function attachShipEngines(dirty, ship_index) {
                     let drive_object_type_index = main.getObjectTypeIndex(dirty.ship_coords[i].object_type_id);
                     if(drive_object_type_index !== -1) {
                         total_engine_power += dirty.object_types[drive_object_type_index].engine_power;
+                        current_engine_energy += dirty.objects[drive_index].energy;
+                        max_engine_energy = dirty.object_types[drive_object_type_index].max_energy_storage;
                     }
 
                 } else {
@@ -1134,6 +1139,8 @@ async function attachShipEngines(dirty, ship_index) {
 
         dirty.objects[ship_index].engine_indexes = engine_indexes;
         dirty.objects[ship_index].current_engine_power = total_engine_power;
+        dirty.objects[ship_index].current_engine_energy = current_engine_energy;
+        dirty.objects[ship_index].max_engine_energy = max_engine_energy;
 
         //console.log("Set current_engine_power to: " + dirty.objects[ship_index].current_engine_power);
 
@@ -3021,233 +3028,7 @@ async function getPlayerCoordAndRoom(dirty, player_index) {
 exports.getPlayerCoordAndRoom = getPlayerCoordAndRoom;
 
 
-/**
- * @param {Object} dirty
- * @param {Object} data
- * @param {number} data.player_index
- * @param {String} data.skill_type
- * @param {number=} data.body_index
- * @param {String=} data.scope
- * @return {Promise<number>}
- * 
- */
-async function getPlayerLevel(dirty, data) {
 
-    try {
-        let level = 1;
-
-        let body_index = -1;
-        let body_type_index = -1;
-
-        let ship_index = -1;
-        let ship_type_index = -1;
-
-        if (!data.scope || data.scope !== 'galaxy') {
-
-            if (data.body_index) {
-                body_index = data.body_index;
-            } else {
-                body_index = await game_object.getIndex(dirty, dirty.players[data.player_index].body_id);
-
-                if (body_index === -1) {
-                    log(chalk.yellow("Could not get a body for the player"));
-                    return 1;
-                }
-            }
-
-
-            body_type_index = main.getObjectTypeIndex(dirty.objects[body_index].object_type_id);
-        }
-
-        if (!data.scope || data.scope === 'galaxy') {
-            ship_index = await game_object.getIndex(dirty, dirty.players[data.player_index].ship_id);
-
-            if (ship_index === -1) {
-                log(chalk.yellow("Could not get a ship for the player"));
-                return 1;
-            }
-
-
-            ship_type_index = main.getObjectTypeIndex(dirty.objects[ship_index].object_type_id);
-
-        }
-
-        // Go through each level type!
-        if (data.skill_type === 'control') {
-            level = 1 + Math.floor(global.level_modifier * Math.sqrt(dirty.players[data.player_index].control_skill_points));
-        } else if (data.skill_type === 'cooking') {
-            level = 1 + Math.floor(global.difficult_level_modifier * Math.sqrt(dirty.players[data.player_index].cooking_skill_points));
-
-        } else if (data.skill_type === 'corrosive') {
-            level = 1 + Math.floor(global.level_modifier * Math.sqrt(dirty.players[data.player_index].corrosive_skill_points));
-        } else if (data.skill_type === 'defense') {
-            level = 1 + Math.floor(global.level_modifier * Math.sqrt(dirty.players[data.player_index].defending_skill_points));
-
-            if (body_type_index !== -1 && dirty.object_types[body_type_index].defense_modifier) {
-                level += dirty.object_types[body_type_index].defense_modifier;
-            }
-
-            if (ship_type_index !== -1 && dirty.object_types[ship_type_index].defense_modifier) {
-                level += dirty.object_types[ship_type_index].defense_modifier;
-            }
-
-        } else if (data.skill_type === 'electric') {
-            level = 1 + Math.floor(global.level_modifier * Math.sqrt(dirty.players[data.player_index].electric_skill_points));
-        } else if (data.skill_type === 'explosion') {
-            level = 1 + Math.floor(global.level_modifier * Math.sqrt(dirty.players[data.player_index].explosion_skill_points));
-        } else if (data.skill_type === 'farming') {
-            level = 1 + Math.floor(global.difficult_level_modifier * Math.sqrt(dirty.players[data.player_index].farming_skill_points));
-        } else if (data.skill_type === 'freeze') {
-            level = 1 + Math.floor(global.level_modifier * Math.sqrt(dirty.players[data.player_index].freeze_skill_points));
-        } else if (data.skill_type === 'hacking') {
-            level = 1 + Math.floor(global.level_modifier * Math.sqrt(dirty.players[data.player_index].hacking_skill_points));
-        }
-        else if (data.skill_type === 'heat') {
-            level = 1 + Math.floor(global.level_modifier * Math.sqrt(dirty.players[data.player_index].heat_skill_points));
-        } else if (data.skill_type === 'gravity') {
-            level = 1 + Math.floor(global.level_modifier * Math.sqrt(dirty.players[data.player_index].gravity_skill_points));
-        } else if (data.skill_type === 'laser') {
-            level = 1 + Math.floor(global.level_modifier * Math.sqrt(dirty.players[data.player_index].laser_skill_points));
-        }
-        else if (data.skill_type === 'manufacturing') {
-
-            level = 1 + Math.floor(global.difficult_level_modifier * Math.sqrt(dirty.players[data.player_index].manufacturing_skill_points));
-
-            if (ship_type_index !== -1 && dirty.object_types[ship_type_index].manufacturing_modifier) {
-                level += dirty.object_types[ship_type_index].manufacturing_modifier;
-            }
-
-            if (body_type_index !== -1 && dirty.object_types[body_type_index].manufacturing_modifier) {
-                level += dirty.object_types[body_type_index].manufacturing_modifier;
-            }
-
-        } else if (data.skill_type === 'melee') {
-            level = 1 + Math.floor(global.level_modifier * Math.sqrt(dirty.players[data.player_index].melee_skill_points));
-        } else if (data.skill_type === 'mining') {
-            level = 1 + Math.floor(global.level_modifier * Math.sqrt(dirty.players[data.player_index].mining_skill_points));
-
-
-            if (ship_type_index !== -1 && dirty.object_types[ship_type_index].mining_modifier) {
-                level += dirty.object_types[ship_type_index].mining_modifier;
-            }
-
-
-            // Body could help too
-            if (body_type_index !== -1 && dirty.object_types[body_type_index].mining_modifier) {
-                level += dirty.object_types[body_type_index].mining_modifier;
-            }
-
-        } else if (data.skill_type === 'piercing') {
-            level = 1 + Math.floor(global.level_modifier * Math.sqrt(dirty.players[data.player_index].piercing_skill_points));
-        } else if (data.skill_type === 'plasma') {
-            level = 1 + Math.floor(global.level_modifier * Math.sqrt(dirty.players[data.player_index].plasma_skill_points));
-        } else if (data.skill_type === 'poison') {
-            level = 1 + Math.floor(global.level_modifier * Math.sqrt(dirty.players[data.player_index].poison_skill_points));
-        } else if (data.skill_type === 'radiation') {
-            level = 1 + Math.floor(global.level_modifier * Math.sqrt(dirty.players[data.player_index].radiation_skill_points));
-        } else if (data.skill_type === 'repairing') {
-            level = 1 + Math.floor(global.level_modifier * Math.sqrt(dirty.players[data.player_index].repairing_skill_points));
-        } else if (data.skill_type === 'researching') {
-            level = 1 + Math.floor(global.difficult_level_modifier * Math.sqrt(dirty.players[data.player_index].researching_skill_points));
-        } else if (data.skill_type === 'salvaging') {
-            level = 1 + Math.floor(global.level_modifier * Math.sqrt(dirty.players[data.player_index].salvaging_skill_points));
-        } else if (data.skill_type === 'surgery') {
-            level = 1 + Math.floor(global.difficult_level_modifier * Math.sqrt(dirty.players[data.player_index].surgery_skill_points));
-        }
-
-        // Lets go through each of the player's equipped items too
-        // I think we only need to do this when dealing with a player's body for now
-        if (body_index !== -1) {
-            for (let i = 0; i < dirty.equipment_linkers.length; i++) {
-                if (dirty.equipment_linkers[i] && dirty.equipment_linkers[i].body_id === dirty.objects[body_index].id) {
-
-                    let equipped_object_index = -1;
-                    let equipped_object_type_index = -1;
-
-                    if (dirty.equipment_linkers[i].object_id) {
-                        equipped_object_index = await game_object.getIndex(dirty, dirty.equipment_linkers[i].object_id);
-                        if (equipped_object_index !== -1) {
-                            equipped_object_type_index = main.getObjectTypeIndex(dirty.objects[equipped_object_index].object_type_id);
-                        }
-                    } else if (dirty.equipment_linkers[i].object_type_id) {
-                        equipped_object_type_index = main.getObjectTypeIndex(dirty.equipment_linkers[i].object_type_id);
-                    }
-
-                    if (equipped_object_type_index !== -1) {
-                        if (data.skill_type === 'manufacturing' && dirty.object_types[equipped_object_type_index].manufacturing_modifier) {
-                            log(chalk.green("Equipped item is adding manufacturing level (augment?!?)!"));
-                            level += dirty.object_types[equipped_object_type_index].manufacturing_modifier;
-                        }
-                    }
-
-
-                }
-            }
-
-
-            // And eating linkers!
-            for(let i = 0; i < dirty.eating_linkers.length; i++) {
-                if(dirty.eating_linkers[i] && dirty.eating_linkers[i].body_id === dirty.objects[body_index].id) {
-                    let race_linker_index = main.getRaceEatingLinkerIndex({
-                        'race_id': dirty.object_types[body_type_index].race_id, 'object_type_id': dirty.eating_linkers[i].eating_object_type_id
-                    });
-
-                    if(dirty.race_eating_linkers[race_linker_index].manufacturing && data.skill_type === 'manufacturing') {
-                        //console.log("Eating increased player attack by: " + dirty.race_eating_linkers[race_linker_index].attack);
-                        level += dirty.race_eating_linkers[race_linker_index].manufacturing;
-                    }
-                }
-            }
-
-            // And addiction!
-            // and minuses for each addiction without a matching eating linker (addictions are held off while the player is still consuming them)
-            for(let i = 0; i < dirty.addiction_linkers.length; i++) {
-
-                if(dirty.addiction_linkers[i] && dirty.addiction_linkers[i].body_id === dirty.objects[body_index].id) {
-
-                    let still_eating = false;
-                    for(let j = 0; j < dirty.eating_linkers.length; j++) {
-                        if(dirty.eating_linkers[j] && dirty.eating_linkers[j].body_id === dirty.objects[body_index].id) {
-                            if(dirty.eating_linkers[j].eating_object_type_id === dirty.addiction_linkers[i].addicted_to_object_type_id) {
-                                still_eating = true;
-                            }
-                        }
-                    }
-
-
-                    if(!still_eating) {
-                        let race_linker_index = main.getRaceEatingLinkerIndex({
-                            'race_id': dirty.object_types[body_type_index].race_id, 'object_type_id': dirty.addiction_linkers[i].addicted_to_object_type_id
-                        });
-    
-                        if(dirty.race_eating_linkers[race_linker_index].manufacturing && data.skill_type === 'manufacturing') {
-                            console.log("Reduced player manufacturing due to addiction linker");
-                            level -= dirty.addition_linkers[i].addiction_level * dirty.race_eating_linkers[race_linker_index].manufacturing;
-                        }
-                    }
-
-                }
-
-            }
-
-        }
-
-      
-        if(data.skill_type === 'manufacturing') {
-            console.log("Manufacturing level returned: " + level);
-        }
-
-
-
-        return level;
-    } catch (error) {
-        log(chalk.red("Error in world.getPlayerLevel: " + error));
-        console.error(error);
-    }
-
-}
-
-exports.getPlayerLevel = getPlayerLevel;
 
 function getPlayerSocket(dirty, player_index) {
 
@@ -5346,7 +5127,7 @@ async function tickStorytellers(dirty, force_event_id = 0) {
 
                     // If the previous event took a long time for players to remove, we can tick difficulty down a bit
                     if(dirty.storytellers[i].previous_event_ticks > 100) {
-
+                    
                     } 
                     // Previous event was taken out fast, we can move difficulty up
                     else {
@@ -5355,7 +5136,7 @@ async function tickStorytellers(dirty, force_event_id = 0) {
 
 
 
-                    let possible_events = dirty.events.filter(event_filter => event_filter.difficulty === 10);
+                    let possible_events = dirty.events.filter(event_filter => event_filter.difficulty <= 10);
                     if(possible_events.length > 0) {
 
                         let chosen_event = possible_events[Math.floor(Math.random()*possible_events.length)];

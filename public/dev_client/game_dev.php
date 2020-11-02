@@ -509,7 +509,8 @@ include('config.php');
 
         <!-- The content of our buttons! -->
         <div>
-            <div id="launch" class="message-is-info" style="display:inline-block; margin-top:10px; padding:10px;"></div>
+            <div id="launch" style="display:inline; margin-top:10px; padding:10px;"></div>
+            <div id="fuel" style="display:inline; margin-top:10px; padding:10px;"></div>
 
             <div id="inventory" style="margin-bottom:10px;"></div>
 
@@ -909,6 +910,9 @@ include('config.php');
 
             this.load.spritesheet('player-royal-cruiser', 'https://space.alphacoders.com/royal-cruiser-animated.png',
                 { 'frameWidth': 64, 'frameHeight': 128, endFrame: 2 });
+
+            this.load.spritesheet('player-science-vessel', 'https://space.alphacoders.com/science-vessel-animated.png',
+                { 'frameWidth': 64, 'frameHeight': 64, endFrame: 9 });
 
             this.load.spritesheet('player-silk-ship', 'https://space.alphacoders.com/silk-ship-animated.png',
                 { 'frameWidth': 64, 'frameHeight': 64, endFrame: 4 });
@@ -1810,6 +1814,16 @@ include('config.php');
                 repeat: -1
             };
             this.anims.create(player_ruel_down_config);
+
+
+            // SCIENCE VESSEL
+                let player_science_vessel_config = {
+                key: 'player-science-vessel-animation',
+                frames: this.anims.generateFrameNumbers('player-science-vessel', { start: 0, end: 8, first: 8 }),
+                frameRate: 2,
+                repeat: -1
+            };
+            this.anims.create(player_science_vessel_config);
             
             
             // PLAYER SHUTTLE

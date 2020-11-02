@@ -1,3 +1,24 @@
+## [0.2.10] - 2020-11-2
+
+### Added
+- Bodies can now give a bonus or negative to researching
+- Manufacturing body now also gives a +2 to researching
+- MLM body gives a +1 to research
+- Science Vessel - Gives a +3 to research stations on it
+- Fuel display for ships that require engines
+- Acid Egg
+- Event with lower difficulty than the bug spawner - spawning an acid egg that turns into... something!
+
+### Changed
+- No longer clearing assemblies and researches when the player switches views. This should make manufacturers, forges, research stations, etc, show what 
+they are doing more often.
+- Increased Voonita, Transporter, and AI Dust spawn amounts on Desert Planets
+- Voon Egg sprite
+
+
+### Fixed
+- The initial wreck type in the galaxy won't disappear if you move onto it anymore
+
 ## [0.2.9] - 2020-10-28
 
 

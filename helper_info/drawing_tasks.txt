@@ -2,7 +2,7 @@
 ** THINGS I'M SENDING FERNANDO'S WAY **
 ***************************************
 
-bug spawner
+
 player body that eats trash (mass of moving maggots)
 
 ***************************

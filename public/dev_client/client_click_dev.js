@@ -176,7 +176,7 @@ $(document).on('click', 'button', function () {
     // Assemble objects. Depending on the class of the object type, we might need to send in the tile_x and tile_y values
     // to grab a corresponding manufacturer
     if(split_name[0] === 'assemble') {
-        console.log("Have assemble click");
+        //console.log("Have assemble click");
 
 
         let assembling_object_type_id = $('#' + clicked_id).attr('object_type_id');

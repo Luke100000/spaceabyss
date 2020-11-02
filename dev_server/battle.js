@@ -303,35 +303,35 @@ const world = require('./world.js');
             }
 
             //console.time("controlTime");
-            let control_level = await world.getPlayerLevel(dirty, { 'player_index': player_index,
+            let control_level = await player.getLevel(dirty, { 'player_index': player_index,
                 'body_index': player_body_index, 'skill_type': 'control' });
             //console.timeEnd("controlTime");
 
-            let corrosive_level = await world.getPlayerLevel(dirty, { 'player_index': player_index,
+            let corrosive_level = await player.getLevel(dirty, { 'player_index': player_index,
                 'body_index': player_body_index, 'scope': 'planet', 'skill_type': 'corrosive' });
-            let electric_level = await world.getPlayerLevel(dirty, { 'player_index': player_index,
+            let electric_level = await player.getLevel(dirty, { 'player_index': player_index,
                 'body_index': player_body_index, 'scope': 'planet',  'skill_type': 'electric' });
-            let explosion_level = await world.getPlayerLevel(dirty, { 'player_index': player_index,
+            let explosion_level = await player.getLevel(dirty, { 'player_index': player_index,
                 'body_index': player_body_index, 'scope': 'planet',  'skill_type': 'explosion' });
-            let freezing_level = await world.getPlayerLevel(dirty, { 'player_index': player_index,
+            let freezing_level = await player.getLevel(dirty, { 'player_index': player_index,
                 'body_index': player_body_index, 'scope': 'planet',  'skill_type': 'freezing' });
-            let hacking_level = await world.getPlayerLevel(dirty, { 'player_index': player_index,
+            let hacking_level = await player.getLevel(dirty, { 'player_index': player_index,
                 'body_index': player_body_index, 'scope': 'planet',  'skill_type': 'hacking' });
-            let heat_level = await world.getPlayerLevel(dirty, { 'player_index': player_index,
+            let heat_level = await player.getLevel(dirty, { 'player_index': player_index,
                 'body_index': player_body_index, 'scope': 'planet',  'skill_type': 'heat' });
-            let gravity_level = await world.getPlayerLevel(dirty, { 'player_index': player_index,
+            let gravity_level = await player.getLevel(dirty, { 'player_index': player_index,
                 'body_index': player_body_index, 'scope': 'planet',  'skill_type': 'gravity' });
-            let laser_level = await world.getPlayerLevel(dirty, { 'player_index': player_index,
+            let laser_level = await player.getLevel(dirty, { 'player_index': player_index,
                 'body_index': player_body_index, 'scope': 'planet',  'skill_type': 'laser' });
-            let melee_level = await world.getPlayerLevel(dirty, { 'player_index': player_index,
+            let melee_level = await player.getLevel(dirty, { 'player_index': player_index,
                 'body_index': player_body_index, 'scope': 'planet',  'skill_type':'melee' } );
-            let piercing_level = await world.getPlayerLevel(dirty, { 'player_index': player_index,
+            let piercing_level = await player.getLevel(dirty, { 'player_index': player_index,
                 'body_index': player_body_index, 'scope': 'planet',  'skill_type': 'piercing' });
-            let plasma_level = await world.getPlayerLevel(dirty, { 'player_index': player_index,
+            let plasma_level = await player.getLevel(dirty, { 'player_index': player_index,
                 'body_index': player_body_index, 'scope': 'planet', 'skill_type': 'plasma' });
-            let poison_level = await world.getPlayerLevel(dirty, { 'player_index': player_index,
+            let poison_level = await player.getLevel(dirty, { 'player_index': player_index,
                 'body_index': player_body_index, 'scope': 'planet', 'skill_type': 'poison' });
-            let radiation_level = await world.getPlayerLevel(dirty, { 'player_index': player_index,
+            let radiation_level = await player.getLevel(dirty, { 'player_index': player_index,
                 'body_index': player_body_index, 'scope': 'planet', 'skill_type': 'radiation' });
 
 

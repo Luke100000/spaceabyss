@@ -227,7 +227,7 @@ const world = require('./world.js');
 
             // The player is trying to move a ship with no engines
             if(socket.move_delay === 1000000) {
-                console.log("Player is trying to move a ship with no engines");
+                //console.log("Player is trying to move a ship with no engines");
 
                 socket.emit('result_info', { 'status': 'failure', 'text': 'Your ship needs engines!' });
                 socket.emit('move_failure', { 'failed_coord_id': data.destination_coord_id,
@@ -677,6 +677,7 @@ const world = require('./world.js');
                     if(!paid_for_move && dirty.objects[dirty.objects[player_ship_index].engine_indexes[i]].energy >= 1) {
                         dirty.objects[dirty.objects[player_ship_index].engine_indexes[i]].energy--;
                         dirty.objects[dirty.objects[player_ship_index].engine_indexes[i]].has_change = true;
+                        dirty.objects[player_ship_index].current_engine_energy--;
                         game_object.sendInfo(socket, false, dirty, dirty.objects[player_ship_index].engine_indexes[i]);
     
                         if(dirty.objects[dirty.objects[player_ship_index].engine_indexes[i]].object_type_id === 265 && dirty.objects[dirty.objects[player_ship_index].engine_indexes[i]].energy === 200) {
@@ -2949,6 +2950,8 @@ const world = require('./world.js');
                                 send_refuel_message = true;
 
 
+                                let energy_difference = dirty.object_types[ion_drive_object_type_index].max_energy_storage - dirty.objects[dirty.objects[ship_index].engine_indexes[i]].energy;
+                                dirty.objects[ship_index].current_engine_energy += energy_difference;
 
                                 dirty.objects[dirty.objects[ship_index].engine_indexes[i]].energy = dirty.object_types[ion_drive_object_type_index].max_energy_storage;
                                 dirty.objects[dirty.objects[ship_index].engine_indexes[i]].has_change = true;
@@ -3425,8 +3428,8 @@ const world = require('./world.js');
             let player_index = socket.player_index;
             let ship_index = await game_object.getIndex(dirty, dirty.players[player_index].ship_id);
 
-            console.log("socket.player_index: " + player_index);
-            console.log("player's ship_id: " + dirty.players[player_index].ship_id + " Got ship_index as: " + ship_index);
+            //console.log("socket.player_index: " + player_index);
+            //console.log("player's ship_id: " + dirty.players[player_index].ship_id + " Got ship_index as: " + ship_index);
 
             if(ship_index === -1) {
                 log(chalk.yellow("Could not find ship in objects"));
@@ -3460,11 +3463,11 @@ const world = require('./world.js');
                 // try and place around the airlock if the ship has one
                 if(typeof dirty.objects[ship_index].airlock_index !== 'undefined' && dirty.objects[ship_index].airlock_index !== -1) {
 
-                    console.log("Ship has an airlock: " + dirty.objects[ship_index].airlock_index);
+                    //console.log("Ship has an airlock: " + dirty.objects[ship_index].airlock_index);
 
                     ship_coord_index = await world.getOpenCoordIndex(dirty, 'ship', dirty.objects[ship_index].airlock_index, 'player', player_index, 2);
 
-                    console.log("world.getOpenCoordIndex returned: " + ship_coord_index);
+                    //console.log("world.getOpenCoordIndex returned: " + ship_coord_index);
 
                     // TODO I need to find a better way of doing this. Something like placeAround - base coord index, placing_width_height
                     /*

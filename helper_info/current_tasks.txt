@@ -5,6 +5,32 @@ CURRENT GAMEPLAY TEST:
 DOING NOW:
 
 
+
+    Research outpost
+        Could have an even better benefit than the science vessel. Something that spawns in space. But there's only a couple, and they can be pretty easily 
+            salvaged away if not defended
+        Research Outpost Content
+            Lets start by spawning it with bursters
+
+    data breach content
+        data guide/protector https://www.artstation.com/artwork/bav9Do
+        observer drone https://images.gemquery.com/259/content_2591696.jpg
+    computational heatsink content
+        https://images.gemquery.com/253/content_2539676.jpg
+        observer drone https://images.gemquery.com/259/content_2591696.jpg
+
+
+
+    
+    Researching augment
+    Researching body (+5 or +6) to researching
+        Like a server rack walking about?
+        
+    Large ice comet
+
+    Addicted to M Man Tick 15/60
+        Not sure it's doing much of anything
+
     maps not updating on autopilot
 
     acid walls

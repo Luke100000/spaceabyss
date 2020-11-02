@@ -23,7 +23,7 @@ async function calculateDefense(dirty, player_index, damage_type = '') {
         let player_defense = 1;
 
         // Base level + body/ship type
-        let defense_level = await world.getPlayerLevel(dirty, { 'player_index': player_index, 'skill_type': 'defense' });
+        let defense_level = await getLevel(dirty, { 'player_index': player_index, 'skill_type': 'defense' });
 
         let player_body_index = await game_object.getIndex(dirty, dirty.players[player_index].body_id);
         let player_body_type_index = main.getObjectTypeIndex(dirty.objects[player_body_index].object_type_id);
@@ -927,6 +927,291 @@ exports.getInventory = getInventory;
 
 
 
+/**
+ * @param {Object} dirty
+ * @param {Object} data
+ * @param {number} data.player_index
+ * @param {String} data.skill_type
+ * @param {number=} data.body_index
+ * @param {String=} data.scope
+ * @param {number=} data.coord_index
+ * @return {Promise<number>}
+ * 
+ */
+async function getLevel(dirty, data) {
+
+    try {
+        let level = 1;
+
+        let body_index = -1;
+        let body_type_index = -1;
+
+        let ship_index = -1;
+        let ship_type_index = -1;
+
+        if (!data.scope || data.scope !== 'galaxy') {
+
+            if (data.body_index) {
+                body_index = data.body_index;
+            } else {
+                body_index = await game_object.getIndex(dirty, dirty.players[data.player_index].body_id);
+
+                if (body_index === -1) {
+                    log(chalk.yellow("Could not get a body for the player"));
+                    return 1;
+                }
+            }
+
+
+            body_type_index = main.getObjectTypeIndex(dirty.objects[body_index].object_type_id);
+        }
+
+        // Go through each level type!
+        if (data.skill_type === 'control') {
+            level = 1 + Math.floor(global.level_modifier * Math.sqrt(dirty.players[data.player_index].control_skill_points));
+        } else if (data.skill_type === 'cooking') {
+            level = 1 + Math.floor(global.difficult_level_modifier * Math.sqrt(dirty.players[data.player_index].cooking_skill_points));
+
+        } else if (data.skill_type === 'corrosive') {
+            level = 1 + Math.floor(global.level_modifier * Math.sqrt(dirty.players[data.player_index].corrosive_skill_points));
+        } else if (data.skill_type === 'defense') {
+            level = 1 + Math.floor(global.level_modifier * Math.sqrt(dirty.players[data.player_index].defending_skill_points));
+
+            // If it's the galaxy view, we need the player's ship's defense
+            if (!data.scope || data.scope === 'galaxy') {
+                ship_index = await game_object.getIndex(dirty, dirty.players[data.player_index].ship_id);
+    
+                if (ship_index === -1) {
+                    log(chalk.yellow("Could not get a ship for the player"));
+                    return 1;
+                }
+    
+    
+                ship_type_index = main.getObjectTypeIndex(dirty.objects[ship_index].object_type_id);
+    
+            }
+
+            if (body_type_index !== -1 && dirty.object_types[body_type_index].defense_modifier) {
+                level += dirty.object_types[body_type_index].defense_modifier;
+            }
+
+            if (ship_type_index !== -1 && dirty.object_types[ship_type_index].defense_modifier) {
+                level += dirty.object_types[ship_type_index].defense_modifier;
+            }
+
+        } else if (data.skill_type === 'electric') {
+            level = 1 + Math.floor(global.level_modifier * Math.sqrt(dirty.players[data.player_index].electric_skill_points));
+        } else if (data.skill_type === 'explosion') {
+            level = 1 + Math.floor(global.level_modifier * Math.sqrt(dirty.players[data.player_index].explosion_skill_points));
+        } else if (data.skill_type === 'farming') {
+            level = 1 + Math.floor(global.difficult_level_modifier * Math.sqrt(dirty.players[data.player_index].farming_skill_points));
+        } else if (data.skill_type === 'freeze') {
+            level = 1 + Math.floor(global.level_modifier * Math.sqrt(dirty.players[data.player_index].freeze_skill_points));
+        } else if (data.skill_type === 'hacking') {
+            level = 1 + Math.floor(global.level_modifier * Math.sqrt(dirty.players[data.player_index].hacking_skill_points));
+        }
+        else if (data.skill_type === 'heat') {
+            level = 1 + Math.floor(global.level_modifier * Math.sqrt(dirty.players[data.player_index].heat_skill_points));
+        } else if (data.skill_type === 'gravity') {
+            level = 1 + Math.floor(global.level_modifier * Math.sqrt(dirty.players[data.player_index].gravity_skill_points));
+        } else if (data.skill_type === 'laser') {
+            level = 1 + Math.floor(global.level_modifier * Math.sqrt(dirty.players[data.player_index].laser_skill_points));
+        }
+        else if (data.skill_type === 'manufacturing') {
+
+            level = 1 + Math.floor(global.difficult_level_modifier * Math.sqrt(dirty.players[data.player_index].manufacturing_skill_points));
+
+            if(data.scope === 'ship' && typeof data.coord_index !== 'undefined') {
+                let ship_index = await game_object.getIndex(dirty, dirty.ship_coords[data.coord_index].ship_id);
+                if(ship_index !== -1) {
+                    ship_type_index = main.getObjectTypeIndex(dirty.objects[ship_index].object_type_id);
+                }
+
+
+            }
+
+            if (ship_type_index !== -1 && dirty.object_types[ship_type_index].manufacturing_modifier) {
+                level += dirty.object_types[ship_type_index].manufacturing_modifier;
+            }
+
+            if (body_type_index !== -1 && dirty.object_types[body_type_index].manufacturing_modifier) {
+                level += dirty.object_types[body_type_index].manufacturing_modifier;
+            }
+
+        } else if (data.skill_type === 'melee') {
+            level = 1 + Math.floor(global.level_modifier * Math.sqrt(dirty.players[data.player_index].melee_skill_points));
+        } else if (data.skill_type === 'mining') {
+            level = 1 + Math.floor(global.level_modifier * Math.sqrt(dirty.players[data.player_index].mining_skill_points));
+
+
+            // If it's the galaxy view, we need the player's ship's defense
+            if (!data.scope || data.scope === 'galaxy') {
+                ship_index = await game_object.getIndex(dirty, dirty.players[data.player_index].ship_id);
+    
+                if (ship_index === -1) {
+                    log(chalk.yellow("Could not get a ship for the player"));
+                    return 1;
+                }
+    
+    
+                ship_type_index = main.getObjectTypeIndex(dirty.objects[ship_index].object_type_id);
+    
+            }
+
+            if (ship_type_index !== -1 && dirty.object_types[ship_type_index].mining_modifier) {
+                level += dirty.object_types[ship_type_index].mining_modifier;
+            }
+
+
+            // Body could help too
+            if (body_type_index !== -1 && dirty.object_types[body_type_index].mining_modifier) {
+                level += dirty.object_types[body_type_index].mining_modifier;
+            }
+
+        } else if (data.skill_type === 'piercing') {
+            level = 1 + Math.floor(global.level_modifier * Math.sqrt(dirty.players[data.player_index].piercing_skill_points));
+        } else if (data.skill_type === 'plasma') {
+            level = 1 + Math.floor(global.level_modifier * Math.sqrt(dirty.players[data.player_index].plasma_skill_points));
+        } else if (data.skill_type === 'poison') {
+            level = 1 + Math.floor(global.level_modifier * Math.sqrt(dirty.players[data.player_index].poison_skill_points));
+        } else if (data.skill_type === 'radiation') {
+            level = 1 + Math.floor(global.level_modifier * Math.sqrt(dirty.players[data.player_index].radiation_skill_points));
+        } else if (data.skill_type === 'repairing') {
+            level = 1 + Math.floor(global.level_modifier * Math.sqrt(dirty.players[data.player_index].repairing_skill_points));
+        } else if (data.skill_type === 'researching') {
+            level = 1 + Math.floor(global.difficult_level_modifier * Math.sqrt(dirty.players[data.player_index].researching_skill_points));
+
+            if(data.scope === 'ship' && typeof data.coord_index !== 'undefined') {
+                let ship_index = await game_object.getIndex(dirty, dirty.ship_coords[data.coord_index].ship_id);
+                if(ship_index !== -1) {
+                    ship_type_index = main.getObjectTypeIndex(dirty.objects[ship_index].object_type_id);
+                    
+                    if(ship_type_index === -1) {
+                        console.log("Could not get the ship type ");
+                    }
+
+                } else {
+                    console.log("Could not get ship");
+                }
+
+            } else {
+                console.log("Scope has us not checking for ship");
+            }
+
+
+            if (ship_type_index !== -1 && dirty.object_types[ship_type_index].researching_modifier) {
+                level += dirty.object_types[ship_type_index].researching_modifier;
+                console.log("Ship type added: " + dirty.object_types[ship_type_index].researching_modifier + " to researching level");
+            } else {
+                console.log("Didn't add from ship. ship_type_index: " + ship_type_index + " ship type researching modifier: " + dirty.object_types[ship_type_index].researching_modifier);
+            }
+
+            if (body_type_index !== -1 && dirty.object_types[body_type_index].researching_modifier) {
+                level += dirty.object_types[body_type_index].researching_modifier;
+                console.log("Body type added: " + dirty.object_types[body_type_index].researching_modifier + " to researching level");
+            }
+
+        } else if (data.skill_type === 'salvaging') {
+            level = 1 + Math.floor(global.level_modifier * Math.sqrt(dirty.players[data.player_index].salvaging_skill_points));
+        } else if (data.skill_type === 'surgery') {
+            level = 1 + Math.floor(global.difficult_level_modifier * Math.sqrt(dirty.players[data.player_index].surgery_skill_points));
+        }
+
+        // Lets go through each of the player's equipped items too
+        // I think we only need to do this when dealing with a player's body for now
+        if (body_index !== -1) {
+            for (let i = 0; i < dirty.equipment_linkers.length; i++) {
+                if (dirty.equipment_linkers[i] && dirty.equipment_linkers[i].body_id === dirty.objects[body_index].id) {
+
+                    let equipped_object_index = -1;
+                    let equipped_object_type_index = -1;
+
+                    if (dirty.equipment_linkers[i].object_id) {
+                        equipped_object_index = await game_object.getIndex(dirty, dirty.equipment_linkers[i].object_id);
+                        if (equipped_object_index !== -1) {
+                            equipped_object_type_index = main.getObjectTypeIndex(dirty.objects[equipped_object_index].object_type_id);
+                        }
+                    } else if (dirty.equipment_linkers[i].object_type_id) {
+                        equipped_object_type_index = main.getObjectTypeIndex(dirty.equipment_linkers[i].object_type_id);
+                    }
+
+                    if (equipped_object_type_index !== -1) {
+                        if (data.skill_type === 'manufacturing' && dirty.object_types[equipped_object_type_index].manufacturing_modifier) {
+                            log(chalk.green("Equipped item is adding manufacturing level (augment?!?)!"));
+                            level += dirty.object_types[equipped_object_type_index].manufacturing_modifier;
+                        }
+                    }
+
+
+                }
+            }
+
+
+            // And eating linkers!
+            for(let i = 0; i < dirty.eating_linkers.length; i++) {
+                if(dirty.eating_linkers[i] && dirty.eating_linkers[i].body_id === dirty.objects[body_index].id) {
+                    let race_linker_index = main.getRaceEatingLinkerIndex({
+                        'race_id': dirty.object_types[body_type_index].race_id, 'object_type_id': dirty.eating_linkers[i].eating_object_type_id
+                    });
+
+                    if(dirty.race_eating_linkers[race_linker_index].manufacturing && data.skill_type === 'manufacturing') {
+                        //console.log("Eating increased player attack by: " + dirty.race_eating_linkers[race_linker_index].attack);
+                        level += dirty.race_eating_linkers[race_linker_index].manufacturing;
+                    }
+                }
+            }
+
+            // And addiction!
+            // and minuses for each addiction without a matching eating linker (addictions are held off while the player is still consuming them)
+            for(let i = 0; i < dirty.addiction_linkers.length; i++) {
+
+                if(dirty.addiction_linkers[i] && dirty.addiction_linkers[i].body_id === dirty.objects[body_index].id) {
+
+                    let still_eating = false;
+                    for(let j = 0; j < dirty.eating_linkers.length; j++) {
+                        if(dirty.eating_linkers[j] && dirty.eating_linkers[j].body_id === dirty.objects[body_index].id) {
+                            if(dirty.eating_linkers[j].eating_object_type_id === dirty.addiction_linkers[i].addicted_to_object_type_id) {
+                                still_eating = true;
+                            }
+                        }
+                    }
+
+
+                    if(!still_eating) {
+                        let race_linker_index = main.getRaceEatingLinkerIndex({
+                            'race_id': dirty.object_types[body_type_index].race_id, 'object_type_id': dirty.addiction_linkers[i].addicted_to_object_type_id
+                        });
+    
+                        if(dirty.race_eating_linkers[race_linker_index].manufacturing && data.skill_type === 'manufacturing') {
+                            console.log("Reduced player manufacturing due to addiction linker");
+                            level -= dirty.addition_linkers[i].addiction_level * dirty.race_eating_linkers[race_linker_index].manufacturing;
+                        }
+                    }
+
+                }
+
+            }
+
+        }
+
+      
+        if(data.skill_type === 'manufacturing') {
+            console.log("Manufacturing level returned: " + level);
+        }
+
+
+
+        return level;
+    } catch (error) {
+        log(chalk.red("Error in player.getLevel: " + error));
+        console.error(error);
+    }
+
+}
+
+exports.getLevel = getLevel;
+
+
 async function getRelationshipLinkers(dirty, player_id) {
 
     try {
@@ -1583,6 +1868,7 @@ module.exports = {
     getEquipment,
     getIndex,
     getInventory,
+    getLevel,
     getRelationshipLinkers,
     getResearchLinkers,
     getShips,

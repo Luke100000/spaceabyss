@@ -978,7 +978,10 @@ function createPlayerSprite(player_index) {
             new_texture_animation_key = 'player-royal-cruiser-animation';
             new_movement_display = 'flip';
             new_sprite_y_offset = 32;
-        }  else if(objects[ship_index].object_type_id === 369) {
+        } else if(objects[ship_index].object_type_id === 335) {
+            new_texture_key = 'player-science-vessel';
+            new_texture_animation_key = 'player-science-vessel-animation';
+        } else if(objects[ship_index].object_type_id === 369) {
             new_texture_key = 'player-silk-ship';
             new_texture_animation_key = 'player-silk-ship-animation';
         } else if(objects[ship_index].object_type_id === 381) {
@@ -1904,6 +1907,64 @@ function generateFactionDisplay() {
     $('#faction').append(html_string);
 }
 
+
+
+function generateFuelDisplay() {
+
+    if(current_view === 'planet') {
+        $('#fuel').empty();
+        return;
+    }
+
+    if(client_player_index === -1) {
+        return false;
+    }
+
+    let client_ship_index = objects.findIndex(function (obj) { return obj && obj.id === players[client_player_index].ship_id; });
+
+    if(client_ship_index === -1) {
+        return false;
+    }
+
+    // If we are just on our own ship, and it's not a dockable ship, the only option is to head back to the galaxy view
+    let client_ship_type_index = object_types.findIndex(function (obj) { return obj.id === objects[client_ship_index].object_type_id; });
+
+    if (object_types[client_ship_type_index].is_dockable) {
+        on_ship_is_dockable = true;
+    }
+
+    // FUEL?????????
+    if(client_ship_type_index !== -1) {
+        if(object_types[client_ship_type_index].needs_engines) {
+
+            $('#fuel').empty();
+
+        
+            if(current_view !== 'planet') {
+                if(typeof objects[client_ship_index].current_engine_energy !== 'undefined') {
+
+                    let html_string = "";
+    
+                    if(objects[client_ship_index].current_engine_energy * 3 < objects[client_ship_index].max_engine_energy) {
+    
+                        html_string += "&nbsp;<span class='has-text-danger'><i class=\"fad fa-gas-pump\"></i> Engine fuel: " + objects[client_ship_index].current_engine_energy  + "/" + 
+                        objects[client_ship_index].max_engine_energy + "</span>";
+    
+                    } else {
+                        html_string += "&nbsp;<span class='has-text-info'><i class=\"fad fa-gas-pump\"></i> Engine fuel: " + objects[client_ship_index].current_engine_energy  + "/" + 
+                        objects[client_ship_index].max_engine_energy + "</span>";
+                    }
+    
+                    $('#fuel').append(html_string);
+    
+                }
+            }
+
+            
+        }
+    }
+}
+
 // Shows all our stuff
 function generatePlayerInfoDisplay() {
 
@@ -2671,15 +2732,11 @@ function generateAirlockDisplay() {
     let on_ship_is_dockable = false;
 
     if (client_ship_index !== -1 && ship_coord_index !== -1 && ship_coords[ship_coord_index].ship_id === objects[client_ship_index].id) {
-        console.log("We are on our ship");
+        //console.log("We are on our ship");
         $('#launch').append('<button class="button is-success" id="viewchange" newview="galaxy"><i class="fad fa-stars"></i> Back To Galaxy</button>');
 
-        // If we are just on our own ship, and it's not a dockable ship, the only option is to head back to the galaxy view
-        let client_ship_type_index = object_types.findIndex(function (obj) { return obj.id === objects[client_ship_index].object_type_id; });
+        generateFuelDisplay();
 
-        if (object_types[client_ship_type_index].is_dockable) {
-            on_ship_is_dockable = true;
-        }
 
     } else if (current_view === "ship") {
         console.log("Doing launch option");
@@ -3403,7 +3460,7 @@ function printAssemblyList(assembling_object = false, coord = false) {
 
 
 
-        console.log("Trying to show things we could assemble");
+        //console.log("Trying to show things we could assemble");
 
         html_string = "";
         html_string += "<div class='message is-dark'><div class='message-header'>Things You Can't Assemble Yet</div>";
@@ -9147,6 +9204,8 @@ function showClickMenuObject(coord) {
     }
 
 
+    // If this is a research station, see if we have a research associated with it
+    
 
 
 
@@ -9557,7 +9616,7 @@ function showClickMenuObject(coord) {
 
 
     if (objects[object_index].object_type_id === 90) {    // MANUFACTURER
-        console.log("User right clicked on Manufacturer!");
+        //console.log("User right clicked on Manufacturer!");
         //if(objects[object_index].player_id === player_id) {
 
         printAssemblyList(objects[object_index], coord);
@@ -9581,37 +9640,63 @@ function showClickMenuObject(coord) {
 
     if (objects[object_index].object_type_id === 127) {  // RESEARCHER
         console.log("Research station options");
+
         // Show a research menu
         shown_options = true;
 
-        let player_inventory_items = inventory_items.filter(inventory_item => inventory_item.player_id === client_player_id &&
-            inventory_item.body_id === players[client_player_index].body_id);
 
-        player_inventory_items.forEach(function (inventory_item) {
-            let object_type_index = object_types.findIndex(function (obj) {
-                return obj && obj.id === inventory_item.object_type_id;
-            });
-            if (object_type_index !== -1) {
+        let researcher_is_active = false;
+        for(let i = 0; i < researches.length; i++) {
 
-                //  Only show if the player hasn't already maxed out the research
-                let research_linker_index = player_research_linkers.findIndex(function (obj) {
-                    return obj &&
-                        obj.player_id === client_player_id && obj.object_type_id === object_types[object_type_index].id;
-                });
+            if(researches[i].researcher_object_id === objects[object_index].id) {
+                researcher_is_active = true;
 
-                // Player is already done researching that
-                if (research_linker_index !== -1 && player_research_linkers[research_linker_index].researches_completed >= object_types[object_type_index].research_times_required) {
+                let html_string = "Researching ";
 
-                } else if (object_types[object_type_index].can_be_researched) {
-                    $('#click_menu').append(object_types[object_type_index].name +
-                        "<button id='research_" + inventory_item.id + "' object_id='" + objects[object_index].id +
-                        "' class='button is-default is-small'>Research</button><br>");
-                }
+                let being_researched_object_type_index = getObjectTypeIndex(researches[i].being_researched_object_type_id);
 
+                html_string += object_types[being_researched_object_type_index].name + " Tick " + researches[i].current_tick_count + "/" + 
+                    object_types[being_researched_object_type_index].research_tick_count;
+
+
+
+                $('#click_menu').append(html_string);
 
             }
+        }
 
-        });
+
+        if(!researcher_is_active) {
+            let player_inventory_items = inventory_items.filter(inventory_item => inventory_item.player_id === client_player_id &&
+                inventory_item.body_id === players[client_player_index].body_id);
+    
+            player_inventory_items.forEach(function (inventory_item) {
+                let object_type_index = object_types.findIndex(function (obj) {
+                    return obj && obj.id === inventory_item.object_type_id;
+                });
+                if (object_type_index !== -1) {
+    
+                    //  Only show if the player hasn't already maxed out the research
+                    let research_linker_index = player_research_linkers.findIndex(function (obj) {
+                        return obj &&
+                            obj.player_id === client_player_id && obj.object_type_id === object_types[object_type_index].id;
+                    });
+    
+                    // Player is already done researching that
+                    if (research_linker_index !== -1 && player_research_linkers[research_linker_index].researches_completed >= object_types[object_type_index].research_times_required) {
+    
+                    } else if (object_types[object_type_index].can_be_researched) {
+                        $('#click_menu').append(object_types[object_type_index].name +
+                            "<button id='research_" + inventory_item.id + "' object_id='" + objects[object_index].id +
+                            "' class='button is-default is-small'>Research</button><br>");
+                    }
+    
+    
+                }
+    
+            });
+        }
+      
     }
 
     // FORGE

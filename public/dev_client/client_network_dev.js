@@ -101,7 +101,7 @@ socket.on('assembly_info', function(data) {
     // lets see if we need to add this to our list of active assemblies
     let active_assembly_index = active_assemblies.findIndex(function (obj) { return obj && obj.id === parseInt(data.assembly.id); });
     if(active_assembly_index === -1) {
-        console.log("Pushed new active assembly");
+        //console.log("Pushed new active assembly");
         active_assembly_index = active_assemblies.push(data.assembly) - 1;
         active_assemblies[active_assembly_index].id = parseInt(active_assemblies[active_assembly_index].id);
     }
@@ -686,7 +686,7 @@ socket.on('equipment_linker_info', function(data) {
 
 
 socket.on('event_info', function(data) {
-    console.log("Got event info");
+    //console.log("Got event info");
 
     let event_index = events.findIndex(function(obj) { return obj && obj.id === parseInt(data.event.id); });
 
@@ -888,7 +888,7 @@ socket.on('inventory_item_info', function(data) {
                     if(tasks[i].check_type === 'object_type' && inventory_items[inventory_index].object_type_id && 
                     tasks[i].check_id === inventory_items[inventory_index].object_type_id) {
                         if(inventory_items[inventory_index].amount >= tasks[i].check_amount) {
-                            console.log("Setting task as complete!");
+                            //console.log("Setting task as complete!");
                             localStorage.setItem("task_" + tasks[i].id, true);
                             generateTaskDisplay();
                         }
@@ -1994,6 +1994,7 @@ socket.on('object_info', function(data) {
             let animation_index = animations.findIndex(function(obj) { return obj && obj.object_id === objects[object_index].id; });
             if(animation_index !== -1) {
                 delete animations[animation_index];
+                redrawBars();
             }
         }
 
@@ -2052,6 +2053,12 @@ socket.on('object_info', function(data) {
             generateSpaceportDisplay();
         }
 
+        let update_fuel_display = false;
+        if(typeof data.object.current_engine_energy !== 'undefined' && data.object.current_engine_energy !== objects[object_index].current_engine_energy) {
+            //console.log("Fuel amount changed");
+            update_fuel_display = true;
+        }
+
 
         /*************************** AT THIS POINT IN THE FUNCTION WE LOSE KNOWING DIFFERENCES BETWEEN OLD AND NEW *********************/
         // We have to specifically change things, since objects could have name next associated with them.
@@ -2077,10 +2084,19 @@ socket.on('object_info', function(data) {
         objects[object_index].docked_at_object_id = parseInt(data.object.docked_at_object_id);
         objects[object_index].tint = data.object.tint;
         objects[object_index].current_engine_power = parseInt(data.object.current_engine_power);
+        if(typeof data.object.current_engine_energy !== 'undefined') {
+            objects[object_index].current_engine_energy = parseInt(data.object.current_engine_energy);
+            objects[object_index].max_engine_energy = parseInt(data.object.max_engine_energy);
+        }
+        
         //objects[object_index] = data.object;
 
         if(update_ship_management_display) {
             generateShipManagementDisplay();
+        }
+
+        if(update_fuel_display) {
+            generateFuelDisplay();
         }
 
         if(redraw_object === true) {
@@ -3346,7 +3362,7 @@ socket.on('stop_attack_data', function(data) {
 
 socket.on('spawned_event_info', function(data) {
 
-    console.log("Got spawned_event_info");
+    //console.log("Got spawned_event_info");
     let spawned_event_index = spawned_events.findIndex(function(obj) { return obj && obj.id === parseInt(data.spawned_event.id); });
 
     if(spawned_event_index === -1) {
@@ -3429,6 +3445,8 @@ socket.on('view_change_data', function(data) {
 
         // player is just the pod
         redrawMap();
+        
+        generateFuelDisplay();
 
     } else if(data.view === 'planet') {
 
@@ -3448,6 +3466,10 @@ socket.on('view_change_data', function(data) {
         if(client_player_index !== -1) {
             setPlayerMoveDelay(client_player_index);
         }
+
+
+        console.log("View chagned to planet. We should be removing fuel display now");
+        generateFuelDisplay();
         
 
 
@@ -3488,9 +3510,10 @@ socket.on('view_change_data', function(data) {
 
     }
 
+    // I think rather than clear these out, we can just... not show them if they aren't relevant
     // clear out our researches and assemblies, since they applied on the previous screen
-    active_assemblies = [];
-    researches = [];
+    //active_assemblies = [];
+    //researches = [];
 
 
     // clear our effects

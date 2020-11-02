@@ -535,7 +535,7 @@ async function damage(dirty, monster_index, damage_amount, data) {
             }
 
             //console.log("Calling deleteMonster with monster index: " + monster_index);
-            if(data.battle_linker.attacking_type === 'player') {
+            if(typeof data.battle_linker !== 'undefined' && data.battle_linker.attacking_type === 'player') {
                 await deleteMonster(dirty, monster_index, { 'reason': 'battle', 'battle_linker': data.battle_linker,
                 'reason_type': 'player', 'reason_id': data.battle_linker.attacking_id });
             } else {

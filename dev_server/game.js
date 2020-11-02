@@ -1612,7 +1612,7 @@ const world = require('./world.js');
                 let farming_level = 1;
                 let success = false;
                 if(socket) {
-                    farming_level = await world.getPlayerLevel(dirty, { 'player_index': socket.player_index, 'skill_type': 'farming' });
+                    farming_level = await player.getLevel(dirty, { 'player_index': socket.player_index, 'skill_type': 'farming' });
 
 
                 } else if(typeof data.npc_index !== 'undefined') {
@@ -3155,7 +3155,7 @@ exports.eat = eat;
                     }
 
                 } else if(dirty.objects[auto_doc_index].player_id && dirty.objects[auto_doc_index].player_id === dirty.players[socket.player_index].id) {
-                    surgery_level = await world.getPlayerLevel(dirty,
+                    surgery_level = await player.getLevel(dirty,
                         { 'player_index': socket.player_index, 'scope': 'planet', 'skill_type': 'surgery' });
                 }
 
@@ -4092,7 +4092,7 @@ exports.eat = eat;
             }
 
             if(needs_complexity_check) {
-                let farming_level = await world.getPlayerLevel(dirty, { 'player_index': player_index, 'skill_type': 'farming' });
+                let farming_level = await player.getLevel(dirty, { 'player_index': player_index, 'skill_type': 'farming' });
 
                 success = world.complexityCheck(farming_level, dirty.object_types[object_type_index].complexity);
             }
@@ -6099,7 +6099,7 @@ exports.eat = eat;
 
 
             // Skill checks!!!
-            let mining_level = await world.getPlayerLevel(dirty, { 'player_index': player_index, 'skill_type': 'mining' });
+            let mining_level = await player.getLevel(dirty, { 'player_index': player_index, 'skill_type': 'mining' });
             let resulting_complexity = dirty.object_types[object_type_index].complexity;
 
             //console.log("Checking mining level: " + mining_level + " against complexity: " + resulting_complexity);
@@ -6415,7 +6415,7 @@ exports.eat = eat;
 
 
             // COMPLEXITY CHECK
-            let repair_level = await world.getPlayerLevel(dirty, { 'player_index': dirty.repairing_linkers[i].player_index, 'skill_type': 'repairing' });
+            let repair_level = await player.getLevel(dirty, { 'player_index': dirty.repairing_linkers[i].player_index, 'skill_type': 'repairing' });
             let resulting_complexity = complexity;
 
             //console.log("Checking repair level: " + repair_level + " against complexity: " + resulting_complexity);
@@ -6636,7 +6636,7 @@ exports.eat = eat;
                 previous_salvaging_chunk = Math.floor(dirty.active_salvagings[i].total_salvaged / 10);
             }
             
-            let salvaging_level = await world.getPlayerLevel(dirty, { 'player_index': dirty.active_salvagings[i].player_index, 'skill_type': 'salvaging' });
+            let salvaging_level = await player.getLevel(dirty, { 'player_index': dirty.active_salvagings[i].player_index, 'skill_type': 'salvaging' });
 
 
             dirty.active_salvagings[i].total_salvaged += salvaging_level;
@@ -7282,12 +7282,16 @@ exports.eat = eat;
                     // Cooking
                     let level = 1;
                     if(dirty.objects[assembler_object_index].object_type_id === 119) {
-                        level = await world.getPlayerLevel(dirty, { 'player_index': player_index, 'skill_type': 'cooking' });
+                        level = await player.getLevel(dirty, { 'player_index': player_index, 'skill_type': 'cooking' });
 
                     }
                     // Manufacturing
                     else {
-                        level = await world.getPlayerLevel(dirty, { 'player_index': player_index, 'skill_type': 'manufacturing' });
+
+                        
+
+                        level = await player.getLevel(dirty, { 'player_index': player_index, 'skill_type': 'manufacturing', 'scope': assembler_object_info.scope,
+                            'coord_index': assembler_object_info.coord_index });
 
                     }
 
@@ -8976,7 +8980,8 @@ exports.eat = eat;
 
 
                         // Need some sort of algorithm to manage this complexity stuff
-                        let research_level = await world.getPlayerLevel(dirty, { 'player_index': player_index, 'skill_type': 'researching' });
+                        let research_level = await player.getLevel(dirty, { 'player_index': player_index, 'skill_type': 'researching',
+                            'scope': object_info.scope, 'coord_index': object_info.coord_index });
                         console.log("Player research level is: " + research_level);
 
 
@@ -9664,7 +9669,7 @@ exports.eat = eat;
                 // 100 is 100% chance, 50 is 50% chance
                 let attack_chance = dirty.monster_types[monster_type_index].attack_chance_on_harvest;
 
-                let player_farming_level = await world.getPlayerLevel(dirty, { 'player_index': socket.player_index, 'skill_type': 'farming' });
+                let player_farming_level = await player.getLevel(dirty, { 'player_index': socket.player_index, 'skill_type': 'farming' });
 
                 attack_chance = attack_chance - player_farming_level;
                 let rand = helper.getRandomIntInclusive(1,100);
