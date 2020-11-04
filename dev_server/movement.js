@@ -3057,17 +3057,17 @@ const world = require('./world.js');
 
 
 
-            console.log("Updated Coord");
+            //console.log("Updated Coord");
 
             await main.updateCoordGeneric({}, { 'planet_coord_index': spaceport_index, 'npc_id': dirty.npcs[npc_index].id });
 
 
             dirty.npcs[npc_index].planet_coord_id = dirty.planet_coords[spaceport_index].id;
             dirty.npcs[npc_index].coord_id = false;
-            console.log("Setting npc coord id to false");
+            //console.log("Setting npc coord id to false");
             dirty.npcs[npc_index].has_change = true;
 
-            console.log("Removing battle linkers");
+            //console.log("Removing battle linkers");
             world.removeBattleLinkers(dirty, { 'npc_id': dirty.npcs[npc_index].id });
 
 

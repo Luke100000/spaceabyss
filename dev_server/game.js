@@ -3581,8 +3581,18 @@ exports.eat = eat;
 
     exports.fix = fix;
 
+
+
+
+    // WARNING WARNING WARNING::::::
+    // *****************************
+    // This function is actively making ships left out on the galaxy disappear!!!!!!!
+    // I believe I originally wrote it when the player's ship wasn't disappearing properly from galaxy coords.
+    // As it stands, if a ship is just left on the map, this function will make it disappear
     async function fixAll(dirty) {
         try {
+
+            /*
             console.time("fixAll");
 
             // Lets focus on logged out players to start
@@ -3633,6 +3643,8 @@ exports.eat = eat;
             }
 
             console.timeEnd("fixAll");
+
+            */
 
 
 
@@ -7498,30 +7510,34 @@ exports.eat = eat;
                         }
 
 
-                        // Increment the amount completed
-                        dirty.assemblies[i].amount_completed++;
 
-                        if(dirty.assemblies[i].amount_completed >= dirty.assemblies[i].total_amount) {
+                        if(dirty.assemblies[i]) {
+                            // Increment the amount completed
+                            dirty.assemblies[i].amount_completed++;
 
-                            //console.log("Going to delete the assembly now");
-                            await (pool.query("DELETE FROM assemblies WHERE id = ?", [dirty.assemblies[i].id]));
+                            if(dirty.assemblies[i].amount_completed >= dirty.assemblies[i].total_amount) {
 
-                            // let the room know the assembly is finished
-                            io.to(assembler_object_info.room).emit('assembly_info', { 'assembly': dirty.assemblies[i], 'finished': true });
+                                //console.log("Going to delete the assembly now");
+                                await (pool.query("DELETE FROM assemblies WHERE id = ?", [dirty.assemblies[i].id]));
 
-                            delete dirty.assemblies[i];
+                                // let the room know the assembly is finished
+                                io.to(assembler_object_info.room).emit('assembly_info', { 'assembly': dirty.assemblies[i], 'finished': true });
+
+                                delete dirty.assemblies[i];
 
 
-                            dirty.objects[assembler_object_index].is_active = false;
-                            await game_object.sendInfo(false, assembler_object_info.room, dirty, assembler_object_index);
-                        } else {
+                                dirty.objects[assembler_object_index].is_active = false;
+                                await game_object.sendInfo(false, assembler_object_info.room, dirty, assembler_object_index);
+                            } else {
 
-                            dirty.assemblies[i].current_tick_count = 0;
-                            dirty.assemblies[i].has_change = true;
-                            // Just send the updated info
-                            io.to(assembler_object_info.room).emit('assembly_info', { 'assembly': dirty.assemblies[i] });
+                                dirty.assemblies[i].current_tick_count = 0;
+                                dirty.assemblies[i].has_change = true;
+                                // Just send the updated info
+                                io.to(assembler_object_info.room).emit('assembly_info', { 'assembly': dirty.assemblies[i] });
 
+                            }
                         }
+
 
 
 

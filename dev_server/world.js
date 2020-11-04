@@ -1127,7 +1127,7 @@ async function attachShipEngines(dirty, ship_index) {
                     if(drive_object_type_index !== -1) {
                         total_engine_power += dirty.object_types[drive_object_type_index].engine_power;
                         current_engine_energy += dirty.objects[drive_index].energy;
-                        max_engine_energy = dirty.object_types[drive_object_type_index].max_energy_storage;
+                        max_engine_energy += dirty.object_types[drive_object_type_index].max_energy_storage;
                     }
 
                 } else {

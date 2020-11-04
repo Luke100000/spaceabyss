@@ -398,28 +398,6 @@ $(document).on('click', 'button', function () {
             $('#debug_mode').append("<button id=\"debug_mode\">Toggle Debug Mode</button>");
             console.log("Set debug_mode to false");
         }
-
-
-        /* old cookie based - seeing if I like using localStorage more
-        // turing it off
-        if (document.cookie.split(';').filter((item) => item.includes('debug_mode=1')).length) {
-            document.cookie = "debug_mode=0";
-            //document.cookie = "debug_mode=0; max-age=31536000";
-
-
-            debug_mode = false;
-            //console.log(document.cookie);
-        }
-        // turning it on
-        else {
-
-            document.cookie = "debug_mode=1";
-
-           
-
-            debug_mode = true;
-        }
-        */
     }
 
 
@@ -1147,6 +1125,52 @@ $(document).on('click', 'button', function () {
         console.log("Played clicked to remove a skin");
         let skin_object_type_id = $('#' + clicked_id).attr('skin_object_type_id');
         socket.emit('skin_remove_data', { 'skin_object_type_id': skin_object_type_id });
+    }
+
+
+    // Toggle debug mode
+    if(split_name[0] === 'sound') {
+
+        console.log("sound click");
+
+        $('#sound').empty();
+
+        let current_sound_status = localStorage.getItem("sound");
+        console.log("current_sound_status:");
+        console.log(current_sound_status);
+
+        // localStorage only actually stores values as strings 
+        if(current_sound_status === null || current_sound_status === false || current_sound_status === "false") {
+
+
+            $('#sound').append("Sound ON");
+            $('#sound').append("<button id=\"sound\">Toggle Sound</button>");
+
+            localStorage.setItem("sound", true);
+            play_sounds = true;
+
+            if(audio_loaded === false) {
+                loadAudio();
+                audio_loaded = true;
+            }
+            
+
+            console.log("Set play_sounds to true");
+        } else {
+
+            localStorage.setItem("sound", false);
+            play_sounds = false;
+
+
+            $('#sound').append("Sound OFF");
+            $('#sound').append("<button id=\"sound\">Toggle Sound</button>");
+            console.log("Set sound off");
+
+            if(sound_engine_is_playing) {
+                sound_engine.stop();
+                sound_engine_is_playing = false;
+            }
+        }
     }
 
 

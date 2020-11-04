@@ -6585,6 +6585,43 @@ function checkLevelIncrease(old_player_data, new_player_data) {
 
 }
 
+
+function loadAudio() {
+    let scene_game = game.scene.getScene('sceneGame');
+    // Lets try some audio stuff
+
+    scene_game.load.on('filecomplete', processAudioFile, this);
+    scene_game.load.audio('level-up', ['https://space.alphacoders.com/level-up.wav']);
+    scene_game.load.start();
+
+    scene_game.load.on('filecomplete', processAudioFile, this);
+    scene_game.load.audio('engine', ['https://space.alphacoders.com/engine.wav']);
+    scene_game.load.start();
+
+    scene_game.load.on('filecomplete', processAudioFile, this);
+    scene_game.load.audio('laser', ['https://space.alphacoders.com/laser.wav']);
+    scene_game.load.start();
+    
+
+}
+
+function processAudioFile(key, type, texture) {
+    let scene_game = game.scene.getScene('sceneGame');
+    console.log("In processAudioFile with key: " + key);
+    if(key === "level-up") {
+        level_up_music = scene_game.sound.add('level-up');
+    }
+
+    if(key === "engine") {
+        sound_engine = scene_game.sound.add('engine', { volume: 0.25, loop: true });
+    }
+
+    if(key === "laser") {
+        sound_laser = scene_game.sound.add('laser', {volume: 0.5 });
+    }
+}
+
+
 function loadMonsterSprites(type, type_id) {
 
 
@@ -6605,42 +6642,6 @@ function loadMonsterSprites(type, type_id) {
             scene_game.load.start();
         }
     }
-
-    /*
-    if(!scene_game.textures.exists('trae')) {
-
-        console.log("Don't have trae loaded in. Loading now");
-
-        scene_game.load.on('filecomplete', processFile, this);
-        scene_game.load.spritesheet('trae', 'https://space.alphacoders.com/trae.png',
-            { frameWidth: 104, frameHeight: 104, endFrame: 10 });
-
-
-        scene_game.load.start();
-
-        console.log("Started load");
-    } else {
-        console.log("Already have trae image loaded in");
-    }
-
-    if(!scene_game.textures.exists('trae-seedling')) {
-
-        console.log("Don't have trae-seedling loaded in. Loading now");
-
-        scene_game.load.on('filecomplete', processFile, this);
-        scene_game.load.spritesheet('trae-seedling', 'https://space.alphacoders.com/trae-seedling.png',
-            { frameWidth: 72, frameHeight: 72, endFrame: 6 });
-
-
-        scene_game.load.start();
-
-        console.log("Started load");
-    } else {
-        console.log("Already have trae seedling image loaded in");
-    }
-    */
-
-
 
 }
 

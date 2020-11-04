@@ -4,7 +4,18 @@ CURRENT GAMEPLAY TEST:
 
 DOING NOW:
 
+    Gotta fix the researches not disappearing!!!!
 
+
+    select objects.id as object_id, objects.player_id, objects.coord_id, coords.object_id, coords.player_id, coords.npc_id,coords.planet_id,coords.belongs_to_planet_id FROM objects LEFT JOIN coords ON coords.id = objects.coord_id WHERE objects.coord_id != false AND objects.object_type_id IN(114,233,298,238,239,339,212,335,369,296,313,381,387) AND objects.player_id != false;
+
+    See if there are any other disappeared ships
+        select ships with a coord_id, left? join coords on the id, select object_id
+
+
+    Test optional audio. Off by default for now while I workd on it
+    1. laser sound
+    2. engine sound
 
     Research outpost
         Could have an even better benefit than the science vessel. Something that spawns in space. But there's only a couple, and they can be pretty easily 

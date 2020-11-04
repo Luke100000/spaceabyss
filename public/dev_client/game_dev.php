@@ -8,6 +8,7 @@ include('config.php');
     var debug_mode = false;
     var mobile_mode = false;
     var notify_on_new_player = false;
+    var play_sounds = false;
 
     if (localStorage.getItem("debug") === "true") {
         debug_mode = true;
@@ -15,6 +16,10 @@ include('config.php');
 
     if (localStorage.getItem("notify_on_new_player") === "true") {
         notify_on_new_player = true;
+    }
+
+    if (localStorage.getItem("sound") === "true") {
+        play_sounds = true;
     }
 
 
@@ -596,6 +601,10 @@ include('config.php');
                 <div id="debug_mode">
 
                 </div>
+
+                <div id="sound">
+
+                </div>
                 <div id="notify_on_new_player">
 
                 </div>
@@ -625,6 +634,12 @@ include('config.php');
         $('#notify_on_new_player').append("Notify when new player joins: True <button id=\"notifynewplayer\">Set to False</button>");
     } else {
         $('#notify_on_new_player').append("Notify when new player joins: False <button id=\"notifynewplayer\">Set to True</button>");
+    }
+
+    if(play_sounds) {
+        $('#sound').append("<button id=\"sound\">Sound ON. Toggle Sound Off</button>");
+    } else {
+        $('#sound').append("<button id=\"sound\">Sound OFF. Toggle Sound On</button>");
     }
 
 </script>
@@ -724,10 +739,9 @@ include('config.php');
 
     var effect_sprites = [];
 
-    var level_up_music;
-
 
     var airlock_display_needs_regeneration = false;
+    var audio_loaded = false;
     var client_move_coord_id;
     var client_move_planet_coord_id;
     var client_move_ship_coord_id;
@@ -768,6 +782,12 @@ include('config.php');
     var pointer_up_time = 10000;
     var moving_direction = false;
     var sent_loney_player_message = false;
+
+    var sound_laser;
+    var sound_engine;
+    var sound_engine_is_playing;
+    var level_up_music;
+
     var spaceport_display_needs_regeneration = false;
     var text_admin;
     var text_admin_time;
@@ -1137,7 +1157,9 @@ include('config.php');
 
 
             // Lets try some audio stuff
-            this.load.audio('level-up', ['https://space.alphacoders.com/level-up.wav']);
+            //this.load.audio('level-up', ['https://space.alphacoders.com/level-up.wav']);
+            //this.load.audio('engine', ['https://space.alphacoders.com/engine.wav']);
+            //this.load.audio('laser', ['https://space.alphacoders.com/laser.wav']);
         },
 
         create: function() {
@@ -2578,7 +2600,7 @@ include('config.php');
             text_admin.setDepth(11);
             text_admin.setVisible(false);
 
-            level_up_music = this.sound.add('level-up');
+
             //level_up_music.play();
         },
 
@@ -2642,6 +2664,11 @@ include('config.php');
                         }
                         else if(players[i].sprite.texture.key === 'player-ruel') {
                             players[i].sprite.anims.play('player-ruel-idle-animation');
+                        }
+
+                        if(sound_engine_is_playing) {
+                            sound_engine.stop();
+                            sound_engine_is_playing = false;
                         }
                     }
                 }
@@ -2887,7 +2914,14 @@ include('config.php');
                         updateEffectSprites('object', player_ship_index);
                     }
                     
-                
+
+
+
+                    if(current_view === 'galaxy' && !sound_engine_is_playing && play_sounds && sound_engine) {
+                        sound_engine.play();
+                        sound_engine_is_playing = true;
+                    }
+                    
                     
                     
 
@@ -2952,6 +2986,8 @@ include('config.php');
                             }
                             */
                         }
+
+                       
                     }
 
                 }

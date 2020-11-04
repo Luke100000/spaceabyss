@@ -1,3 +1,17 @@
+## [0.2.11] - 2020-11-4
+
+### Fixed
+- Disappearing ships! This should now be stopped from happening. Next up I'm going to code an admin function to dock ships at the Azure planet. I don't want 
+to just spawn all the lost ships in space; not everyone would be the first to find their ship(s).
+- Science Vessel sprite should show up when ship is not active
+- Diamond Deposit should show up
+- Bug that wasn't giving extra manufacturing points on a failed assembly
+- Bug with moving around the function that calculates player attack
+
+
+### Added
+- Working on adding audio to the client. Off by default while I mess with it over the course of the next several weeks.
+
 ## [0.2.10] - 2020-11-2
 
 ### Added

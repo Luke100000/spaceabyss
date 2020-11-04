@@ -428,6 +428,12 @@ socket.on('damaged_data', function(data) {
 
     //console.log(data.damage_types);
 
+    if(play_sounds && sound_laser) {
+        sound_laser.play();
+    }
+    
+
+
     let drawing_x = -100;
     let drawing_y = -100;
 

@@ -647,6 +647,7 @@ const world = require('./world.js');
             };
         } catch(error) {
             log(chalk.red("Error in battle.calculatePlayerAttack: " + error));
+            console.error(error);
         }
 
     }
