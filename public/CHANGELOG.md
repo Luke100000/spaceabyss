@@ -1,3 +1,28 @@
+## [0.2.13] - 2020-11-6
+
+### Added
+- Admin ability to warp ships to the Azure planet. Going to use this to 'find' the lost ships in the galaxy from the bug mentioned in 0.2.11
+
+### Fixed
+- Events spawning with limits were being limited by the total number of that event on the planet, instead of by the number of spawned events directly 
+associated with that planet event linker. This has been fixed. Since old spawned events don't have this information, there will be extra monster/spawners 
+on planets for a bit
+- NPCs should be more successfull at finding planets when the server first
+- Some progress bars on manufacturing would be too long or too short; they were still referencing an old system for calculating progress.
+
+
+## [0.2.12] - 2020-11-5
+
+
+### Changed
+- Despawned all events > 2000 ticks due to a bug with despawning events. There's an auto purge at 10000 ticks, but that's a month
+
+### Fixed
+- Client bug when removing equipment and using the task system
+- Bug where the server wouldn't say to remove a failed research.
+- Client bug that prevented the research station menu from being displayed
+
+
 ## [0.2.11] - 2020-11-4
 
 ### Fixed

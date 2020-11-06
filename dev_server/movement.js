@@ -3647,6 +3647,7 @@ const world = require('./world.js');
     exports.switchToVirtual = switchToVirtual;
 
 
+    // Takes a ship, and docks it at the one Azure planet we have
     async function warpShipToAzurePlanet(socket, dirty, ship_id) {
 
         try {
@@ -3670,7 +3671,7 @@ const world = require('./world.js');
                 return false;
             }
 
-            if(dirty.objects[ship_index].player_id !== dirty.players[socket.player_index].id) {
+            if(!socket.is_admin && dirty.objects[ship_index].player_id !== dirty.players[socket.player_index].id) {
                 log(chalk.yellow("Ship does not belong to the player"));
                 return false;
             }
@@ -3685,6 +3686,7 @@ const world = require('./world.js');
 
             dirty.objects[ship_index].docked_at_planet_id = dirty.planets[azure_planet_index].id;
             dirty.objects[ship_index].coord_id = false;
+            dirty.objects[ship_index].has_change = true;
             game_object.sendInfo(socket, "galaxy", dirty, ship_index);
 
             await main.updateCoordGeneric(socket, { 'coord_index': coord_index, 'object_id': false });

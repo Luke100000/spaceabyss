@@ -243,7 +243,7 @@ async function spawn(dirty, event_index, data) {
 
         
 
-        let debug_event_ids = [0];
+        let debug_event_ids = [84,85];
 
         let planet_index = -1;
         let planet_event_linker_index = -1;
@@ -343,7 +343,7 @@ async function spawn(dirty, event_index, data) {
                     planet_coord => planet_coord.planet_id === dirty.planets[planet_index].id &&
                         planet_coord.level <= dirty.planet_event_linkers[planet_event_linker_index].highest_planet_level &&
                         planet_coord.level >= dirty.planet_event_linkers[planet_event_linker_index].lowest_planet_level &&
-                        !planet_coord.object_type_id
+                        helper.isFalse(planet_coord.object_type_id)
                 );
 
 
@@ -457,7 +457,7 @@ async function spawn(dirty, event_index, data) {
 
 
             // see how many events with this id the planet has
-            let currently_spawned = dirty.spawned_events.filter(spawned_event => spawned_event.event_id === dirty.events[event_index].id &&
+            let currently_spawned = dirty.spawned_events.filter(spawned_event => spawned_event.planet_event_linker_id === dirty.planet_event_linkers[planet_event_linker_index].id &&
                 spawned_event.planet_id === dirty.planets[planet_index].id);
 
             if(currently_spawned.length >= dirty.planet_event_linkers[planet_event_linker_index].limit_per_planet) {
@@ -693,8 +693,8 @@ async function spawn(dirty, event_index, data) {
         let sql = "";
         let inserts = "";
         if(event_scope === 'planet') {
-            sql = "INSERT INTO spawned_events(event_id,planet_id,origin_planet_coord_id) VALUES(?,?,?)";
-            inserts = [dirty.events[event_index].id, dirty.planets[planet_index].id, origin_planet_coord_id];
+            sql = "INSERT INTO spawned_events(event_id,planet_id,origin_planet_coord_id,planet_event_linker_id) VALUES(?,?,?,?)";
+            inserts = [dirty.events[event_index].id, dirty.planets[planet_index].id, origin_planet_coord_id, dirty.planet_event_linkers[planet_event_linker_index].id];
         } else if(event_scope === 'ship') {
             sql = "INSERT INTO spawned_events(event_id,ship_id,origin_ship_coord_id) VALUES(?,?,?)";
             inserts = [dirty.events[event_index].id, dirty.ship_coords[data.ship_coord_index].ship_id, dirty.ship_coords[data.ship_coord_index].id];
@@ -987,7 +987,7 @@ async function spawnOnPlanet(dirty, i, debug_planet_type_id) {
 
             if(dirty.planets[i].planet_type_id === debug_planet_type_id) {
                 console.log("Have " + planet_event_linkers.length + " events for planet type id: " + dirty.planets[i].planet_type_id);
-                console.log(planet_event_linkers);
+                //console.log(planet_event_linkers);
             }
 
             let random_planet_event_linker = planet_event_linkers[Math.floor(Math.random() * planet_event_linkers.length)];
@@ -1018,7 +1018,7 @@ async function spawnOnPlanet(dirty, i, debug_planet_type_id) {
                     dirty.planets[i].current_regular_monster_count++;
                     console.log("Increased the regular monster count on planet id: " + dirty.planets[i].id + " to: " + dirty.planets[i].current_regular_monster_count);
                 } else if(random_planet_event_linker.is_regular_monster_spawn) {
-                    log(chalk.yellow("Linker is a regular monster spawn, but we did not increment the current_regular_monster_count. spawned_event_index: " + spawned_event_index));
+                    log(chalk.yellow("Linker is a regular monster spawn, but we did not increment the current_regular_monster_count. Planet id: " + dirty.planets[i].id + " spawned_event_index: " + spawned_event_index));
                 }
             }
 
@@ -1155,7 +1155,7 @@ async function tickSpawning(dirty) {
 
     try {
 
-        let debug_planet_type_id = 0;
+        let debug_planet_type_id = 7;
 
 
         // Spawn Events On Every Planet!

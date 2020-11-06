@@ -9,6 +9,7 @@ game.processAdminChatMessage
 /deletestructure structure_id
 /deletespawnedevent spawned_event_id
 /destroyplanet PLANET_ID
+/dockcommand OBJECT_ID
 /generateplanet PLANET_ID
 /gift PLAYER_ID AMOUNT OBJECT_TYPE_ID
 /move (UP|DOWN)

@@ -678,7 +678,7 @@ socket.on('equipment_linker_info', function(data) {
 
 
 
-    if(use_tasks) {
+    if(use_tasks && typeof data.remove === 'undefined') {
         let matched_equipment_count = 0;
         for(let i = 0; i < tasks.length; i++) {
             if(tasks[i].check_location === 'equipment' && tasks[i].check_id === equipment_linkers[equipment_linker_index].object_type_id) {

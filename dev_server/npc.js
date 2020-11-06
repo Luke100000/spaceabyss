@@ -605,8 +605,16 @@ const planet = require('./planet.js');
                     obj.planet_id === chosen_planet.id; });
 
                 if(chosen_planet_coord_index === -1) {
-                    console.log("Could not find the coord the planet is on for forager");
-                    return false;
+
+                    chosen_planet_coord_index = await main.getCoordIndex({ 'coord_id': chosen_planet.coord_id });
+
+                    if(chosen_planet_coord_index === -1) {
+                        console.log("Could not find the coord the planet is on ( planet id: " + chosen_planet.id + " coord_id: " + chosen_planet.coord_id + ") for forager");
+                        return false;
+                    }
+                    
+
+                    
                 }
 
                 dirty.npc_tasks.push({ 'npc_id': dirty.npcs[npc_index].id, 'destination_tile_x': dirty.coords[chosen_planet_coord_index].tile_x,

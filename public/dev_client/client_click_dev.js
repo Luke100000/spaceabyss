@@ -1182,7 +1182,7 @@ $(document).on('click', 'button', function () {
     }
 
     if(split_name[0] === 'switchbody') {
-        console.log("player is switching bodies");
+        //console.log("player is switching bodies");
 
 
         let move_inventory = $('#' + clicked_id).attr('move_inventory');
@@ -1201,7 +1201,7 @@ $(document).on('click', 'button', function () {
     }
 
     if(split_name[0] === 'take') {
-        console.log("player is taking item from a chest or something!!");
+        //console.log("player is taking item from a chest or something!!");
 
         let inventory_item_id = $('#' + clicked_id).attr('inventory_item_id');
 
@@ -1212,7 +1212,7 @@ $(document).on('click', 'button', function () {
         
         socket.emit('take_data', { inventory_item_id: inventory_item_id, 'amount': amount });
 
-        console.log("Sending that player is taking inventory item id: " + inventory_item_id);
+        //console.log("Sending that player is taking inventory item id: " + inventory_item_id);
 
         $('#click_menu').empty();
         $('#click_menu').hide();

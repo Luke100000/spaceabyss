@@ -1112,7 +1112,7 @@ function createPlayerSprite(player_index) {
     }
     // Just a switch!
     else if (players[player_index].sprite.texture.key !== new_texture_key) {
-        console.log("Switching texture for player id: " + players[player_index].id);
+        //console.log("Switching texture for player id: " + players[player_index].id);
         players[player_index].sprite.setTexture(new_texture_key);
         players[player_index].sprite.anims.play(new_texture_animation_key);
 
@@ -7491,11 +7491,23 @@ function redrawBars(source = '') {
         //console.log("In redrawBars for assemblies. Current tick count: " + active_assembly.current_tick_count);
 
         let object_type_index = object_types.findIndex(function (obj) { return obj && obj.id === active_assembly.being_assembled_object_type_id; });
+        let assembler_object_index = getObjectIndex(active_assembly.assembler_object_id);
+        let assembled_in_linker_index = -1;
+        if(assembler_object_index !== -1) {
+            assembled_in_linker_index = assembled_in_linkers.findIndex(function(obj) { return obj && obj.object_type_id === active_assembly.being_assembled_object_type_id && 
+                obj.assembled_in_object_type_id === objects[assembler_object_index].object_type_id; });
+        } else {
+            console.log("Could not find assembler object. id: " + active_assembly.assember_objet_id);
+        }
+
+
         let percent_complete = 1;
         //console.log("Total assembly time: " + object_types[object_type_index].assembly_time);
 
-        if (active_assembly.current_tick_count >= 1) {
-            percent_complete = active_assembly.current_tick_count / object_types[object_type_index].assembly_time * 100;
+        if (active_assembly.current_tick_count >= 1 && assembled_in_linker_index !== -1) {
+            percent_complete = active_assembly.current_tick_count / assembled_in_linkers[assembled_in_linker_index].tick_count * 100;
+        } else if(assembled_in_linker_index === -1) {
+            console.log("Could not find assembled_in_linker, percent is remaining at 1");
         }
 
         graphics.fillStyle(0x4286f4);
@@ -9649,21 +9661,25 @@ function showClickMenuObject(coord) {
         let researcher_is_active = false;
         for(let i = 0; i < researches.length; i++) {
 
-            if(researches[i].researcher_object_id === objects[object_index].id) {
-                researcher_is_active = true;
-
-                let html_string = "Researching ";
-
-                let being_researched_object_type_index = getObjectTypeIndex(researches[i].being_researched_object_type_id);
-
-                html_string += object_types[being_researched_object_type_index].name + " Tick " + researches[i].current_tick_count + "/" + 
-                    object_types[being_researched_object_type_index].research_tick_count;
-
-
-
-                $('#click_menu').append(html_string);
-
+            if(researches[i]) {
+                if(researches[i].researcher_object_id === objects[object_index].id) {
+                    researcher_is_active = true;
+    
+                    let html_string = "Researching ";
+    
+                    let being_researched_object_type_index = getObjectTypeIndex(researches[i].being_researched_object_type_id);
+    
+                    html_string += object_types[being_researched_object_type_index].name + " Tick " + researches[i].current_tick_count + "/" + 
+                        object_types[being_researched_object_type_index].research_tick_count;
+    
+    
+    
+                    $('#click_menu').append(html_string);
+    
+                }
             }
+
+           
         }
 
 
@@ -11108,7 +11124,7 @@ function updatePlayerClient(data) {
             }
         }
 
-        console.log("Generating new equipment display due to new body");
+        //console.log("Generating new equipment display due to new body");
         generateEquipmentDisplay();
         // If the new body previously had a name on it, we remove that now
         let new_body_index = objects.findIndex(function (obj) { return obj && obj.id === data.player.body_id; });

@@ -5104,6 +5104,14 @@ exports.eat = eat;
 
 
                 destroyPlanet(socket, dirty, { 'planet_index': planet_index });
+            }  else if(data.message.includes("/dockcommand ")) {
+                console.log("Got dockcommand");
+                let split = data.message.split(" ");
+                let object_id = parseInt(split[1]);
+                console.log("Admin is warping ship id: " + object_id + " to azure planet");
+
+
+                await movement.warpShipToAzurePlanet(socket, dirty, object_id);
             } else if(data.message.includes("/fix ")) {
 
 
@@ -9069,7 +9077,7 @@ exports.eat = eat;
 
 
                             if(helper.notFalse(player_socket)) {
-                                player_socket.emit('research_info', { 'research': dirty.researches[i] });
+                                player_socket.emit('research_info', { 'remove': true, 'research': dirty.researches[i] });
 
                                 // Send a system message that the research has failed
                                 player_socket.emit('chat', { 'message': dirty.object_types[object_type_index].name +

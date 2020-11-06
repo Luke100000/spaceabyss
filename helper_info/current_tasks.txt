@@ -4,8 +4,9 @@ CURRENT GAMEPLAY TEST:
 
 DOING NOW:
 
-    Gotta fix the researches not disappearing!!!!
 
+    I really like the idea of a fast/slow growth mode for algae vats... so they make a bunch while you are sleeping
+        ALTERNATIVELY, could have them keep producing up to a max storage level
 
     select objects.id as object_id, objects.player_id, objects.coord_id, coords.object_id, coords.player_id, coords.npc_id,coords.planet_id,coords.belongs_to_planet_id FROM objects LEFT JOIN coords ON coords.id = objects.coord_id WHERE objects.coord_id != false AND objects.object_type_id IN(114,233,298,238,239,339,212,335,369,296,313,381,387) AND objects.player_id != false;
 
