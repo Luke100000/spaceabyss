@@ -140,6 +140,7 @@ Compression Laser
 Distruptor Cannon
 Effectors (influence people - kind of like organic mind hacking)
 Electromagnetic coil gun
+Electromagnetic Pulse Emitter
 Electron Flux Whip (ELF)
 Energy Disk
 Erasure Cannon

@@ -159,7 +159,7 @@ async function deleteSpawnedEvent(dirty, spawned_event_index, data = {}) {
         }
 
 
-        console.log("going to check if a storyteller is associated with spawned event id: " + dirty.spawned_events[spawned_event_index].id);
+        //console.log("going to check if a storyteller is associated with spawned event id: " + dirty.spawned_events[spawned_event_index].id);
         // See if this spawned event is associated with a storyteller, and if so, update the storyteller
         for(let i = 0; i < dirty.storytellers.length; i++) {
             if(dirty.storytellers[i].current_spawned_event_id === dirty.spawned_events[spawned_event_index].id) {
@@ -243,7 +243,7 @@ async function spawn(dirty, event_index, data) {
 
         
 
-        let debug_event_ids = [84,85];
+        let debug_event_ids = [];
 
         let planet_index = -1;
         let planet_event_linker_index = -1;
@@ -1018,7 +1018,7 @@ async function spawnOnPlanet(dirty, i, debug_planet_type_id) {
                     dirty.planets[i].current_regular_monster_count++;
                     console.log("Increased the regular monster count on planet id: " + dirty.planets[i].id + " to: " + dirty.planets[i].current_regular_monster_count);
                 } else if(random_planet_event_linker.is_regular_monster_spawn) {
-                    log(chalk.yellow("Linker is a regular monster spawn, but we did not increment the current_regular_monster_count. Planet id: " + dirty.planets[i].id + " spawned_event_index: " + spawned_event_index));
+                    //log(chalk.yellow("Linker is a regular monster spawn, but we did not increment the current_regular_monster_count. Planet id: " + dirty.planets[i].id + " spawned_event_index: " + spawned_event_index));
                 }
             }
 
@@ -1155,7 +1155,7 @@ async function tickSpawning(dirty) {
 
     try {
 
-        let debug_planet_type_id = 7;
+        let debug_planet_type_id = 0;
 
 
         // Spawn Events On Every Planet!

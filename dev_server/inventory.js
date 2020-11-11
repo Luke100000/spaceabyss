@@ -586,7 +586,7 @@ async function removeFromInventory(socket, dirty, data) {
 
 
         if (dirty.inventory_items[inventory_item_index].amount <= data.amount) {
-            console.log("Deleting inventory item id: " + dirty.inventory_items[inventory_item_index].id);
+            //console.log("Deleting inventory item id: " + dirty.inventory_items[inventory_item_index].id);
 
             // We are trying/testing to not await for this - since the delete can take quite a bit of time
             (pool.query("DELETE FROM inventory_items WHERE id = ?", [dirty.inventory_items[inventory_item_index].id]));

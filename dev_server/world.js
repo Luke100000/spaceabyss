@@ -5110,7 +5110,7 @@ async function tickStorytellers(dirty, force_event_id = 0) {
 
 
 
-        console.log("in tickStorytellers");
+        //console.log("in tickStorytellers");
         for(let i = 0; i < dirty.storytellers.length; i++) {
 
             if(helper.isFalse(dirty.storytellers[i].current_spawned_event_id)) {
@@ -5181,7 +5181,7 @@ async function tickStorytellers(dirty, force_event_id = 0) {
                 }
 
             } else {
-                console.log("Ticking current event");
+                //console.log("Ticking current event");
 
                 dirty.storytellers[i].current_event_ticks++;
                 dirty.storytellers[i].has_change = true;

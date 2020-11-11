@@ -861,6 +861,7 @@ async function getIndex(dirty, object_id) {
 
             } else {
                 log(chalk.yellow("Did not find object with id: " + object_id + " in the database"));
+                console.trace("Traced");
 
 
                 // if a planet coord still has this object id, lets remove that as well

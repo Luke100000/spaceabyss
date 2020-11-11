@@ -54,7 +54,7 @@ function removeMonster(monster_id) {
 
 
     let removing_monster_id = parseInt(monster_id);
-    console.log("Removing monster id: " + monster_id);
+    //console.log("Removing monster id: " + monster_id);
 
     let monster_index = monsters.findIndex(function (obj) { return obj && obj.id === parseInt(monster_id); });
 

@@ -175,6 +175,8 @@ include('config.php');
             <div class="message is-info">
                 <div class="message-body">
                     <h3 class="is-size-3">Game Login</h3>
+                     <a class="button is-info" href="/user/register">Register An Account</a> 
+                    <a class="button is-info" href="/player/create">Create A Player</a>
                     <form class="form-control" id="login">
 
                         <div id="login_status">
@@ -783,6 +785,7 @@ include('config.php');
     var moving_direction = false;
     var sent_loney_player_message = false;
 
+    var sound_corporation_1;
     var sound_laser;
     var sound_engine;
     var sound_engine_is_playing;
@@ -869,6 +872,8 @@ include('config.php');
 
         preload: function() {
 
+
+            this.sound.pauseOnBlur = false;
             this.load.image('void', 'https://space.alphacoders.com/void.png');
 
             // PLAYER SPRITESHEETS - end frame is total frame count
@@ -1171,6 +1176,8 @@ include('config.php');
             void_tile.setScrollFactor(0);
 
             camera = this.cameras.main;
+            // Testing for compatibility with Phaser 3.24.1
+            //camera.roundPixels = true;
             //cursors = this.input.keyboard.createCursorKeys();
             upKey = this.input.keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.UP);
             downKey = this.input.keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.DOWN);

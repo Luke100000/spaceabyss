@@ -1,3 +1,16 @@
+## [0.2.14] - 2020-11-10
+
+### Fixed
+- NPCs will now not show up on every level of a planet
+- If a player's body dies while they are offline (addictions killing the body or something) the server will give them a new body when the log back on
+
+### Changed
+- Pods now have a 'Build A Better Ship' in salvaging and attacking instances where it can't participate
+- Mag Dust now drop Territe and Credits commonly, and Dirt Piles rarely. I think this will be more useful for new players. It was a little weird that the second 
+monster many players will see would drop something used so obscurely (and potentially not really used in the future)
+- Doing quite a bit more audio testing, as well as testing what kinds of breaking changes I'll encounter as I upgrade Phaser (ooof it's a lot)
+
+
 ## [0.2.13] - 2020-11-6
 
 ### Added

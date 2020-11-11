@@ -2735,9 +2735,17 @@ async function loginPlayer(socket, dirty, data) {
             console.log("Player does not have a body. Giving them a new body");
             await world.setPlayerBody(dirty, player_index);
             resend_player_info = true;
+        } else {
+            // second way a player might not have a body
+            let body_index = await game_object.getIndex(dirty, dirty.players[socket.player_index].body_id);
 
-
+            if(body_index === -1) {
+                log(chalk.yellow("Player did not have a body when logging in!!"));
+                await world.setPlayerBody(dirty, player_index);
+            }
         }
+
+        
 
         // Make sure the player's ship still exists
         let ship_index = -1;
@@ -3046,7 +3054,7 @@ async function loginPlayer(socket, dirty, data) {
         // If the storyteller has a current event, we can send that now
         for(let i = 0; i < dirty.storytellers.length; i++) {
             if(dirty.storytellers[i] && dirty.storytellers[i].current_spawned_event_id) {
-                console.log("Storyteller has a current_spawned_event_id");
+                //console.log("Storyteller has a current_spawned_event_id");
 
                 let spawned_event_index = dirty.spawned_events.findIndex(function(obj) { return obj && obj.id === dirty.storytellers[i].current_spawned_event_id; });
                 if(spawned_event_index !== -1) {
@@ -4879,9 +4887,9 @@ async function tickFood(dirty) {
 async function tickEvents(dirty) {
     try {
         //log(chalk.yellow("going to call event.tickSpawning"));
-        console.time("event.tickSpawning");
+        //console.time("event.tickSpawning");
         await event.tickSpawning(dirty);
-        console.timeEnd("event.tickSpawning");
+        //console.timeEnd("event.tickSpawning");
         await event.tickSpawnedEvents(dirty);
         //await game.tickEvents(dirty);
     } catch(error) {

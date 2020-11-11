@@ -643,6 +643,14 @@ function clearPreviousLevel() {
         */
     });
 
+    npcs.forEach(function(npc, i) {
+        if(npcs[i].sprite) {
+            npc.sprite.destroy();
+            npc.sprite = false;
+            delete npcs[i];
+        }
+    });
+
     players.forEach(function (player, i) {
 
         if (player.id === client_player_id) {
@@ -2937,6 +2945,46 @@ function notFalse(the_value) {
     }
 
     return true;
+}
+
+function playBackgroundMusic(type, type_id) {
+
+    if(!play_sounds) {
+        return false;
+    }
+
+    console.log("In playBackgroundMusic");
+
+    let scene_game = game.scene.getScene('sceneGame');
+
+    if(type === 'planet_type' && type_id === 30) {
+        console.log("Going to load in corporation_1 background music");
+
+
+        // Load up the file if we don't have it already
+        // Phaser 3.23+ required
+        //if(!scene_game.sound.get('corporation_1')) {
+        if(!sound_corporation_1) {
+            scene_game.load.on('filecomplete', processAudioFile, this);
+            scene_game.load.audio('corporation_1', ['https://space.alphacoders.com/Urban-Jungle-2061_Looping.mp3']);
+            scene_game.load.start();
+        }
+            
+        //}
+
+        
+        if(sound_corporation_1) {
+         
+            sound_corporation_1.play();
+        }
+        
+
+    } else if(type === 'galaxy') {
+        if(sound_corporation_1) {
+            sound_corporation_1.stop();
+        }
+    }
+
 }
 
 function pointerDownDesktop(pointer, pointerTileX, pointerTileY) {
@@ -6606,8 +6654,9 @@ function loadAudio() {
 }
 
 function processAudioFile(key, type, texture) {
-    let scene_game = game.scene.getScene('sceneGame');
     console.log("In processAudioFile with key: " + key);
+    let scene_game = game.scene.getScene('sceneGame');
+    
     if(key === "level-up") {
         level_up_music = scene_game.sound.add('level-up');
     }
@@ -6619,6 +6668,17 @@ function processAudioFile(key, type, texture) {
     if(key === "laser") {
         sound_laser = scene_game.sound.add('laser', {volume: 0.5 });
     }
+
+    if(key === 'corporation_1') { 
+        sound_corporation_1 = scene_game.sound.add('corporation_1', {volume: 0.5 });
+        //if(play_on_complete) {
+        //    scene_game.sound.play(sound_corporation_1);
+        //}
+        sound_corporation_1.play();
+    }
+
+
+    
 }
 
 
@@ -6655,6 +6715,7 @@ function processFile(key, type, texture) {
 
     if (monster_sprites_index === -1) {
         console.log("%c Could not find " + key + " in monster_sprites");
+        return false;
     }
 
     let frame_count_minus_one = monster_sprites[monster_sprites_index].frame_count - 1;
@@ -7422,6 +7483,8 @@ function movePlayerInstant(player_index, x, y) {
 
     if (players[player_index].id === client_player_id) {
         //console.log("function movePlayerInstant centering camera at tile_x,tile_y: " + tile_x + "," + tile_y);
+        // True is setting roundPixels to true. Testing this to get rid of tile bleed in Phaser 3.24.1
+        //camera.startFollow(players[player_index].sprite, true);
         camera.startFollow(players[player_index].sprite);
         //camera.centerOn(x, y);
     }
@@ -8237,13 +8300,13 @@ function removeNpc(npc_id) {
         if (battle_linker.attacking_type === 'npc' && battle_linker.attacking_id === npc_id) {
 
             delete battle_linkers[i];
-            console.log("Removed battle linker - attacking np");
+            //console.log("Removed battle linker - attacking np");
         }
 
         if (battle_linker.being_attacked_type === 'npc' && battle_linker.being_attacked_id === npc_id) {
 
             delete battle_linkers[i];
-            console.log("Removed battle linker - npc being attacked");
+            //console.log("Removed battle linker - npc being attacked");
         }
     });
 
@@ -9891,6 +9954,7 @@ function showClickMenuObject(coord) {
                 let player_ship_index = objects.findIndex(function (obj) { return obj && obj.id === players[client_player_index].ship_id; });
                 if (player_ship_index !== -1 && objects[player_ship_index].object_type_id === 114) {
                     player_can_salvage = false;
+                    $('#click_menu').append("<a target='_blank' href='https://space.alphacoders.com/site/tutorial/ship-building'>Build A Better Ship To Salvage</a>");
                 }
             }
 
@@ -9959,9 +10023,25 @@ function showClickMenuObject(coord) {
             }
             // Just an attack option
             else {
-                $('#click_menu').append("<br><button id='attack_" + objects[object_index].id + "' object_id='" + objects[object_index].id +
+
+                // No attack option if we are in the galaxy view and in a pod
+                let pod_in_galaxy = false;
+                if(current_view === 'galaxy') {
+                    let player_ship_index = objects.findIndex(function(obj) { return obj && obj.id === players[client_player_index].ship_id; });
+                    if(player_ship_index !== -1 && objects[player_ship_index].object_type_id === 114) {
+                        pod_in_galaxy = true;
+                    }
+                    
+                }
+
+                if(!pod_in_galaxy) {
+                    $('#click_menu').append("<br><button id='attack_" + objects[object_index].id + "' object_id='" + objects[object_index].id +
                     "' class='button is-warning is-small' source='object_type_can_be_attacked'>Attack " +
                     object_types[object_type_index].name + "</button><br>");
+                } else {
+                    $('#click_menu').append("<br><a target='_blank' href='https://space.alphacoders.com/site/tutorial/ship-building'>Build A Better Ship To Attack</a>");
+                }
+                
             }
         }
 

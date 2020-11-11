@@ -215,7 +215,7 @@ socket.on('battle_linker_info', function(data) {
             }
 
             delete battle_linkers[battle_linker_index];
-            console.log("Removed battle linker - server said to remove");
+            //console.log("Removed battle linker - server said to remove");
             redrawBars();
         } else {
             //console.log("Didn't have it anyways");
@@ -429,6 +429,7 @@ socket.on('damaged_data', function(data) {
     //console.log(data.damage_types);
 
     if(play_sounds && sound_laser) {
+        console.log("Playing sound_laser!");
         sound_laser.play();
     }
     
@@ -798,7 +799,7 @@ socket.on('coord_info', function (data) {
 
 
     if(coords[coord_index].npc_id) {
-        console.log("Coord has an npc");
+        //console.log("Coord has an npc");
         let npc_index = npcs.findIndex(function(obj) { return obj && obj.id === parseInt(coords[coord_index].npc_id); });
         if(npc_index === -1) {
             console.log("We don't have this npc. Requesting it");
@@ -1013,6 +1014,7 @@ socket.on('login_data', function(data) {
                 if(planet_index !== -1) {
                     console.log("Going to call loadMonsterSprites for planet type id: " + planets[planet_index].planet_type_id);
                     loadMonsterSprites('planet', planets[planet_index].planet_type_id);
+                    playBackgroundMusic('planet_type', planets[planet_index].planet_type_id);
                 } else {
                     console.log("Could not get the planet");
                 }
@@ -1549,7 +1551,7 @@ socket.on('news', function (data) {
 
 socket.on('npc_info', function(data) {
 
-    console.log("Got npc info for npc id: " + data.npc.id);
+    //console.log("Got npc info for npc id: " + data.npc.id);
 
     data.npc.id = parseInt(data.npc.id);
 
@@ -1580,7 +1582,7 @@ socket.on('npc_info', function(data) {
                 redrawBars();
             }
         } else {
-            console.log("Not drawing this npc right now");
+            //console.log("Not drawing this npc right now");
 
         }
     } else {
@@ -3454,6 +3456,8 @@ socket.on('view_change_data', function(data) {
         
         generateFuelDisplay();
 
+        playBackgroundMusic('galaxy');
+
     } else if(data.view === 'planet') {
 
         current_view = 'planet';
@@ -3467,6 +3471,7 @@ socket.on('view_change_data', function(data) {
 
         if(data.planet_type_id) {
             loadMonsterSprites('planet', data.planet_type_id);
+            playBackgroundMusic('planet_type', data.planet_type_id);
         }
 
         if(client_player_index !== -1) {
@@ -3474,8 +3479,13 @@ socket.on('view_change_data', function(data) {
         }
 
 
-        console.log("View chagned to planet. We should be removing fuel display now");
+        //console.log("View chagned to planet. We should be removing fuel display now");
         generateFuelDisplay();
+
+        if(sound_engine && sound_engine.isPlaying) {
+            sound_engine.stop();
+        }
+        
         
 
 

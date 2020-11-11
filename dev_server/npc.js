@@ -579,10 +579,13 @@ const planet = require('./planet.js');
             2. On a planet, lets walk around and try harvesting things
             3. Tired of this planet? Lets go to a new one
     */
-    async function foragerSetTask(dirty, npc_index) {
+    async function foragerSetTask(dirty, npc_index, debug_npc_ids) {
         try {
 
-            //console.log("In foragerSetTask for npc id: " + dirty.npcs[npc_index].id + " " + dirty.npcs[npc_index].name);
+            if(debug_npc_ids.indexOf(dirty.npcs[npc_index].id) !== -1) {
+                console.log("In foragerSetTask for npc id: " + dirty.npcs[npc_index].id + " " + dirty.npcs[npc_index].name);
+            }
+            
 
             if(!dirty.npcs[npc_index].planet_coord_id) {
 
@@ -624,7 +627,9 @@ const planet = require('./planet.js');
             // Actions on a planet
             else {
 
-                //console.log("Npc is on a planet");
+                if(debug_npc_ids.indexOf(dirty.npcs[npc_index].id) !== -1) {
+                    console.log("NPC is on a planet");
+                }
 
                 let npc_coord_index = await main.getPlanetCoordIndex({ 'planet_coord_id': dirty.npcs[npc_index].planet_coord_id });
 
@@ -847,6 +852,8 @@ const planet = require('./planet.js');
 
         try {
 
+            let debug_npc_ids = [0];
+
             //console.log("In npc.npcActions");
 
             // We want a certain number of npcs in our world
@@ -866,6 +873,10 @@ const planet = require('./planet.js');
 
                     if(!npc) {
                         return false;
+                    }
+
+                    if(debug_npc_ids.indexOf(dirty.npcs[i].id) !== -1) {
+                        console.log("IN npcAtions for npc:id " + npc.id + " " + npc.name);
                     }
 
 
@@ -894,9 +905,9 @@ const planet = require('./planet.js');
                     }
 
                     if(task_index !== -1) {
-                        performNpcTask(dirty, i, task_index);
+                        performNpcTask(dirty, i, task_index, debug_npc_ids);
                     } else {
-                        setNpcTask(dirty, i);
+                        setNpcTask(dirty, i, debug_npc_ids);
                     }
 
 
@@ -1006,7 +1017,7 @@ const planet = require('./planet.js');
 
 
     */
-    async function performNpcTask(dirty, npc_index, task_index) {
+    async function performNpcTask(dirty, npc_index, task_index, debug_npc_ids) {
         try {
 
             //console.log("Task index: " + task_index);
@@ -1340,7 +1351,7 @@ const planet = require('./planet.js');
     exports.setNpcStructure = setNpcStructure;
 
 
-    async function setNpcTask(dirty, npc_index) {
+    async function setNpcTask(dirty, npc_index, debug_npc_ids) {
         try {
 
             //console.log("In setNpcTask");
@@ -1419,7 +1430,7 @@ const planet = require('./planet.js');
                 } else if(dirty.npcs[npc_index].current_job_id === 6) {
                     slaverCode(dirty, npc_index);
                 } else if(dirty.npcs[npc_index].current_job_id === 7) {
-                    foragerSetTask(dirty, npc_index);
+                    foragerSetTask(dirty, npc_index, debug_npc_ids);
                 }
             }
 
