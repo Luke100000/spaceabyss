@@ -2953,35 +2953,126 @@ function playBackgroundMusic(type, type_id) {
         return false;
     }
 
-    console.log("In playBackgroundMusic");
+    console.log("In playBackgroundMusic type: " + type + " type_id: " + type_id);
 
     let scene_game = game.scene.getScene('sceneGame');
 
     if(type === 'planet_type' && type_id === 30) {
-        console.log("Going to load in corporation_1 background music");
 
+        console.log("Going to play corporation planet background music");
 
         // Load up the file if we don't have it already
         // Phaser 3.23+ required
-        //if(!scene_game.sound.get('corporation_1')) {
-        if(!sound_corporation_1) {
-            scene_game.load.on('filecomplete', processAudioFile, this);
-            scene_game.load.audio('corporation_1', ['https://space.alphacoders.com/Urban-Jungle-2061_Looping.mp3']);
-            scene_game.load.start();
+        let rand_num = getRandomIntInclusive(1,2);
+
+        if(rand_num === 1) {
+            if(!sound_corporation_1) {
+                scene_game.load.on('filecomplete', processAudioFile, this);
+                scene_game.load.audio('corporation_1', ['https://space.alphacoders.com/corporation_1.mp3']);
+                scene_game.load.start();
+            } else {
+    
+                //sound_corporation_1.on('ended', function() { console.log("In sound corporation 1 ended"); playBackgroundMusic(type, type_id); });
+                sound_corporation_1.play();
+            }
+                
+        } else {
+            if(!sound_corporation_2) {
+                scene_game.load.on('filecomplete', processAudioFile, this);
+                scene_game.load.audio('corporation_2', ['https://space.alphacoders.com/corporation_2.mp3']);
+                scene_game.load.start();
+            } else {
+    
+                //sound_corporation_2.on('ended', function() { console.log("In sound corporation 2 ended"); playBackgroundMusic(type, type_id); });
+                sound_corporation_2.play();
+            }
+                
         }
-            
-        //}
+
 
         
-        if(sound_corporation_1) {
-         
-            sound_corporation_1.play();
-        }
+    
         
 
     } else if(type === 'galaxy') {
         if(sound_corporation_1) {
             sound_corporation_1.stop();
+        }
+    }
+
+}
+
+
+function playDamageSound(damage_types) {
+
+    if(!play_sounds) {
+        return false;
+    }
+
+    let scene_game = game.scene.getScene('sceneGame');
+
+    for(let i = 0; i < damage_types.length; i++) {
+
+
+        if(damage_types[i] === 'electric') {
+            if(sound_electric) {
+                sound_electric.play();
+            } else {
+                scene_game.load.on('filecomplete', processAudioFile, this);
+                scene_game.load.audio('electric', ['https://space.alphacoders.com/electricity.mp3']);
+                scene_game.load.start();
+            }
+        } else if(damage_types[i] === 'hacking') {
+            if(sound_hacking) {
+                sound_hacking.play();
+            } else {
+                scene_game.load.on('filecomplete', processAudioFile, this);
+                scene_game.load.audio('hacking', ['https://space.alphacoders.com/hacking.mp3']);
+                scene_game.load.start();
+            }
+        } else if(damage_types[i] === 'healing') {
+            if(sound_healing) {
+                sound_healing.play();
+            } else {
+                scene_game.load.on('filecomplete', processAudioFile, this);
+                scene_game.load.audio('healing', ['https://space.alphacoders.com/healing.wav']);
+                scene_game.load.start();
+            }
+        } else if(damage_types[i] === 'laser') {
+
+            if(sound_laser) {
+                sound_laser.play();
+            } else {
+                scene_game.load.on('filecomplete', processAudioFile, this);
+                scene_game.load.audio('laser', ['https://space.alphacoders.com/laser.wav']);
+                scene_game.load.start();
+            }
+        } else if(damage_types[i] === 'melee') {
+            if(sound_melee) {
+                sound_melee.play();
+            } else {
+                scene_game.load.on('filecomplete', processAudioFile, this);
+                scene_game.load.audio('melee', ['https://space.alphacoders.com/melee.mp3']);
+                scene_game.load.start();
+            }
+        } else if(damage_types[i] === 'piercing') {
+            if(sound_piercing) {
+                sound_piercing.play();
+            } else {
+                scene_game.load.on('filecomplete', processAudioFile, this);
+                scene_game.load.audio('piercing', ['https://space.alphacoders.com/piercing.mp3']);
+                scene_game.load.start();
+            }
+        } else {
+           
+            if(sound_melee) {
+                sound_melee.play();
+            } else {
+                scene_game.load.on('filecomplete', processAudioFile, this);
+                scene_game.load.audio('melee', ['https://space.alphacoders.com/melee.mp3']);
+                scene_game.load.start();
+            }
+            
         }
     }
 
@@ -3286,6 +3377,10 @@ function printAssemblyList(assembling_object = false, coord = false) {
 
         html_string += "<div class='message is-info'><div class='message-body'>";
 
+        if(players[client_player_index].exp < 50) {
+            html_string += "<div class='notification is-info'>New Player Tip: You will need 20 Territe to build a Manufacturer. You can build more things in a manufacturer</div>";
+        }
+
 
         let could_assemble_something = false;
 
@@ -3333,33 +3428,45 @@ function printAssemblyList(assembling_object = false, coord = false) {
 
 
         floor_types.forEach(function (floor_type) {
+
+
+            // Object type is assembled
             if (floor_type.is_assembled) {
 
-                // Check Assembly Linkers
-                let floor_assembly_linkers = floor_type_assembly_linkers.filter(linker => linker.required_for_floor_type_id === floor_type.id);
 
-                let requirements_met = true;
+                // See if there is an assembled in linker
+                let assembled_in_linker_index = assembled_in_linkers.findIndex(function (obj) { return obj && obj.floor_type_id === floor_type.id; });
 
-                floor_assembly_linkers.forEach(function (assembly_linker) {
-                    let met_this_requirement = false;
-                    player_inventory_items.forEach(function (inventory_item) {
-                        if (inventory_item.object_type_id === assembly_linker.object_type_id && inventory_item.amount >= assembly_linker.amount) {
-                            met_this_requirement = true;
+                if (assembled_in_linker_index === -1) {
+                    // Check Assembly Linkers
+                    let floor_assembly_linkers = floor_type_assembly_linkers.filter(linker => linker.required_for_floor_type_id === floor_type.id);
+
+                    let requirements_met = true;
+
+                    floor_assembly_linkers.forEach(function (assembly_linker) {
+                        let met_this_requirement = false;
+                        player_inventory_items.forEach(function (inventory_item) {
+                            if (inventory_item.object_type_id === assembly_linker.object_type_id && inventory_item.amount >= assembly_linker.amount) {
+                                met_this_requirement = true;
+                            }
+                        });
+
+                        if (!met_this_requirement) {
+                            requirements_met = false;
                         }
                     });
 
-                    if (!met_this_requirement) {
-                        requirements_met = false;
-                    }
-                });
+                    if (requirements_met) {
+                        html_string += generateAssemblyListItemFloor(floor_type, floor_assembly_linkers);
 
-                if (requirements_met) {
-                    html_string += generateAssemblyListItemFloor(floor_type, floor_assembly_linkers);
-
-                    if (!could_assemble_something) {
-                        could_assemble_something = true;
+                        if (!could_assemble_something) {
+                            could_assemble_something = true;
+                        }
                     }
                 }
+
+
+
             }
         });
 
@@ -3502,6 +3609,60 @@ function printAssemblyList(assembling_object = false, coord = false) {
         });
 
 
+        floor_types.forEach(function (floor_type) {
+
+            
+            // See if there is a matching assembled_in_linker for this object type
+            let assembled_in_linker_index = assembled_in_linkers.findIndex(function (obj) {
+                return obj && obj.floor_type_id === floor_type.id &&
+                    obj.assembled_in_object_type_id === assembling_object.object_type_id;
+            });
+
+            if (assembled_in_linker_index === -1) {
+                return false;
+            }
+
+            if(!floor_type.is_assembled) {
+                return false;
+            }
+
+
+
+            console.log("Floor type id: " + floor_type.id + " " + floor_type.name + "is assembled here!");
+
+
+            // Check Assembly Linkers
+            let floor_assembly_linkers = floor_type_assembly_linkers.filter(linker => linker.required_for_floor_type_id === floor_type.id);
+
+            let requirements_met = true;
+
+            floor_assembly_linkers.forEach(function (assembly_linker) {
+                let met_this_requirement = false;
+                player_inventory_items.forEach(function (inventory_item) {
+                    if (inventory_item.object_type_id === assembly_linker.object_type_id && inventory_item.amount >= assembly_linker.amount) {
+                        met_this_requirement = true;
+                    }
+                });
+
+                if (!met_this_requirement) {
+                    requirements_met = false;
+                    console.log("Failed to meet requirements");
+                }
+            });
+
+            if (requirements_met) {
+                console.log("generating floor display");
+                html_string += generateAssemblyListItemFloor(floor_type, floor_assembly_linkers, false, assembling_object);
+
+            }
+            
+
+
+
+            
+        });
+
+
         html_string += "</div>";
 
         $('#click_menu').append(html_string);
@@ -3590,6 +3751,8 @@ function printAssemblyList(assembling_object = false, coord = false) {
 
 
         });
+
+
 
         html_string += "</div>";
 
@@ -3890,7 +4053,7 @@ function generateAssemblyListItem(object_type, object_assembly_linkers, assembli
     return html_string;
 }
 
-function generateAssemblyListItemFloor(floor_type, floor_assembly_linkers, coord = false) {
+function generateAssemblyListItemFloor(floor_type, floor_assembly_linkers, coord = false, assembling_object = false) {
     let html_string = "";
     html_string += "<table class='assemble'><tr><td><div class='center'><strong>" + floor_type.name + " Floor</strong><br>";
     html_string += "<img src='https://space.alphacoders.com/floor-" + urlName(floor_type.name) + ".png'>";
@@ -3924,6 +4087,7 @@ function generateAssemblyListItemFloor(floor_type, floor_assembly_linkers, coord
         }
     }
 
+    html_string += " being_assembled_in_object_id='" + assembling_object.id + "'";
 
     html_string += " floor_type_id='" + floor_type.id + "' class='button is-default' source='generateAssemblyListItemFloor'>Assemble</button></div>";
     html_string += "</td></tr></table>";
@@ -6635,6 +6799,7 @@ function checkLevelIncrease(old_player_data, new_player_data) {
 
 
 function loadAudio() {
+    
     let scene_game = game.scene.getScene('sceneGame');
     // Lets try some audio stuff
 
@@ -6643,11 +6808,7 @@ function loadAudio() {
     scene_game.load.start();
 
     scene_game.load.on('filecomplete', processAudioFile, this);
-    scene_game.load.audio('engine', ['https://space.alphacoders.com/engine.wav']);
-    scene_game.load.start();
-
-    scene_game.load.on('filecomplete', processAudioFile, this);
-    scene_game.load.audio('laser', ['https://space.alphacoders.com/laser.wav']);
+    scene_game.load.audio('engine', ['https://space.alphacoders.com/engine.mp3']);
     scene_game.load.start();
     
 
@@ -6657,25 +6818,74 @@ function processAudioFile(key, type, texture) {
     console.log("In processAudioFile with key: " + key);
     let scene_game = game.scene.getScene('sceneGame');
     
-    if(key === "level-up") {
-        level_up_music = scene_game.sound.add('level-up');
+
+    /****************** PLANETS *****************/
+    if(key === 'corporation_1') { 
+        sound_corporation_1 = scene_game.sound.add('corporation_1', {volume: 0.25 });
+        sound_corporation_1.on('ended', function() { console.log("In sound corporation 1 ended"); playBackgroundMusic('planet_type', 30); });
+        sound_corporation_1.play();
     }
+
+    if(key === 'corporation_2') { 
+        sound_corporation_2 = scene_game.sound.add('corporation_2', {volume: 0.25 });
+        sound_corporation_2.on('ended', function() { console.log("In sound corporation 2 ended"); playBackgroundMusic('planet_type', 30); });
+        sound_corporation_2.play();
+    }
+
+    if(key === 'frozen_1') { 
+        sound_frozen_1 = scene_game.sound.add('frozen_1', {volume: 0.5 });
+        sound_frozen_1.play();
+    }
+
+    if(key === 'inferno_1') { 
+        sound_inferno_1 = scene_game.sound.add('inferno_1', {volume: 0.5 });
+        sound_inferno_1.play();
+    }
+
+
+    /************* NOT PLANETS!!! *************/
 
     if(key === "engine") {
         sound_engine = scene_game.sound.add('engine', { volume: 0.25, loop: true });
     }
 
-    if(key === "laser") {
-        sound_laser = scene_game.sound.add('laser', {volume: 0.5 });
+    if(key === "electric") {
+        sound_electric = scene_game.sound.add('electric', { volume: 0.4 });
+        sound_electric.play();
     }
 
-    if(key === 'corporation_1') { 
-        sound_corporation_1 = scene_game.sound.add('corporation_1', {volume: 0.5 });
-        //if(play_on_complete) {
-        //    scene_game.sound.play(sound_corporation_1);
-        //}
-        sound_corporation_1.play();
+    if(key === "hacking") {
+        sound_hacking = scene_game.sound.add('hacking', { volume: 0.5 });
+        sound_hacking.play();
     }
+
+    if(key === "healing") {
+        sound_healing = scene_game.sound.add('healing', { volume: 0.5 });
+        sound_healing.play();
+    }
+
+    if(key === "laser") {
+        sound_laser = scene_game.sound.add('laser', {volume: 0.5 });
+        sound_laser.play();
+    }
+
+    if(key === "level-up") {
+        level_up_music = scene_game.sound.add('level-up');
+    }
+
+    if(key === 'melee') {
+        sound_melee = scene_game.sound.add('melee', { volume: 0.8 });
+        sound_melee.play();
+    }
+
+    if(key === 'piercing') {
+        sound_piercing = scene_game.sound.add('piercing', { volume: 0.5 });
+        sound_piercing.play();
+    }
+
+
+
+
 
 
     
@@ -6709,12 +6919,17 @@ function processFile(key, type, texture) {
 
     let scene_game = game.scene.getScene('sceneGame');
 
-    console.log("In processFile for key: " + key);
+    //console.log("In processFile for key: " + key);
+
+    // If we already have this key, it's already being
+    //if(scene_game.textures.exists(key)) {
+    //    return false;
+    //}
 
     let monster_sprites_index = monster_sprites.findIndex(function (obj) { return obj && obj.key === key; });
 
     if (monster_sprites_index === -1) {
-        console.log("%c Could not find " + key + " in monster_sprites");
+        //console.log("%c Could not find " + key + " in monster_sprites");
         return false;
     }
 
@@ -9692,6 +9907,16 @@ function showClickMenuObject(coord) {
 
 
     if (objects[object_index].object_type_id === 90) {    // MANUFACTURER
+        //console.log("User right clicked on Manufacturer!");
+        //if(objects[object_index].player_id === player_id) {
+
+        printAssemblyList(objects[object_index], coord);
+        //}
+
+
+    }
+
+    if (objects[object_index].object_type_id === 402) {    // MANUFACTURER
         //console.log("User right clicked on Manufacturer!");
         //if(objects[object_index].player_id === player_id) {
 

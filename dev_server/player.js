@@ -619,7 +619,7 @@ async function damage(dirty, data) {
         if(!data.flavor_text) {
             data.flavor_text = false;
         } else {
-            console.log("In player.damage with flavor text: " + data.flavor_text);
+            //console.log("In player.damage with flavor text: " + data.flavor_text);
         }
 
         if(!data.damage_types) {
@@ -1331,8 +1331,8 @@ async function kill(dirty, player_index) {
 
         // Get the socket the player is connected with
         let player_socket = world.getPlayerSocket(dirty, player_index);
-        if(player_socket === false) {
-            console.log("Got player socket as FALSE");
+        if(helper.isFalse(player_socket)) {
+            console.log("Player doesn't look to be currently connected");
         } else {
             console.log("Got player socket id as: " + player_socket.id);
         }
@@ -1388,6 +1388,7 @@ async function kill(dirty, player_index) {
 
             // Don't want to overwrite the object that is already on the tile
             if(!dirty.ship_coords[coord_index].object_id) {
+                console.log("Trying to place the dead body on the ship");
                 await main.updateCoordGeneric(player_socket, { 'ship_coord_index': coord_index, 'player_id': false, 'object_index': new_object_index });
             } else {
                 dirty.waiting_drops.push({'object_index': new_object_index, 'ship_coord_index': coord_index });
@@ -1450,9 +1451,9 @@ async function kill(dirty, player_index) {
 
         // delete the old body
         console.log("Going to delete the old body. Body index: " + body_index);
-        await game_object.deleteObject(dirty, { 'object_index': body_index });
+        let delete_body_result = await game_object.deleteObject(dirty, { 'object_index': body_index });
 
-        console.log("Deleted the old body");
+        console.log("Tried to delete the old body. Result: " + delete_body_result);
 
         // give the player a new body
         // TODO we want to have a cost for body switching for any reason
@@ -1468,12 +1469,18 @@ async function kill(dirty, player_index) {
 
 
 
-        await movement.switchToGalaxy(player_socket, dirty, 'death');
-        player_socket.emit('message_data', { 'message': "Your body was killed", 'scope': 'system' });
+        
+        if(helper.notFalse(player_socket)) {
+            await movement.switchToGalaxy(player_socket, dirty, 'death');
+            player_socket.emit('message_data', { 'message': "Your body was killed", 'scope': 'system' });
+        }
+        
 
         // and clear out the database queue
         delete dirty.database_queue[database_queue_index];
 
+
+        return true;
 
     } catch(error) {
         log(chalk.red("Error in player.kill: " + error));

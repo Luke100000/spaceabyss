@@ -160,6 +160,7 @@ dirty.events = [];
 dirty.event_tick_linkers = [];
 dirty.event_linkers = [];
 dirty.factions = [];
+dirty.faction_linkers = [];
 dirty.floor_types = [];
 dirty.floor_type_display_linkers = [];
 dirty.elevator_linkers = [];
@@ -395,6 +396,20 @@ inits.init(function(callback) {
         callback(null);
    });
 });
+
+inits.init(function(callback) {
+    pool.query("SELECT * FROM faction_linkers", function(err, rows, fields) {
+        if(err) throw err;
+ 
+         if(rows[0]) {
+             dirty.faction_linkers = rows;
+         }
+ 
+         console.log("Loaded Faction Linkers Into Memory");
+ 
+         callback(null);
+    });
+ });
 
 inits.init(function(callback) {
     pool.query("SELECT * FROM floor_types", function(err, rows, fields) {
@@ -1243,6 +1258,7 @@ inits.init(function(callback) {
 
 const battle = require('./battle.js');
 const event = require('./event.js');
+const faction = require('./faction.js');
 const game = require('./game.js');
 const game_object = require('./game_object.js');
 const helper = require('./helper.js');
@@ -1538,7 +1554,7 @@ io.sockets.on('connection', function (socket) {
     });
 
     socket.on('create_faction_data', async function(data) {
-       await world.createFaction(socket, dirty, data);
+       await faction.create(socket, dirty, data);
     });
 
 
@@ -1585,7 +1601,7 @@ io.sockets.on('connection', function (socket) {
     });
 
     socket.on('leave_faction_data', function(data) {
-        world.leaveFaction(socket, dirty, data);
+        faction.leave(socket, dirty);
     });
 
     socket.on('login_data', function (data) {
@@ -1675,7 +1691,7 @@ io.sockets.on('connection', function (socket) {
     });
 
     socket.on('request_faction_data', async function(data) {
-        await game.sendFactionData(socket, dirty);
+        await faction.sendData(socket, dirty);
     });
 
     socket.on('request_fix', async function(data) {
@@ -3037,9 +3053,12 @@ async function loginPlayer(socket, dirty, data) {
         await player.sendShips(socket, dirty, player_index);
         await world.sendPlayerAreas(socket, dirty, player_index);
 
+        let faction_linker_index = faction.getLinkerIndex(dirty, dirty.players[player_index].id);
         // If the player has a faction, we send that faction info
-        if(dirty.players[player_index].faction_id) {
-            let faction_index = getFactionIndex(dirty.players[player_index].faction_id);
+        if(faction_linker_index !== -1) {
+
+            socket.emit('faction_linker_info', { 'faction_linker': dirty.faction_linkers[faction_linker_index] });
+            let faction_index = faction.getIndex(dirty, dirty.players[player_index].faction_id);
 
             if(faction_index !== -1) {
                 socket.emit('faction_info', { 'faction': dirty.factions[faction_index] });
@@ -3579,18 +3598,6 @@ async function getCoordIndex(data) {
 }
 
 module.exports.getCoordIndex = getCoordIndex;
-
-function getFactionIndex(faction_id) {
-    try {
-
-        return dirty.factions.findIndex(function(obj) { return obj && obj.id === parseInt(faction_id); });
-    } catch(error) {
-        log(chalk.red("Error in getFactionIndex: " + error));
-        console.error(error);
-    }
-}
-
-module.exports.getFactionIndex = getFactionIndex;
 
 
 //  data:   planet_coord_id   OR   (   planet_id   |   planet_level   |   tile_x   |   tile_y   ) OR spawned_monster_id

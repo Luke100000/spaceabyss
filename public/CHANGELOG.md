@@ -1,3 +1,21 @@
+## [0.2.15] - 2020-11-17
+
+
+### Added
+- Tons of work on audio. It's going to take me a lot of time to get audio that doesn't sound like butt. I might need to get someone that can do sound effects 
+specifically for Space Abyss.
+- Architect Station. The construction of all the floors/walls has been moved to this station.
+
+### Fixed
+- Bug with dying due to addiction
+
+### Changed
+- Floor types now need to be assembled in something (for now, they will all be in the Architect Station)
+- More monsters on the Azure planet and Machine planet will also sometimes drop AI Dust
+- Increased number of times AI Fragments have to be researched
+- Started to revamp the faction system... and by revamp I mean actually start working to get them to a point where they are usable. Lots more work to do on this,
+but the body addiction dying bug was kind of big.
+
 ## [0.2.14] - 2020-11-10
 
 ### Fixed

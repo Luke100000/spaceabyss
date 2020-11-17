@@ -774,7 +774,9 @@ async function deleteObject(dirty, data) {
             await game.checkSpawnedEvent(dirty, check_spawned_event_id, check_spawned_event_data);
         }
 
-        //console.log("Done in game_object.deleteObject");
+        console.log("Done in game_object.deleteObject");
+
+        return true;
     } catch(error) {
         log(chalk.red("Error in game_object.deleteObject: " + error));
         console.error(error);
@@ -861,7 +863,7 @@ async function getIndex(dirty, object_id) {
 
             } else {
                 log(chalk.yellow("Did not find object with id: " + object_id + " in the database"));
-                console.trace("Traced");
+                //console.trace("Traced");
 
 
                 // if a planet coord still has this object id, lets remove that as well

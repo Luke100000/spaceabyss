@@ -1,4 +1,3 @@
-
 function objectTint(object_id) {
     console.log("In objectTint");
     let new_object_tint = $("#objectcolor_" + object_id).val();
@@ -206,14 +205,15 @@ $(document).on('click', 'button', function () {
         var clicked_tile_x = false;
         var clicked_tile_y = false;
         console.log("tile_x attribute: " + $('#' + clicked_id).attr('tile_x'));
+        let being_assembled_in_object_id = $('#' + clicked_id).attr('being_assembled_in_object_id');
         if($('#' + clicked_id).attr('tile_x')) {
             console.log("Assembly click has tile_x");
             var clicked_tile_x = $('#' + clicked_id).attr('tile_x');
             var clicked_tile_y = $('#' + clicked_id).attr('tile_y');
 
-            socket.emit("assemble_data", {floor_type_id: split_name[1], 'tile_x': clicked_tile_x, 'tile_y': clicked_tile_y});
+            socket.emit("assemble_data", {floor_type_id: split_name[1], 'tile_x': clicked_tile_x, 'tile_y': clicked_tile_y, 'being_assembled_in_object_id': being_assembled_in_object_id });
         } else {
-            socket.emit("assemble_data", {floor_type_id: split_name[1]});
+            socket.emit("assemble_data", {floor_type_id: split_name[1], 'being_assembled_in_object_id': being_assembled_in_object_id});
         }
 
         $('#click_menu').empty();
@@ -1135,12 +1135,13 @@ $(document).on('click', 'button', function () {
 
         $('#sound').empty();
 
-        let current_sound_status = localStorage.getItem("sound");
-        console.log("current_sound_status:");
-        console.log(current_sound_status);
+        //let current_sound_status = localStorage.getItem("sound");
+        //console.log("current_sound_status:");
+        //console.log(current_sound_status);
 
         // localStorage only actually stores values as strings 
-        if(current_sound_status === null || current_sound_status === false || current_sound_status === "false") {
+        if(play_sounds === false) {
+        //if(current_sound_status === null || current_sound_status === false || current_sound_status === "false") {
 
 
             $('#sound').append("Sound ON");
@@ -1166,10 +1167,13 @@ $(document).on('click', 'button', function () {
             $('#sound').append("<button id=\"sound\">Toggle Sound</button>");
             console.log("Set sound off");
 
-            if(sound_engine_is_playing) {
-                sound_engine.stop();
-                sound_engine_is_playing = false;
-            }
+            //if(sound_engine && sound_engine.isPlaying) {
+            //    sound_engine.stop();
+            //}
+
+            let scene_game = game.scene.getScene('sceneGame');
+
+            scene_game.sound.stopAll();
         }
     }
 

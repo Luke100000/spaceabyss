@@ -428,11 +428,7 @@ socket.on('damaged_data', function(data) {
 
     //console.log(data.damage_types);
 
-    if(play_sounds && sound_laser) {
-        console.log("Playing sound_laser!");
-        sound_laser.play();
-    }
-    
+
 
 
     let drawing_x = -100;
@@ -594,6 +590,11 @@ socket.on('damaged_data', function(data) {
         effect_data.damage_types = [data.additional_effect];
         addEffect(effect_data);
     }
+
+
+    
+    playDamageSound(data.damage_types);
+
 
 });
 
@@ -824,6 +825,26 @@ socket.on('faction_info', function(data) {
         }
     }
 });
+
+
+socket.on('faction_linker_info', function(data) {
+
+
+    let faction_linker_index = faction_linkers.findIndex(function(obj) { return obj && obj.id === data.faction_linker.id; });
+
+    if(faction_linker_index !== -1 && typeof data.remove !== 'undefined') {
+        delete faction_linkers[faction_linker_index];
+    } else if(fation_linker_index === -1) {
+        faction_linkers.push(data.faction_linker);
+    }
+
+    generateFactionDisplay();
+    
+
+
+});
+
+
 
 
 socket.on('floor_type_info', function(data) {
@@ -3456,6 +3477,8 @@ socket.on('view_change_data', function(data) {
         
         generateFuelDisplay();
 
+        let scene_game = game.scene.getScene('sceneGame');
+        scene_game.sound.stopAll();
         playBackgroundMusic('galaxy');
 
     } else if(data.view === 'planet') {
@@ -3468,6 +3491,10 @@ socket.on('view_change_data', function(data) {
         battle_linkers = [];
         coords = [];
         ship_coords = [];
+
+        
+        let scene_game = game.scene.getScene('sceneGame');
+        scene_game.sound.stopAll();
 
         if(data.planet_type_id) {
             loadMonsterSprites('planet', data.planet_type_id);
@@ -3482,6 +3509,7 @@ socket.on('view_change_data', function(data) {
         //console.log("View chagned to planet. We should be removing fuel display now");
         generateFuelDisplay();
 
+        
         if(sound_engine && sound_engine.isPlaying) {
             sound_engine.stop();
         }

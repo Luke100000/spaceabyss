@@ -145,16 +145,20 @@ Electron Flux Whip (ELF)
 Energy Disk
 Erasure Cannon
 Fusion Weapons
+Fusion Lance
 Gauss rifle
 Gravity weapons
 Gravgun
+grenade launcher
 Grid-fire impulsor
 Heavy Blaster
+Heavy Laser
 Knife missiles
 line gun
 Liquid Hydrogen Weapons
 Monofilament warp
 Nanite Cannon
+neutrino weapons ( look up on Google - cool stuff like passing through the earth)
 proton pack
 Pulse Pistol
 Pulse Rifle

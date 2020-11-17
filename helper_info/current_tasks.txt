@@ -4,16 +4,19 @@ CURRENT GAMEPLAY TEST:
 
 DOING NOW:
 
+    Dying on a ship is broken when it's from an addiction ( thinks body isn't equipped )
+
+
+    Have a large AI dust spawn or two on Desert planets
+
     Sounds for the different damage types
     Background music for the different planets/galaxy
-
-    See if we can tell if a sprite/audio file is in the process of being loaded/exists at all/play after load
-        I suppose I can do that in the processAudioFile function since it's being asigned to a variable.
-        Either it's basically false, or it's there
 
 
     Test that the basics of factions works
         Maybe a faction display on the site and all that
+        have the players attacking Phatheon's stuff be in a faction together
+        Cytheus and.... Neurotox
 
     Once we have audio and factions, I think it'll be time to try to get the game on Itch.io
 
@@ -25,9 +28,6 @@ DOING NOW:
     select objects.id as object_id, objects.player_id, objects.coord_id, coords.object_id, coords.player_id, coords.npc_id,coords.planet_id,coords.belongs_to_planet_id FROM objects LEFT JOIN coords ON coords.id = objects.coord_id WHERE objects.coord_id != false AND objects.object_type_id IN(114,233,298,238,239,339,212,335,369,296,313,381,387) AND objects.player_id != false;
 
 
-    Test optional audio. Off by default for now while I work on it
-    1. laser sound
-    2. engine sound
 
     Research outpost
         Could have an even better benefit than the science vessel. Something that spawns in space. But there's only a couple, and they can be pretty easily 
@@ -86,7 +86,7 @@ DOING NOW:
 
             When a market linker ends, if the area has auto_market , just extend it again instead of deleting it.
 
-
+    laser sound is a pew, laser sprite is a beam
 
     To upgrade to phaser 3.24.1:
         Have to extrude floor tiles ( at the very least )

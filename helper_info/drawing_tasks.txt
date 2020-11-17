@@ -3,6 +3,10 @@
 ***************************************
 
 
+large ai dust (a rarer spawn on desert planets)
+
+buildings for the corporation planet (64x64 to 64x96 for starters)
+
 player body that eats trash (mass of moving maggots)
 
 ***************************
@@ -70,10 +74,6 @@ moss deposit
 
 Asteroid Ship
 
-Zuran Cruiser Wreck
-    https://images.gemquery.com/255/content_2554351.jpg
-
-    Spawns a Widden Monster
 
     Also spawns bugs https://images.gemquery.com/240/content_2402471.png
 

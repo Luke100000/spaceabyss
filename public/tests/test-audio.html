@@ -1,0 +1,130 @@
+<!doctype html>
+<html lang="en">
+    <head>
+        <meta charset="UTF-8" />
+
+
+        <script src="//space.alphacoders.com/phaser-3.15.1.js"></script>
+
+
+
+        <script type="text/javascript">
+
+
+
+
+            var SceneGame = new Phaser.Class({
+                Extends: Phaser.Scene,
+
+                initialize:
+
+                function SceneGame() {
+                    Phaser.Scene.call(this, { key: 'sceneGame', 'active': true });
+                },
+
+                preload: function() {
+                    this.sound.pauseOnBlur = false;
+                },
+
+            create: function() {
+
+
+                this.input.on('pointerdown', function(pointer) {
+                    //console.log("down");
+                    test();
+                });
+
+            },
+
+            update: function(time, delta) {
+
+            }
+
+        });
+
+
+        var config = {
+                type: Phaser.WEBGL,
+                width: 704,
+                height: 576,
+                backgroundColor: '#000000',
+                parent: 'the_game',
+                physics: {
+                    default: 'arcade'
+                },
+                pixelArt: true,
+                scene: [ SceneGame ]
+            };
+
+
+
+        game = new Phaser.Game(config);
+
+
+
+    </script>
+
+
+    </head>
+
+    <body>
+        <div id="the_game"></div>
+    </body>
+
+
+
+    <script>
+
+        var sound_first;
+        var sound_second;
+
+        function test() {
+            //console.log("test");
+            let scene_game = game.scene.getScene('sceneGame');
+            scene_game.load.on('filecomplete', processAudioFile, this);
+            scene_game.load.audio('sound_first', ['https://space.alphacoders.com/corporation_1.mp3']);
+            scene_game.load.start();
+        }
+
+        function processAudioFile(key, type_texture) {
+            let scene_game = game.scene.getScene('sceneGame');
+
+            if(key === 'sound_first') {
+                sound_first = scene_game.sound.add('sound_first', {volume: 0.5 });
+                
+                sound_first.on('ended', function(sound) { console.log("In sound_first ended"); playSecondSound();  }, this);
+                //sound_first.on('complete', function(sound) { console.log("In sound_first complete");  }, this);
+                sound_first.play();
+            }
+
+            if(key === 'sound_second') {
+                sound_second = scene_game.sound.add('sound_second', {volume: 0.5 });
+                
+                sound_second.on('ended', function(sound) { console.log("In sound_second ended"); playFirst();  }, this);
+                //sound_second.on('complete', function(sound) { console.log("In sound_second complete");  }, this);
+                sound_second.play();
+            }
+            
+        }
+
+
+        function playSecondSound() {
+            if(!sound_second) {
+                let scene_game = game.scene.getScene('sceneGame');
+                scene_game.load.on('filecomplete', processAudioFile, this);
+                scene_game.load.audio('sound_second', ['https://space.alphacoders.com/corporation_2.mp3']);
+                scene_game.load.start();
+            } else {
+                sound_second.play();
+            }
+            
+        }
+
+        function playFirst() {
+            sound_first.play();
+        }
+
+
+    </script>
+
+</html>

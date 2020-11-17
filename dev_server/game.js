@@ -587,7 +587,6 @@ const world = require('./world.js');
 
             // Add it
             if(addiction_linker_index === -1) {
-                // we can create the faction
                 let sql = "INSERT INTO addiction_linkers(addicted_to_object_type_id, addicted_body_id, addiction_level) VALUES(?,?,?)";
                 let inserts = [dirty.object_types[object_type_index].id, dirty.objects[data.player_body_index].id, 1];
 
@@ -7068,7 +7067,6 @@ exports.eat = eat;
                     if(body_index === -1) {
                         log(chalk.yellow("Doesn't look like that body exists anymore - removing the linker"));
 
-
                         await (pool.query("DELETE FROM addiction_linkers WHERE id = ?", [dirty.addiction_linkers[i].id] ));
                         delete dirty.addiction_linkers[i];
                         return false;
@@ -7076,6 +7074,16 @@ exports.eat = eat;
 
                     let body_type_index = main.getObjectTypeIndex(dirty.objects[body_index].object_type_id);
                     let player_index = await player.getIndex(dirty, { 'player_id': dirty.objects[body_index].player_id });
+
+                    if(player_index === -1) {
+                        log(chalk.yellow("Can't find the player this body is supposed to be associated with. body's player id: " + dirty.objects[body_index].player_id));
+                        console.log("Removing addiction linker");
+
+
+                        await (pool.query("DELETE FROM addiction_linkers WHERE id = ?", [dirty.addiction_linkers[i].id] ));
+                        delete dirty.addiction_linkers[i];
+                        return false;
+                    }
                     let race_eating_index = dirty.race_eating_linkers.findIndex(function(obj) { return obj &&
                         obj.race_id === dirty.object_types[body_type_index].race_id && obj.object_type_id === dirty.object_types[addicted_object_type_index].id; });
                     let player_socket = await world.getPlayerSocket(dirty, player_index);
@@ -7121,7 +7129,7 @@ exports.eat = eat;
                                 let addiction_damage_amount = addiction_linker.addiction_level * Math.abs(dirty.race_eating_linkers[race_eating_index].hp);
 
                                 // Player has this body equippped
-                                if(dirty.players[player_index].body_id === addiction_linker.body_id) {
+                                if(dirty.players[player_index].body_id === addiction_linker.addicted_body_id) {
                                     console.log("Reduced player hp due to addiction linker");
 
                                     // Something like poison will have -HP - we don't want poison to heal in this case.
@@ -7132,7 +7140,9 @@ exports.eat = eat;
                                     if(new_player_hp <= 0) {
     
                                         console.log("Calling player.kill from tickAddictions");
-                                        await player.kill(dirty, player_index);
+                                        let player_kill_result = await player.kill(dirty, player_index);
+
+                                        console.log("player kill result: " + player_kill_result);
     
     
                                     } else {
@@ -7148,6 +7158,8 @@ exports.eat = eat;
                                         }
                                     }
                                 } else {
+                                    console.log("Damaging body that player does not have equipped. Addition body id: " + addiction_linker.addicted_body_id + 
+                                    " player body_id: " + dirty.players[player_index].body_id);
 
                                     let body_info = await game_object.getCoordAndRoom(dirty, body_index);
                                     game_object.damage(dirty, body_index, addiction_damage_amount, { 'object_info': body_info });
@@ -7727,24 +7739,30 @@ exports.eat = eat;
             let player_index = await player.getIndex(dirty, {'player_id':socket.player_id});
 
             // get the player's body
-            let body_index = await game_object.getIndex(dirty, dirty.players[player_index].body_id);
+            if(dirty.players[player_index].body_id) {
+                let body_index = await game_object.getIndex(dirty, dirty.players[player_index].body_id);
 
-            if(body_index !== -1) {
-                dirty.objects[body_index].energy++;
-                dirty.objects[body_index].has_change = true;
-
-
-                // Ruel bodies gain defense every 10,000 energy
-                if(dirty.objects[body_index].race_id === 11) {
-                    if(dirty.objects[body_index].energy >= 10000) {
-                        dirty.objects[body_index].defense++;
-                        dirty.objects[body_index].energy -= 10000;
-                        dirty.objects[body_index].has_change = true;
+                if(body_index !== -1) {
+                    dirty.objects[body_index].energy++;
+                    dirty.objects[body_index].has_change = true;
+    
+    
+                    // Ruel bodies gain defense every 10,000 energy
+                    if(dirty.objects[body_index].race_id === 11) {
+                        if(dirty.objects[body_index].energy >= 10000) {
+                            dirty.objects[body_index].defense++;
+                            dirty.objects[body_index].energy -= 10000;
+                            dirty.objects[body_index].has_change = true;
+                        }
                     }
+    
+                    socket.emit('object_info', { 'object': dirty.objects[body_index] });
                 }
-
-                socket.emit('object_info', { 'object': dirty.objects[body_index] });
+            } else {
+                chalk.yellow("Player id: " + dirty.players[player_index].id + " doesn't have a body id... maybe they just died?");
+            
             }
+            
 
         }
 
@@ -7843,6 +7861,13 @@ exports.eat = eat;
                                 }
                                 dirty.players[player_index].current_hp = new_hp;
                                 dirty.players[player_index].has_change = true;
+
+                                // Some eating linkers will reduce HP
+                                if(dirty.race_eating_linkers[race_linker_index].hp < 0) {
+                                    if(new_hp <= 0) {
+                                        await player.kill(dirty, player_index);
+                                    }
+                                }
 
                                 
 
@@ -10580,17 +10605,6 @@ exports.eat = eat;
     }
     exports.sendAssemblyLinkerData = sendAssemblyLinkerData;
 
-    async function sendFactionData(socket, dirty) {
-        //console.log("Client is requesting faction data");
-
-        dirty.factions.forEach(function(faction) {
-            socket.emit('faction_info', { 'faction': faction });
-        });
-
-
-    }
-
-    exports.sendFactionData = sendFactionData;
 
     async function sendFloorTypeData(socket, dirty) {
         //console.log("Client is requesting floor_type data");

@@ -1739,70 +1739,6 @@ async function connectLevel(socket, dirty, data) {
 
 exports.connectLevel = connectLevel;
 
-async function createFaction(socket, dirty, data) {
-
-    try {
-        let name = data.name;
-        console.log("Got faction name as: " + name);
-        name = helper.cleanStringInput(name);
-
-        console.log("Sanitized version: " + name);
-
-        let player_index = await player.getIndex(dirty, { 'player_id': socket.player_id });
-
-        // see if there's a matching faction name already
-        let faction_index = dirty.factions.findIndex(function (obj) { return obj && obj.name === name; });
-
-        if (faction_index !== -1) {
-            socket.emit('chat', { 'message': 'A faction with that name already exists. Please try a different name', 'scope': 'system' });
-            return false;
-        }
-
-        // Make sure the player isn't already part of a faction
-        if (dirty.players[player_index].faction_id) {
-            socket.emit('chat', { 'message': 'You will need to leave your current faction before creating one', 'scope': 'system' });
-            return false;
-        }
-
-
-        // we can create the faction
-        let sql = "INSERT INTO factions(name, player_id,player_count,requires_invite) VALUES(?,?,?,true)";
-        let inserts = [name, dirty.players[player_index].id, 1];
-
-        let [result] = await (pool.query(sql, inserts));
-
-        let new_id = result.insertId;
-
-        console.log("Inserted new faction id: " + new_id);
-
-
-        let [rows, fields] = await (pool.query("SELECT * FROM factions WHERE id = ?", [new_id]));
-        if (rows[0]) {
-
-            let new_faction_index = dirty.factions.push(rows[0]) - 1;
-
-            socket.emit('faction_info', { 'faction': dirty.factions[new_faction_index] });
-
-            // and have the player join!
-            dirty.players[player_index].faction_id = dirty.factions[new_faction_index].id;
-            dirty.players[player_index].has_change = true;
-
-            // and send the new player info
-            let player_info = getPlayerCoordAndRoom(dirty, player_index);
-            if (player_info.room) {
-                io.to(player_info.room).emit('player_info', { 'player': dirty.players[player_index] });
-            }
-        }
-
-
-    } catch (error) {
-        log(chalk.red("Error in world.createFaction"));
-        console.error(error);
-    }
-
-}
-
-exports.createFaction = createFaction;
 
 //  data:   coord_floor_type_ids   |   coord_monster_type_ids   |   coord_object_type_ids   |   level   |   tile_x
 //          tile_y
@@ -2250,44 +2186,6 @@ async function enslave(socket, dirty, data) {
 }
 
 exports.enslave = enslave;
-
-async function leaveFaction(socket, dirty, data) {
-    try {
-
-
-        if (isNaN(dirty.players[socket.player_index].faction_id)) {
-            log(chalk.yellow("Player doesn't seem to have a faction"));
-            return false;
-        }
-
-        let faction_index = main.getFactionIndex(dirty.players[socket.player_index].faction_id);
-
-
-
-        dirty.players[socket.player_index].faction_id = false;
-        dirty.players[socket.player_index].has_change = true;
-
-        let player_info = getPlayerCoordAndRoom(dirty, socket.player_index);
-
-        if (player_info.room) {
-            io.to(player_info.room).emit('player_info', { 'player': dirty.players[socket.player_index] });
-        }
-
-        // Decrease the faction's player count
-        if (faction_index !== -1) {
-            dirty.factions[faction_index].player_count--;
-            dirty.factions[faction_index].has_change = true;
-        }
-
-        return;
-
-    } catch (error) {
-        log(chalk.red("Error in world.leaveFaction: " + error));
-        console.error(error);
-    }
-}
-
-exports.leaveFaction = leaveFaction;
 
 
 

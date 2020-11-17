@@ -20,6 +20,8 @@ include('config.php');
 
     if (localStorage.getItem("sound") === "true") {
         play_sounds = true;
+    } else if(localStorage.getItem("sound") === "false") {
+        play_sounds = false;
     }
 
 
@@ -37,6 +39,15 @@ include('config.php');
         </script>
 
 
+        <?php
+    }
+
+    if(isset($_GET['play_sound'])) {
+        ?>
+        <script type="text/javascript">
+            play_sounds = true;
+            console.log("Set play sounds to true");
+        </script>
         <?php
     }
 ?>
@@ -639,9 +650,11 @@ include('config.php');
     }
 
     if(play_sounds) {
-        $('#sound').append("<button id=\"sound\">Sound ON. Toggle Sound Off</button>");
+        $('#sound').append("Sound ON");
+        $('#sound').append("<button id=\"sound\">Toggle Sound</button>");
     } else {
-        $('#sound').append("<button id=\"sound\">Sound OFF. Toggle Sound On</button>");
+        $('#sound').append("Sound OFF");
+        $('#sound').append("<button id=\"sound\">Toggle Sound</button>");
     }
 
 </script>
@@ -694,6 +707,7 @@ include('config.php');
     var eating_linkers = [];
     var events = [];
     var factions = [];
+    var faction_linkers = [];
     var floor_types = [];
     var floor_type_assembly_linkers = [];
     var floor_type_display_linkers = [];
@@ -785,10 +799,22 @@ include('config.php');
     var moving_direction = false;
     var sent_loney_player_message = false;
 
+
+    // SOUNDS!!!
     var sound_corporation_1;
-    var sound_laser;
+    var sound_corporation_2;
+    var sound_control;
+    var sound_corrosive;
+    var sound_electric;
     var sound_engine;
-    var sound_engine_is_playing;
+    var sound_explosion;
+    var sound_freezing;
+    var sound_hacking;
+    var sound_healing;
+    var sound_laser;
+    var sound_piercing;
+    var sound_melee;
+    
     var level_up_music;
 
     var spaceport_display_needs_regeneration = false;
@@ -2673,9 +2699,9 @@ include('config.php');
                             players[i].sprite.anims.play('player-ruel-idle-animation');
                         }
 
-                        if(sound_engine_is_playing) {
+                        if(sound_engine && sound_engine.isPlaying) {
                             sound_engine.stop();
-                            sound_engine_is_playing = false;
+
                         }
                     }
                 }
@@ -2924,9 +2950,8 @@ include('config.php');
 
 
 
-                    if(current_view === 'galaxy' && !sound_engine_is_playing && play_sounds && sound_engine) {
+                    if(current_view === 'galaxy' && play_sounds && sound_engine && !sound_engine.isPlaying) {
                         sound_engine.play();
-                        sound_engine_is_playing = true;
                     }
                     
                     
