@@ -1,3 +1,13 @@
+## [0.2.16] - 2020-11-18
+
+### Added
+- Factions should be functional from the website end of things. There still may be server functionality that doesn't properly support factions yet
+- Faction names must be between 2 and 60 characters
+
+
+### Changed
+- Lots of directory updates, other small updates as we move the website's frontend from Laravel5.1 to Laravel5.5
+
 ## [0.2.15] - 2020-11-17
 
 

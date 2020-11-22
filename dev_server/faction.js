@@ -5,6 +5,7 @@ var pool = database.pool;
 const chalk = require('chalk');
 const log = console.log;
 
+const helper = require('./helper.js');
 const main = require('./space_abyss' + process.env.FILE_SUFFIX + '.js');
 
 
@@ -23,6 +24,19 @@ async function create(socket, dirty, data) {
         name = helper.cleanStringInput(name);
 
         console.log("Sanitized version: " + name);
+
+        // Name is too short!
+        if(name.length <= 2) {
+            socket.emit('chat', { 'message': 'Faction name is too short', 'scope': 'system' });
+            socket.emit('result_info', {'status': 'failure', 'text': 'Faction name is too short' });
+            return false;
+        }
+
+        if(name.length >= 60) {
+            socket.emit('chat', { 'message': 'Faction name is too long', 'scope': 'system' });
+            socket.emit('result_info', {'status': 'failure', 'text': 'Faction name is too long' });
+            return false;
+        }
 
 
         // see if there's a matching faction name already
@@ -44,7 +58,7 @@ async function create(socket, dirty, data) {
 
         // we can create the faction
         let sql = "INSERT INTO factions(name, player_id,player_count,requires_invite) VALUES(?,?,?,true)";
-        let inserts = [name, dirty.players[player_index].id, 1];
+        let inserts = [name, dirty.players[socket.player_index].id, 1];
 
         let [result] = await (pool.query(sql, inserts));
 
@@ -62,7 +76,7 @@ async function create(socket, dirty, data) {
 
             // and have the player join!
             let sql_linker = "INSERT INTO faction_linkers(player_id,faction_id,role) VALUES(?,?,'admin')";
-            let inserts_linker = [dirty.players[socket.player_index].id, dirty.factions[new_faction_linker_index].id];
+            let inserts_linker = [dirty.players[socket.player_index].id, dirty.factions[new_faction_index].id];
 
             let [result_linker] = await (pool.query(sql_linker, inserts_linker));
             let new_linker_id = result_linker.insertId;
@@ -116,6 +130,78 @@ function getLinkerIndex(dirty, player_id) {
 
 exports.getLinkerIndex = getLinkerIndex;
 
+
+async function join(socket, dirty, data) {
+    try {
+
+        console.log("In faction.join with faction id: " + data.faction_id);
+        if(typeof socket.player_index === 'undefined' || socket.player_index === -1) {
+            return false;
+        }
+
+        let faction_index = getIndex(dirty, parseInt(data.faction_id));
+
+        if(faction_index === -1) {
+            socket.emit('result_info', { 'status': 'failure', 'text': 'Could not find that faction' });
+            return false;
+        }
+
+        let faction_invitation_id = 0;
+
+        if(dirty.factions[faction_index].requires_invite) {
+
+            let [rows, fields] = await (pool.query("SELECT * FROM faction_invitations WHERE invited_player_id = ? AND faction_id = ?",
+            [dirty.players[socket.player_index].id, dirty.factions[faction_index].id]));
+            if (rows[0]) {
+                // Woot! There's the invite!
+                faction_invitation_id = rows[0].id;
+
+            } else {
+
+
+                socket.emit('result_info', { 'status': 'failure', 'text': 'Joining this faction requires an invite' });
+                return false;
+
+            }
+
+        }
+
+
+        // We can join
+        let sql_linker = "INSERT INTO faction_linkers(player_id,faction_id,role) VALUES(?,?,'member')";
+        let inserts_linker = [dirty.players[socket.player_index].id, dirty.factions[faction_index].id];
+
+        let [result_linker] = await (pool.query(sql_linker, inserts_linker));
+        let new_linker_id = result_linker.insertId;
+        let [rows_linker, fields_linker] = await (pool.query("SELECT * FROM faction_linkers WHERE id = ?", [new_linker_id]));
+
+        if (rows_linker[0]) {
+            let new_faction_linker_index = dirty.faction_linkers.push(rows_linker[0]) - 1;
+            socket.emit('faction_linker_info', { 'faction_linker': dirty.faction_linkers[new_faction_linker_index]});
+
+            socket.emit('result_info', { 'status': 'success', 'text': "Joined " + dirty.factions[faction_index].name + " Faction!"});
+
+            if(faction_invitation_id !== 0) {
+                // and remove the invitation
+                (pool.query("DELETE FROM faction_invitations WHERE id = ?", [faction_invitation_id]));
+            }
+
+            dirty.factions[faction_index].player_count++;
+            dirty.factions[faction_index].has_change = true;
+            
+        }
+
+
+
+
+
+    } catch(error) {
+        log(chalk.red("Error in faction.join: " + error));
+        console.error(error);
+    }
+}
+
+exports.join = join;
 
 /**
  * @param {Object} socket

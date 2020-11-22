@@ -1,4 +1,5 @@
 var mysql = require('mysql2/promise');
+//var mysql = require('mysql2');
 
 var pool = mysql.createPool({
     host     : process.env.IPADDRESS,
@@ -7,6 +8,8 @@ var pool = mysql.createPool({
     database : process.env.MYSQLDATABASE,
     connectionLimit: 10
 });
+
+//pool.promise();
 
 exports.pool = pool;
 

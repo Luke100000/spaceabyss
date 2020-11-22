@@ -4,7 +4,7 @@ var io = io_handler.io;
 var database = require('./database.js');
 var pool = database.pool;
 const PF = require('pathfinding');
-const uuid = require('uuid/v1');
+const { v1: uuidv1 } = require('uuid');
 const chalk = require('chalk');
 const log = console.log;
 
@@ -212,7 +212,7 @@ async function addBattleLinker(socket, dirty, data) {
         // EVERYTHING CHECKED OUT. LETS ADD IT
 
         let battle_linker = {
-            'id': uuid(),
+            'id': uuidv1(),
             'attacking_id': data.attacking_id, 'attacking_type': data.attacking_type, 'being_attacked_id': data.being_attacked_id,
             'being_attacked_type': data.being_attacked_type, 'socket_id': socket_id, 'being_attacked_socket_id': being_attacked_socket_id,
             'turn_count': 0
@@ -1391,7 +1391,7 @@ async function checkMonsterBattleConditions(dirty, monster_id, checking_type, ch
         //console.log("Monster is not yet attacking anything. Poor " + checking_type + " ;)");
 
         let battle_linker_data = {
-            'id': uuid(),
+            'id': uuidv1(),
             'attacking_id': monster_id, 'attacking_type': 'monster', 'being_attacked_id': checking_id,
             'being_attacked_type': checking_type
         };
@@ -1503,7 +1503,7 @@ async function checkObjectBattleConditions(socket, dirty, object_id, checking_ty
 
 
         let battle_linker_data = {
-            'id': uuid(),
+            'id': uuidv1(),
             'attacking_id': object_id, 'attacking_type': 'object', 'being_attacked_id': checking_id,
             'being_attacked_type': checking_type
         };
@@ -3389,7 +3389,7 @@ async function manageElevatorLinkers(socket, dirty, object_id) {
             }
 
             base_elevator_linker_index = dirty.elevator_linkers.push({
-                'id': uuid(),
+                'id': uuidv1(),
                 'object_id': dirty.objects[object_index].id, 'level': dirty.planet_coords[planet_coord_index].level, 'group_id': new_elevator_group_id
             }) - 1;
 
@@ -3421,7 +3421,7 @@ async function manageElevatorLinkers(socket, dirty, object_id) {
                     }
 
                     let down_elevator_linker_index = dirty.elevator_linkers.push({
-                        'id': uuid(),
+                        'id': uuidv1(),
                         'object_id': dirty.planet_coords[down_planet_coord_index].object_id, 'level': dirty.planet_coords[down_planet_coord_index].level,
                         'group_id': new_elevator_group_id
                     }) - 1;
@@ -3452,7 +3452,7 @@ async function manageElevatorLinkers(socket, dirty, object_id) {
                     }
 
                     let up_elevator_linker_index = dirty.elevator_linkers.push({
-                        'id': uuid(),
+                        'id': uuidv1(),
                         'object_id': dirty.planet_coords[up_planet_coord_index].object_id, 'level': dirty.planet_coords[up_planet_coord_index].level,
                         'group_id': new_elevator_group_id
                     }) - 1;

@@ -14,6 +14,8 @@ function handler(request, response) {
 
 var app = require('https').createServer(options, handler).listen(process.env.PORT);
 var io = require('socket.io').listen(app);
+// For socket.io 3.0 we would need to do the below line instead
+//var io = require('socket.io')(app);
 
 
 

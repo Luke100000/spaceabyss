@@ -51,6 +51,13 @@ function submitCreateFaction() {
 
 }
 
+function submitFactionJoin() {
+    console.log("In submitFactionJoin");
+    let faction_id = $('#factionjoin').val();
+    console.log("Sending faction id: " + faction_id);
+    socket.emit('faction_join_data', { 'faction_id': faction_id });
+}
+
 function submitObjectName(object_id) {
     console.log("In submitObjectName");
     let new_object_name = $('#object_' + object_id + '_name').val();

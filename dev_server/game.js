@@ -5,7 +5,7 @@ var database = require('./database.js');
 var pool = database.pool;
 const chalk = require('chalk');
 const log = console.log;
-const uuid = require('uuid/v1');
+const { v1: uuidv1 } = require('uuid');
 
 const event = require('./event.js');
 const game_object = require('./game_object.js');
@@ -2562,7 +2562,7 @@ exports.eat = eat;
 
 
                 } else if(data.ship_coord_id) {
-                    console.log("Trying to destroy object type from ship coord id");
+                    //console.log("Trying to destroy object type from ship coord id");
                     coord_index = await main.getShipCoordIndex({ 'ship_coord_id': data.ship_coord_id });
 
                     if(coord_index === -1) {
@@ -4491,7 +4491,7 @@ exports.eat = eat;
             }
 
             let mining_linker = {
-                'id': uuid(),
+                'id': uuidv1(),
                 'player_id': socket.player_id, 'object_id': dirty.objects[object_index].id,
                 'player_socket_id': socket.id
             };
@@ -6983,7 +6983,7 @@ exports.eat = eat;
 
 
             let active_salvaging_linker = {
-                'id': uuid(),
+                'id': uuidv1(),
                 'player_id': socket.player_id, 'object_id': dirty.objects[object_index].id,
                 'player_index': player_index, 'object_index': object_index,
                 'total_salvaged': 0,
@@ -7039,7 +7039,7 @@ exports.eat = eat;
         try {
 
             // I think we can just have an autopilots array and put in the relevant info
-            let autopilot_index = dirty.autopilots.push({ 'id': uuid(), 'player_id': socket.player_id, 'destination_tile_x': parseInt(destination_tile_x),
+            let autopilot_index = dirty.autopilots.push({ 'id': uuidv1(), 'player_id': socket.player_id, 'destination_tile_x': parseInt(destination_tile_x),
                 'destination_tile_y': parseInt(destination_tile_y) }) - 1;
 
             //console.log("Pushed autopilot: ");
@@ -9732,7 +9732,7 @@ exports.eat = eat;
 
                     if(existing_battle_linker_index === -1) {
                         let battle_linker_data = {
-                            'id': uuid(),
+                            'id': uuidv1(),
                             'attacking_id': dirty.monsters[monster_index].id, 'attacking_type': 'monster', 'being_attacked_id': dirty.players[socket.player_index].id,
                             'being_attacked_type': 'player'
                         };
@@ -10067,7 +10067,7 @@ exports.eat = eat;
 
 
             let repairing_linker = {
-                'id': uuid(),
+                'id': uuidv1(),
                 'player_id': dirty.players[socket.player_index].id,
                 'player_index': socket.player_index,
                 'player_socket_id': socket.id

@@ -4,7 +4,8 @@ SOCKET.IO VERSION socket.io@2.something
 */
 //const path = require('path');
 //require('dotenv').config({ path: path.join(__dirname, '.env') }).load();
-require('dotenv').load();
+//require('dotenv').load();
+require('dotenv').config();
 //require('dotenv').config({ path: '/var/www/space.alphacoders.com/html/dev_server' });
 //const dotenv_result = require('dotenv').config({ path: '/var/www'});
 
@@ -46,8 +47,9 @@ var crypto = require('crypto');
 const chalk = require('chalk');
 const log = console.log;
 
+const { v1: uuidv1 } = require('uuid');
 
-const uuid = require('uuid/v1');
+//const uuid = require('uuid/v1');
 
 
 // Something about timing
@@ -224,6 +226,7 @@ dirty.waiting_drops = [];
 
 // Clear Players From Planet Coords
 inits.init(1, function(callback) {
+
 
     pool.query("UPDATE planet_coords SET player_id = false WHERE player_id > 0", function(err, result) {
         if(err) throw err;
@@ -1593,6 +1596,10 @@ io.sockets.on('connection', function (socket) {
     socket.on('equip_data', function (data) {
         console.log("Player is equipping inventory_item id: " + data.inventory_item_id + " at equip slot: " + data.equip_slot);
         game.equipItem(socket, dirty, data);
+    });
+
+    socket.on('faction_join_data', function(data) {
+        faction.join(socket, dirty, data);
     });
 
     socket.on('give_data', function(data) {

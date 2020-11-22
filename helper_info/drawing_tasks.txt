@@ -7,6 +7,8 @@ large ai dust (a rarer spawn on desert planets)
 
 buildings for the corporation planet (64x64 to 64x96 for starters)
 
+quick matter set (floor,wall, stairs,hole)
+
 player body that eats trash (mass of moving maggots)
 
 ***************************

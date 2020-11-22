@@ -1,6 +1,8 @@
 <?php
 // TODO pretty sure client_move_start_time and client_move_pixel_amount can be deprecated fully in favor of players[index].move_start_time and players[index].move_pixel_count
 include('config.php');
+header("Access-Control-Allow-Origin: *");
+
 ?>
 
 <script type="text/javascript">
@@ -80,8 +82,8 @@ include('config.php');
 
 
 
-    <script src="//space.alphacoders.com/jquery-3.3.1.min.js"></script>
-    <script src="//space.alphacoders.com/phaser-3.15.1.js"></script>
+    <script src="//space.alphacoders.com/js/jquery-3.3.1.min.js"></script>
+    <script src="//space.alphacoders.com/js/phaser-3.15.1.js"></script>
 
     <script src="client_functions_<?php echo $client_version; ?>.js"></script>
     <script src="client_network_<?php echo $client_version; ?>.js"></script>
@@ -93,8 +95,8 @@ include('config.php');
 
 
     <link href="//space.alphacoders.com/bulma-0.7.2/css/bulma.min.css" rel="stylesheet" media="screen">
-    <script src='//space.alphacoders.com/spectrum.js'></script>
-    <link rel='stylesheet' href='//space.alphacoders.com/spectrum.css' />
+    <script src='//space.alphacoders.com/js/spectrum.js'></script>
+    <link rel='stylesheet' href='//space.alphacoders.com/css/spectrum.css' />
     <link href="//space.alphacoders.com/fontawesome-pro-5.13.1-web/css/all.css" rel="stylesheet">
     <style type="text/css">
 
@@ -174,7 +176,7 @@ include('config.php');
         }
     </style>
 </head>
-<body style="background-image: url('https://space.alphacoders.com/void.png'); background-repeat: repeat; height:100%;">
+<body style="background-image: url('https://space.alphacoders.com/images/void.png'); background-repeat: repeat; height:100%;">
 
 
 
@@ -900,239 +902,239 @@ include('config.php');
 
 
             this.sound.pauseOnBlur = false;
-            this.load.image('void', 'https://space.alphacoders.com/void.png');
+            this.load.image('void', 'https://space.alphacoders.com/images/void.png');
 
             // PLAYER SPRITESHEETS - end frame is total frame count
-            this.load.spritesheet('player-pod', 'https://space.alphacoders.com/player-pod-animated.png',
+            this.load.spritesheet('player-pod', 'https://space.alphacoders.com/images/player-pod-animated.png',
                 { frameWidth: 64, frameHeight: 64, endFrame: 2 });
 
-            this.load.spritesheet('player-cutter', 'https://space.alphacoders.com/cutter-animated.png',
+            this.load.spritesheet('player-cutter', 'https://space.alphacoders.com/images/cutter-animated.png',
                 { frameWidth: 64, frameHeight: 64, endFrame: 12 });
 
-            this.load.spritesheet('player-galaxy', 'https://space.alphacoders.com/player-galaxy-animated.png',
+            this.load.spritesheet('player-galaxy', 'https://space.alphacoders.com/images/player-galaxy-animated.png',
                 { frameWidth: 64, frameHeight: 60, endFrame: 30 });
 
-            this.load.spritesheet('player-human', 'https://space.alphacoders.com/player-human-animated.png',
+            this.load.spritesheet('player-human', 'https://space.alphacoders.com/images/player-human-animated.png',
                 { frameWidth: 64, frameHeight: 70, endFrame: 26 });
 
                 
-            this.load.spritesheet('player-manufacturing', 'https://space.alphacoders.com/manufacturing-body-animated.png',
+            this.load.spritesheet('player-manufacturing', 'https://space.alphacoders.com/images/manufacturing-body-animated.png',
                 { frameWidth: 64, frameHeight: 64, endFrame: 28 });
 
-            this.load.spritesheet('player-mlm', 'https://space.alphacoders.com/player-mlm-animated.png',
+            this.load.spritesheet('player-mlm', 'https://space.alphacoders.com/images/player-mlm-animated.png',
                 { frameWidth: 64, frameHeight: 64, endFrame: 36 });
 
-            this.load.spritesheet('player-octopus', 'https://space.alphacoders.com/player-octopus-body-animated.png',
+            this.load.spritesheet('player-octopus', 'https://space.alphacoders.com/images/player-octopus-body-animated.png',
                 { frameWidth: 64, frameHeight: 64, endFrame: 30 });
 
-            this.load.spritesheet('player-reinforced-human', 'https://space.alphacoders.com/reinforced-human-body-animated.png',
+            this.load.spritesheet('player-reinforced-human', 'https://space.alphacoders.com/images/reinforced-human-body-animated.png',
                 { frameWidth: 64, frameHeight: 64, endFrame: 28 });
 
-            this.load.spritesheet('player-ruel', 'https://space.alphacoders.com/ruel-body-animated.png',
+            this.load.spritesheet('player-ruel', 'https://space.alphacoders.com/images/ruel-body-animated.png',
                 { frameWidth: 64, frameHeight: 64, endFrame: 36 });
 
             // Ships
-            this.load.spritesheet('player-asteroid-ship', 'https://space.alphacoders.com/asteroid-ship-animated.png',
+            this.load.spritesheet('player-asteroid-ship', 'https://space.alphacoders.com/images/asteroid-ship-animated.png',
                 { 'frameWidth': 64, 'frameHeight': 64, endFrame: 3 });
 
-            this.load.spritesheet('player-blockade-runner', 'https://space.alphacoders.com/blockade-runner-animated.png',
+            this.load.spritesheet('player-blockade-runner', 'https://space.alphacoders.com/images/blockade-runner-animated.png',
                 { 'frameWidth': 64, 'frameHeight': 64, endFrame: 12 });
 
-            this.load.spritesheet('player-shuttle', 'https://space.alphacoders.com/shuttle-animated.png',
+            this.load.spritesheet('player-shuttle', 'https://space.alphacoders.com/images/shuttle-animated.png',
                 { 'frameWidth': 64, 'frameHeight': 64, endFrame: 16 });
 
-            this.load.spritesheet('player-cargo-ship', 'https://space.alphacoders.com/cargo-ship-animated.png',
+            this.load.spritesheet('player-cargo-ship', 'https://space.alphacoders.com/images/cargo-ship-animated.png',
                 { 'frameWidth': 64, 'frameHeight': 64, endFrame: 16 });
 
-            this.load.spritesheet('player-destroyer', 'https://space.alphacoders.com/destroyer-animated.png',
+            this.load.spritesheet('player-destroyer', 'https://space.alphacoders.com/images/destroyer-animated.png',
                 { 'frameWidth': 128, 'frameHeight': 128, endFrame: 2 });
 
-            this.load.spritesheet('player-fighter', 'https://space.alphacoders.com/fighter-animated.png',
+            this.load.spritesheet('player-fighter', 'https://space.alphacoders.com/images/fighter-animated.png',
             { 'frameWidth': 64, 'frameHeight': 64, endFrame: 16 });
 
-            this.load.spritesheet('player-lancer', 'https://space.alphacoders.com/lancer-animated.png',
+            this.load.spritesheet('player-lancer', 'https://space.alphacoders.com/images/lancer-animated.png',
                 { 'frameWidth': 64, 'frameHeight': 64, endFrame: 12 });
 
-            this.load.spritesheet('player-living-wood-ship', 'https://space.alphacoders.com/living-wood-ship-animated.png',
+            this.load.spritesheet('player-living-wood-ship', 'https://space.alphacoders.com/images/living-wood-ship-animated.png',
                 { 'frameWidth': 64, 'frameHeight': 64, endFrame: 8 });
 
-            this.load.spritesheet('player-mining-ship', 'https://space.alphacoders.com/mining-ship-animated.png',
+            this.load.spritesheet('player-mining-ship', 'https://space.alphacoders.com/images/mining-ship-animated.png',
                 { 'frameWidth': 64, 'frameHeight': 64, endFrame: 16 });
 
-            this.load.spritesheet('player-royal-cruiser', 'https://space.alphacoders.com/royal-cruiser-animated.png',
+            this.load.spritesheet('player-royal-cruiser', 'https://space.alphacoders.com/images/royal-cruiser-animated.png',
                 { 'frameWidth': 64, 'frameHeight': 128, endFrame: 2 });
 
-            this.load.spritesheet('player-science-vessel', 'https://space.alphacoders.com/science-vessel-animated.png',
+            this.load.spritesheet('player-science-vessel', 'https://space.alphacoders.com/images/science-vessel-animated.png',
                 { 'frameWidth': 64, 'frameHeight': 64, endFrame: 9 });
 
-            this.load.spritesheet('player-silk-ship', 'https://space.alphacoders.com/silk-ship-animated.png',
+            this.load.spritesheet('player-silk-ship', 'https://space.alphacoders.com/images/silk-ship-animated.png',
                 { 'frameWidth': 64, 'frameHeight': 64, endFrame: 4 });
 
-            this.load.spritesheet('player-space-station', 'https://space.alphacoders.com/space-station-animated.png',
+            this.load.spritesheet('player-space-station', 'https://space.alphacoders.com/images/space-station-animated.png',
                 { 'frameWidth': 96, 'frameHeight': 96, endFrame: 12});
 
-            this.load.spritesheet('player-water-ship', 'https://space.alphacoders.com/water-ship-animated.png',
+            this.load.spritesheet('player-water-ship', 'https://space.alphacoders.com/images/water-ship-animated.png',
                 { 'frameWidth': 64, 'frameHeight': 64, endFrame: 6});
 
             // MONSTER SPRITESHEETS - end frame is total frame count
-            this.load.spritesheet('acid-fiend', 'https://space.alphacoders.com/acid-fiend.png',
+            this.load.spritesheet('acid-fiend', 'https://space.alphacoders.com/images/acid-fiend.png',
                 { frameWidth: 64, frameHeight: 64, endFrame: 3 });
-            this.load.spritesheet('acid-fly', 'https://space.alphacoders.com/acid-fly.png',
+            this.load.spritesheet('acid-fly', 'https://space.alphacoders.com/images/acid-fly.png',
                 { frameWidth: 64, frameHeight: 64, endFrame: 3 });
-            this.load.spritesheet('ai-daemon', 'https://space.alphacoders.com/ai-daemon.png',
+            this.load.spritesheet('ai-daemon', 'https://space.alphacoders.com/images/ai-daemon.png',
                 { frameWidth: 64, frameHeight: 64, endFrame: 2 });
-            this.load.spritesheet('ai-edifice', 'https://space.alphacoders.com/ai-edifice.png',
+            this.load.spritesheet('ai-edifice', 'https://space.alphacoders.com/images/ai-edifice.png',
                 { frameWidth: 64, frameHeight: 64, endFrame: 2 });
-            this.load.spritesheet('ai-forge', 'https://space.alphacoders.com/ai-forge.png',
+            this.load.spritesheet('ai-forge', 'https://space.alphacoders.com/images/ai-forge.png',
                 { frameWidth: 64, frameHeight: 64, endFrame: 12 });
-            this.load.spritesheet('ai-space-construct', 'https://space.alphacoders.com/ai-space-construct.png',
+            this.load.spritesheet('ai-space-construct', 'https://space.alphacoders.com/images/ai-space-construct.png',
                 { frameWidth: 64, frameHeight: 64, endFrame: 2 });
-            this.load.spritesheet('ananke', 'https://space.alphacoders.com/ananke.png',
+            this.load.spritesheet('ananke', 'https://space.alphacoders.com/images/ananke.png',
                 { frameWidth: 64, frameHeight: 64, endFrame: 3 });
-            this.load.spritesheet('bird', 'https://space.alphacoders.com/bird.png',
+            this.load.spritesheet('bird', 'https://space.alphacoders.com/images/bird.png',
                 { frameWidth: 64, frameHeight: 64, endFrame: 2 });
-            this.load.spritesheet('broken-nanite-cluster', 'https://space.alphacoders.com/broken-nanite-cluster.png',
+            this.load.spritesheet('broken-nanite-cluster', 'https://space.alphacoders.com/images/broken-nanite-cluster.png',
                 { frameWidth: 64, frameHeight: 64, endFrame: 3 });
-            this.load.spritesheet('carnivorous-plant-baby', 'https://space.alphacoders.com/carnivorous-plant-baby.png',
+            this.load.spritesheet('carnivorous-plant-baby', 'https://space.alphacoders.com/images/carnivorous-plant-baby.png',
                 { frameWidth: 64, frameHeight: 64, endFrame: 2 });
-            this.load.spritesheet('corrupted-scientist', 'https://space.alphacoders.com/corrupted-scientist.png',
+            this.load.spritesheet('corrupted-scientist', 'https://space.alphacoders.com/images/corrupted-scientist.png',
                 { frameWidth: 64, frameHeight: 64, endFrame: 12 });
-            this.load.spritesheet('crab-slerm', 'https://space.alphacoders.com/crab-slerm.png',
+            this.load.spritesheet('crab-slerm', 'https://space.alphacoders.com/images/crab-slerm.png',
                 { frameWidth: 64, frameHeight: 64, endFrame: 3 });
-            this.load.spritesheet('crystal-bee', 'https://space.alphacoders.com/crystal-bee.png',
+            this.load.spritesheet('crystal-bee', 'https://space.alphacoders.com/images/crystal-bee.png',
                 { frameWidth: 64, frameHeight: 64, endFrame: 12 });
-            this.load.spritesheet('crystal-spider', 'https://space.alphacoders.com/crystal-spider.png',
+            this.load.spritesheet('crystal-spider', 'https://space.alphacoders.com/images/crystal-spider.png',
                 { frameWidth: 64, frameHeight: 64, endFrame: 4 });
-            this.load.spritesheet('crystal-spider-baby', 'https://space.alphacoders.com/crystal-spider-baby.png',
+            this.load.spritesheet('crystal-spider-baby', 'https://space.alphacoders.com/images/crystal-spider-baby.png',
                 { frameWidth: 64, frameHeight: 64, endFrame: 7 });
-            this.load.spritesheet('crystal-golem', 'https://space.alphacoders.com/crystal-golem.png',
+            this.load.spritesheet('crystal-golem', 'https://space.alphacoders.com/images/crystal-golem.png',
                 { frameWidth: 64, frameHeight: 64, endFrame: 12 });
-            this.load.spritesheet('cyberskell', 'https://space.alphacoders.com/cyberskell.png',
+            this.load.spritesheet('cyberskell', 'https://space.alphacoders.com/images/cyberskell.png',
                 { frameWidth: 64, frameHeight: 64, endFrame: 2 });
-            this.load.spritesheet('ddrone', 'https://space.alphacoders.com/ddrone.png',
+            this.load.spritesheet('ddrone', 'https://space.alphacoders.com/images/ddrone.png',
                 { frameWidth: 64, frameHeight: 64, endFrame: 19 });
-            this.load.spritesheet('geno-rat', 'https://space.alphacoders.com/geno-rat.png',
+            this.load.spritesheet('geno-rat', 'https://space.alphacoders.com/images/geno-rat.png',
                 { frameWidth: 64, frameHeight: 64, endFrame: 3 });
-            this.load.spritesheet('glitched-god', 'https://space.alphacoders.com/glitched-god.png',
+            this.load.spritesheet('glitched-god', 'https://space.alphacoders.com/images/glitched-god.png',
                 { frameWidth: 64, frameHeight: 64, endFrame: 2 });
-            this.load.spritesheet('legend', 'https://space.alphacoders.com/legend.png',
+            this.load.spritesheet('legend', 'https://space.alphacoders.com/images/legend.png',
                 { frameWidth: 64, frameHeight: 64, endFrame: 2 });
-            this.load.spritesheet('living-tree', 'https://space.alphacoders.com/living-tree.png',
+            this.load.spritesheet('living-tree', 'https://space.alphacoders.com/images/living-tree.png',
                 { frameWidth: 64, frameHeight: 64, endFrame: 2 });
-            this.load.spritesheet('macro-virus', 'https://space.alphacoders.com/nano-virus.png',
+            this.load.spritesheet('macro-virus', 'https://space.alphacoders.com/images/nano-virus.png',
                 { frameWidth: 64, frameHeight: 64, endFrame: 2 });
-            this.load.spritesheet('mag-dust', 'https://space.alphacoders.com/mag-dust.png',
+            this.load.spritesheet('mag-dust', 'https://space.alphacoders.com/images/mag-dust.png',
                 { frameWidth: 64, frameHeight: 64, endFrame: 6 });
-            this.load.spritesheet('matriarch', 'https://space.alphacoders.com/matriarch.png',
+            this.load.spritesheet('matriarch', 'https://space.alphacoders.com/images/matriarch.png',
                 { frameWidth: 64, frameHeight: 128, endFrame: 3 });
-            this.load.spritesheet('milk-slerm', 'https://space.alphacoders.com/milk-slerm.png',
+            this.load.spritesheet('milk-slerm', 'https://space.alphacoders.com/images/milk-slerm.png',
                 { frameWidth: 64, frameHeight: 64, endFrame: 6 });
-            this.load.spritesheet('mini-drone', 'https://space.alphacoders.com/mini-drone.png',
+            this.load.spritesheet('mini-drone', 'https://space.alphacoders.com/images/mini-drone.png',
                 { frameWidth: 64, frameHeight: 64, endFrame: 7 });
-            this.load.spritesheet('monitor', 'https://space.alphacoders.com/monitor.png',
+            this.load.spritesheet('monitor', 'https://space.alphacoders.com/images/monitor.png',
                 { frameWidth: 64, frameHeight: 64, endFrame: 2 });
 
-            this.load.spritesheet('process', 'https://space.alphacoders.com/process.png',
+            this.load.spritesheet('process', 'https://space.alphacoders.com/images/process.png',
                 { frameWidth: 64, frameHeight: 64, endFrame: 6 });
-            this.load.spritesheet('robot-janitor', 'https://space.alphacoders.com/robot-janitor.png',
+            this.load.spritesheet('robot-janitor', 'https://space.alphacoders.com/images/robot-janitor.png',
                 { frameWidth: 64, frameHeight: 64, endFrame: 4 });
-            this.load.spritesheet('scrapslog', 'https://space.alphacoders.com/scrapslog.png',
+            this.load.spritesheet('scrapslog', 'https://space.alphacoders.com/images/scrapslog.png',
                 { frameWidth: 68, frameHeight: 68, endFrame: 16 });
-            this.load.spritesheet('slave', 'https://space.alphacoders.com/slave.png',
+            this.load.spritesheet('slave', 'https://space.alphacoders.com/images/slave.png',
                 { frameWidth: 64, frameHeight: 64, endFrame: 1 });
-            this.load.spritesheet('slaver', 'https://space.alphacoders.com/slaver.png',
+            this.load.spritesheet('slaver', 'https://space.alphacoders.com/images/slaver.png',
                 { frameWidth: 76, frameHeight: 76, endFrame: 4 });
-            this.load.spritesheet('slaver-guard', 'https://space.alphacoders.com/slaver-guard.png',
+            this.load.spritesheet('slaver-guard', 'https://space.alphacoders.com/images/slaver-guard.png',
                 { frameWidth: 72, frameHeight: 76, endFrame: 4 });
-            this.load.spritesheet('snail', 'https://space.alphacoders.com/snail.png',
+            this.load.spritesheet('snail', 'https://space.alphacoders.com/images/snail.png',
                 { frameWidth: 64, frameHeight: 64, endFrame: 2 });
-            this.load.spritesheet('spider', 'https://space.alphacoders.com/spider.png',
+            this.load.spritesheet('spider', 'https://space.alphacoders.com/images/spider.png',
                 { frameWidth: 64, frameHeight: 64, endFrame: 3 });
-            this.load.spritesheet('smasher', 'https://space.alphacoders.com/smasher.png',
+            this.load.spritesheet('smasher', 'https://space.alphacoders.com/images/smasher.png',
                 { frameWidth: 64, frameHeight: 64, endFrame: 2 });
-            this.load.spritesheet('suut', 'https://space.alphacoders.com/suut.png',
+            this.load.spritesheet('suut', 'https://space.alphacoders.com/images/suut.png',
                 { frameWidth: 64, frameHeight: 64, endFrame: 2 });
-            this.load.spritesheet('tortured-soul', 'https://space.alphacoders.com/tortured-soul.png',
+            this.load.spritesheet('tortured-soul', 'https://space.alphacoders.com/images/tortured-soul.png',
                 { frameWidth: 64, frameHeight: 64, endFrame: 3 });
-            this.load.spritesheet('transporter', 'https://space.alphacoders.com/transporter.png?234',
+            this.load.spritesheet('transporter', 'https://space.alphacoders.com/images/transporter.png?234',
                 { frameWidth: 64, frameHeight: 64, endFrame: 2 });
-            this.load.spritesheet('voon-guardian', 'https://space.alphacoders.com/voon-guardian.png',
+            this.load.spritesheet('voon-guardian', 'https://space.alphacoders.com/images/voon-guardian.png',
                 { frameWidth: 64, frameHeight: 64, endFrame: 1 });
-            this.load.spritesheet('voonita', 'https://space.alphacoders.com/voonita.png',
+            this.load.spritesheet('voonita', 'https://space.alphacoders.com/images/voonita.png',
                 { frameWidth: 64, frameHeight: 64, endFrame: 2 });
-            this.load.spritesheet('vueg-baby', 'https://space.alphacoders.com/vueg-baby.png',
+            this.load.spritesheet('vueg-baby', 'https://space.alphacoders.com/images/vueg-baby.png',
                 { frameWidth: 64, frameHeight: 64, endFrame: 3 });
-            this.load.spritesheet('warmind', 'https://space.alphacoders.com/warmind.png',
+            this.load.spritesheet('warmind', 'https://space.alphacoders.com/images/warmind.png',
                 { frameWidth: 64, frameHeight: 96, endFrame: 3 });
-            this.load.spritesheet('world-leech', 'https://space.alphacoders.com/world-leech.png',
+            this.load.spritesheet('world-leech', 'https://space.alphacoders.com/images/world-leech.png',
                 { frameWidth: 128, frameHeight: 128, endFrame: 2 });
-            this.load.spritesheet('young-slerm', 'https://space.alphacoders.com/young-slerm.png',
+            this.load.spritesheet('young-slerm', 'https://space.alphacoders.com/images/young-slerm.png',
                 { frameWidth: 64, frameHeight: 64, endFrame: 3 });
 
 
             // NPC
-            this.load.spritesheet('npc', 'https://space.alphacoders.com/npc.png',
+            this.load.spritesheet('npc', 'https://space.alphacoders.com/images/npc.png',
                 { frameWidth: 64, frameHeight: 64, endFrame: 2 });
-            this.load.spritesheet('npc-pod', 'https://space.alphacoders.com/npc-pod-animated.png',
+            this.load.spritesheet('npc-pod', 'https://space.alphacoders.com/images/npc-pod-animated.png',
                 { frameWidth: 64, frameHeight: 64, endFrame: 2 });
-            this.load.spritesheet('bug-ship', 'https://space.alphacoders.com/bug-ship-animated.png',
+            this.load.spritesheet('bug-ship', 'https://space.alphacoders.com/images/bug-ship-animated.png',
                 { frameWidth: 64, frameHeight: 64, endFrame: 4 });
 
             // EFFECTS!!! - END FRAME IS THE TOTAL FRAME COUNT
 
-            this.load.spritesheet('addiction-effect', 'https://space.alphacoders.com/addiction-effect.png', {
+            this.load.spritesheet('addiction-effect', 'https://space.alphacoders.com/images/addiction-effect.png', {
                frameWidth: 64, frameHeight: 128, endFrame: 8
             });
 
-            this.load.spritesheet('blocked-effect', 'https://space.alphacoders.com/blocked-effect.png', {
+            this.load.spritesheet('blocked-effect', 'https://space.alphacoders.com/images/blocked-effect.png', {
                 frameWidth: 64, frameHeight: 64, endFrame: 7
             });
 
-            this.load.spritesheet('electric-effect', 'https://space.alphacoders.com/electric-effect.png', {
+            this.load.spritesheet('electric-effect', 'https://space.alphacoders.com/images/electric-effect.png', {
                 frameWidth: 64, frameHeight: 64, endFrame: 6
             });
 
-            this.load.spritesheet('explosion-effect', 'https://space.alphacoders.com/explosion-effect.png', {
+            this.load.spritesheet('explosion-effect', 'https://space.alphacoders.com/images/explosion-effect.png', {
                 frameWidth: 64, frameHeight: 64, endFrame: 12
             });
 
-            this.load.spritesheet('energy-effect', 'https://space.alphacoders.com/energy_hit.png', {
+            this.load.spritesheet('energy-effect', 'https://space.alphacoders.com/images/energy_hit.png', {
                 frameWidth: 64, frameHeight: 64, endFrame: 4
             });
 
-            this.load.spritesheet('fire-effect', 'https://space.alphacoders.com/Fire0.png', {
+            this.load.spritesheet('fire-effect', 'https://space.alphacoders.com/images/Fire0.png', {
                 frameWidth: 64, frameHeight: 128, endFrame: 8
             });
 
-            this.load.spritesheet('hacking-effect', 'https://space.alphacoders.com/hacking-effect.png', {
+            this.load.spritesheet('hacking-effect', 'https://space.alphacoders.com/images/hacking-effect.png', {
                 frameWidth: 64, frameHeight: 64, endFrame: 12
             });
 
-            this.load.spritesheet('healing-effect', 'https://space.alphacoders.com/healing-effect.png', {
+            this.load.spritesheet('healing-effect', 'https://space.alphacoders.com/images/healing-effect.png', {
                 frameWidth: 64, frameHeight: 64, endFrame: 5
             });
 
-            this.load.spritesheet('heat-effect', 'https://space.alphacoders.com/heat-effect.png', {
+            this.load.spritesheet('heat-effect', 'https://space.alphacoders.com/images/heat-effect.png', {
                 frameWidth: 64, frameHeight: 64, endFrame: 3
             });
 
-            this.load.spritesheet('gravity-effect', 'https://space.alphacoders.com/gravity-effect.png', {
+            this.load.spritesheet('gravity-effect', 'https://space.alphacoders.com/images/gravity-effect.png', {
                 frameWidth: 90, frameHeight: 128, endFrame: 14
             });
 
-            this.load.spritesheet('laser-effect', 'https://space.alphacoders.com/laser-effect.png', {
+            this.load.spritesheet('laser-effect', 'https://space.alphacoders.com/images/laser-effect.png', {
                 frameWidth: 64, frameHeight: 64, endFrame: 3
             });
 
-            this.load.spritesheet('melee-effect', 'https://space.alphacoders.com/melee-effect.png', {
+            this.load.spritesheet('melee-effect', 'https://space.alphacoders.com/images/melee-effect.png', {
                 frameWidth: 64, frameHeight: 64, endFrame: 9
             });
 
-            this.load.spritesheet('piercing-effect', 'https://space.alphacoders.com/piercing-effect.png', {
+            this.load.spritesheet('piercing-effect', 'https://space.alphacoders.com/images/piercing-effect.png', {
                 frameWidth: 64, frameHeight: 64, endFrame: 5
             });
 
-            this.load.spritesheet('poison-effect', 'https://space.alphacoders.com/poison-effect.png', {
+            this.load.spritesheet('poison-effect', 'https://space.alphacoders.com/images/poison-effect.png', {
                frameWidth: 64, frameHeight: 128, endFrame: 8
             });
 
@@ -1141,50 +1143,50 @@ include('config.php');
                frameWidth: 64, frameHeight: 64, endFrame: 11
             });
             */
-            this.load.spritesheet('radiation-effect', 'https://space.alphacoders.com/radiation-effect.png', {
+            this.load.spritesheet('radiation-effect', 'https://space.alphacoders.com/images/radiation-effect.png', {
                frameWidth: 64, frameHeight: 128, endFrame: 8
             });
 
-            this.load.spritesheet('repairing-effect', 'https://space.alphacoders.com/repairing.png', {
+            this.load.spritesheet('repairing-effect', 'https://space.alphacoders.com/images/repairing.png', {
                 frameWidth: 16, frameHeight: 80, endFrame: 11
             });
 
 
             // For the time being, we are keeping mining and salvaging separate. Probably
             // should combine them at some point
-            this.load.spritesheet('mining-effect', 'https://space.alphacoders.com/mining-beam.png', {
+            this.load.spritesheet('mining-effect', 'https://space.alphacoders.com/images/mining-beam.png', {
                 frameWidth: 192, frameHeight: 64, endFrame: 6
             });
 
 
-            this.load.spritesheet('salvaging-effect', 'https://space.alphacoders.com/salvaging-beam.png', {
+            this.load.spritesheet('salvaging-effect', 'https://space.alphacoders.com/images/salvaging-beam.png', {
                 frameWidth: 256, frameHeight: 64, endFrame: 6
             });
 
-            this.load.spritesheet('thorn-effect', 'https://space.alphacoders.com/thorn-effect.png', {
+            this.load.spritesheet('thorn-effect', 'https://space.alphacoders.com/images/thorn-effect.png', {
                 frameWidth: 64, frameHeight: 64, endFrame: 10
             });
 
 
             // THE MAIN GAME!!! OBJECTS AND PLAYERS
-            this.load.spritesheet('above-images', 'https://space.alphacoders.com/above-images.png?334',
+            this.load.spritesheet('above-images', 'https://space.alphacoders.com/images/above-images.png',
                 { frameWidth: 64, frameHeight: 64 });
-            this.load.spritesheet('floor-images', 'https://space.alphacoders.com/floor-images.png',
+            this.load.spritesheet('floor-images', 'https://space.alphacoders.com/images/floor-images.png',
                 { frameWidth: 64, frameHeight: 64 });
-            this.load.spritesheet('object-images', 'https://space.alphacoders.com/object-images.png?233',
+            this.load.spritesheet('object-images', 'https://space.alphacoders.com/images/object-images.png',
                 { frameWidth: 64, frameHeight: 64 });
 
 
 
             // attack effects
 
-            this.load.spritesheet('damage_energies_sheet', 'https://space.alphacoders.com/energy-hit.png',
+            this.load.spritesheet('damage_energies_sheet', 'https://space.alphacoders.com/images/energy-hit.png',
                 { frameWidth: 64, frameHeight: 64, endFrame: 3 });
 
 
 
 
-            this.load.image('attack_box', 'https://space.alphacoders.com/attack_box.png');
+            this.load.image('attack_box', 'https://space.alphacoders.com/images/attack_box.png');
 
 
             // Lets try some audio stuff

@@ -1860,15 +1860,18 @@ function generateFactionDisplay() {
         return false;
     }
 
+
+    let player_faction_linker_index = faction_linkers.findIndex(function(obj) { return obj && obj.player_id === players[client_player_index].id; });
+
     $('#faction').empty();
 
 
 
     let html_string = "";
-    html_string += "<div class='message is-dark message-inline'><div class='message-body'>";
+    html_string += "<div class='message is-dark message-inline'><div class='message-body'><strong>Factions:</strong><br>";
 
     // Allow them to create a faction or join one
-    if (!players[client_player_index].faction_id) {
+    if (player_faction_linker_index === -1) {
         html_string += "<form action='#'>";
         html_string += "<input type=\"text\" class=\"input\" name=\"faction_name\" id=\"faction_name\">";
         html_string += "<input onclick=\"submitCreateFaction(); return false;\" type=\"submit\" class=\"button is-default\" value=\"Create Faction\">";
@@ -1895,7 +1898,7 @@ function generateFactionDisplay() {
         html_string += "</form>";
 
     } else {
-        let faction_index = factions.findIndex(function (obj) { return obj && obj.id === players[client_player_index].faction_id; });
+        let faction_index = factions.findIndex(function (obj) { return obj && obj.id === faction_linkers[player_faction_linker_index].faction_id; });
         if (faction_index !== -1) {
             html_string += "Your current faction: <a target='_blank' href='https://space.alphacoders.com/faction/view/" +
                 factions[faction_index].id + "'>" + factions[faction_index].name + "</a> ";
@@ -3769,7 +3772,7 @@ function printDiscovery(object_type, assembly_linkers) {
     html_string += "<div class='box has-text-centered' style='display: inline-block;'>";
 
     html_string += object_type.name + "<br>";
-    html_string += "<img src='https://space.alphacoders.com/" + urlName(object_type.name) + ".png'><br>";
+    html_string += "<img src='https://space.alphacoders.com/images/" + urlName(object_type.name) + ".png'><br>";
 
     // Show what is required to assemble it
     assembly_linkers.forEach(function (assembly_linker) {
@@ -3778,7 +3781,7 @@ function printDiscovery(object_type, assembly_linkers) {
 
         html_string += " " + assembly_linker.amount + " ";
         if (required_object_type_index !== -1) {
-            html_string += object_types[required_object_type_index].name + " <img style='width:16px; height:16px;' src='https://space.alphacoders.com/" +
+            html_string += object_types[required_object_type_index].name + " <img style='width:16px; height:16px;' src='https://space.alphacoders.com/images/" +
                 urlName(object_types[required_object_type_index].name) + ".png'>";
         } else {
             html_string += "" + assembly_linker.object_type_id;
@@ -3971,7 +3974,7 @@ function generateAssemblyListItem(object_type, object_assembly_linkers, assembli
     }
     
     html_string += "<br>";
-    html_string += "<img src='https://space.alphacoders.com/" + urlName(object_type.name) + ".png'>";
+    html_string += "<img src='https://space.alphacoders.com/images/" + urlName(object_type.name) + ".png'>";
 
     // Show what is required to assemble it
 
@@ -3984,7 +3987,7 @@ function generateAssemblyListItem(object_type, object_assembly_linkers, assembli
 
             html_string += "<br> " + assembly_linker.amount + " ";
             if (required_object_type_index !== -1) {
-                html_string += object_types[required_object_type_index].name + " <img style='width:16px; height:16px;' src='https://space.alphacoders.com/" +
+                html_string += object_types[required_object_type_index].name + " <img style='width:16px; height:16px;' src='https://space.alphacoders.com/images/" +
                     urlName(object_types[required_object_type_index].name) + ".png'>";
 
                     
@@ -4056,7 +4059,7 @@ function generateAssemblyListItem(object_type, object_assembly_linkers, assembli
 function generateAssemblyListItemFloor(floor_type, floor_assembly_linkers, coord = false, assembling_object = false) {
     let html_string = "";
     html_string += "<table class='assemble'><tr><td><div class='center'><strong>" + floor_type.name + " Floor</strong><br>";
-    html_string += "<img src='https://space.alphacoders.com/floor-" + urlName(floor_type.name) + ".png'>";
+    html_string += "<img src='https://space.alphacoders.com/images/floor-" + urlName(floor_type.name) + ".png'>";
 
     // Show what is required to assemble it
     floor_assembly_linkers.forEach(function (assembly_linker) {
@@ -4065,7 +4068,7 @@ function generateAssemblyListItemFloor(floor_type, floor_assembly_linkers, coord
 
         html_string += "<br> " + assembly_linker.amount + " ";
         if (required_object_type_index !== -1) {
-            html_string += object_types[required_object_type_index].name + " <img style='width:16px; height:16px;' src='https://space.alphacoders.com/" +
+            html_string += object_types[required_object_type_index].name + " <img style='width:16px; height:16px;' src='https://space.alphacoders.com/images/" +
                 urlName(object_types[required_object_type_index].name) + ".png'>";
         } else {
             html_string += "" + assembly_linker.object_type_id;
@@ -4220,7 +4223,7 @@ function generateCanAssembleListDeprecated() {
 
                 html_string += "</td><td>";
 
-                html_string += "<img src='https://space.alphacoders.com/" + urlName(floor_types[i].name) + ".png'>";
+                html_string += "<img src='https://space.alphacoders.com/images/" + urlName(floor_types[i].name) + ".png'>";
 
                 html_string += "</td></tr></table>";
 
@@ -4304,7 +4307,7 @@ function generateEquipmentDisplay() {
             }
 
             equipment_linker_string += " <img title='" + object_types[object_type_index].name + "' style='width:32px; height:32px;' " +
-                " src='https://space.alphacoders.com/" + urlName(object_types[object_type_index].name) + ".png'>";
+                " src='https://space.alphacoders.com/images/" + urlName(object_types[object_type_index].name) + ".png'>";
 
             equipment_linker_string += " ( ";
             if (object_types[object_type_index].attack_strength) {
@@ -4496,10 +4499,10 @@ function generateInventoryDisplay() {
         // Internal div
         if (object_type_index !== -1) {
             adding_string += "<div style='width:60px; height:60px; background-size: cover; position:relative; " +
-                " background-image: url(https://space.alphacoders.com/" + urlName(object_types[object_type_index].name) + ".png); '>";
+                " background-image: url(https://space.alphacoders.com/images/" + urlName(object_types[object_type_index].name) + ".png); '>";
         } else if (floor_type_index !== -1) {
             adding_string += "<div style='width:60px; height:60px; background-size: cover; position:relative; " +
-                " background-image: url(https://space.alphacoders.com/floor-" + urlName(floor_types[floor_type_index].name) + ".png); '>";
+                " background-image: url(https://space.alphacoders.com/images/floor-" + urlName(floor_types[floor_type_index].name) + ".png); '>";
         }
 
 
@@ -6907,7 +6910,7 @@ function loadMonsterSprites(type, type_id) {
             !scene_game.textures.exists(monster_sprites[i].key)) {
 
             scene_game.load.on('filecomplete', processFile, this);
-            scene_game.load.spritesheet(monster_sprites[i].key, "https://space.alphacoders.com/" + monster_sprites[i].key + ".png",
+            scene_game.load.spritesheet(monster_sprites[i].key, "https://space.alphacoders.com/images/" + monster_sprites[i].key + ".png",
                 { frameWidth: monster_sprites[i].frame_width, frame_height: monster_sprites[i].frame_height, endFrame: monster_sprites[i].frame_count });
             scene_game.load.start();
         }
@@ -9414,7 +9417,7 @@ function showClickMenuNpc(coord) {
                 let inventory_object_type_index = getObjectTypeIndex(inventory_items[i].object_type_id);
 
                 $('#click_menu').append("<img style='width:28px;'" +
-                " src='https://space.alphacoders.com/" + urlName(object_types[inventory_object_type_index].name) + ".png'>" +
+                " src='https://space.alphacoders.com/images/" + urlName(object_types[inventory_object_type_index].name) + ".png'>" +
                 "<button class='button is-small' id='buy_" + inventory_items[i].id + "' npc_id='" + npcs[npc_index].id + "' " +
                 " inventory_item_id='" + inventory_items[i].id + "'>Buy $" + inventory_items[i].price + "</button><br>");
             } else {
@@ -9521,7 +9524,7 @@ function showClickMenuObject(coord) {
 
 
                     take_string += "<div style='display:inline-block; position:relative; width:146px; height:74px; " +
-                        " background-image: url(https://space.alphacoders.com/" +
+                        " background-image: url(https://space.alphacoders.com/images/" +
                         urlName(object_types[object_type_index].name) + ".png); background-repeat: no-repeat; " +
                         " background-position: top; " +
                         " border: 1px #c8c1c1 solid; border-radius:6px; margin:2px;'>";
@@ -9570,7 +9573,7 @@ function showClickMenuObject(coord) {
                 }
                 // It's something that is being sold
                 else if (inventory_item.price) {
-                    take_string += "<img style='width:28px;' src='https://space.alphacoders.com/" + urlName(object_types[object_type_index].name) + ".png'>" +
+                    take_string += "<img style='width:28px;' src='https://space.alphacoders.com/images/" + urlName(object_types[object_type_index].name) + ".png'>" +
                         "<button id='buy_" + inventory_item.id + "' storage_object_id='" + objects[object_index].id + "' " +
                         " inventory_item_id='" + inventory_item.id + "'>Buy $" + inventory_item.price + "</button><br>";
                 } 
@@ -9796,7 +9799,7 @@ function showClickMenuObject(coord) {
 
                 let put_in_string = "";
                 put_in_string += "<div style='display:inline-block; position:relative; width:146px; height:74px; " +
-                    " background-image: url(https://space.alphacoders.com/" +
+                    " background-image: url(https://space.alphacoders.com/images/" +
                     urlName(object_types[object_type_index].name) + ".png); background-repeat: no-repeat; " +
                     " background-position: top; " +
                     " border: 1px #c8c1c1 solid; border-radius:6px; margin:2px;'>";
@@ -10082,7 +10085,7 @@ function showClickMenuObject(coord) {
                             // 1. Its our auto doc
                             if (objects[object_index].player_id && client_player_id && objects[object_index].player_id === client_player_id) {
                                 $('#click_menu').append("<img style='width:32px; height:32px;' " +
-                                    "src='https://space.alphacoders.com/" + urlName(object_types[inventory_item_object_type_index].name) + ".png'> " +
+                                    "src='https://space.alphacoders.com/images/" + urlName(object_types[inventory_item_object_type_index].name) + ".png'> " +
                                     "<button id='equip_" + inventory_items[i].id + "_" + object_type_equipment_linkers[j].equip_slot +
                                     "' inventory_item_id='" + inventory_items[i].id + "' equip_slot='" + object_type_equipment_linkers[j].equip_slot + "' " +
                                     " class='button is-small'>Implant " + object_types[inventory_item_object_type_index].name + " Into Your " +
@@ -10093,7 +10096,7 @@ function showClickMenuObject(coord) {
                                 let npc_surgery_level = 1 + Math.floor(difficult_level_modifier * Math.sqrt(npcs[object_npc_index].surgery_skill_points));
 
                                 $('#click_menu').append("<img style='width:32px; height:32px;' " +
-                                    "src='https://space.alphacoders.com/" + urlName(object_types[inventory_item_object_type_index].name) + ".png'> " +
+                                    "src='https://space.alphacoders.com/images/" + urlName(object_types[inventory_item_object_type_index].name) + ".png'> " +
                                     "<button id='equip_" + inventory_items[i].id + "_" + object_type_equipment_linkers[j].equip_slot +
                                     "' inventory_item_id='" + inventory_items[i].id + "' equip_slot='" + object_type_equipment_linkers[j].equip_slot + "' " +
                                     " class='button is-small'>Pay $" + npc_surgery_level + " Credits: Implant " + object_types[inventory_item_object_type_index].name + " Into Your " +
@@ -10444,7 +10447,7 @@ function showClickMenuShipEngine(coord) {
                 }
 
                 ship_engine_string += "<div style='display:inline-block; position:relative; width:146px; height:74px; " +
-                    " background-image: url(https://space.alphacoders.com/" +
+                    " background-image: url(https://space.alphacoders.com/images/" +
                     urlName(object_types[object_type_index].name) + ".png); background-repeat: no-repeat; " +
                     " background-position: top; " +
                     " border: 1px #c8c1c1 solid; border-radius:6px; margin:2px;'>";
@@ -10491,7 +10494,7 @@ function showClickMenuShipWeapon(coord) {
                 }
 
                 ship_weapon_string += "<div style='display:inline-block; position:relative; width:146px; height:74px; " +
-                    " background-image: url(https://space.alphacoders.com/" +
+                    " background-image: url(https://space.alphacoders.com/images/" +
                     urlName(object_types[object_type_index].name) + ".png); background-repeat: no-repeat; " +
                     " background-position: top; " +
                     " border: 1px #c8c1c1 solid; border-radius:6px; margin:2px;'>";

@@ -834,7 +834,7 @@ socket.on('faction_linker_info', function(data) {
 
     if(faction_linker_index !== -1 && typeof data.remove !== 'undefined') {
         delete faction_linkers[faction_linker_index];
-    } else if(fation_linker_index === -1) {
+    } else if(faction_linker_index === -1) {
         faction_linkers.push(data.faction_linker);
     }
 
