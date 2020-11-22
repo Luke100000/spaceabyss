@@ -9096,7 +9096,7 @@ function showClickMenu(pointer) {
                             let inventory_options_string = "";
 
                             inventory_options_string += "<div style='display:inline-block; position:relative; width:146px; height:74px; " +
-                                " background-image: url(https://space.alphacoders.com/" +
+                                " background-image: url(https://space.alphacoders.com/images/" +
                                 urlName(object_types[object_type_index].name) + ".png); background-repeat: no-repeat; " +
                                 " background-position: top; " +
                                 " border: 1px #c8c1c1 solid; border-radius:6px; margin:2px;'>";

@@ -1,4 +1,9 @@
-## [0.2.16] - 2020-11-18
+## [0.2.17] - 2020-11-22
+
+### Fixed
+- Images not showing up on drop menu
+
+## [0.2.16] - 2020-11-20
 
 ### Added
 - Factions should be functional from the website end of things. There still may be server functionality that doesn't properly support factions yet
