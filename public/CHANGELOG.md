@@ -1,3 +1,24 @@
+## [0.2.18] - 2020-11-23
+
+
+### Added 
+- Galaxy News when a player loses control of a planet
+- Message when you try to eat something, but are already eating it
+- Credits on the game login screen
+- Color coding for inventory items that you are currently eating or are addicted to. It can be hard to read the list of things you are eating in the middle of 
+battle, so I think having a color display on the inventory items will make it more clear when you can eat something again.
+- The client will now proactively remove mining and salvaging beams if the player moves too far away from the object that is being mined/salvaged
+
+### Fixed
+- You can now equip diamond armor
+- Fighter ship image now shows up properly
+- Some links within the game client pointing to the old client location
+- Laser gun and laser rifle showing up as question marks when dropped on the floor
+
+
+### Changed
+- Using a minified version of Phaser on production. In theory this should make for a pretty good reduction in initial page load time for new players
+
 ## [0.2.17] - 2020-11-22
 
 ### Fixed

@@ -582,11 +582,29 @@ async function deleteObject(dirty, data) {
             if(dirty.objects[data.object_index].planet_coord_id) {
                 let planet_index = await planet.getIndex(dirty, { 'planet_id': dirty.objects[data.object_index].planet_id, 'source': 'game_object.deleteObject' });
                 if (planet_index !== -1) {
+
+                    let previous_owner_index = await player.getIndex(dirty, { 'player_id': dirty.planets[planet_index].player_id });
+
                     dirty.planets[planet_index].ai_id = false;
                     dirty.planets[planet_index].player_id = false;
                     dirty.planets[planet_index].has_change = true;
 
                     io.emit('planet_info', { 'planet': dirty.planets[planet_index] });
+
+                    // Lets do a player log for this!
+                    if(typeof data.reason_type !== 'undefined' && data.reason_type === 'player') {
+                        let reason_player_index = await player.getIndex(dirty, { 'player_id': data.reason_id });
+                        if(reason_player_index !== -1) {
+
+                            let message = dirty.players[reason_player_index].name + " has defeated the planetary AI on the planet " + dirty.planets[planet_index].name +
+                                " causing " + dirty.players[previous_owner_index].name + " to lose control of the planet";
+
+                            world.addPlayerLog(dirty, reason_player_index, message, { 'planet_id': dirty.planets[planet_index].id });
+                        }
+                        
+                    }
+                    
+
                 }
             } else if(dirty.objects[data.object_index].ship_coord_id) {
                 let ship_coord_index = await main.getShipCoordIndex({ 'ship_coord_id': dirty.objects[data.object_index].ship_coord_id });

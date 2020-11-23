@@ -941,12 +941,12 @@ function createPlayerSprite(player_index) {
         else if(objects[ship_index].object_type_id === 313) {
             new_texture_key = 'player-blockade-runner';
             new_texture_animation_key = 'player-blockade-runner-down-animation';
-        } else if (objects[ship_index].object_type_id === 238) {
+        } else if (objects[ship_index].object_type_id === 238) {                    // CARGO SHIP
             new_texture_key = 'player-cargo-ship';
             new_texture_animation_key = 'player-cargo-ship-down-animation';
             //new_movement_display = 'rotate';
 
-        } else if (objects[ship_index].object_type_id === 114) {
+        } else if (objects[ship_index].object_type_id === 114) {                    // POD
             new_texture_key = 'player-pod';
             new_texture_animation_key = 'player-pod-animation';
 
@@ -954,6 +954,10 @@ function createPlayerSprite(player_index) {
             new_texture_key = 'player-cutter';
             new_texture_animation_key = 'player-cutter-down-animation';
             //new_movement_display = 'rotate';
+        } else if (objects[ship_index].object_type_id === 339) {                    // FIGHTER
+            new_texture_key = 'player-fighter';
+            new_texture_animation_key = 'player-fighter-down-animation';
+
         } else if(objects[ship_index].object_type_id === 296) {
             new_texture_key = 'player-lancer';
             new_texture_animation_key = 'player-lancer-down-animation';
@@ -2846,7 +2850,7 @@ function generateAirlockDisplay() {
 
 
     if (ship_coord_index !== -1 && ship_coords[ship_coord_index].object_type_id === 266) {
-        console.log("Player is on an airlock");
+        //console.log("Player is on an airlock");
         $('#launch').append('<button class="button is-danger" id="buy_pod" object_type_id="114">Use Emergency Pod</button>');
 
     } else {
@@ -3827,6 +3831,12 @@ function generateAddictionDisplay() {
 
 
     let body_index = objects.findIndex(function (obj) { return obj && obj.id === players[client_player_index].body_id; });
+
+    if(body_index === -1) {
+        // We just don't have this information yet
+        return false;
+    }
+
     let body_type_index = object_types.findIndex(function (obj) { return obj && obj.id === objects[body_index].object_type_id; });
 
 
@@ -4480,11 +4490,42 @@ function generateInventoryDisplay() {
 
 
         // Wrapper div
-        let adding_string = "<div id='inventory_item_" + inventory_item.id + "' style=' " +
+        let adding_string = "";
+
+        // see if the client is currently eating this
+
+        let eating_linker_index = eating_linkers.findIndex(function(obj) { return obj && obj.eating_object_type_id === inventory_item.object_type_id && 
+            obj.body_id === players[client_player_index].body_id });
+
+        let addiction_linker_index = addiction_linkers.findIndex(function(obj) { return obj && obj.addicted_to_object_type_id === inventory_item.object_type_id && 
+            obj.addicted_body_id === players[client_player_index].body_id; });
+
+        // or is currently addicted to this
+
+        if(eating_linker_index !== -1) {
+
+            adding_string += "<div id='inventory_item_" + inventory_item.id + "' style=' " +
             " display:inline-block; border: 2px solid black; width:64px; height:64px; " +
-            " border-radius: 4px; box-shadow: 1px 3px 4px #2cc2f9; margin:2px; " +
-            " background-image: linear-gradient(141deg, #c3faff 0%, #1fc8db 51%, #2cb5e8 75%); " +
+            " border-radius: 4px; box-shadow: 1px 3px 4px #2cf939; margin:2px; " +
+            " background-image: linear-gradient(141deg, #c3ffcf 0%, #1fdb34 51%, #2ce838 75%); " +
             " ' ";
+
+        } else if(addiction_linker_index !== -1) {
+
+            adding_string += "<div id='inventory_item_" + inventory_item.id + "' style=' " +
+            " display:inline-block; border: 2px solid black; width:64px; height:64px; " +
+            " border-radius: 4px; box-shadow: 1px 3px 4px #f92c2c; margin:2px; " +
+            " background-image: linear-gradient(141deg, #ffc3c3 0%, #db1f1f 51%, #e82c2c 75%); " +
+            " ' ";
+        } else {
+            adding_string += "<div id='inventory_item_" + inventory_item.id + "' style=' " +
+                " display:inline-block; border: 2px solid black; width:64px; height:64px; " +
+                " border-radius: 4px; box-shadow: 1px 3px 4px #2cc2f9; margin:2px; " +
+                " background-image: linear-gradient(141deg, #c3faff 0%, #1fc8db 51%, #2cb5e8 75%); " +
+                " ' ";
+        }
+
+
 
 
         if (object_type_index !== -1) {
@@ -4526,128 +4567,6 @@ function generateInventoryDisplay() {
     });
 }
 
-
-function generateInventoryDisplayOld() {
-
-    console.log("IN OLD FUNCTION!!!");
-    return false;
-    // Don't have info about the client player yet
-    if (client_player_index === -1) {
-        return false;
-    }
-    //console.log("%c Generating inventory display", log_success);
-    $('#inventory').empty();
-
-    inventory_items.forEach(function (inventory_item, i) {
-
-        // Only use our inventory items for the main display
-        if (inventory_item.player_id !== player_id) {
-            return false;
-        }
-
-        let object_type_index = -1;
-        let floor_type_index = -1;
-        if (inventory_item.object_id) {
-            let object_index = objects.findIndex(function (obj) { return obj && obj.id === inventory_item.object_id; });
-            if (object_index === -1) {
-                //console.log("Have inventory item but don't have the object associated with it. object id: "
-                //    + inventory_item.object_id + ". Requesting info");
-                socket.emit('request_object_info', { 'object_id': inventory_item.object_id });
-                return;
-            }
-
-            object_type_index = object_types.findIndex(function (obj) { return obj && obj.id === objects[object_index].object_type_id; });
-        } if (inventory_item.object_type_id) {
-            object_type_index = object_types.findIndex(function (obj) { return obj && obj.id === inventory_item.object_type_id; });
-        } else if (inventory_item.floor_type_id) {
-            floor_type_index = floor_types.findIndex(function (obj) { return obj && obj.id === inventory_item.floor_type_id; });
-        }
-
-        // Wrapper div
-        let adding_string = "<div id='inventory_item_" + inventory_item.id + "' style='padding:6px;'>";
-
-        adding_string += "<div style='display:inline-block; width: 120px;'>";
-
-
-        // Amount, name, and image display
-        if (object_type_index !== -1) {
-            adding_string += inventory_item.amount + " " + object_types[object_type_index].name;
-            adding_string += "<img style='width:16px; height:16px;' src='https://space.alphacoders.com/" + urlName(object_types[object_type_index].name) + ".png'>";
-        } else if (floor_type_index !== -1) {
-            adding_string += inventory_item.amount + " " + floor_types[floor_type_index].name + " Floor";
-            adding_string += "<img style='width:16px; height:16px;'";
-            adding_string += "src='https://space.alphacoders.com/" + floor_types[floor_type_index].name.toLowerCase() + ".png'>";
-        }
-
-        adding_string += "</div>";
-
-
-        // Next div is for equip,eat, ect
-        adding_string += "<div style='width:100px; display:inline-block;'>";
-
-        if (object_type_index !== -1) {
-            if (object_types[object_type_index].is_equippable) {
-                //console.log("Object type " + object_types[object_type_index].name + " is equippable");
-
-                let type_equipment_linkers = object_type_equipment_linkers.filter(linker => linker.object_type_id === object_types[object_type_index].id);
-
-                //console.log("Length of type_equipment_linkers: " + type_equipment_linkers.length);
-                if (type_equipment_linkers.length > 0) {
-                    //console.log("Adding equip button stuff");
-
-                    adding_string += "Equip: ";
-
-
-                    type_equipment_linkers.forEach(function (linker) {
-                        adding_string += "<button id='equip_" + inventory_item.id + "_" + linker.equip_slot +
-                            "' inventory_item_id='" + inventory_item.id + "' equip_slot='"
-                            + linker.equip_slot + "' class='button is-default'>Equip " + linker.equip_slot + "</button>";
-                    });
-
-
-
-                }
-
-                //adding_string += "<button id='equip_" + inventory_item.id + "' class='btn btn-info btn-xs'>Equip</button>";
-            }
-
-            // see if the body the player has can eat this
-            let body_index = objects.findIndex(function (obj) { return obj && obj.id === players[client_player_index].body_id; });
-            if (body_index !== -1) {
-
-                let body_object_type_index = object_types.findIndex(function (obj) { return obj && obj.id === objects[body_index].object_type_id; });
-
-                //console.log("Our body's race id: " + object_types[body_object_type_index].race_id);
-
-                // now lets see if the race can eat this one
-                race_eating_linkers.forEach(function (race_eating_linker) {
-
-
-                    if (race_eating_linker.race_id === object_types[body_object_type_index].race_id && race_eating_linker.object_type_id === object_types[object_type_index].id) {
-                        adding_string += "<button id='eat_" + inventory_item.id + "' class='button is-info is-small'>Eat</button>";
-                    }
-                });
-            }
-        }
-
-        // Ending the equip/eat div
-        adding_string += "</div>";
-
-        // Trash div (We are wrapping the buttons in divs so the trash button always lines up
-        adding_string += "<div style='display:inline-block;'>";
-        adding_string += "<button id='trash_" + inventory_item.id + "' class='button is-danger is-small'><span class='glyphicon glyphicon-trash'></span> Trash</button>";
-        adding_string += "</div>";
-
-
-
-        // End wrapper div
-        adding_string += "</div>";
-        $('#inventory').append(adding_string);
-
-
-
-    });
-}
 
 function generateNonAiManagementDisplay(object_index = -1) {
 
@@ -7671,7 +7590,51 @@ function initiateMovePlayerFlow(player_index, destination_coord_type, destinatio
         }
 
 
+    }
 
+
+    // If there's a mining or a salvaging beam, and we are 3+ tiles away, lets remove the beam
+    if (client_player_index !== -1 && player_index === client_player_index) {
+        
+        for(let i = 0; i < mining_linkers.length; i++) {
+            if(mining_linkers[i] && mining_linkers[i].player_id === players[client_player_index].id) {
+                let object_index = getObjectIndex(mining_linkers[i].object_id);
+
+                if(object_index !== -1) {
+                    let object_info = getObjectInfo(object_index);
+            
+                    // It's possible that we won't have the coord for the mining if we are back to viewing the ship
+                    if(object_info.coord !== false && client_player_info && client_player_info.coord) {
+                        if(Math.abs(object_info.coord.tile_x - client_player_info.coord.tile_x) >= 3 || 
+                        Math.abs(object_info.coord.tile_y - client_player_info.coord.tile_y) >= 3) {
+                            console.log("Client is proactively removing mining beam");
+                            removeEffects('object', mining_linkers[i].object_id);
+                        }
+                    }
+                }
+                
+            }
+        }
+
+        for(let i = 0; i < salvaging_linkers.length; i++) {
+            if(salvaging_linkers[i] && salvaging_linkers[i].player_id === players[client_player_index].id) {
+                let object_index = getObjectIndex(salvaging_linkers[i].object_id);
+
+                if(object_index !== -1) {
+                    let object_info = getObjectInfo(object_index);
+            
+                    // It's possible that we won't have the coord for the mining if we are back to viewing the ship
+                    if(object_info.coord !== false && client_player_info && client_player_info.coord) {
+                        if(Math.abs(object_info.coord.tile_x - client_player_info.coord.tile_x) >= 3 || 
+                        Math.abs(object_info.coord.tile_y - client_player_info.coord.tile_y) >= 3) {
+                            console.log("Client is proactively removing salvaging beam");
+                            removeEffects('object', salvaging_linkers[i].object_id);
+                        }
+                    }
+                }
+                
+            }
+        }
 
 
     }

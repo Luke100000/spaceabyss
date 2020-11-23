@@ -8,7 +8,7 @@ socket.on('addiction_linker_info', function(data) {
         return false;
     }
 
-    console.log("%c Got addiction linker with id: " + data.addiction_linker.id, log_success);
+    //console.log("%c Got addiction linker with id: " + data.addiction_linker.id, log_success);
 
     let linker_index = addiction_linkers.findIndex(function(obj) { return obj && obj.id === parseInt(data.addiction_linker.id); });
 
@@ -16,11 +16,14 @@ socket.on('addiction_linker_info', function(data) {
         console.log("Deleted addiction linker");
         delete addiction_linkers[linker_index];
         generateAddictionDisplay();
+        generateInventoryDisplay();
         return;
+
     }
 
     if(linker_index === -1) {
         linker_index = addiction_linkers.push(data.addiction_linker) - 1;
+        generateInventoryDisplay();
 
     } else {
 
@@ -621,6 +624,8 @@ socket.on('eating_linker_info', function(data) {
         //console.log("Removing eating linker");
         delete eating_linkers[eating_linker_index];
 
+        generateInventoryDisplay();
+
     } else if(eating_linker_index === -1) {
         //console.log("Pushed to eating_linkers");
         eating_linker_index = eating_linkers.push(data.eating_linker) - 1;
@@ -628,6 +633,7 @@ socket.on('eating_linker_info', function(data) {
         eating_linkers[eating_linker_index].last_update = Math.floor(new Date());
 
         //console.log("Eating linker eating_object_type_id is: " + eating_linkers[eating_linker_index].eating_object_type_id);
+        generateInventoryDisplay();
 
     } else {
         eating_linkers[eating_linker_index] = data.eating_linker;
@@ -1108,7 +1114,7 @@ socket.on('market_linker_info', function(data) {
 
 });
 
-// This should only be updates about mining 
+// This is only UPDATES on mining progress. The actual MININING LINKER stuff is on mining linker info (hint - it's below this)
 socket.on('mining_info', function(data) {
     console.log("Got mining_info");
 
@@ -1171,7 +1177,7 @@ socket.on('mining_info', function(data) {
 
 socket.on('mining_linker_info', function(data) {
 
-    console.log("Got mining_linker_info with id : " + data.mining_linker.id);
+    //console.log("Got mining_linker_info with id : " + data.mining_linker.id);
 
     let index = mining_linkers.findIndex(function(obj) { return obj && obj.id === data.mining_linker.id; });
 

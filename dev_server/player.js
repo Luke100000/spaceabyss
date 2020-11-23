@@ -16,6 +16,395 @@ const planet = require('./planet.js');
 const world = require('./world.js');
 
 
+async function calculateAttack(dirty, player_index, player_body_index, calculating_range) {
+
+    try {
+
+        if(player_index === -1) {
+            log(chalk.yellow("Player index sent do player.calculateAttack was -1"));
+            return false;
+        }
+
+        if(player_body_index === -1) {
+            log(chalk.yellow("Player body index sent to do player.calculateAttack was -1"));
+            return false;
+        }
+
+        let damage_amount = 0;
+        let damage_types = [];
+        let radius_damage_amounts = [];
+        let decrement_equipment_linker_ids = [];
+
+        let player_body_type_index = main.getObjectTypeIndex(dirty.objects[player_body_index].object_type_id);
+
+        // default 5 attack at one range ( hands )
+        if(calculating_range === 1) {
+            damage_amount = 5;
+        }
+
+        // If the player's body type has an attack modifier, we change the attack by that amount
+        if(dirty.object_types[player_body_type_index].attack_modifier) {
+            damage_amount += dirty.object_types[player_body_type_index].attack_modifier;
+        }
+
+        //console.time("controlTime");
+        let control_level = await getLevel(dirty, { 'player_index': player_index,
+            'body_index': player_body_index, 'skill_type': 'control' });
+        //console.timeEnd("controlTime");
+
+        let corrosive_level = await getLevel(dirty, { 'player_index': player_index,
+            'body_index': player_body_index, 'scope': 'planet', 'skill_type': 'corrosive' });
+        let electric_level = await getLevel(dirty, { 'player_index': player_index,
+            'body_index': player_body_index, 'scope': 'planet',  'skill_type': 'electric' });
+        let explosion_level = await getLevel(dirty, { 'player_index': player_index,
+            'body_index': player_body_index, 'scope': 'planet',  'skill_type': 'explosion' });
+        let freezing_level = await getLevel(dirty, { 'player_index': player_index,
+            'body_index': player_body_index, 'scope': 'planet',  'skill_type': 'freezing' });
+        let hacking_level = await getLevel(dirty, { 'player_index': player_index,
+            'body_index': player_body_index, 'scope': 'planet',  'skill_type': 'hacking' });
+        let heat_level = await getLevel(dirty, { 'player_index': player_index,
+            'body_index': player_body_index, 'scope': 'planet',  'skill_type': 'heat' });
+        let gravity_level = await getLevel(dirty, { 'player_index': player_index,
+            'body_index': player_body_index, 'scope': 'planet',  'skill_type': 'gravity' });
+        let laser_level = await getLevel(dirty, { 'player_index': player_index,
+            'body_index': player_body_index, 'scope': 'planet',  'skill_type': 'laser' });
+        let melee_level = await getLevel(dirty, { 'player_index': player_index,
+            'body_index': player_body_index, 'scope': 'planet',  'skill_type':'melee' } );
+        let piercing_level = await getLevel(dirty, { 'player_index': player_index,
+            'body_index': player_body_index, 'scope': 'planet',  'skill_type': 'piercing' });
+        let plasma_level = await getLevel(dirty, { 'player_index': player_index,
+            'body_index': player_body_index, 'scope': 'planet', 'skill_type': 'plasma' });
+        let poison_level = await getLevel(dirty, { 'player_index': player_index,
+            'body_index': player_body_index, 'scope': 'planet', 'skill_type': 'poison' });
+        let radiation_level = await getLevel(dirty, { 'player_index': player_index,
+            'body_index': player_body_index, 'scope': 'planet', 'skill_type': 'radiation' });
+
+
+        let total_attacking_equipment_count = 0;
+        let control_equipment_count = 0;
+        let corrosive_equipment_count = 0;
+        let electric_equipment_count = 0;
+        let explosion_equipment_count = 0;
+        let freezing_equipment_count = 0;
+        let gravity_equipment_count = 0;
+        let hacking_equipment_count = 0;
+        let heat_equipment_count = 0;
+        let laser_equipment_count = 0
+        let melee_equipment_count = 0;
+        let piercing_equipment_count = 0;
+        let plasma_equipment_count = 0;
+        let poison_equipment_count = 0;
+        let radiation_equipment_count = 0;
+        
+
+
+        for(let equipment_linker of dirty.equipment_linkers) {
+            if(equipment_linker && equipment_linker.body_id === dirty.players[player_index].body_id) {
+
+
+                let object_type_index = dirty.object_types.findIndex(function(obj) { return obj && obj.id === equipment_linker.object_type_id; });
+                if(object_type_index !== -1) {
+
+                    // see if the object attack is in this range
+                    if(dirty.object_types[object_type_index].min_attack_range <= calculating_range && dirty.object_types[object_type_index].max_attack_range >= calculating_range) {
+                        //log(chalk.cyan("Have equipped item in range. Adding: " + dirty.object_types[object_type_index].attack_strength));
+                        damage_amount += dirty.object_types[object_type_index].attack_strength;
+
+
+                        // TODO flesh out all the damage types
+                        if(dirty.object_types[object_type_index].equip_skill === 'control') {
+                            control_equipment_count++;
+                        } else if(dirty.object_types[object_type_index].equip_skill === 'corrosive') {
+                            corrosive_equipment_count++;
+                        } else if(dirty.object_types[object_type_index].equip_skill === 'electric') {
+                            electric_equipment_count++;
+                        } else if(dirty.object_types[object_type_index].equip_skill === 'explosion') {
+                            explosion_equipment_count++;
+                        } else if(dirty.object_types[object_type_index].equip_skill === 'freezing') {
+                            freezing_equipment_count++;
+                        } else if(dirty.object_types[object_type_index].equip_skill === 'gravity') {
+                            gravity_equipment_count++;
+                        } else if(dirty.object_types[object_type_index].equip_skill === 'hacking') {
+                            hacking_equipment_count++;
+                        } else if(dirty.object_types[object_type_index].equip_skill === 'heat') {
+                            heat_equipment_count++;
+                        } else if(dirty.object_types[object_type_index].equip_skill === 'laser') {
+                            laser_equipment_count++;
+                        } else if(dirty.object_types[object_type_index].equip_skill === 'melee') {
+                            melee_equipment_count++;
+                        } else if(dirty.object_types[object_type_index].equip_skill === 'piercing') {
+                            piercing_equipment_count++;
+                        } else if(dirty.object_types[object_type_index].equip_skill === 'poison') {
+                            poison_equipment_count++;
+                        } else if(dirty.object_types[object_type_index].equip_skill === 'radiation') {
+                            radiation_equipment_count++;
+                        }
+
+                        // If the equip skill/(damage type) isn't in our damage types array yet, add it
+                        let need_to_add_type = true;
+                        for(let t = 0; t < damage_types.length; t++) {
+                            if(damage_types[t] === dirty.object_types[object_type_index].equip_skill) {
+                                need_to_add_type = false;
+                            }
+                        }
+
+                        if(need_to_add_type) {
+                            //console.log("Pushing damage type: " + dirty.object_types[object_type_index].equip_skill);
+                            damage_types.push(dirty.object_types[object_type_index].equip_skill);
+                        }
+
+                        total_attacking_equipment_count++;
+
+                        if(dirty.object_types[object_type_index].attack_radius) {
+                            radius_damage_amounts.push({ 'radius': dirty.object_types[object_type_index].attack_radius,
+                                'damage_amount': dirty.object_types[object_type_index].attack_strength,
+                                'damage_type': dirty.object_types[object_type_index].equip_skill });
+                        }
+
+                        if(dirty.object_types[object_type_index].is_consumed_on_attack) {
+                            //log(chalk.cyan("Consuming attack item"));
+                            decrement_equipment_linker_ids.push(equipment_linker.id);
+                        }
+
+                    }
+                }
+            }
+        }
+
+        // Control
+        if(control_equipment_count > 0) {
+            let control_equipment_percent = control_equipment_count / total_attacking_equipment_count;
+            let control_bonus = Math.floor(control_level * control_equipment_percent);
+
+            if(control_bonus > 1) {
+                damage_amount += control_bonus - 1;
+            }
+        }
+
+        // Corrosive
+        if(corrosive_equipment_count > 0) {
+            let corrosive_equipment_percent = corrosive_equipment_count / total_attacking_equipment_count;
+            let corrosive_bonus = Math.floor(corrosive_level * corrosive_equipment_percent);
+
+            if(corrosive_bonus > 1) {
+                damage_amount += corrosive_bonus - 1;
+            }
+        }
+
+        // Electric
+        if(electric_equipment_count > 0) {
+            let electric_equipment_percent = electric_equipment_count / total_attacking_equipment_count;
+            let electric_bonus = Math.floor(electric_level * electric_equipment_percent);
+
+            if(electric_bonus > 1) {
+                damage_amount += electric_bonus - 1;
+            }
+        }
+        
+
+        // Explosion
+        if(explosion_equipment_count > 0) {
+            let explosion_equipment_percent = explosion_equipment_count / total_attacking_equipment_count;
+            let explosion_bonus = Math.floor(explosion_level * explosion_equipment_percent);
+
+            if(explosion_bonus > 1) {
+                damage_amount += explosion_bonus - 1;
+            }
+        }
+
+        // Freezing
+        if(freezing_equipment_count > 0) {
+            let freezing_equipment_percent = freezing_equipment_count / total_attacking_equipment_count;
+            let freezing_bonus = Math.floor(freezing_level * freezing_equipment_percent);
+
+            if(freezing_bonus > 1) {
+                damage_amount += freezing_bonus - 1;
+            }
+        }
+
+        // Gravity
+        if(gravity_equipment_count > 0) {
+            let gravity_equipment_percent = gravity_equipment_count / total_attacking_equipment_count;
+            let gravity_bonus = Math.floor(gravity_level * gravity_equipment_percent);
+
+            if(gravity_bonus > 1) {
+                damage_amount += gravity_bonus - 1;
+            }
+        }
+
+        // Hacking
+        if(hacking_equipment_count > 0) {
+            let hacking_equipment_percent = hacking_equipment_count / total_attacking_equipment_count;
+            let hacking_bonus = Math.floor(hacking_level * hacking_equipment_percent);
+
+            if(hacking_bonus > 1) {
+                damage_amount += hacking_bonus - 1;
+            }
+        }
+
+        // Heat
+        if(heat_equipment_count > 0) {
+            let heat_equipment_percent = heat_equipment_count / total_attacking_equipment_count;
+            let heat_bonus = Math.floor(heat_level * heat_equipment_percent);
+
+            if(heat_bonus > 1) {
+                damage_amount += heat_bonus - 1;
+            }
+        }
+
+    
+        // Laser percent
+        if(laser_equipment_count > 0) {
+            let laser_equipment_percent = laser_equipment_count / total_attacking_equipment_count;
+            let laser_bonus = Math.floor(laser_level * laser_equipment_percent);
+
+            if(laser_bonus > 1) {
+                damage_amount += laser_bonus - 1;
+            }
+        }
+
+        // Melee percent
+        if(melee_equipment_count > 0) {
+            let melee_equipment_percent = melee_equipment_count / total_attacking_equipment_count;
+            let melee_bonus = Math.floor(melee_level * melee_equipment_percent);
+
+            if(melee_bonus > 1) {
+                damage_amount += melee_bonus - 1;
+            }
+        }
+
+        // Piercing
+        if(piercing_equipment_count > 0) {
+            let piercing_equipment_percent = piercing_equipment_count / total_attacking_equipment_count;
+            let piercing_bonus = Math.floor(piercing_level * piercing_equipment_percent);
+
+            if(piercing_bonus > 1) {
+                damage_amount += piercing_bonus - 1;
+            }
+        }
+
+        // Plasma
+        if(plasma_equipment_count > 0) {
+            let plasma_equipment_percent = plasma_equipment_count / total_attacking_equipment_count;
+            let plasma_bonus = Math.floor(plasma_level * plasma_equipment_percent);
+
+            if(plasma_bonus > 1) {
+                damage_amount += plasma_bonus - 1;
+            }
+        }
+
+        // Poison
+        if(poison_equipment_count > 0) {
+            let poison_equipment_percent = poison_equipment_count / total_attacking_equipment_count;
+            let poison_bonus = Math.floor(poison_level * poison_equipment_percent);
+
+            if(poison_bonus > 1) {
+                damage_amount += poison_bonus - 1;
+            }
+        }
+
+        // Radiation
+        if(radiation_equipment_count > 0) {
+            let radiation_equipment_percent = radiation_equipment_count / total_attacking_equipment_count;
+            let radiation_bonus = Math.floor(radiation_level * radiation_equipment_percent);
+
+            if(radiation_bonus > 1) {
+                damage_amount += radiation_bonus - 1;
+            }
+        }
+
+        // There's also a situation where there is nothing equipped, and we are attacking at range one
+        if(total_attacking_equipment_count === 0 && calculating_range === 1 && melee_level > 1) {
+            damage_amount += melee_level - 1;
+        }
+
+        let body_eating_linkers = dirty.eating_linkers.filter(linker => linker.body_id === dirty.players[player_index].body_id);
+
+
+
+        // and bonuses for eating linkers
+        for(let eating_linker of body_eating_linkers) {
+            if(eating_linker && eating_linker.body_id === dirty.players[player_index].body_id) {
+
+
+                let race_linker_index = main.getRaceEatingLinkerIndex({
+                    'race_id': dirty.object_types[player_body_type_index].race_id, 'object_type_id': eating_linker.eating_object_type_id
+                });
+
+                if(dirty.race_eating_linkers[race_linker_index].attack) {
+                    //console.log("Eating increased player attack by: " + dirty.race_eating_linkers[race_linker_index].attack);
+                    damage_amount += dirty.race_eating_linkers[race_linker_index].attack;
+                }
+            }
+        }
+
+        // and minuses for each addiction without a matching eating linker (addictions are held off while the player is still consuming them)
+        let body_addiction_linkers = dirty.addiction_linkers.filter(linker => linker.addicted_body_id === dirty.players[player_index].body_id);
+        for(let addiction_linker of body_addiction_linkers) {
+
+            let still_eating = false;
+            for(let eating_linker of body_eating_linkers) {
+                if(eating_linker.eating_object_type_id === addiction_linker.addicted_to_object_type_id) {
+                    still_eating = true;
+                    console.log("Player is still eating thing causing addiction");
+                }
+            }
+
+            if(!still_eating) {
+
+                console.log("Player is not eating something they are addicted to");
+
+                let race_linker_index = main.getRaceEatingLinkerIndex({
+                    'race_id': dirty.object_types[player_body_type_index].race_id, 'object_type_id': addiction_linker.addicted_to_object_type_id
+                });
+
+                if(dirty.race_eating_linkers[race_linker_index].attack) {
+                    console.log("Reduced player attacked due to addiction linker");
+                    damage_amount -= addiction_linker.addiction_level * dirty.race_eating_linkers[race_linker_index].attack;
+                } else {
+                    console.log("Addiction did not influence attack");
+                }
+
+            }
+
+        }
+
+        // No equipment, range 1, no damage types present. The player is hitting with their hands
+        if(damage_types.length === 0 && calculating_range === 1) {
+            damage_types.push('melee');
+        }
+
+
+        return { 'damage_amount': damage_amount, 'damage_types': damage_types,
+            'radius_damage_amounts': radius_damage_amounts,
+            'decrement_equipment_linker_ids': decrement_equipment_linker_ids,
+            'control_equipment_count': control_equipment_count,
+            'corrosive_equipment_count': corrosive_equipment_count,
+            'electric_equipment_count': electric_equipment_count,
+            'explosion_equipment_count': explosion_equipment_count,
+            'freezing_equipment_count': freezing_equipment_count,
+            'gravity_equipment_count': gravity_equipment_count,
+            'hacking_equipment_count': hacking_equipment_count,
+            'heat_equipment_count': heat_equipment_count,
+            'laser_equipment_count': laser_equipment_count,
+            'melee_equipment_count': melee_equipment_count,
+            'piercing_equipment_count': piercing_equipment_count,
+            'plasma_equipment_count': plasma_equipment_count,
+            'poison_equipment_count': poison_equipment_count,
+            'radiation_equipment_count': radiation_equipment_count
+
+        
+        };
+    } catch(error) {
+        log(chalk.red("Error in player.calculateAttack: " + error));
+        console.error(error);
+    }
+
+}
+
+exports.calculateAttack = calculateAttack;
+
+
 async function calculateDefense(dirty, player_index, damage_type = '') {
 
     try {
@@ -1867,6 +2256,7 @@ exports.sendShips = sendShips;
     exports.unequip = unequip;
 
 module.exports = {
+    calculateAttack,
     calculateDefense,
     calculateMovementModifier,
     canPlace,

@@ -83,7 +83,18 @@ header("Access-Control-Allow-Origin: *");
 
 
     <script src="//space.alphacoders.com/js/jquery-3.3.1.min.js"></script>
-    <script src="//space.alphacoders.com/js/phaser-3.15.1.js"></script>
+    <?php
+    if($environment == "production") {
+        ?>
+        <script src="//space.alphacoders.com/js/phaser-3.15.1.min.js"></script>
+        <?php
+    } else {
+        ?>
+        <script src="//space.alphacoders.com/js/phaser-3.15.1.js"></script>
+        <?php
+    }
+    ?>
+    
 
     <script src="client_functions_<?php echo $client_version; ?>.js"></script>
     <script src="client_network_<?php echo $client_version; ?>.js"></script>
@@ -211,9 +222,13 @@ header("Access-Control-Allow-Origin: *");
                             <input id="password" type="password" class="input">
                         </div>
 
-                        <button type="submit" class="button is-info">Login</button>
+                        <button type="submit" class="button is-info">Login And Play!</button>
 
                     </form>
+
+
+                    <br>
+                    Art By <a target="_blank" href="/artist">pixelTheWise and others</a>, Music By <a target="_blank" href="/artist">Eric Matya and others</a>
                 </div>
             </div>
         </div>
@@ -232,7 +247,7 @@ header("Access-Control-Allow-Origin: *");
                 <div class="message-body">
                     <h1 class="is-size-1">Loading and Connecting</h1>
                     This should disappear once the game is loaded, and you have an active connection to the server.
-                    If it does not disappear after more than 20 seconds, <a class="button is-warning" href="https://space.alphacoders.com/game.php">Reload the page and Relogin</a><br>
+                    If it does not disappear after more than 20 seconds, <a class="button is-warning" href="https://space.alphacoders.com/client/game.php">Reload the page and Relogin</a><br>
                 </div>
             </div>
         </div>
@@ -249,7 +264,7 @@ header("Access-Control-Allow-Origin: *");
                 <div class="message-body">
                     <h1 class="is-size-1">Disconnected</h1>
                     You have lost your connection to Space Abyss
-                    <a class="button is-warning" href="https://space.alphacoders.com/game.php">Reload the page and Relogin</a><br><br>
+                    <a class="button is-warning" href="https://space.alphacoders.com/client/game.php">Reload the page and Relogin</a><br><br>
 
                     <a href="https://space.alphacoders.com" class="button is-default">Back Home</a>
                 </div>

@@ -5,22 +5,6 @@ CURRENT GAMEPLAY TEST:
 DOING NOW:
 
 
-    organize the public folder
-        images in images folder
-        css in css folder
-        js in js folder
-        any .png, .jpg, .wav, .mp3 etc need to use the audio/image folders
-        putting the client in a client folder
-        jquery in the js folder
-        get the old clients out of public and into /html /laravel5.5 client_old or whaterver
-        phaser in js
-        socket.io in js
-        spectrum in .js and .css
-
-
-    upgrade Space Abyss website from Laravel 5.1 to 8.x?
-        Or just to 5.5 for now to match the rest of the sites; and see how difficult it is
-
     Test that the basics of factions works
         Maybe a faction display on the site and all that
         have the players attacking Phatheon's stuff be in a faction together

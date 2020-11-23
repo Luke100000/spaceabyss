@@ -359,7 +359,7 @@ function addEffect(data) {
 
 function removeEffects(removing_type, removing_id) {
 
-    console.log("Removing effects from " + removing_type + " id: " + removing_id);
+    //console.log("Removing effects from " + removing_type + " id: " + removing_id);
 
     for(let i = 0; i < effect_sprites.length; i++) {
         if(effect_sprites[i] && effect_sprites[i].visible) {
@@ -367,7 +367,7 @@ function removeEffects(removing_type, removing_id) {
             
             if(removing_type === 'object' && effect_sprites[i].object_id && effect_sprites[i].object_id === removing_id) {
 
-                console.log("Found effect on object. No longer visible!");
+                //console.log("Found effect on object. No longer visible!");
                 effect_sprites[i].object_id = false;
                 effect_sprites[i].setVisible(false);
             }

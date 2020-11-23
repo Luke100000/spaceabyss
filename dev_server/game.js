@@ -2354,6 +2354,7 @@ async function eat(socket, dirty, data) {
 
             if(socket) {
                 socket.emit('chat', { 'message': 'You can only eat one of something at a time', 'scope': 'system' });
+                socket.emit('result_info', { 'status': 'failure', 'text': "Already Eating This" });
             }
 
             return false;
