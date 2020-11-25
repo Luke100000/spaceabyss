@@ -897,18 +897,28 @@ socket.on('inventory_item_info', function(data) {
         if(inventory_index === -1) {
             inventory_index = inventory_items.push(inventory_item) - 1;
             inventory_items[inventory_index].id = parseInt(inventory_items[inventory_index].id);
+            generateInventoryItemDisplay(inventory_index);
         } else {
+
+            let inventory_item_updated = false;
             // see if there's an update on the amount
             if(inventory_item.amount !== inventory_items[inventory_index].amount) {
                 inventory_items[inventory_index].amount = inventory_item.amount;
+                inventory_item_updated = true;
             }
 
             if(inventory_item.body_id !== inventory_items[inventory_index].body_id) {
                 inventory_items[inventory_index].body_id = inventory_item.body_id;
+                inventory_item_updated = true;
             }
 
             if(inventory_item.price !== inventory_items[inventory_index].price) {
                 inventory_items[inventory_index].price - inventory_item.price;
+                inventory_item_updated = true;
+            }
+
+            if(inventory_item_updated) {
+                generateInventoryItemDisplay(inventory_index);
             }
         }
 
@@ -935,9 +945,9 @@ socket.on('inventory_item_info', function(data) {
 
     // If it inventory item was about us, update our inventory displayer and re-calculate the assembly list
     if(inventory_item.player_id && inventory_item.player_id === player_id) {
-        generateInventoryDisplay();
+        //generateInventoryDisplay();
 
-        printAssemblyList();
+        //printAssemblyList();
 
     }
 
@@ -962,10 +972,10 @@ socket.on('inventory_item_info', function(data) {
     */
 
     // lets populate our build/assemble tab
-    $('#can_assemble_list').empty();
+    //$('#can_assemble_list').empty();
 
     //console.log("At object_types adding to assemble part");
-    printAssemblyList();
+    //printAssemblyList();
 });
 
 
@@ -2266,10 +2276,10 @@ socket.on('object_type_info', function(data) {
 
     /* SHOULD NOT KEEP THIS HERE ITS INEFFICIENT */
     // lets populate our build/assemble tab
-    $('#can_assemble_list').empty();
+    //$('#can_assemble_list').empty();
 
     //console.log("At object_types adding to assemble part");
-    printAssemblyList();
+    //printAssemblyList();
 
 });
 

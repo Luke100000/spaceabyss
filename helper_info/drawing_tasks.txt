@@ -11,6 +11,12 @@ quick matter set (floor,wall, stairs,hole)
 
 player body that eats trash (mass of moving maggots)
 
+9. Widden Animations
+10. Quick Matter Floor
+11. Quick Matter Wall
+12. Quick Matter Stairs
+13. Quick Matter Hole
+
 ***************************
 ** GENERAL DRAWING IDEAS **
 ***************************

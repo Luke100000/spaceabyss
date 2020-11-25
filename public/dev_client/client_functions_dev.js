@@ -3364,16 +3364,20 @@ function pointerDownDesktop(pointer, pointerTileX, pointerTileY) {
 function printAssemblyList(assembling_object = false, coord = false) {
 
 
+    console.log("In printAssemblyList. object_type_index 30 is: " + object_types[30].name);
 
     let player_can_build_something = false;
     let player_inventory_items = inventory_items.filter(inventory_item => inventory_item.player_id === player_id &&
         inventory_item.body_id === players[client_player_index].body_id);
 
 
+
+
     /******************************************* BASIC ASSEMBLIES !!!!!!!!!!!!!!! ***********************************************/
     // generate the default can_assemble_list
     // basic assemblies. Is assembled, no research required, and doesn't need to be assembled in another object type
     if (assembling_object === false) {
+        console.log("In printAssemblyList assembling_object is false. object_type_index 30 is: " + object_types[30].name);
 
         if (!$("#can_assemble_list").is(":visible")) {
             return false;
@@ -3496,6 +3500,8 @@ function printAssemblyList(assembling_object = false, coord = false) {
 
     else if (assembling_object.is_active) {
 
+        console.log("In printAssemblyList in is_active. object_type_index 30 is: " + object_types[30].name);
+
         let html_string = "";
 
         // try and get the thing that is being assembled
@@ -3535,6 +3541,8 @@ function printAssemblyList(assembling_object = false, coord = false) {
     }
     else {
 
+        console.log("In printAssemblyList before else. object_type_index 30 is: " + object_types[30].name);
+
 
         let html_string = "";
 
@@ -3547,7 +3555,7 @@ function printAssemblyList(assembling_object = false, coord = false) {
 
 
 
-
+        console.log("In printAssemblyList Before things you can assemble. object_type_index 30 is: " + object_types[30].name);
         html_string += "<div class='message is-info'><div class='message-header'>Things You Can Assemble</div>";
 
         object_types.forEach(function (object_type) {
@@ -3615,6 +3623,7 @@ function printAssemblyList(assembling_object = false, coord = false) {
 
         });
 
+        console.log("In printAssemblyList after things you can assemble/before floors. object_type_index 30 is: " + object_types[30].name);
 
         floor_types.forEach(function (floor_type) {
 
@@ -3669,6 +3678,8 @@ function printAssemblyList(assembling_object = false, coord = false) {
             
         });
 
+        console.log("In printAssemblyList after floors. object_type_index 30 is: " + object_types[30].name);
+
 
         html_string += "</div>";
 
@@ -3686,7 +3697,8 @@ function printAssemblyList(assembling_object = false, coord = false) {
 
 
         // Ternary in my code!!!!!
-        let sorted_object_types = object_types.sort((a, b) => (a.complexity > b.complexity) ? 1 : -1);
+        // BE VERY careful with sorting like this - it CHANGES THE ORDER OF THE ORIGINAL ARRAY unless we do [...array]
+        let sorted_object_types = [...object_types].sort((a, b) => (a.complexity > b.complexity) ? 1 : -1);
 
         // Lets mess with showing what the player COULD build if they had enough stuff
         sorted_object_types.forEach(function (object_type) {
@@ -3766,6 +3778,8 @@ function printAssemblyList(assembling_object = false, coord = false) {
         $('#click_menu').append(html_string);
 
     }
+
+    console.log("end of printAssemblyList. object_type_index 30 is: " + object_types[30].name);
 
 
 }
@@ -3997,8 +4011,9 @@ function generateAssemblyListItem(object_type, object_assembly_linkers, assembli
 
             html_string += "<br> " + assembly_linker.amount + " ";
             if (required_object_type_index !== -1) {
-                html_string += object_types[required_object_type_index].name + " <img style='width:16px; height:16px;' src='https://space.alphacoders.com/images/" +
-                    urlName(object_types[required_object_type_index].name) + ".png'>";
+                html_string += object_types[required_object_type_index].name + " <a target='_blank' href='https://space.alphacoders.com/object-type/view/" + 
+                object_types[required_object_type_index].id + "'><img style='width:16px; height:16px;' src='https://space.alphacoders.com/images/" +
+                    urlName(object_types[required_object_type_index].name) + ".png'></a>";
 
                     
 
@@ -4456,7 +4471,7 @@ function generateInventoryDisplay() {
 
     inventory_items.forEach(function (inventory_item, i) {
         // Only use our inventory items for the main display
-        if (inventory_item.player_id !== player_id) {
+        if (inventory_item.player_id !== players[client_player_index].id) {
             return false;
         }
 
@@ -4464,6 +4479,9 @@ function generateInventoryDisplay() {
             return false;
         }
 
+        generateInventoryItemDisplay(i);
+
+        /*
         let object_type_index = -1;
         let floor_type_index = -1;
         if (inventory_item.object_id) {
@@ -4481,6 +4499,7 @@ function generateInventoryDisplay() {
         } else if (inventory_item.floor_type_id) {
             floor_type_index = floor_types.findIndex(function (obj) { return obj && obj.id === inventory_item.floor_type_id; });
         }
+
 
         // TODO
         // I want to change the appearance of the linear gradient depending on how the player can interact with the item
@@ -4564,7 +4583,147 @@ function generateInventoryDisplay() {
         // End wrapper div
         adding_string += "</div>";
         $('#inventory').append(adding_string);
+
+        */
     });
+}
+
+function generateInventoryItemDisplay(inventory_item_index) {
+
+    console.log("In generateInventoryItem");
+
+
+    // Don't have info about the client player yet
+    if (client_player_index === -1) {
+        return false;
+    }
+
+    if (inventory_items[inventory_item_index].player_id !== players[client_player_index].id) {
+        return false;
+    }
+
+    if(inventory_items[inventory_item_index].body_id !== players[client_player_index].body_id) {
+        return false;
+    }
+
+    let mode = "add";
+    if( $("#inventory_item_" + inventory_items[inventory_item_index].id).length ) {
+        mode = "update";
+    }
+
+
+
+    let object_type_index = -1;
+    let floor_type_index = -1;
+    if (inventory_items[inventory_item_index].object_id) {
+        let object_index = objects.findIndex(function (obj) { return obj && obj.id === inventory_items[inventory_item_index].object_id; });
+        if (object_index === -1) {
+            //console.log("Have inventory item but don't have the object associated with it. object id: "
+            //    + inventory_item.object_id + ". Requesting info");
+            socket.emit('request_object_info', { 'object_id': inventory_items[inventory_item_index].object_id });
+            return;
+        }
+
+        object_type_index = object_types.findIndex(function (obj) { return obj && obj.id === objects[object_index].object_type_id; });
+    } if (inventory_items[inventory_item_index].object_type_id) {
+        object_type_index = object_types.findIndex(function (obj) { return obj && obj.id === inventory_items[inventory_item_index].object_type_id; });
+    } else if (inventory_items[inventory_item_index].floor_type_id) {
+        floor_type_index = floor_types.findIndex(function (obj) { return obj && obj.id === inventory_items[inventory_item_index].floor_type_id; });
+    }
+
+    // Wrapper div
+    let adding_string = "";
+
+    if(mode === 'add') {
+        adding_string += "<div id='inventory_item_" + inventory_items[inventory_item_index].id + "' " +
+            " style='display:inline-block; width:64px; height:64px;'>";
+    }
+
+
+    // see if the client is currently eating this
+
+    let eating_linker_index = eating_linkers.findIndex(function(obj) { return obj && obj.eating_object_type_id === inventory_items[inventory_item_index].object_type_id && 
+        obj.body_id === players[client_player_index].body_id });
+
+    let addiction_linker_index = addiction_linkers.findIndex(function(obj) { return obj && obj.addicted_to_object_type_id === inventory_items[inventory_item_index].object_type_id && 
+        obj.addicted_body_id === players[client_player_index].body_id; });
+
+    // or is currently addicted to this
+
+    if(eating_linker_index !== -1) {
+
+        adding_string += "<div style=' " +
+        " border-radius: 4px; box-shadow: 1px 3px 4px #2cf939; margin:2px; " +
+        " background-image: linear-gradient(141deg, #c3ffcf 0%, #1fdb34 51%, #2ce838 75%); " +
+        " ' ";
+
+    } else if(addiction_linker_index !== -1) {
+
+        adding_string += "<div style=' " +
+        " border-radius: 4px; box-shadow: 1px 3px 4px #f92c2c; margin:2px; " +
+        " background-image: linear-gradient(141deg, #ffc3c3 0%, #db1f1f 51%, #e82c2c 75%); " +
+        " ' ";
+    } else {
+        adding_string += "<div style=' " +
+            " border-radius: 4px; box-shadow: 1px 3px 4px #2cc2f9; margin:2px; " +
+            " background-image: linear-gradient(141deg, #c3faff 0%, #1fc8db 51%, #2cb5e8 75%); " +
+            " ' ";
+    }
+
+
+
+
+    if (object_type_index !== -1) {
+        adding_string += " title='" + object_types[object_type_index].name + "' ";
+    } else if (floor_type_index !== -1) {
+        adding_string += " title='" + floor_types[floor_type_index].name + "' ";
+    }
+
+    adding_string += " onclick='showInventoryOptions(" + inventory_items[inventory_item_index].id + ")'>";
+
+
+    // Internal div
+    if (object_type_index !== -1) {
+        adding_string += "<div style='width:60px; height:60px; background-size: cover; position:relative; " +
+            " background-image: url(https://space.alphacoders.com/images/" + urlName(object_types[object_type_index].name) + ".png); '>";
+    } else if (floor_type_index !== -1) {
+        adding_string += "<div style='width:60px; height:60px; background-size: cover; position:relative; " +
+            " background-image: url(https://space.alphacoders.com/images/floor-" + urlName(floor_types[floor_type_index].name) + ".png); '>";
+    }
+
+
+
+
+
+
+    adding_string += "<span style='color:white; font-size:20px; text-shadow: 1px 1px black; position:absolute; right: 6px; bottom: 0;'>";
+    adding_string += inventory_items[inventory_item_index].amount;
+    adding_string += "</span>";
+
+    adding_string += "</div>";
+
+
+
+
+
+    // End wrapper div
+    adding_string += "</div>";
+
+
+    if(mode === 'add') {
+        adding_string += "</div>";
+    }
+
+    if( mode === "update" ) {
+        //console.log("Updating just that inventory item");
+        $("#inventory_item_" + inventory_items[inventory_item_index].id).empty();
+        $("#inventory_item_" + inventory_items[inventory_item_index].id).append(adding_string);
+    } else {
+        //console.log("Appending new inventory item");
+        $('#inventory').append(adding_string);
+    }
+
+
 }
 
 
@@ -8986,7 +9145,7 @@ function showClickMenu(pointer) {
         }
 
         if (current_view === "galaxy" && (coord.planet_id || coord.belongs_to_planet_id)) {
-            console.log("Going to show click menu for planet id: " + coord.planet_id + " / " + coord.belongs_to_planet_id);
+            //console.log("Going to show click menu for planet id: " + coord.planet_id + " / " + coord.belongs_to_planet_id);
             showClickMenuPlanet(coord);
         }
 
@@ -9427,6 +9586,7 @@ function showClickMenuObject(coord) {
 
 
 
+
     // SPAWNING OTHER THINGS
     if (objects[object_index].has_spawned_object) {
         //console.log("User right clicked on something that spawns other things!");
@@ -9479,8 +9639,8 @@ function showClickMenuObject(coord) {
 
         object_inventory_items.forEach(function (inventory_item) {
             //console.log("Has inventory item id: " + inventory_item.id);
-            let object_type_index = object_types.findIndex(function (obj) { return obj && obj.id === inventory_item.object_type_id; });
-            if (object_type_index !== -1) {
+            let inventory_item_object_type_index = object_types.findIndex(function (obj) { return obj && obj.id === inventory_item.object_type_id; });
+            if (inventory_item_object_type_index !== -1) {
 
                 // It's ours - we can take from it
                 if (objects[object_index].player_id === client_player_id || (!inventory_item.player_id && !inventory_item.npc_id && !inventory_item.price)) {
@@ -9488,7 +9648,7 @@ function showClickMenuObject(coord) {
 
                     take_string += "<div style='display:inline-block; position:relative; width:146px; height:74px; " +
                         " background-image: url(https://space.alphacoders.com/images/" +
-                        urlName(object_types[object_type_index].name) + ".png); background-repeat: no-repeat; " +
+                        urlName(object_types[inventory_item_object_type_index].name) + ".png); background-repeat: no-repeat; " +
                         " background-position: top; " +
                         " border: 1px #c8c1c1 solid; border-radius:6px; margin:2px;'>";
 
@@ -9536,7 +9696,7 @@ function showClickMenuObject(coord) {
                 }
                 // It's something that is being sold
                 else if (inventory_item.price) {
-                    take_string += "<img style='width:28px;' src='https://space.alphacoders.com/images/" + urlName(object_types[object_type_index].name) + ".png'>" +
+                    take_string += "<img style='width:28px;' src='https://space.alphacoders.com/images/" + urlName(object_types[inventory_item_object_type_index].name) + ".png'>" +
                         "<button id='buy_" + inventory_item.id + "' storage_object_id='" + objects[object_index].id + "' " +
                         " inventory_item_id='" + inventory_item.id + "'>Buy $" + inventory_item.price + "</button><br>";
                 } 
@@ -9552,7 +9712,6 @@ function showClickMenuObject(coord) {
 
         $('#click_menu').append("<br>");
     }
-
 
 
     // SHIP OPTIONS
@@ -9748,6 +9907,7 @@ function showClickMenuObject(coord) {
 
     }
 
+
     // If it belongs to us, we can place things in it
     // Commented out: objects[object_index].player_id === player_id
     // Reason: We are going to do multiple tiers of things that can have inventory. Higher tiers will be 'smart' with rules
@@ -9757,13 +9917,13 @@ function showClickMenuObject(coord) {
             inventory_item.body_id === players[client_player_index].body_id);
 
         player_inventory_items.forEach(function (inventory_item) {
-            let object_type_index = object_types.findIndex(function (obj) { return obj && obj.id === inventory_item.object_type_id; });
-            if (object_type_index !== -1) {
+            let inventory_item_object_type_index = object_types.findIndex(function (obj) { return obj && obj.id === inventory_item.object_type_id; });
+            if (inventory_item_object_type_index !== -1) {
 
                 let put_in_string = "";
                 put_in_string += "<div style='display:inline-block; position:relative; width:146px; height:74px; " +
                     " background-image: url(https://space.alphacoders.com/images/" +
-                    urlName(object_types[object_type_index].name) + ".png); background-repeat: no-repeat; " +
+                    urlName(object_types[inventory_item_object_type_index].name) + ".png); background-repeat: no-repeat; " +
                     " background-position: top; " +
                     " border: 1px #c8c1c1 solid; border-radius:6px; margin:2px;'>";
 
@@ -9800,6 +9960,8 @@ function showClickMenuObject(coord) {
 
         });
     }
+
+
 
     // Commented out: && objects[object_index].player_id === player_id
     // Reason: We are going to do multiple tiers of things that can have inventory. Higher tiers will be 'smart' with rules
@@ -9840,8 +10002,10 @@ function showClickMenuObject(coord) {
         $('#click_menu').append("</div>");
     }
 
+
+
     // See if anything can be dropped onto this
-    let can_be_dropped_object_types = object_types.filter(object_type => object_type.drop_requires_object_type_id == objects[object_index].object_type_id);
+    let can_be_dropped_object_types = object_types.filter(object_type => object_type.drop_requires_object_type_id === objects[object_index].object_type_id);
     if (can_be_dropped_object_types.length > 0) {
         // For each of these, see if the client player has an inventory item that matches
         for (let i = 0; i < can_be_dropped_object_types.length; i++) {
@@ -9852,6 +10016,8 @@ function showClickMenuObject(coord) {
             }
         }
     }
+
+
 
     /******************** INDIVIDUAL THINGS. SHOULD TRY AND MAKE FLAGS LIKE can_store_items, can_manage, etc ****************/
 
@@ -9872,6 +10038,7 @@ function showClickMenuObject(coord) {
     }
 
 
+
     if (objects[object_index].object_type_id === 90) {    // MANUFACTURER
         //console.log("User right clicked on Manufacturer!");
         //if(objects[object_index].player_id === player_id) {
@@ -9882,7 +10049,11 @@ function showClickMenuObject(coord) {
 
     }
 
-    if (objects[object_index].object_type_id === 402) {    // MANUFACTURER
+
+
+    
+
+    if (objects[object_index].object_type_id === 402) {    // ARCHITECT STATION
         //console.log("User right clicked on Manufacturer!");
         //if(objects[object_index].player_id === player_id) {
 
@@ -9891,6 +10062,8 @@ function showClickMenuObject(coord) {
 
 
     }
+
+
 
     if (objects[object_index].object_type_id === 116) { // SHIPYARD
         printAssemblyList(objects[object_index], coord);
@@ -9942,22 +10115,22 @@ function showClickMenuObject(coord) {
                 inventory_item.body_id === players[client_player_index].body_id);
     
             player_inventory_items.forEach(function (inventory_item) {
-                let object_type_index = object_types.findIndex(function (obj) {
+                let inventory_item_object_type_index = object_types.findIndex(function (obj) {
                     return obj && obj.id === inventory_item.object_type_id;
                 });
-                if (object_type_index !== -1) {
+                if (inventory_item_object_type_index !== -1) {
     
                     //  Only show if the player hasn't already maxed out the research
                     let research_linker_index = player_research_linkers.findIndex(function (obj) {
                         return obj &&
-                            obj.player_id === client_player_id && obj.object_type_id === object_types[object_type_index].id;
+                            obj.player_id === client_player_id && obj.object_type_id === object_types[inventory_item_object_type_index].id;
                     });
     
                     // Player is already done researching that
-                    if (research_linker_index !== -1 && player_research_linkers[research_linker_index].researches_completed >= object_types[object_type_index].research_times_required) {
+                    if (research_linker_index !== -1 && player_research_linkers[research_linker_index].researches_completed >= object_types[inventory_item_object_type_index].research_times_required) {
     
-                    } else if (object_types[object_type_index].can_be_researched) {
-                        $('#click_menu').append(object_types[object_type_index].name +
+                    } else if (object_types[inventory_item_object_type_index].can_be_researched) {
+                        $('#click_menu').append(object_types[inventory_item_object_type_index].name +
                             "<button id='research_" + inventory_item.id + "' object_id='" + objects[object_index].id +
                             "' class='button is-default is-small'>Research</button><br>");
                     }
@@ -10162,9 +10335,10 @@ function showClickMenuObject(coord) {
 
 
 
+
     // Let abandoned pods be attackable too
     if (object_types[object_type_index].can_be_attacked || (object_types[object_type_index].id === 114 && isFalse(objects[object_index].player_id)) ) {
-        //console.log("can be attacked");
+        //console.log("can be attacked (or abandoned pod)");
 
         // see if we are already attacking based on the battle linkers we have
         let player_is_attacking = false;
@@ -10373,7 +10547,7 @@ function showClickMenuPlanet(coord) {
             "planet_id='" + planet_id + "' class='button is-warning is-small'>" +
             "Stop Attacking</button>");
     } else {
-        console.log("Going to give the playet the opportunity to attack the planet");
+        //console.log("Going to give the playet the opportunity to attack the planet");
 
         let attack_text = "Attack Planet";
 
@@ -11070,7 +11244,7 @@ function updatePlayer(data, player_index) {
                 updated_coord_id = true;
                 initiateMovePlayerFlow(player_index, 'galaxy', coords[coord_index], 'updatePlayer > galaxy');
             } else {
-                console.log("There was no move");
+                //console.log("There was no move");
             }
 
             // Player switched ships!

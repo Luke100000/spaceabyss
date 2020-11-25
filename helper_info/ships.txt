@@ -1,0 +1,187 @@
+*****************************************
+************************** SHIPS ***************************
+*****************************************
+
+References:
+    https://tvtropes.org/pmwiki/pmwiki.php/Main/StandardSciFiFleet
+    https://www.reddit.com/r/worldbuilding/comments/4l7lvb/what_spaceship_classes_does_your_scifi_world_have/
+
+PLAYER SHIPS
+
+FREE
+    TIER 1 - Territe, Batteries, Chitin (complexity 1-4)
+        TIER 2 - Refine Territe, Batteries, Keratin,  (complexity 6-9)
+            TIER 3 - Exodium, Power cells, Living Wood, Silk, Thiol (complexity 10-14)
+                TIER 4 - Refined Exodium, Power Cells, AI Fragments (18-22)
+                    TIER 5 - Diamond (26-32)
+                        TIER 6 - Spun Diamond, Diamond Battery (36-40)
+                            TIER 7 - HyperDiamond (44-48)
+                                TIER 8 - Crystal (52-56), God Dust(56-59)
+                                    TIER 9 Hypercrystal, Crystal Battery (60-64)
+                                        TIER 10 - Crystadmantium (Crystonium), Antimatter, Quantum Battery (100+)
+
+
+Pod (DRAWN)
+
+
+****************** MINING + MANUFACTURING **********************************
+
+    Mining (small)
+
+            Mining Frigate (small)
+
+                    exhumer https://www.artstation.com/artwork/eyJ26 (medium)
+
+                            Mining Barge (medium)
+
+                                    Mining Command Platorm (https://gemquery.com/content/view/2543463) (medium)
+
+
+
+                Factory Ship (+ to manufacturing) (medium)
+
+                            Industry Platform (++ to manufacturing) (medium)
+
+
+
+****************** BULK TRANSPORT **********************************
+
+    Cargo Ship (small)
+
+            Light freighter ( https://images.gemquery.com/254/content_2542324.jpg ) (small)
+
+                        Freighter ( Have Image Idea ) (medium)
+
+                                Heavy Freighter (medium)
+
+        Tanker (Have Image Idea) (small/medium?change tier?)
+
+
+
+****************** DAMAGE DEALING **********************************
+
+            Blockade Runner (small)
+
+
+            Cutter (small)
+
+
+    Fighter (small)
+                        Assault Fighter (small)
+
+            Lancer (small)
+            Striker (small)
+
+                Corvette (small)
+                Destroyer (medium)
+                Frigate ( have image idea ) (medium) (this is redundant for now - like the destroyer more)
+
+                    Cruiser (medium) (have image idea)
+
+                        Gunship (small) (have image idea)
+                        Dreadnought ( have image idea ) (medium)
+                        Battlecruiser (medium)
+
+                            Heavy Cruiser (medium)
+
+                                Nova-class Battlecruiser (medium)
+                                    Supercruiser (medium/large)
+
+
+
+****************** RESEARCH **********************************
+
+    Science Vessel (small)
+
+                    Garden Ship (medium)
+                        Sun Ship - can go undamaged into the sun area (small)
+
+
+
+****************** JOY???? **********************************
+
+    Shuttle
+
+        Yacht ( have image idea ) (small)
+
+                Royal Cruiser (have image idea) (medium)
+
+                        Royal Starship (medium)
+
+        Light Sail Ship (Lighthugger) (small)
+
+
+
+
+            Living Wood Ship (small)
+
+            Water Ship (small)
+                                Water City (medium/large?)
+
+            Silk Ship (small)
+                        Spun Diamond Silk Ship (small)
+
+
+                Carrier (medium)
+                            Colony Ship (large)
+                                Worldship (large)
+                                Stardome (large)
+                                Cityship (More of a high tech version of a city station ) (large)
+                                    Star Fortress - Tier 9 (large)
+
+
+            Station (medium)
+                    Asteroid Station (medium)
+                            City Station (have 1 image idea) (large)
+
+NPC SHIPS
+    Prisonship
+    Knightship
+    Slavership
+
+
+Light Sail Ship (Lighthugger?)
+Ramscoops. There is stuff in space. In the 'interstellar medium'. Would be neat to have ships
+    slowly accrue some material if they are a certain type of ship
+
+Pinnace (Don't like how it sounds verbally. PENIS)
+Starliner
+Diligent-class tactical patrol/escort ship 
+
+lets do the same with salvaging and surgery (salvaging ship, hospital ships)
+Homestead ship
+Generation ship
+Starship
+Transport ship
+Yacht
+Gundam style spaceship for players
+Gunship
+
+
+ENGINE TYPES
+
+    I think I like the idea of having most engine types having specific fuel types that they excell with,
+        but I like the idea of turning things like algae into fuel. So letting algae get turned into an algae cell and
+        be inputted into a fusion/thiol/drive
+
+Hidden/None
+Pod
+    Ion Drive
+
+        Algae
+        Electric - Batteries
+        Fusion - Water
+
+
+            Thiol
+
+            Mass Converter (Just put whatever in it!)
+
+                Power Cells (Fuel Cells?)
+                Fusion - Life Water (This is gonna be really limited...)
+
+                Living Wood drive - can add life water, or just wait for regen
+
+
+
+                                        Antimatter

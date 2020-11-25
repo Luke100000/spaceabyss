@@ -94,7 +94,7 @@ PIERCING
 
             Gatling Gun
 
-                    Railgun *RANGE*
+                    Railgun *RANGE* (have image idea)
 
                             Atom Piercer
 
@@ -118,7 +118,9 @@ RADIATION (no initial damage - just does addiction stuff)
 
 DEFENSIVE ITEMS
 
-Force Shield
+Quick Matter Shield
+
+        Force Shield
 
 
 STATION WEAPONS

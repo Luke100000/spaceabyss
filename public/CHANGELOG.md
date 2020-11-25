@@ -1,3 +1,20 @@
+## [0.2.19] - 2020-11-25
+
+### Added
+- When a ship is first generated, the airlock will automatically spawn with a rule that allows the creating player onto it
+
+
+### Fixed
+- Display of damaged ship walls
+- Anyone that's played Space Abyss has known about a bug that sometimes shows the wrong name for the Attack/Destroy buttons at the end of some lists. 
+This has been fixed!
+- Display of M Man (as a side note, the M Man, M AT, M HP names aren't as great as I hoped they would be. I will probably change them soon)
+- Many airlocks did not have a player id set, or did not match their ship. I believe I have fixed the cause of this, and now I've updated the broken airlocks
+
+### Changed
+- Instead of generating our entire inventory list every time a single inventory item changes, if we already have the inventory item being displayed, we just 
+update that display instead
+
 ## [0.2.18] - 2020-11-23
 
 

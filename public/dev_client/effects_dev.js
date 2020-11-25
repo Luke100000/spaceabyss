@@ -428,9 +428,16 @@ function updateEffectSprites(moved_type, moved_index) {
             
             // Object that is the beam destination moved
             if(moved_type === 'object' && effect_sprites[i].object_id === objects[moved_index].id) {
-                effect_needs_update = true;
-                effect_sprites[i].destination_x = objects[moved_index].sprite.x;
-                effect_sprites[i].destination_y = objects[moved_index].sprite.y;
+
+                // The client has lost track of where this object is, we can actually remove the effect
+                if(!objects[moved_index].sprite) {
+                    removeEffects('object', objects[moved_index].id);
+                } else {
+                    effect_needs_update = true;
+                    effect_sprites[i].destination_x = objects[moved_index].sprite.x;
+                    effect_sprites[i].destination_y = objects[moved_index].sprite.y;
+                }
+                
             }
 
 
@@ -471,7 +478,7 @@ function updateEffectSprites(moved_type, moved_index) {
             
             if(moved_type === 'object' && effect_sprites[i].damage_source_type === 'object' && effect_sprites[i].damage_source_id === objects[moved_index].id) {
 
-                console.log("Effect with object attacking needs update!");
+                //console.log("Effect with object attacking needs update!");
                 effect_needs_update = true;
 
 

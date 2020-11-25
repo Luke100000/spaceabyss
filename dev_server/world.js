@@ -420,7 +420,15 @@ async function addPlayerLog(dirty, player_index, message, data = {}) {
 
 exports.addPlayerLog = addPlayerLog;
 
-//  object_id   |   new_rule
+
+/**
+ * @param {Object} socket
+ * @param {Object} dirty
+ * @param {Object} data
+ * @param {number} data.object_id
+ * @param {String} data.new_rule
+ * @param {Boolean=} data.allow Foribly allow the rule (e.g. used when creating ships)
+ */
 async function addRule(socket, dirty, data) {
     try {
         log(chalk.cyan("Got rule_data. Object id: " + data.object_id + " new rule: " + data.new_rule));
@@ -457,7 +465,16 @@ async function addRule(socket, dirty, data) {
 
         }
 
-        if (!socket.player_id || socket.player_id !== dirty.objects[object_index].player_id) {
+        let can_add_rules = false;
+
+        if(typeof data.allow !== 'undefined') {
+            can_add_rules = true;
+        } else if (helper.notFalse(socket) && dirty.players[socket.player_index].id === dirty.objects[object_index].player_id) {
+            
+            can_add_rules = true;
+        }
+
+        if(!can_add_rules) {
             log(chalk.yellow("Not that player's object to add rules for"));
             return false;
         }
@@ -1864,6 +1881,15 @@ async function createShipCoord(dirty, ship_index, linker, data = {}) {
 
 
             await game_object.place(false, dirty, { 'object_index': new_object_index, 'ship_coord_index': new_ship_coord_index, 'reason': 'generate_ship' });
+
+            dirty.objects[new_object_index].player_id = dirty.objects[ship_index].player_id;
+            dirty.objects[new_object_index].has_change = true;
+
+            if(dirty.objects[new_object_index].object_type_id === 266) {
+                console.log("Adding default allow creator rule to airlock");
+                addRule({}, dirty, { 'object_id': dirty.objects[new_object_index].id, 'new_rule': 'allow_creator',
+                    'allow': true });
+            }
         }
     } catch(error) {
         log(chalk.red("Error in world.createShipCoord:" + error));
@@ -3310,6 +3336,7 @@ async function insertObjectType(socket, dirty, data) {
             }
 
             //await main.getShipCoords(object_id);
+
         }
 
         if (dirty.object_types[object_type_index].max_energy_storage && dirty.object_types[object_type_index].max_energy_storage > 1) {
@@ -4201,14 +4228,15 @@ async function sendRuleInfo(socket, room, dirty, rule_id) {
         let rule_index = await main.getRuleIndex(rule_id);
 
         if (rule_index !== -1) {
-            if (socket !== false) {
+            if (helper.notFalse(socket)) {
                 socket.emit('rule_info', { 'rule': dirty.rules[rule_index] });
-            } else if (room !== false) {
+            } else if (helper.notFalse(room)) {
                 io.to(room).emit('rule_info', { 'rule': dirty.rules[rule_index] });
             }
         }
     } catch (error) {
         log(chalk.red("Error in world.sendRuleInfo: " + error));
+        console.error(error);
     }
 }
 

@@ -1,0 +1,33 @@
+*****************************************
+************************** MONSTERS ***************************
+*****************************************
+
+
+
+***************** HUMAN ***************************
+
+Slave (human)
+        Corrupted Scientist
+        Gang Smasher
+        Gang Gunner
+            Gang Boss
+                Geisha
+                    Sniper
+
+
+
+***************** NULLROM ************************
+                Burster
+
+
+***************** RUEL ************************
+
+***************** SLAGCELL ************************
+    Slaver
+        Cyberskell
+            Slaver Guard
+            Tortured Soul
+                    Carver
+                                Slagcell Queen
+
+

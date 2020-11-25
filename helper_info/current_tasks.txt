@@ -5,6 +5,9 @@ CURRENT GAMEPLAY TEST:
 DOING NOW:
 
 
+    Great nomad seems like it will generate new tiles, but not update existing ones
+
+
     Test that the basics of factions works
         Maybe a faction display on the site and all that
         have the players attacking Phatheon's stuff be in a faction together
