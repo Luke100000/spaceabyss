@@ -992,10 +992,6 @@ header("Access-Control-Allow-Origin: *");
                 { 'frameWidth': 64, 'frameHeight': 64, endFrame: 6});
 
             // MONSTER SPRITESHEETS - end frame is total frame count
-            this.load.spritesheet('acid-fiend', 'https://space.alphacoders.com/images/acid-fiend.png',
-                { frameWidth: 64, frameHeight: 64, endFrame: 3 });
-            this.load.spritesheet('acid-fly', 'https://space.alphacoders.com/images/acid-fly.png',
-                { frameWidth: 64, frameHeight: 64, endFrame: 3 });
             this.load.spritesheet('ai-daemon', 'https://space.alphacoders.com/images/ai-daemon.png',
                 { frameWidth: 64, frameHeight: 64, endFrame: 2 });
             this.load.spritesheet('ai-edifice', 'https://space.alphacoders.com/images/ai-edifice.png',
@@ -2711,6 +2707,8 @@ header("Access-Control-Allow-Origin: *");
                         } 
                         else if(players[i].sprite.texture.key === 'player-reinforced-human') {
                             players[i].sprite.anims.play('player-reinforced-human-idle-animation');
+                        } else if(players[i].sprite.texture.key === 'player-researching') {
+                            players[i].sprite.anims.play('player-researching-idle-animation');
                         }
                         else if(players[i].sprite.texture.key === 'player-ruel') {
                             players[i].sprite.anims.play('player-ruel-idle-animation');

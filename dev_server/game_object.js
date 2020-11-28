@@ -1742,6 +1742,25 @@ async function updateType(dirty, object_type_id) {
                                 // object_type_id
                                 if(helper.notFalse(dirty.ship_linkers[i].object_type_id) && dirty.ship_coords[ship_coord_index].object_type_id !== dirty.ship_linkers[i].object_type_id) {
                                     console.log("Need to update object type id");
+
+                                    let coord_object_type_index = main.getObjectTypeIndex(dirty.ship_linkers[i].object_type_id);
+                                    if(coord_object_type_index !== -1) {
+                                        if(dirty.object_types[object_type_index].assembled_as_object) {
+                                            let new_object_id = await world.insertObjectType(false, dirty, { 'object_type_id':dirty.ship_linkers[i].object_type_id });
+                                            let new_object_index = await getIndex(dirty, new_object_id);
+
+                                            if(new_object_index !== -1) {
+
+                                                await place(false, dirty, { 'object_index': new_object_index, 'ship_coord_index': ship_coord_index, 'reason': 'generate_ship' });
+                                                
+                                            }
+                                            
+                                        } else {
+                                            dirty.ship_coords[ship_coord_index].object_type_id = dirty.ship_linkers[i].object_type_id;
+                                            dirty.ship_coords[ship_coord_index].has_change = true;
+                                        }
+                                    }
+
                                 }
                                 
     
@@ -1753,6 +1772,8 @@ async function updateType(dirty, object_type_id) {
                                 // spawns_monster_type_id
                                 if(helper.notFalse(dirty.ship_linkers[i].spawns_monster_type_id) && dirty.ship_coords[ship_coord_index].spawns_monster_type_id !== dirty.ship_linkers[i].spawns_monster_type_id) {
                                     console.log("Need to update spawns_monster_type_id");
+                                    dirty.ship_coords[ship_coord_index].spawns_monster_type_id = dirty.ship_linkers[i].spawns_monster_type_id;
+                                    dirty.ship_coords[ship_coord_index].has_change = true;
                                 }
     
                                 // is_weapon_hardpoint

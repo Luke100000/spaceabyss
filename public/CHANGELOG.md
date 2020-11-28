@@ -1,3 +1,34 @@
+## [0.2.20] - 2020-11-28
+
+
+### Added
+- Data Breach - Something fun that can spawn on Machine Planets
+- Data Guard
+- Player Researching Body
+- Diamond Battery
+- Jelly Rod
+- Volt Rifle
+- Chem Blaster
+- Acid Egg Storyteller event
+- Client ability to load in player and ships images after initial preload. As we add content, the number of images we've been needing to load has gotten 
+to be quite a bit - and we're just getting started. The client is moving towards more dynamically loading just the images the player encounters.
+
+
+### Fixed
+- Bug that sometimes caused player bodies/ships to flip incorrectly.
+
+
+### Changed
+- Acid Fiend Sprite
+- Acid Fly Sprite
+- Bug Spawner Sprite
+- Zuran Cruiser Wreck Sprite
+- Silk Ship Sprite
+- Silk Floor Sprite
+- Lots of changes to monster strengths and weaknesses. Mostly just adding some in, as most 
+monsters still don't have any set for them.
+
+
 ## [0.2.19] - 2020-11-25
 
 ### Added

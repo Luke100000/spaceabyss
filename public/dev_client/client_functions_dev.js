@@ -914,13 +914,16 @@ function createPlayerSprite(player_index) {
     let new_movement_display = 'flip';
     let new_sprite_x_offset = 0;
     let new_sprite_y_offset = 0;
+    let body_index = -1;
+    let ship_index = -1;
+    let used_skin = false;
 
 
     let scene_game = game.scene.getScene('sceneGame');
 
     if (current_view === 'galaxy') {
         // figure out what ship we have
-        let ship_index = objects.findIndex(function (obj) { return obj && obj.id === players[player_index].ship_id; });
+        ship_index = objects.findIndex(function (obj) { return obj && obj.id === players[player_index].ship_id; });
 
         if (ship_index === -1) {
             //console.log("%c at time of creating the player id: " + players[player_index].id + " sprite, we don't have the player's ship object",  log_warning);
@@ -972,7 +975,7 @@ function createPlayerSprite(player_index) {
             new_texture_key = 'player-shuttle';
             new_texture_animation_key = 'player-shuttle-down-animation';
             //new_movement_display = 'rotate';
-        } else if (objects[ship_index].object_type_id === 155) {
+        } else if (objects[ship_index].object_type_id === 155) {                // SPACE STATION
             new_texture_key = 'player-space-station';
             new_texture_animation_key = 'player-space-station-animation';
             // Not sure I want any movement display
@@ -990,10 +993,10 @@ function createPlayerSprite(player_index) {
             new_texture_animation_key = 'player-royal-cruiser-animation';
             new_movement_display = 'flip';
             new_sprite_y_offset = 32;
-        } else if(objects[ship_index].object_type_id === 335) {
+        } else if(objects[ship_index].object_type_id === 335) {                 // SCIENCE VESSEL
             new_texture_key = 'player-science-vessel';
             new_texture_animation_key = 'player-science-vessel-animation';
-        } else if(objects[ship_index].object_type_id === 369) {
+        } else if(objects[ship_index].object_type_id === 369) {                 // SILK SHIP
             new_texture_key = 'player-silk-ship';
             new_texture_animation_key = 'player-silk-ship-animation';
         } else if(objects[ship_index].object_type_id === 381) {
@@ -1010,8 +1013,6 @@ function createPlayerSprite(player_index) {
 
     } else if (current_view === 'planet' || current_view === 'ship') {
 
-
-        let used_skin = false;
         // If the player has a skin_object_type_id set, we use that
         if (players[player_index].skin_object_type_id) {
 
@@ -1026,7 +1027,7 @@ function createPlayerSprite(player_index) {
         // Normal body!
         if (used_skin === false) {
             //console.log("View is planet or ship");
-            let body_index = objects.findIndex(function (obj) { return obj && obj.id === players[player_index].body_id; });
+            body_index = objects.findIndex(function (obj) { return obj && obj.id === players[player_index].body_id; });
 
             if (body_index === -1) {
                 //console.log("%c at time of creating the player id: " + players[player_index].id + " sprite, we don't have the player's " +
@@ -1061,6 +1062,11 @@ function createPlayerSprite(player_index) {
                 new_texture_key = 'player-reinforced-human';
                 new_texture_animation_key = 'player-reinforced-human-idle-animation';
             } 
+            // RESEARCHING
+            else if(objects[body_index].object_type_id === 411) {
+                new_texture_key = 'player-researching';
+                new_texture_animation_key = 'player-researching-idle-animation';
+            }
             // RUEL
             else if (objects[body_index].object_type_id === 142) {
                 new_texture_key = 'player-ruel';
@@ -1095,23 +1101,43 @@ function createPlayerSprite(player_index) {
 
         if (player_info.coord) {
 
+            if(scene_game.textures.exists(new_texture_key)) {
 
-            players[player_index].sprite = scene_game.add.sprite(-1000, -1000, new_texture_key);
+                players[player_index].sprite = scene_game.add.sprite(-1000, -1000, new_texture_key);
 
-            players[player_index].sprite.anims.play(new_texture_animation_key);
+                players[player_index].sprite.anims.play(new_texture_animation_key);
+    
+                players[player_index].sprite.x = player_info.coord.tile_x * tile_size + tile_size / 2 + new_sprite_x_offset;
+                players[player_index].sprite.y = player_info.coord.tile_y * tile_size + tile_size / 2 + new_sprite_y_offset;
+    
+                if (client_player_id && players[player_index].id === client_player_id) {
+                    camera.startFollow(players[player_index].sprite);
+                }
+    
+                players[player_index].movement_display = new_movement_display;
+                players[player_index].sprite_x_offset = new_sprite_x_offset;
+                players[player_index].sprite_y_offset = new_sprite_y_offset;
+    
+                setPlayerMoveDelay(player_index);
+            } else {
+                console.log("New player image isn't loaded yet");
 
-            players[player_index].sprite.x = player_info.coord.tile_x * tile_size + tile_size / 2 + new_sprite_x_offset;
-            players[player_index].sprite.y = player_info.coord.tile_y * tile_size + tile_size / 2 + new_sprite_y_offset;
-
-            if (client_player_id && players[player_index].id === client_player_id) {
-                camera.startFollow(players[player_index].sprite);
+                if(ship_index !== -1) {
+                    console.log("Loading Ship Sprite");
+                    loadPlayerSprites(objects[ship_index].object_type_id);
+                } else if(used_skin) {
+                    console.log("Loading Skin Sprite");
+                    loadPlayerSprites(players[player_index].skin_object_type_id);
+                } else if(body_index !== -1) {
+                    console.log("Loading Body Sprite");
+                    loadPlayerSprites(objects[body_index].object_type_id);
+                }
+                
+                
             }
 
-            players[player_index].movement_display = new_movement_display;
-            players[player_index].sprite_x_offset = new_sprite_x_offset;
-            players[player_index].sprite_y_offset = new_sprite_y_offset;
 
-            setPlayerMoveDelay(player_index);
+          
 
         } else {
             console.log("%c No idea where to put player sprite for player id: " + players[player_index].id + "!", log_warning);
@@ -1124,21 +1150,41 @@ function createPlayerSprite(player_index) {
     }
     // Just a switch!
     else if (players[player_index].sprite.texture.key !== new_texture_key) {
-        //console.log("Switching texture for player id: " + players[player_index].id);
-        players[player_index].sprite.setTexture(new_texture_key);
-        players[player_index].sprite.anims.play(new_texture_animation_key);
 
-        let player_info = getPlayerInfo(player_index);
-        if (player_info.coord) {
-            players[player_index].sprite.x = player_info.coord.tile_x * tile_size + tile_size / 2 + new_sprite_x_offset;
-            players[player_index].sprite.y = player_info.coord.tile_y * tile_size + tile_size / 2 + new_sprite_y_offset;
+        if(scene_game.textures.exists(new_texture_key)) {
+            //console.log("Switching texture for player id: " + players[player_index].id);
+            players[player_index].sprite.setTexture(new_texture_key);
+            players[player_index].sprite.anims.play(new_texture_animation_key);
+
+            let player_info = getPlayerInfo(player_index);
+            if (player_info.coord) {
+                players[player_index].sprite.x = player_info.coord.tile_x * tile_size + tile_size / 2 + new_sprite_x_offset;
+                players[player_index].sprite.y = player_info.coord.tile_y * tile_size + tile_size / 2 + new_sprite_y_offset;
+            }
+            players[player_index].movement_display = new_movement_display;
+            players[player_index].sprite_x_offset = new_sprite_x_offset;
+            players[player_index].sprite_y_offset = new_sprite_y_offset;
+            players[player_index].sprite.angle = 0;
+            players[player_index].sprite.flipX = false;
+
+            setPlayerMoveDelay(player_index);
+
+        } else {
+            console.log("New player image isn't loaded yet");
+
+            if(ship_index !== -1) {
+                console.log("Loading Ship Sprite");
+                loadPlayerSprites(objects[ship_index].object_type_id);
+            } else if(used_skin) {
+                console.log("Loading Skin Sprite");
+                loadPlayerSprites(players[player_index].skin_object_type_id);
+            } else if(body_index !== -1) {
+                console.log("Loading Body Sprite");
+                loadPlayerSprites(objects[body_index].object_type_id);
+            }
         }
-        players[player_index].movement_display = new_movement_display;
-        players[player_index].sprite_x_offset = new_sprite_x_offset;
-        players[player_index].sprite_y_offset = new_sprite_y_offset;
-        players[player_index].sprite.angle = 0;
 
-        setPlayerMoveDelay(player_index);
+
     }
 
 
@@ -1466,11 +1512,14 @@ function drawCoord(type, coord) {
 
     if (coord.object_id) {
 
+        //console.log("Coord has object");
+
         object_index = objects.findIndex(function (obj) { return obj && obj.id === coord.object_id; });
 
         if (object_index === -1) {
             draw_object = false;
             socket.emit('request_object_info', { 'object_id': coord.object_id });
+            //console.log("Don't have object info");
 
 
         } else if (client_player_index !== -1 && objects[object_index].id === players[client_player_index].ship_id) {
@@ -2597,16 +2646,13 @@ function getObjectInfo(object_index) {
     }
 
 
-
     if (objects[object_index].coord_id) {
         coord_index = coords.findIndex(function (obj) { return obj && obj.id === objects[object_index].coord_id; });
         if (coord_index !== -1) {
             scope = "galaxy";
             coord = coords[coord_index];
         }
-    }
-
-    if (objects[object_index].planet_coord_id) {
+    } else if (objects[object_index].planet_coord_id) {
 
         coord_index = planet_coords.findIndex(function (obj) { return obj && obj.id === objects[object_index].planet_coord_id; });
         if (coord_index !== -1) {
@@ -4590,7 +4636,7 @@ function generateInventoryDisplay() {
 
 function generateInventoryItemDisplay(inventory_item_index) {
 
-    console.log("In generateInventoryItem");
+    //console.log("In generateInventoryItem");
 
 
     // Don't have info about the client player yet
@@ -5989,6 +6035,8 @@ function mapAddObject(object) {
         return false;
     }
 
+    //console.log("In mapAddObject for: " + object_types[object_type_index].name);
+
     // see if the object type has display linkers
 
     // I THINK that for this, we just want to show only the original and the visual ones
@@ -6635,6 +6683,8 @@ function checkForClientMove(time, tile_x = false, tile_y = false) {
 
 
 var monster_sprites = [];
+monster_sprites.push({ 'key': 'acid-fiend',             'monster_type_id': 74, 'planet_type_id': 15, 'frame_width': 64, 'frame_height': 68, 'frame_count': 10, 'frame_rate': 8 });
+monster_sprites.push({ 'key': 'acid-fly',               'monster_type_id': 70, 'planet_type_id': 15, 'frame_width': 64, 'frame_height': 64, 'frame_count': 6, 'frame_rate': 12 });
 monster_sprites.push({ 'key': 'algae-king',             'monster_type_id': 113, 'planet_type_id': 16, 'frame_width': 64, 'frame_height': 64, 'frame_count': 4, 'frame_rate': 8 });
 monster_sprites.push({ 'key': 'bionic-crab',            'monster_type_id': 105, 'planet_type_id': 34, 'frame_width': 64, 'frame_height': 64, 'frame_count': 9, 'frame_rate': 8 });
 monster_sprites.push({ 'key': 'blossomtis',             'monster_type_id': 116, 'planet_type_id': 29, 'frame_width': 64, 'frame_height': 64, 'frame_count': 4, 'frame_rate': 8 });
@@ -6642,6 +6692,7 @@ monster_sprites.push({ 'key': 'burger-drone',           'monster_type_id': 118, 
 monster_sprites.push({ 'key': 'burster',                'monster_type_id': 120, 'planet_type_id': 7, 'frame_width': 64, 'frame_height': 64, 'frame_count': 11, 'frame_rate': 8 });
 monster_sprites.push({ 'key': 'cherree',                'monster_type_id': 117, 'planet_type_id': 29, 'frame_width': 64, 'frame_height': 64, 'frame_count': 3, 'frame_rate': 8 });
 monster_sprites.push({ 'key': 'construction-worker',    'monster_type_id': 112, 'planet_type_id': 30, 'frame_width': 64, 'frame_height': 66, 'frame_count': 7, 'frame_rate': 8 });
+monster_sprites.push({ 'key': 'data-guard',             'monster_type_id': 136, 'planet_type_id': 19, 'frame_width': 64, 'frame_height': 68, 'frame_count': 8, 'frame_rate': 8 });
 monster_sprites.push({ 'key': 'frost-spider',           'monster_type_id': 114, 'planet_type_id': 11, 'frame_width': 64, 'frame_height': 64, 'frame_count': 3, 'frame_rate': 8 });
 monster_sprites.push({ 'key': 'gang-smasher',           'monster_type_id': 111, 'planet_type_id': 30, 'frame_width': 64, 'frame_height': 68, 'frame_count': 8, 'frame_rate': 8 });
 monster_sprites.push({ 'key': 'gang-gunner',            'monster_type_id': 110, 'planet_type_id': 30, 'frame_width': 64, 'frame_height': 66, 'frame_count': 9, 'frame_rate': 8 });
@@ -6972,6 +7023,35 @@ function processAudioFile(key, type, texture) {
     
 }
 
+function loadPlayerSprites(object_type_id) {
+
+    console.log("In loadPlayerSprites");
+
+    // RESEARCHING BODY
+    if(object_type_id === 411) {
+
+        console.log("Loading in Researching Body");
+
+        let scene_game = game.scene.getScene('sceneGame');
+
+        if(!scene_game.textures.exists('player-researching')) {
+            scene_game.load.on('filecomplete', processPlayerFile, this);
+            scene_game.load.spritesheet('player-researching', "https://space.alphacoders.com/images/researching-body-animated.png",
+                { frameWidth: 64, frame_height: 64, endFrame: 30 });
+            scene_game.load.start();
+        }
+    } 
+    // SILK SHIP
+    else if(object_type_id === 369) {
+        if(!scene_game.textures.exists('player-silk-ship')) {
+            scene_game.load.on('filecomplete', processPlayerFile, this);
+            scene_game.load.spritesheet('player-silk-ship', "https://space.alphacoders.com/images/silk-ship-animated.png",
+                { frameWidth: 64, frame_height: 64, endFrame: 8 });
+            scene_game.load.start();
+        }
+    }
+}
+
 
 function loadMonsterSprites(type, type_id) {
 
@@ -7036,6 +7116,110 @@ function processFile(key, type, texture) {
     }
 
 
+}
+
+function processPlayerFile(key, type, texture) {
+
+    console.log("In processPlayerFile");
+    let scene_game = game.scene.getScene('sceneGame');
+
+
+    let loaded_object_type_id = 0;
+    let loaded_type = "";
+
+    // RESEARCHING
+    if(key === 'player-researching') {
+
+        console.log("Processing researching body");
+        loaded_object_type_id = 411;
+        loaded_type = "body";
+
+
+        let player_researching_idle_config = {
+            key: 'player-researching-idle-animation',
+            frames: scene_game.anims.generateFrameNumbers('player-researching', { start: 0, end: 5, first: 5 }),
+            frameRate: 4,
+            repeat: -1
+        };
+        scene_game.anims.create(player_researching_idle_config);
+
+
+        let player_researching_left_config = {
+            key: 'player-researching-left-animation',
+            frames: scene_game.anims.generateFrameNumbers('player-researching', { start: 6, end: 11, first: 11 }),
+            frameRate: 4,
+            repeat: -1
+        };
+
+        scene_game.anims.create(player_researching_left_config);
+
+        let player_researching_right_config = {
+            key: 'player-researching-right-animation',
+            frames: scene_game.anims.generateFrameNumbers('player-researching', { start: 12, end: 17, first: 17 }),
+            frameRate: 4,
+            repeat: -1
+        };
+        scene_game.anims.create(player_researching_right_config);
+
+        let player_researching_up_config = {
+            key: 'player-researching-up-animation',
+            frames: scene_game.anims.generateFrameNumbers('player-researching', { start: 18, end: 23, first: 23 }),
+            frameRate: 4,
+            repeat: -1
+        };
+
+        scene_game.anims.create(player_researching_up_config);
+
+        let player_researching_down_config = {
+            key: 'player-researching-down-animation',
+            frames: scene_game.anims.generateFrameNumbers('player-researching', { start: 24, end: 29, first: 29 }),
+            frameRate: 4,
+            repeat: -1
+        };
+        scene_game.anims.create(player_researching_down_config);
+
+        
+
+
+    } 
+    // SILK SHIP
+    else if(key === 'player-silk-ship') {
+        loaded_object_type_id = 369;
+        loaded_type = "ship";
+
+
+        let player_silk_ship_config = {
+            key: 'player-silk-ship-animation',
+            frames: this.anims.generateFrameNumbers('player-silk-ship', { start: 0, end: 7, first: 7 }),
+            frameRate: 2,
+            repeat: -1
+        };
+        this.anims.create(player_silk_ship_config);
+                    
+    }
+
+
+    // Now lets create a player sprite for any players that are using this
+    for(let i = 0; i < players.length; i++) {
+        if(players[i] && !players[i].sprite) {
+
+            if(loaded_type === "body") {
+                let body_index = objects.findIndex(function(obj) { return obj && obj.id === players[i].body_id; });
+                if(body_index !== -1 && objects[body_index].object_type_id === loaded_object_type_id) {
+                    console.log("Going to re-try creating player sprite");
+                    createPlayerSprite(i);
+                    
+                }
+            } else if(loaded_type === "ship") {
+                let ship_index = objects.findIndex(function(obj) { return obj && obj.id === players[i].ship_id; });
+                if(ship_index !== -1 && objects[ship_index].object_type_id === loaded_object_type_id) {
+                    createPlayerSprite(i);
+                }
+            }
+            
+
+        }
+    }
 }
 
 function moveNpcFlow(npc_index, to_coord) {
@@ -7645,6 +7829,38 @@ function initiateMovePlayerFlow(player_index, destination_coord_type, destinatio
             }
         }
 
+
+        /********** RESEARCHING *************/
+        else if (players[player_index].sprite.texture.key === 'player-researching') {
+
+            // LEFT !
+            if (players[player_index].destination_x < players[player_index].sprite.x) {
+
+                if (players[player_index].sprite.anims.getCurrentKey() !== 'player-researching-left-animation') {
+                    players[player_index].sprite.anims.play('player-researching-left-animation');
+                }
+
+            }
+            // RIGHT!
+            else if (players[player_index].destination_x > players[player_index].sprite.x) {
+                if (players[player_index].sprite.anims.getCurrentKey() !== 'player-researching-right-animation') {
+                    players[player_index].sprite.anims.play('player-researching-right-animation');
+                }
+
+            }
+            // UP!
+            else if (players[player_index].destination_y < players[player_index].sprite.y) {
+                if (players[player_index].sprite.anims.getCurrentKey() !== 'player-researching-up-animation') {
+                    players[player_index].sprite.anims.play('player-researching-up-animation');
+                }
+            }
+            // DOWN!
+            else if (players[player_index].destination_y > players[player_index].sprite.y) {
+                if (players[player_index].sprite.anims.getCurrentKey() !== 'player-researching-down-animation') {
+                    players[player_index].sprite.anims.play('player-researching-down-animation');
+                }
+            }
+        }
 
         /***************************** RUEL *******************************/
         else if (players[player_index].sprite.texture.key === 'player-ruel') {
@@ -8958,7 +9174,7 @@ function shouldDraw(base_coord, other_coord, source = false, debug = false) {
 
     let debug_other_coord_ids = [];
     if (!base_coord) {
-        if (debug_other_coord_ids.indexOf(other_coord.id) !== -1) {
+        if (debug || debug_other_coord_ids.indexOf(other_coord.id) !== -1) {
             console.log("No base coord in shouldDraw. source: " + source);
         }
 
@@ -8966,7 +9182,7 @@ function shouldDraw(base_coord, other_coord, source = false, debug = false) {
     }
 
     if (!other_coord) {
-        if (debug_other_coord_ids.indexOf(other_coord.id) !== -1) {
+        if (debug || debug_other_coord_ids.indexOf(other_coord.id) !== -1) {
             console.log("No other coord in shouldDraw. source: " + source);
         }
 
@@ -8977,7 +9193,7 @@ function shouldDraw(base_coord, other_coord, source = false, debug = false) {
     let tile_y_difference = Math.abs(base_coord.tile_y - other_coord.tile_y);
 
     if (tile_x_difference > 10 || tile_y_difference > 10) {
-        if (debug_other_coord_ids.indexOf(other_coord.id) !== -1) {
+        if (debug || debug_other_coord_ids.indexOf(other_coord.id) !== -1) {
             console.log("Tile difference is too high. Returning false");
         }
 
@@ -9006,7 +9222,7 @@ function shouldDraw(base_coord, other_coord, source = false, debug = false) {
         return true;
     }
 
-    if (debug_other_coord_ids.indexOf(other_coord.id) !== -1) {
+    if (debug || debug_other_coord_ids.indexOf(other_coord.id) !== -1) {
         console.log("Default return false. base_coord:");
         console.log(base_coord);
         console.log("other_coord:");

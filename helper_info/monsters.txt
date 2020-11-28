@@ -15,6 +15,23 @@ Slave (human)
                     Sniper
 
 
+***************** MLM ************************
+    Robot Janitor
+        Monitor
+        Process
+        Mini Drone
+            DDrone
+            Army Unit
+                Data Guard
+                Tower
+                    Warmind
+                    MechGun
+                        Primewall
+                        Hovertank
+                            Eliminator
+                            Glitched God
+                                Alloyborn
+                                    Godmind
 
 ***************** NULLROM ************************
                 Burster
@@ -30,4 +47,12 @@ Slave (human)
                     Carver
                                 Slagcell Queen
 
+***************** SOKOLH ************************
 
+                Infantry
+
+
+
+
+MONSTER IDS WE CAN USE WHEN WE WANT TO ADD ANOTHER MONSTER
+50

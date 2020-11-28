@@ -1,3 +1,12 @@
+***********
+** NOTES **
+***********
+
+Send the player body frames in the order:
+idle, left, right, up, down
+
+
+
 ***************************************
 ** THINGS I'M SENDING FERNANDO'S WAY **
 ***************************************
@@ -16,6 +25,20 @@ player body that eats trash (mass of moving maggots)
 11. Quick Matter Wall
 12. Quick Matter Stairs
 13. Quick Matter Hole
+
+
+Keratin Plating (so we can have the Vooard drop that, and let players equip the Keratin Armor)
+
+replace the current DDrone! https://space.alphacoders.com/monster-type/view/13
+
+
+. 
+Type: Environmental Object
+Size: 64x64 max
+Frames Needed: 1-2 Designs
+Flavor Text: A broken giant. It looks like it's already been salvaged a bit, but you can probably salvage a bit more still. You can't help but wonder what caused this 
+once powerful bot to break.
+Reference Image: https://images5.alphacoders.com/914/914760.jpg
 
 ***************************
 ** GENERAL DRAWING IDEAS **

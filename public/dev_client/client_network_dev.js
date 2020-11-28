@@ -809,7 +809,7 @@ socket.on('coord_info', function (data) {
         //console.log("Coord has an npc");
         let npc_index = npcs.findIndex(function(obj) { return obj && obj.id === parseInt(coords[coord_index].npc_id); });
         if(npc_index === -1) {
-            console.log("We don't have this npc. Requesting it");
+            //console.log("We don't have this npc. Requesting it");
             socket.emit('request_npc_info', { 'npc_id': coords[coord_index].npc_id });
         }
     }
@@ -1822,6 +1822,8 @@ socket.on('object_info', function(data) {
     // add it
     if(object_index === -1) {
 
+        //console.log("Adding in object id: " + data.object.id);
+
 
         object_index = objects.push(data.object) - 1;
         objects[object_index].id = parseInt(objects[object_index].id);
@@ -1923,9 +1925,9 @@ socket.on('object_info', function(data) {
 
         if(client_player_info && shouldDraw(client_player_info.coord, object_info.coord, "object_info")) {
 
-            if(objects[object_index].id === 86021) {
-                console.log("Calling drawCoord for object id: " + objects[object_index].id);
-            }
+            
+            //console.log("Calling drawCoord for object id: " + objects[object_index].id);
+            
 
 
             drawCoord(object_info.scope, object_info.coord);
@@ -1946,6 +1948,8 @@ socket.on('object_info', function(data) {
             if(objects[object_index].current_hp !== object_types[object_type_index].hp) {
                 redrawBars();
             }
+        } else {
+            //console.log("Not drawing object id: " + objects[object_index].id);
         }
 
 
@@ -2473,7 +2477,7 @@ socket.on('planet_coord_info', function (data) {
 
         let npc_index = npcs.findIndex(function(obj) { return obj && obj.id === parseInt(planet_coords[coord_index].npc_id); });
         if(npc_index === -1) {
-            console.log("We don't have this npc. Requesting it");
+            //console.log("We don't have this npc. Requesting it");
             socket.emit('request_npc_info', { 'npc_id': planet_coords[coord_index].npc_id });
         }
     }

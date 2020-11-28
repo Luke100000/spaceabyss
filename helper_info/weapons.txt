@@ -104,6 +104,7 @@ PIERCING
                     Fernblade
 
 POISON (no initial damage - just done addiction stuff)
+                Jelly Rod
 
 PLASMA
             Blaster

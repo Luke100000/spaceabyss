@@ -5049,20 +5049,25 @@ async function tickStorytellers(dirty, force_event_id = 0) {
                 if(rand_chance < 4 || force_event_id) {
 
                     let difficulty_ceiling = dirty.storytellers[i].previous_difficulty;
-                    let difficulty_floor = dirty.storytellers[i].previous_difficulty;
+                    let difficulty_floor = dirty.storytellers[i].previous_difficulty - 10;
 
                     // If the previous event took a long time for players to remove, we can tick difficulty down a bit
                     if(dirty.storytellers[i].previous_event_ticks > 100) {
-                    
+
+                        // While we don't have events we're basically manually switching to a 5 difficulty event instead of the 10 difficulty 
+                        if(difficulty_ceiling === 10) {
+                            difficulty_ceiling = 5;
+                            difficulty_floor = 5;
+                        }
                     } 
                     // Previous event was taken out fast, we can move difficulty up
                     else {
-
+                        difficulty_ceiling = 10;
                     }
 
 
 
-                    let possible_events = dirty.events.filter(event_filter => event_filter.difficulty <= 10);
+                    let possible_events = dirty.events.filter(event_filter => event_filter.difficulty <= difficulty_ceiling);
                     if(possible_events.length > 0) {
 
                         let chosen_event = possible_events[Math.floor(Math.random()*possible_events.length)];

@@ -69,7 +69,7 @@ FREE/PASSIVE
                     Defense (player armor): 5
                     Armor Types: Diamond, Researching: 50/50
 
-                        TIER 6 - Spun Diamond, Diamond Cell/Battery 
+                        TIER 6 - Spun Diamond, Diamond Battery 
                         Minimum Monster Damage: 60
                         Complexity: 36-40
                         Damage: Melee 8, Range 5

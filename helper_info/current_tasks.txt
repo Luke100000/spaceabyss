@@ -5,7 +5,11 @@ CURRENT GAMEPLAY TEST:
 DOING NOW:
 
 
+    Have the diamond batteries spawn on machine planets once we have the Primewall/Glitched God drawn (or find another MLM)
+
+
     Great nomad seems like it will generate new tiles, but not update existing ones
+    Make sure that beams from other players are removed when those players stop attacking/move away/up down etc
 
 
     Test that the basics of factions works

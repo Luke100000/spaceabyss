@@ -194,6 +194,12 @@ async function calculateDefense(dirty, monster_index, damage_types = [], attack_
 async function canPlace(dirty, scope, coord, data) {
     try {
 
+
+        if(helper.isFalse(coord)) {
+            log(chalk.yellow("Invalid coord passed into monster.canPlace"));
+            console.trace("trace it!");
+        }
+
         let debug_monster_type_id = 0;
 
         let checking_coords = [];
@@ -1205,47 +1211,53 @@ async function move(dirty, i, data) {
                             let test_placing_coord = {};
                             let test_index = -1;
                             if(scope === 'planet') {
-                                if(direction === 'left') {
+                                if(direction === 'left' && base_coord.left_coord_index !== -1) {
                                     test_placing_coord = dirty.planet_coords[base_coord.left_coord_index];
                                     test_index = base_coord.left_coord_index;
-                                } else if(direction === 'right') {
+                                } else if(direction === 'right' && base_coord.right_coord_index !== -1) {
                                     test_placing_coord = dirty.planet_coords[base_coord.right_coord_index];
                                     test_index = base_coord.right_coord_index;
-                                } else if(direction === 'up') {
+                                } else if(direction === 'up' && base_coord.up_coord_index !== -1) {
                                     test_placing_coord = dirty.planet_coords[base_coord.up_coord_index];
                                     test_index = base_coord.up_coord_index;
-                                } else if(direction === 'down') {
+                                } else if(direction === 'down' && base_coord.down_coord_index !== -1) {
                                     test_placing_coord = dirty.planet_coords[base_coord.down_coord_index];
                                     test_index = base_coord.down_coord_index;
                                 }
                                 
 
                             } else if(scope === 'ship') {
-                                if(direction === 'left') {
+                                if(direction === 'left' && base_coord.left_coord_index !== -1) {
                                     test_placing_coord = dirty.ship_coords[base_coord.left_coord_index];
                                     test_index = base_coord.left_coord_index;
-                                } else if(direction === 'right') {
+                                } else if(direction === 'right' && base_coord.right_coord_index !== -1) {
                                     test_placing_coord = dirty.ship_coords[base_coord.right_coord_index];
                                     test_index = base_coord.right_coord_index;
-                                } else if(direction === 'up') {
+                                } else if(direction === 'up' && base_coord.up_coord_index !== -1) {
                                     test_placing_coord = dirty.ship_coords[base_coord.up_coord_index];
                                     test_index = base_coord.up_coord_index;
-                                } else if(direction === 'down') {
+                                } else if(direction === 'down' && base_coord.down_coord_index !== -1) {
                                     test_placing_coord = dirty.ship_coords[base_coord.down_coord_index];
                                     test_index = base_coord.down_coord_index;
                                 }
                             }
 
-                            let can_place_result = await canPlace(dirty, scope, test_placing_coord, { 'monster_index': i});
+                            if(helper.notFalse(test_placing_coord)) {
+                                let can_place_result = await canPlace(dirty, scope, test_placing_coord, { 'monster_index': i});
 
-                            if(can_place_result === true) {
-                                destination_coord_index = test_index;
-
-                                // and run again with the test_index as our new base_index
-                                base_coord_index = test_index;
+                                if(can_place_result === true) {
+                                    destination_coord_index = test_index;
+    
+                                    // and run again with the test_index as our new base_index
+                                    base_coord_index = test_index;
+                                } else {
+                                    can_still_move = false;
+                                }
                             } else {
                                 can_still_move = false;
                             }
+
+                            
 
                         } else {
                             can_still_move = false;
