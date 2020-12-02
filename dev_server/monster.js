@@ -912,6 +912,109 @@ async function getCoordAndRoom(dirty, monster_index) {
 
 exports.getCoordAndRoom = getCoordAndRoom;
 
+
+async function getIndex(dirty, monster_id) {
+
+
+    try {
+
+        monster_id = parseInt(monster_id);
+
+        if(monster_id === 0 || isNaN(monster_id)) {
+            log(chalk.yellow("0 or NaN sent into monster.getIndex"));
+            return -1;
+        }
+
+        //console.log("In monster.getIndex. Seeing if we have monster with id: " + monster_id);
+
+        let monster_index = dirty.monsters.findIndex(function(obj) { return obj && obj && obj.id === monster_id; });
+
+        if(monster_index === -1) {
+            //console.log("Did not find monster id: " + monster_id + " in dirty");
+
+            try {
+                let [rows, fields] = await (pool.query("SELECT * FROM monsters WHERE id = ?",
+                    [monster_id]));
+
+                if(rows[0]) {
+                    let adding_monster = rows[0];
+                    adding_monster.has_change = false;
+
+
+                    // Since MySQL is slow - we re-check to make sure we didn't already add the monster
+                    monster_index = dirty.monsters.findIndex(function(obj) { return obj && obj.id === parseInt(monster_id); });
+                    if(monster_index !== -1) {
+                        log(chalk.yellow("Looks like we already added the monster"));
+                    } else {
+                        //console.log("Adding monster id: " + monster.id);
+                        monster_index = dirty.monsters.push(adding_monster) - 1;
+
+                        // Make sure the id is an int
+                        dirty.monsters[monster_index].id = parseInt(dirty.monsters[monster_index].id);
+                        //console.log("Pushed new monster to dirty. monster_index: " + monster_index);
+
+
+                        // the monster is associated with an AI
+                        if(adding_monster.object_id) {
+                            //console.log("Monster has object id - grabbing that: " + monster.object_id);
+                            await game_object.getIndex(dirty, adding_monster.object_id);
+                        }
+
+                        // and associate the monster with a room and coord index
+                        if(dirty.monsters[monster_index].planet_coord_id) {
+                            let planet_coord_index = await main.getPlanetCoordIndex({ 'planet_coord_id': dirty.monsters[monster_index].planet_coord_id });
+                            if(planet_coord_index !== -1) {
+                                dirty.monsters[monster_index].planet_coord_index = planet_coord_index;
+                                dirty.monsters[monster_index].room = "planet_" + dirty.planet_coords[planet_coord_index].planet_id;
+                            } else {
+
+                                // The monster's planet coord LITERALLY does not exist
+                                log(chalk.yellow("Deleting monster id: " + dirty.monsters[monster_index].id));
+                                await deleteMonster(dirty, monster_index);
+
+                            }
+                        } else if(dirty.monsters[monster_index].ship_coord_id) {
+                            let ship_coord_index = await main.getShipCoordIndex({ 'ship_coord_id': dirty.monsters[monster_index].ship_coord_id });
+                            if(ship_coord_index !== -1) {
+                                dirty.monsters[monster_index].ship_coord_index = ship_coord_index;
+                                dirty.monsters[monster_index].room = "ship_" + dirty.ship_coords[ship_coord_index].ship_id;
+                            }
+                        } else if(dirty.monsters[monster_index].coord_id) {
+                            let coord_index = await main.getCoordIndex({ 'coord_id': dirty.monsters[monster_index].coord_id });
+                            if(coord_index !== -1) {
+                                dirty.monsters[monster_index].coord_index = coord_index;
+                                dirty.monsters[monster_index].room = "galaxy";
+                            }
+                        }
+                    }
+
+
+
+
+                    return monster_index;
+
+                }
+            } catch(error) {
+                console.error("Unable to get monster from database: " + error);
+            }
+
+        } else {
+            //console.log("Found monster");
+        }
+
+        //console.log("Returning: " + monster_index);
+
+        return monster_index;
+    } catch(error) {
+        log(chalk.red("Error in monster.getIndex: " + error));
+        console.error(error);
+    }
+
+
+}
+
+exports.getIndex = getIndex;
+
 /**
  *
  * @param dirty
@@ -1303,19 +1406,23 @@ async function move(dirty, i, data) {
                                         'tile_x': x, 'tile_y':y };
                                     let checking_coord_index = await main.getPlanetCoordIndex(checking_data);
 
-                                    let monster_can_place_result = await canPlace(dirty, 'planet',
+                                    if(checking_coord_index !== -1) {
+                                        let monster_can_place_result = await canPlace(dirty, 'planet',
                                         dirty.planet_coords[checking_coord_index], {'monster_index': i });
 
-                                    if(checking_coord_index !== -1 && monster_can_place_result === true ) {
+                                        if(checking_coord_index !== -1 && monster_can_place_result === true ) {
 
-                                        new_x = dirty.planet_coords[checking_coord_index].tile_x;
-                                        new_y = dirty.planet_coords[checking_coord_index].tile_y;
+                                            new_x = dirty.planet_coords[checking_coord_index].tile_x;
+                                            new_y = dirty.planet_coords[checking_coord_index].tile_y;
 
-                                        change_x = new_x - old_coord.tile_x;
-                                        change_y = new_y - old_coord.tile_y;
-                                        found_coord = true;
+                                            change_x = new_x - old_coord.tile_x;
+                                            change_y = new_y - old_coord.tile_y;
+                                            found_coord = true;
 
+                                        }
                                     }
+
+                                    
                                 } else if(scope === 'ship') {
 
                                     let checking_data = { 'ship_id': attacking_coord.ship_id,
@@ -1873,7 +1980,7 @@ async function sendInfo(socket, room, dirty, data) {
         if (data.monster_index) {
             monster_index = data.monster_index;
         } else if (data.monster_id) {
-            monster_index = await main.getMonsterIndex(data.monster_id);
+            monster_index = await getIndex(dirty, data.monster_id);
         }
 
         if (monster_index !== -1) {
@@ -2052,7 +2159,7 @@ async function spawn(dirty, monster_type_id, data) {
         //console.log("Inserted monster");
 
         let new_monster_id = result.insertId;
-        let new_monster_index = await main.getMonsterIndex(new_monster_id);
+        let new_monster_index = await getIndex(dirty, new_monster_id);
         //console.log("Got new monster id: " + new_monster_id);
 
         if (scope === 'planet') {
@@ -2123,6 +2230,7 @@ module.exports = {
     deleteMonster,
     fix,
     getCoordAndRoom,
+    getIndex,
     move,
     sendInfo,
     spawn

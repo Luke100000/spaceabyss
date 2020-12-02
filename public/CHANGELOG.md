@@ -1,3 +1,17 @@
+## [0.2.21] - 2020-12-2
+
+### Added
+- The room now gets information about when a player stops attacking something.
+- Large Dust Growth to Desert Planets
+- Large Comet that shows up in the galaxy
+
+### Fixed
+- A small conceptual bug with moving players other than the client - but this significantly improves the movement of other players!
+
+
+### Changed
+- Moved more functions around
+
 ## [0.2.20] - 2020-11-28
 
 

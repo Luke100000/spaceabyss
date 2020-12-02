@@ -44,6 +44,7 @@ async function addBattleLinker(socket, dirty, data) {
         let being_attacked_socket_id = false;
         let attacking_index = -1;
         let being_attacked_index = -1;
+        let room = "";
 
         if (socket !== false) {
             socket_id = socket.id;
@@ -81,6 +82,9 @@ async function addBattleLinker(socket, dirty, data) {
                 // Can't attack if we aren't a player
                 return false;
             }
+
+            let attacking_player_info = await player.getCoordAndRoom(dirty, attacking_index);
+            room = attacking_player_info.room;
         }
 
         if (data.being_attacked_type === 'player') {
@@ -98,6 +102,12 @@ async function addBattleLinker(socket, dirty, data) {
                 // Not gonna attack players we can't find
                 return false;
             }
+
+            if(helper.isFalse(room)) {
+                let defending_player_info = await player.getCoordAndRoom(dirty, being_attacked_index);
+                room = defending_player_info.room;
+            }
+            
         }
 
 
@@ -215,7 +225,8 @@ async function addBattleLinker(socket, dirty, data) {
             'id': uuidv1(),
             'attacking_id': data.attacking_id, 'attacking_type': data.attacking_type, 'being_attacked_id': data.being_attacked_id,
             'being_attacked_type': data.being_attacked_type, 'socket_id': socket_id, 'being_attacked_socket_id': being_attacked_socket_id,
-            'turn_count': 0
+            'turn_count': 0,
+            'room': room
         };
 
         battle_linker_index = dirty.battle_linkers.push(battle_linker) - 1;
@@ -251,6 +262,13 @@ async function addBattleLinker(socket, dirty, data) {
                     io.to(dirty.battle_linkers[previous_battle_linker_index].being_attacked_socket_id).emit('battle_linker_info',
                         { 'remove': true, 'battle_linker': dirty.battle_linkers[previous_battle_linker_index] });
                 }
+
+                // we need to send to the room as well
+                if(typeof dirty.battle_linkers[previous_battle_linker_index].room !== 'undefined' && helper.notFalse(dirty.battle_linkers[previous_battle_linker_index].room)) {
+                    io.to(dirty.battle_linkers[previous_battle_linker_index].room).emit('battle_linker_info', { 'remove': true, 'battle_linker': dirty.battle_linkers[previous_battle_linker_index] });
+                }
+
+
 
                 delete dirty.battle_linkers[previous_battle_linker_index];
 
@@ -652,7 +670,7 @@ async function aiAttack(dirty, data) {
         } else if(data.attacking_type === 'object') {
             being_attacked_index = await game_object.getIndex(dirty, data.attacking_id);
         } else if(data.attacking_type === 'monster') {
-            being_attacked_index = await main.getMonsterIndex(data.attacking_id);
+            being_attacked_index = await monster.getIndex(dirty, data.attacking_id);
         }
 
         if(being_attacked_index === -1) {
@@ -1078,7 +1096,7 @@ async function aiRetaliate(dirty, ai_index, attacking_type, attacking_id) {
         let already_attacking = false;
 
         for (let linker of existing_attack_linkers) {
-            let monster_index = await main.getMonsterIndex(linker.attacking_id);
+            let monster_index = await monster.getIndex(dirty, linker.attacking_id);
             if (dirty.monsters[monster_index].monster_type_id === 33 || dirty.monsters[monster_index].monster_type_id === 57) {
                 already_attacking = true;
             }
@@ -1332,7 +1350,7 @@ async function checkMonsterBattleConditions(dirty, monster_id, checking_type, ch
 
     try {
         //log(chalk.green("Checking monster id: " + monster_id + " against " + checking_type + " id: " + checking_id));
-        let monster_index = await main.getMonsterIndex(monster_id);
+        let monster_index = await monster.getIndex(dirty, monster_id);
 
         if (monster_index === -1) {
             log(chalk.yellow("Could not find monster"));
@@ -1405,12 +1423,16 @@ async function checkMonsterBattleConditions(dirty, monster_id, checking_type, ch
         }
 
 
+        let monster_info = await monster.getCoordAndRoom(dirty, monster_index);
+
+
         //console.log("Monster is not yet attacking anything. Poor " + checking_type + " ;)");
 
         let battle_linker_data = {
             'id': uuidv1(),
             'attacking_id': monster_id, 'attacking_type': 'monster', 'being_attacked_id': checking_id,
-            'being_attacked_type': checking_type
+            'being_attacked_type': checking_type,
+            'room': monster_info.room
         };
 
         let player_socket = getPlayerSocket(dirty, player_index);
@@ -1474,7 +1496,7 @@ async function checkObjectBattleConditions(socket, dirty, object_id, checking_ty
 
 
         let player_index = -1;
-        let player_info = false;
+        let player_info = {};
         if (checking_type === 'player') {
             player_index = await player.getIndex(dirty, { 'player_id': checking_id });
 
@@ -1484,7 +1506,7 @@ async function checkObjectBattleConditions(socket, dirty, object_id, checking_ty
                 
             }
 
-            player_info = await getPlayerCoordAndRoom(dirty, player_index);
+            player_info = await player.getCoordAndRoom(dirty, player_index);
 
             // If the player is on a spaceport tile, we won't be able to attack the player
             if (player_info.coord && (player_info.coord.floor_type_id === 11 || player_info.coord.floor_type_id === 44) ) {
@@ -1522,7 +1544,8 @@ async function checkObjectBattleConditions(socket, dirty, object_id, checking_ty
         let battle_linker_data = {
             'id': uuidv1(),
             'attacking_id': object_id, 'attacking_type': 'object', 'being_attacked_id': checking_id,
-            'being_attacked_type': checking_type
+            'being_attacked_type': checking_type,
+            'room': player_info.room
         };
 
         if (socket !== false) {
@@ -2905,53 +2928,6 @@ async function getOpenCoordIndex(dirty, coord_type, base_coord_index, placing_ty
 
 exports.getOpenCoordIndex = getOpenCoordIndex;
 
-async function getPlayerCoordAndRoom(dirty, player_index) {
-
-    try {
-
-        let room = '';
-        let coord_index = -1;
-        let scope = '';
-        let coord = {};
-
-        if (dirty.players[player_index].coord_id) {
-            coord_index = await main.getCoordIndex(
-                { 'coord_id': dirty.players[player_index].coord_id });
-            if (coord_index !== -1) {
-                room = "galaxy";
-                scope = "galaxy";
-                coord = dirty.coords[coord_index];
-            }
-        }
-
-        if (dirty.players[player_index].planet_coord_id) {
-            coord_index = await main.getPlanetCoordIndex(
-                { 'planet_coord_id': dirty.players[player_index].planet_coord_id });
-            if (coord_index !== -1) {
-                room = "planet_" + dirty.planet_coords[coord_index].planet_id;
-                scope = "planet";
-                coord = dirty.planet_coords[coord_index];
-            }
-
-        } else if (dirty.players[player_index].ship_coord_id) {
-            coord_index = await main.getShipCoordIndex({ 'ship_coord_id': dirty.players[player_index].ship_coord_id });
-            if (coord_index !== -1) {
-                room = "ship_" + dirty.ship_coords[coord_index].ship_id;
-                scope = "ship";
-                coord = dirty.ship_coords[coord_index];
-            }
-        }
-
-        return { 'room': room, 'coord_index': coord_index, 'coord': coord, 'scope': scope };
-    } catch (error) {
-        log(chalk.red("Error in world.getPlayerCoordAndRoom: " + error));
-    }
-
-}
-
-exports.getPlayerCoordAndRoom = getPlayerCoordAndRoom;
-
-
 
 
 function getPlayerSocket(dirty, player_index) {
@@ -3761,7 +3737,17 @@ exports.reloadEvent = reloadEvent;
 
 
 //  battle_linker_id   |   monster_id   |   npc_id   |   object_id   |   player_id
-function removeBattleLinkers(dirty, data) {
+/**
+ * @param {Object} dirty
+ * @param {Object} data
+ * @param {number=} data.battle_linker_id
+ * @param {number=} data.monster_id
+ * @param {number=} data.npc_id
+ * @param {number=} data.object_id
+ * @param {number=} data.player_id
+ * 
+ */
+async function removeBattleLinkers(dirty, data) {
 
     try {
         // Just removing one battle linker
@@ -3785,79 +3771,93 @@ function removeBattleLinkers(dirty, data) {
             }
 
 
+            // we need to send to the room as well
+            if(typeof dirty.battle_linkers[battle_linker_index].room !== 'undefined' && helper.notFalse(dirty.battle_linkers[battle_linker_index].room)) {
+                io.to(dirty.battle_linkers[battle_linker_index].room).emit('battle_linker_info', { 'remove': true, 'battle_linker': dirty.battle_linkers[battle_linker_index] });
+            }
+            
+
+
             delete dirty.battle_linkers[battle_linker_index];
         }
         // Removing all of one type
         else {
 
-            // Sent in a monster, npc, object, or player id. So we remove all of that type
-            dirty.battle_linkers.forEach(function (battle_linker, i) {
+            for(let i = 0; i < dirty.battle_linkers.length; i++) {
 
-                let remove_battle_linker = false;
+                if(dirty.battle_linkers[i]) {
+                    let remove_battle_linker = false;
+    
+                    if (data.monster_id) {
+                        //console.log("In removeBattleLinkers for monster id: " + data.monster_id);
+                        if (
+                            (dirty.battle_linkers[i].attacking_type === 'monster' && dirty.battle_linkers[i].attacking_id === data.monster_id) ||
+                            (dirty.battle_linkers[i].being_attacked_type === 'monster' && dirty.battle_linkers[i].being_attacked_id === data.monster_id)
+                        ) {
+                            //log(chalk.cyan("Removing battle linker with monster"));
+                            remove_battle_linker = true;
 
-                if (data.monster_id) {
-                    //console.log("In removeBattleLinkers for monster id: " + data.monster_id);
-                    if (
-                        (battle_linker.attacking_type === 'monster' && battle_linker.attacking_id === data.monster_id) ||
-                        (battle_linker.being_attacked_type === 'monster' && battle_linker.being_attacked_id === data.monster_id)
-                    ) {
-                        //log(chalk.cyan("Removing battle linker with monster"));
-                        remove_battle_linker = true;
+                        }
+                    }
+    
+                    if (data.npc_id) {
+                        if (
+                            (dirty.battle_linkers[i].attacking_type === 'npc' && dirty.battle_linkers[i].attacking_id === data.npc_id) ||
+                            (dirty.battle_linkers[i].being_attacked_type === 'npc' && dirty.battle_linkers[i].being_attacked_id === data.npc_id)
+                        ) {
+                            //log(chalk.cyan("Removing battle linker with npc"));
+                            remove_battle_linker = true;
+    
+                        }
+                    }
+    
+                    if (data.object_id) {
+                        if (
+                            (dirty.battle_linkers[i].attacking_type === 'object' && dirty.battle_linkers[i].attacking_id === data.object_id) ||
+                            (dirty.battle_linkers[i].being_attacked_type === 'object' && dirty.battle_linkers[i].being_attacked_id === data.object_id)
+                        ) {
+                            //log(chalk.cyan("Removing battle linker with object"));
+                            remove_battle_linker = true;
+    
+                        }
+                    }
+    
+                    if (data.player_id) {
+                        //console.log("In removeBattleLinkers for player id: " + data.player_id);
+    
+                        if (
+                            (dirty.battle_linkers[i].attacking_type === 'player' && dirty.battle_linkers[i].attacking_id === data.player_id) ||
+                            (dirty.battle_linkers[i].being_attacked_type === 'player' && dirty.battle_linkers[i].being_attacked_id === data.player_id)
+                        ) {
+                            //log(chalk.cyan("Removing battle linker with player"));
+                            remove_battle_linker = true;
+                        }
+                    }
+    
+    
+                    if (remove_battle_linker) {
+    
+                        if (dirty.battle_linkers[i].socket_id) {
+                            //console.log("Sending to socket_id");
+                            io.to(dirty.battle_linkers[i].socket_id).emit('battle_linker_info', { 'remove': true, 'battle_linker': dirty.battle_linkers[i] });
+                        }
+    
+                        if (dirty.battle_linkers[i].being_attacked_socket_id) {
+                            //console.log("Sending to being_attacked_socket_id");
+                            io.to(dirty.battle_linkers[i].being_attacked_socket_id).emit('battle_linker_info', { 'remove': true, 'battle_linker': dirty.battle_linkers[i] });
+                        }
 
+                        // we need to send to the room as well
+                        if(typeof dirty.battle_linkers[i].room !== 'undefined' && helper.notFalse(dirty.battle_linkers[i].room)) {
+                            io.to(dirty.battle_linkers[i].room).emit('battle_linker_info', { 'remove': true, 'battle_linker': dirty.battle_linkers[i] });
+                        }
+    
+                        delete dirty.battle_linkers[i];
                     }
                 }
 
-                if (data.npc_id) {
-                    if (
-                        (battle_linker.attacking_type === 'npc' && battle_linker.attacking_id === data.npc_id) ||
-                        (battle_linker.being_attacked_type === 'npc' && battle_linker.being_attacked_id === data.npc_id)
-                    ) {
-                        //log(chalk.cyan("Removing battle linker with npc"));
-                        remove_battle_linker = true;
+            }
 
-                    }
-                }
-
-                if (data.object_id) {
-                    if (
-                        (battle_linker.attacking_type === 'object' && battle_linker.attacking_id === data.object_id) ||
-                        (battle_linker.being_attacked_type === 'object' && battle_linker.being_attacked_id === data.object_id)
-                    ) {
-                        //log(chalk.cyan("Removing battle linker with object"));
-                        remove_battle_linker = true;
-
-                    }
-                }
-
-                if (data.player_id) {
-                    //console.log("In removeBattleLinkers for player id: " + data.player_id);
-
-                    if (
-                        (battle_linker.attacking_type === 'player' && battle_linker.attacking_id === data.player_id) ||
-                        (battle_linker.being_attacked_type === 'player' && battle_linker.being_attacked_id === data.player_id)
-                    ) {
-                        //log(chalk.cyan("Removing battle linker with player"));
-                        remove_battle_linker = true;
-                    }
-                }
-
-
-                if (remove_battle_linker) {
-
-                    if (battle_linker.socket_id) {
-                        //console.log("Sending to socket_id");
-                        io.to(battle_linker.socket_id).emit('battle_linker_info', { 'remove': true, 'battle_linker': battle_linker });
-                    }
-
-                    if (battle_linker.being_attacked_socket_id) {
-                        //console.log("Sending to being_attacked_socket_id");
-                        io.to(battle_linker.being_attacked_socket_id).emit('battle_linker_info', { 'remove': true, 'battle_linker': battle_linker });
-                    }
-
-                    delete dirty.battle_linkers[i];
-                }
-
-            });
         }
 
     } catch (error) {
@@ -4544,7 +4544,7 @@ exports.setPlayerMoveDelay = setPlayerMoveDelay;
 async function skinRemove(socket, dirty, skin_object_type_id) {
     try {
 
-        let player_info = await getPlayerCoordAndRoom(dirty, socket.player_index);
+        let player_info = await player.getCoordAndRoom(dirty, socket.player_index);
 
         dirty.players[socket.player_index].skin_object_type_id = false;
         dirty.players[socket.player_index].has_change = true;
@@ -4577,7 +4577,7 @@ async function skinUse(socket, dirty, skin_object_type_id) {
             return false;
         }
 
-        let player_info = await getPlayerCoordAndRoom(dirty, socket.player_index);
+        let player_info = await player.getCoordAndRoom(dirty, socket.player_index);
 
         dirty.players[socket.player_index].skin_object_type_id = skin_object_type_id;
         dirty.players[socket.player_index].has_change = true;

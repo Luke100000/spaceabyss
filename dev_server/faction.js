@@ -6,6 +6,7 @@ const chalk = require('chalk');
 const log = console.log;
 
 const helper = require('./helper.js');
+const player = require('./player.js');
 const main = require('./space_abyss' + process.env.FILE_SUFFIX + '.js');
 
 
@@ -234,7 +235,7 @@ async function leave(socket, dirty) {
         dirty.players[socket.player_index].faction_id = false;
         dirty.players[socket.player_index].has_change = true;
 
-        let player_info = getPlayerCoordAndRoom(dirty, socket.player_index);
+        let player_info = await player.getCoordAndRoom(dirty, socket.player_index);
 
         if (player_info.room) {
             io.to(player_info.room).emit('player_info', { 'player': dirty.players[socket.player_index] });

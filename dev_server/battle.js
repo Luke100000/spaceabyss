@@ -21,6 +21,16 @@ const world = require('./world.js');
 
 
     //  data:   monster_id   |   npc_id   |   object_id   |   player_id   |   planet_id
+    /**
+     * @param {Object} socket
+     * @param {Object} dirty
+     * @param {Object} data
+     * @param {number=} data.monster_id
+     * @param {number=} data.npc_id
+     * @param {number=} data.object_id
+     * @param {number=} data.player_id
+     * @param {number=} data.planet_id
+     */
     async function attackStop(socket, dirty, data) {
 
         try {
@@ -93,7 +103,16 @@ const world = require('./world.js');
                 }
             }
 
+            // we need to send to the room as well
+            if(typeof dirty.battle_linkers[battle_linker_index].room !== 'undefined' && helper.notFalse(dirty.battle_linkers[battle_linker_index].room)) {
+                io.to(dirty.battle_linkers[battle_linker_index].room).emit('battle_linker_info', { 'remove': true, 'battle_linker': dirty.battle_linkers[battle_linker_index] });
+            }
+
+            
+
             delete dirty.battle_linkers[battle_linker_index];
+
+
 
             //console.log("Removed battle linker");
         } catch(error) {
@@ -339,7 +358,7 @@ const world = require('./world.js');
                 }
 
                 if(dirty.planet_coords[data.planet_coord_index].monster_id) {
-                    being_damaged_monster_index = await main.getMonsterIndex(dirty.planet_coords[data.planet_coord_index].monster_id);
+                    being_damaged_monster_index = await monster.getIndex(dirty, dirty.planet_coords[data.planet_coord_index].monster_id);
                 }
 
             } else if(data.ship_coord_index) {
@@ -351,7 +370,7 @@ const world = require('./world.js');
                 }
 
                 if(dirty.ship_coords[data.ship_coord_index].monster_id) {
-                    being_damaged_monster_index = await main.getMonsterIndex(dirty.ship_coords[data.ship_coord_index].monster_id);
+                    being_damaged_monster_index = await monster.getIndex(dirty, dirty.ship_coords[data.ship_coord_index].monster_id);
                 }
             }
 
@@ -543,7 +562,7 @@ const world = require('./world.js');
             battle_linker.turn_count += 1;
 
 
-            let monster_index = await main.getMonsterIndex(battle_linker.attacking_id);
+            let monster_index = await monster.getIndex(dirty, battle_linker.attacking_id);
             let object_index = await game_object.getIndex(dirty, battle_linker.being_attacked_id);
 
             if(monster_index === -1) {
@@ -651,7 +670,7 @@ const world = require('./world.js');
                 return;
             }
 
-            let monster_index = await main.getMonsterIndex(battle_linker.attacking_id);
+            let monster_index = await monster.getIndex(dirty, battle_linker.attacking_id);
             let player_index = await player.getIndex(dirty, { 'player_id': battle_linker.being_attacked_id });
 
             if(monster_index === -1) {
@@ -669,7 +688,7 @@ const world = require('./world.js');
             let monster_type_index = main.getMonsterTypeIndex(dirty.monsters[monster_index].monster_type_id);
 
             let monster_info = await monster.getCoordAndRoom(dirty, monster_index);
-            let player_info = await world.getPlayerCoordAndRoom(dirty, player_index);
+            let player_info = await player.getCoordAndRoom(dirty, player_index);
 
             if(monster_info.coord === false) {
                 log(chalk.yellow("Could not get the attacking monster coord"));
@@ -812,7 +831,7 @@ const world = require('./world.js');
 
             for(let battle_linker of monster_battle_linkers) {
 
-                let monster_index = await main.getMonsterIndex(battle_linker.attacking_id);
+                let monster_index = await monster.getIndex(dirty, battle_linker.attacking_id);
                 let monster_type_index = main.getMonsterTypeIndex(dirty.monsters[monster_index].monster_type_id);
 
                 let attack_movement_delay = 2000;
@@ -849,7 +868,7 @@ const world = require('./world.js');
         try {
 
             let npc_index = await npc.getIndex(dirty, battle_linker.attacking_id);
-            let monster_index = await main.getMonsterIndex(battle_linker.being_attacked_id);
+            let monster_index = await monster.getIndex(dirty, battle_linker.being_attacked_id);
 
             if(npc_index === -1) {
                 log(chalk.yellow("Could not find npc id: " + battle_linker.attacking_id));
@@ -1071,7 +1090,7 @@ const world = require('./world.js');
             }
 
             let npc_info = await world.getNpcCoordAndRoom(dirty, npc_index);
-            let player_info = await world.getPlayerCoordAndRoom(dirty, player_index);
+            let player_info = await player.getCoordAndRoom(dirty, player_index);
 
             if(npc_info.coord === false) {
                 log(chalk.yellow("Could not get the attacking npc coord"));
@@ -1576,7 +1595,7 @@ const world = require('./world.js');
 
             let object_type_index = main.getObjectTypeIndex(dirty.objects[object_index].object_type_id);
             let object_info = await game_object.getCoordAndRoom(dirty, object_index);
-            let player_info = await world.getPlayerCoordAndRoom(dirty, player_index);
+            let player_info = await player.getCoordAndRoom(dirty, player_index);
 
             if(object_info.coord === false) {
                 log(chalk.yellow("Could not get the attacking object coord"));
@@ -1668,7 +1687,7 @@ const world = require('./world.js');
             }
 
 
-            let monster_index = await main.getMonsterIndex(battle_linker.being_attacked_id);
+            let monster_index = await monster.getIndex(dirty, battle_linker.being_attacked_id);
             let player_index = await player.getIndex(dirty, {'player_id':battle_linker.attacking_id});
 
             if(monster_index === -1) {
@@ -1685,7 +1704,7 @@ const world = require('./world.js');
             }
 
 
-            let player_info = await world.getPlayerCoordAndRoom(dirty, player_index);
+            let player_info = await player.getCoordAndRoom(dirty, player_index);
             let monster_info = await monster.getCoordAndRoom(dirty, monster_index);
 
             if(player_info.coord === false) {
@@ -1883,7 +1902,7 @@ const world = require('./world.js');
                 return;
             }
 
-            let player_info = await world.getPlayerCoordAndRoom(dirty, player_index);
+            let player_info = await player.getCoordAndRoom(dirty, player_index);
             let npc_info = await world.getNpcCoordAndRoom(dirty, npc_index);
 
             if(player_info.coord === false) {
@@ -2019,7 +2038,7 @@ const world = require('./world.js');
                 return;
             }
 
-            let player_info = await world.getPlayerCoordAndRoom(dirty, player_index);
+            let player_info = await player.getCoordAndRoom(dirty, player_index);
             let object_info = await game_object.getCoordAndRoom(dirty, object_index);
 
             if(player_info.coord === false) {
@@ -2135,8 +2154,8 @@ const world = require('./world.js');
 
             }
 
-            let attacking_player_info = await world.getPlayerCoordAndRoom(dirty, attacking_player_index);
-            let defending_player_info = await world.getPlayerCoordAndRoom(dirty, defending_player_index);
+            let attacking_player_info = await player.getCoordAndRoom(dirty, attacking_player_index);
+            let defending_player_info = await player.getCoordAndRoom(dirty, defending_player_index);
 
             if(attacking_player_info.coord === false) {
                 log(chalk.yellow("Could not get the attacking player coord"));

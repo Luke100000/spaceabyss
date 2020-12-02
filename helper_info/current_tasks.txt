@@ -4,13 +4,18 @@ CURRENT GAMEPLAY TEST:
 
 DOING NOW:
 
+    Add in the large ice comet and push this latest update
 
     Have the diamond batteries spawn on machine planets once we have the Primewall/Glitched God drawn (or find another MLM)
 
+    I want to build a garden ship (station)
+        It's tier 5 - and none of the tier 5 materials have any organic component. Closest is Living Wood at tier 3.
+        Cold Fusion
+        Life Blood (don't like the name blood) | Mana | Life Mana
 
-    Great nomad seems like it will generate new tiles, but not update existing ones
-    Make sure that beams from other players are removed when those players stop attacking/move away/up down etc
 
+
+    Have a large AI dust spawn or two on Desert planets
 
     Test that the basics of factions works
         Maybe a faction display on the site and all that
@@ -19,7 +24,6 @@ DOING NOW:
             their faction...
             ChaosArray
 
-    Have a large AI dust spawn or two on Desert planets
 
     Sounds for the different damage types
     Background music for the different planets/galaxy
@@ -51,14 +55,9 @@ DOING NOW:
         https://images.gemquery.com/253/content_2539676.jpg
         observer drone https://images.gemquery.com/259/content_2591696.jpg
 
-
-
     
     Researching augment
-    Researching body (+5 or +6) to researching
-        Like a server rack walking about?
-        
-    Large ice comet
+
 
     Addicted to M Man Tick 15/60
         Not sure it's doing much of anything

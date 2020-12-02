@@ -167,55 +167,52 @@ socket.on('battle_linker_info', function(data) {
 
     if(data.remove) {
 
+        for(let i = 0; i < effect_sprites.length; i++) {
 
-        if(battle_linker_index !== -1) {
-            //console.log("Removing battle linker with id" + battle_linkers[battle_linker_index].id);
+            if(effect_sprites[i]) {
 
+                if(data.battle_linker.being_attacked_type === 'monster' && 
+                    data.battle_linker.being_attacked_id === effect_sprites[i].monster_id) {
 
-            for(let i = 0; i < effect_sprites.length; i++) {
-
-                if(effect_sprites[i]) {
-
-                    if(battle_linkers[battle_linker_index].being_attacked_type === 'monster' && 
-                        battle_linkers[battle_linker_index].being_attacked_id === effect_sprites[i].monster_id) {
-
-                            effect_sprites[i].monster_id = false;
-                            effect_sprites[i].setVisible(false);
-
-                    }
-
-
-                    if(battle_linkers[battle_linker_index].being_attacked_type === 'object' &&
-                        battle_linkers[battle_linker_index].being_attacked_id === effect_sprites[i].object_id) {
-
-
-                        effect_sprites[i].object_id = false;
+                        effect_sprites[i].monster_id = false;
                         effect_sprites[i].setVisible(false);
-
-                    }
-
-                    if(battle_linkers[battle_linker_index].being_attacked_type === 'planet' && 
-                        battle_linkers[battle_linker_index].being_attacked_id === effect_sprites[i].planet_id) {
-
-                        effect_sprites[i].planet_id = false;
-                        effect_sprites[i].setVisible(false);
-                    }
-
-                    if(battle_linkers[battle_linker_index].being_attacked_type === 'player' && 
-                        battle_linkers[battle_linker_index].being_attacked_id === effect_sprites[i].player_id &&
-                            battle_linkers[battle_linker_index].attacking_type === effect_sprites[i].damage_source_type && 
-                            battle_linkers[battle_linker_index].attacking_id === effect_sprites[i].damage_source_id) {
-                            effect_sprites[i].player_id = false;
-                            effect_sprites[i].setVisible(false);  
-                        }
 
                 }
 
-                
+
+                if(data.battle_linker.being_attacked_type === 'object' &&
+                    data.battle_linker.being_attacked_id === effect_sprites[i].object_id) {
 
 
+                    effect_sprites[i].object_id = false;
+                    effect_sprites[i].setVisible(false);
+
+                }
+
+                if(data.battle_linker.being_attacked_type === 'planet' && 
+                    data.battle_linker.being_attacked_id === effect_sprites[i].planet_id) {
+
+                    effect_sprites[i].planet_id = false;
+                    effect_sprites[i].setVisible(false);
+                }
+
+                if(data.battle_linker.being_attacked_type === 'player' && 
+                        data.battle_linker.being_attacked_id === effect_sprites[i].player_id &&
+                        data.battle_linker.attacking_type === effect_sprites[i].damage_source_type && 
+                        data.battle_linker.attacking_id === effect_sprites[i].damage_source_id) {
+                        effect_sprites[i].player_id = false;
+                        effect_sprites[i].setVisible(false);  
+                    }
 
             }
+
+    
+
+        }
+
+
+        if(battle_linker_index !== -1) {
+            console.log("Removing battle linker with id" + battle_linkers[battle_linker_index].id);
 
             delete battle_linkers[battle_linker_index];
             //console.log("Removed battle linker - server said to remove");

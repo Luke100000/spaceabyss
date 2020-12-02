@@ -7328,7 +7328,25 @@ function initiateMovePlayerFlow(player_index, destination_coord_type, destinatio
 
     // If the player is already moving, lets ignore this
     if (players[player_index].destination_x) {
-        return false;
+
+        if(player_index === client_player_index) {
+            console.log("Ignoring due to player already having a destination_x");
+            return false;
+        } else {
+
+            let new_destination_x = destination_coord.tile_x * tile_size + tile_size / 2 + players[player_index].sprite_x_offset;
+            let new_destination_y = destination_coord.tile_y * tile_size + tile_size / 2 + players[player_index].sprite_y_offset;
+            // For non client players, lets try just warping them to their previous destination_x/y if the new one is different
+            if(players[player_index].destination_x === new_destination_y && players[player_index].destination_y === new_destination_y) {
+                console.log("Other player already has this destination, ignoring");
+                return false;
+            }
+
+            // Not the same! Warp em, and we'll continue to set things below
+            movePlayerInstant(player_index, players[player_index].destination_x, players[player_index].destination_y);
+
+        }
+
     }
 
     players[player_index].move_start_time = our_time;
@@ -11286,6 +11304,7 @@ function updatePlayer(data, player_index) {
                 }
                 // Otherwise, flow them there
                 else if (data.player.planet_coord_id !== players[player_index].planet_coord_id) {
+                    console.log("Other player: " + players[player_index].name + " moved to planet coord id: " + data.player.planet_coord_id);
                     players[player_index].planet_coord_id = data.player.planet_coord_id;
                     updated_planet_coord_id = true;
                     initiateMovePlayerFlow(player_index, 'planet', planet_coords[coord_index], 'updatePlayer > planet');

@@ -1080,6 +1080,52 @@ async function damage(dirty, data) {
 
 exports.damage = damage;
 
+async function getCoordAndRoom(dirty, player_index) {
+
+    try {
+
+        let room = '';
+        let coord_index = -1;
+        let scope = '';
+        let coord = {};
+
+        if (dirty.players[player_index].coord_id) {
+            coord_index = await main.getCoordIndex(
+                { 'coord_id': dirty.players[player_index].coord_id });
+            if (coord_index !== -1) {
+                room = "galaxy";
+                scope = "galaxy";
+                coord = dirty.coords[coord_index];
+            }
+        }
+
+        if (dirty.players[player_index].planet_coord_id) {
+            coord_index = await main.getPlanetCoordIndex(
+                { 'planet_coord_id': dirty.players[player_index].planet_coord_id });
+            if (coord_index !== -1) {
+                room = "planet_" + dirty.planet_coords[coord_index].planet_id;
+                scope = "planet";
+                coord = dirty.planet_coords[coord_index];
+            }
+
+        } else if (dirty.players[player_index].ship_coord_id) {
+            coord_index = await main.getShipCoordIndex({ 'ship_coord_id': dirty.players[player_index].ship_coord_id });
+            if (coord_index !== -1) {
+                room = "ship_" + dirty.ship_coords[coord_index].ship_id;
+                scope = "ship";
+                coord = dirty.ship_coords[coord_index];
+            }
+        }
+
+        return { 'room': room, 'coord_index': coord_index, 'coord': coord, 'scope': scope };
+    } catch (error) {
+        log(chalk.red("Error in player.getCoordAndRoom: " + error));
+    }
+
+}
+
+exports.getCoordAndRoom = getCoordAndRoom;
+
 
 
 async function getEquipment(dirty, body_id) {
@@ -2262,6 +2308,7 @@ module.exports = {
     canPlace,
     claimShip,
     damage,
+    getCoordAndRoom,
     getEquipment,
     getIndex,
     getInventory,

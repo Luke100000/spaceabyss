@@ -12,33 +12,29 @@ idle, left, right, up, down
 ***************************************
 
 
-large ai dust (a rarer spawn on desert planets)
 
-buildings for the corporation planet (64x64 to 64x96 for starters)
+Diamond Battery Deposit
+Type: Spawner
+Size: 30x30 max
+Frames Needed: 1 empty frame, 1 full frame
+Notes: Spawns several of the Diamond Batteries that we drew in batch #24 (https://space.alphacoders.com/images/diamond-battery.png) I don't have an image for it,
+but a lower tier spawner ( it spawns normal batteries ) is https://space.alphacoders.com/images/battery-deposit-animated.png for example.
+
 
 quick matter set (floor,wall, stairs,hole)
 
 player body that eats trash (mass of moving maggots)
 
-9. Widden Animations
 10. Quick Matter Floor
 11. Quick Matter Wall
 12. Quick Matter Stairs
 13. Quick Matter Hole
 
 
-Keratin Plating (so we can have the Vooard drop that, and let players equip the Keratin Armor)
-
-replace the current DDrone! https://space.alphacoders.com/monster-type/view/13
 
 
 . 
-Type: Environmental Object
-Size: 64x64 max
-Frames Needed: 1-2 Designs
-Flavor Text: A broken giant. It looks like it's already been salvaged a bit, but you can probably salvage a bit more still. You can't help but wonder what caused this 
-once powerful bot to break.
-Reference Image: https://images5.alphacoders.com/914/914760.jpg
+
 
 ***************************
 ** GENERAL DRAWING IDEAS **

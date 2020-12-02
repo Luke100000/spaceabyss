@@ -2207,7 +2207,7 @@ const world = require('./world.js');
 
                     // Monsters die
                     if(dirty.planet_coords[i].monster_id) {
-                        let monster_index = await main.getMonsterIndex(dirty.planet_coords[i].monster_id);
+                        let monster_index = await monster.getIndex(dirty, dirty.planet_coords[i].monster_id);
                         if(monster_index !== -1) {
                             await monster.deleteMonster(dirty, monster_index);
                         }
@@ -3092,7 +3092,7 @@ exports.eat = eat;
             if(current_equip_slot_count > 0 || dirty.object_type_equipment_linkers[equipment_linker_index].auto_doc_required) {
 
 
-                let player_info = await world.getPlayerCoordAndRoom(dirty, socket.player_index);
+                let player_info = await player.getCoordAndRoom(dirty, socket.player_index);
 
 
                 if(player_info.coord.object_type_id !== 140) {
@@ -4667,7 +4667,7 @@ exports.eat = eat;
 
             // Monsters on it die
             if(dirty.planet_coords[data.planet_coord_index].monster_id) {
-                let monster_index = await main.getMonsterIndex(dirty.planet_coords[data.planet_coord_index].monster_id);
+                let monster_index = await monster.getIndex(dirty, dirty.planet_coords[data.planet_coord_index].monster_id);
                 if(monster_index !== -1) {
                     await monster.deleteMonster(dirty, monster_index);
                 }
@@ -5197,7 +5197,7 @@ exports.eat = eat;
                 console.log("Admin is moving: " + movement);
 
                 let player_index = await player.getIndex(dirty, { 'player_id': socket.player_id });
-                let player_info = await world.getPlayerCoordAndRoom(dirty, player_index);
+                let player_info = await player.getCoordAndRoom(dirty, player_index);
 
                 let new_level = dirty.planet_coords[player_info.coord_index].level + 1;
 
@@ -6006,7 +6006,7 @@ exports.eat = eat;
 
             // lets make sure we are in range
             // lets see if the player is close enough to the monster to hit it
-            let player_info = await world.getPlayerCoordAndRoom(dirty, player_index);
+            let player_info = await player.getCoordAndRoom(dirty, player_index);
             let object_info = await game_object.getCoordAndRoom(dirty, object_index);
 
             if(!player_info.coord || !object_info.coord) {
@@ -6561,7 +6561,7 @@ exports.eat = eat;
 
             // Make sure the player and the object are still close enough
 
-            let player_info = await world.getPlayerCoordAndRoom(dirty, dirty.active_salvagings[i].player_index);
+            let player_info = await player.getCoordAndRoom(dirty, dirty.active_salvagings[i].player_index);
             let object_info = await game_object.getCoordAndRoom(dirty, dirty.active_salvagings[i].object_index);
 
             if(!player_info.coord || !object_info.coord) {
@@ -7849,7 +7849,7 @@ exports.eat = eat;
                         if(dirty.race_eating_linkers[race_linker_index].hp) {
 
 
-                            let player_info = await world.getPlayerCoordAndRoom(dirty, player_index);
+                            let player_info = await player.getCoordAndRoom(dirty, player_index);
 
                             // Player has the body that is eating this equipped
                             if(eating_linker.player_id && dirty.players[player_index].body_id === eating_linker.body_id) {
@@ -9529,7 +9529,7 @@ exports.eat = eat;
                     return false;
                 }
 
-                monster_index = await main.getMonsterIndex(data.monster_id);
+                monster_index = await monster.getIndex(dirty, data.monster_id);
 
                 if(monster_index === -1) {
                     log(chalk.yellow("No monster sss"));
@@ -9544,7 +9544,7 @@ exports.eat = eat;
             }
 
 
-            let player_info = await world.getPlayerCoordAndRoom(dirty, socket.player_index);
+            let player_info = await player.getCoordAndRoom(dirty, socket.player_index);
 
 
             // and lets get the coord of the thing we are picking up ( object or object type )
@@ -9735,7 +9735,8 @@ exports.eat = eat;
                         let battle_linker_data = {
                             'id': uuidv1(),
                             'attacking_id': dirty.monsters[monster_index].id, 'attacking_type': 'monster', 'being_attacked_id': dirty.players[socket.player_index].id,
-                            'being_attacked_type': 'player'
+                            'being_attacked_type': 'player',
+                            'room': player_info.room
                         };
 
                         if(socket !== false) {
@@ -10507,7 +10508,7 @@ exports.eat = eat;
                 return false;
             }
 
-            let player_info = await world.getPlayerCoordAndRoom(dirty, player_index);
+            let player_info = await player.getCoordAndRoom(dirty, player_index);
             let object_info = await game_object.getCoordAndRoom(dirty, researching_object_index);
 
             if(player_info.room !== object_info.room) {
@@ -11058,7 +11059,7 @@ exports.eat = eat;
             // we just need to make sure the player is within a REASONABLE tile_x/tile_y of the elevator, and in the same room
 
             let elevator_info = await game_object.getCoordAndRoom(dirty, elevator_index);
-            let player_info = await world.getPlayerCoordAndRoom(dirty, socket.player_index);
+            let player_info = await player.getCoordAndRoom(dirty, socket.player_index);
 
             if(!elevator_info.coord || !player_info.coord) {
                 log(chalk.yellow("Either the elevator or the player didn't return a valid coord"));

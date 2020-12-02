@@ -31,7 +31,8 @@ Slave (human)
                             Eliminator
                             Glitched God
                                 Alloyborn
-                                    Godmind
+                                    Reality Engine
+                                        Godmind
 
 ***************** NULLROM ************************
                 Burster

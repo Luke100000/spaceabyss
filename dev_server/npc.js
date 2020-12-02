@@ -20,6 +20,7 @@ const helper = require('./helper.js');
 const inventory = require('./inventory.js');
 const main = require('./space_abyss' + process.env.FILE_SUFFIX + '.js');
 const map = require('./map.js');
+const monster = require('./monster.js');
 const movement = require('./movement.js');
 const world = require('./world.js');
 const planet = require('./planet.js');
@@ -2019,7 +2020,7 @@ const planet = require('./planet.js');
 
                                                 if (dirty.planet_coords[other_coord_index].monster_id) {
 
-                                                    let monster_index = await main.getMonsterIndex(dirty.planet_coords[other_coord_index].monster_id);
+                                                    let monster_index = await monster.getIndex(dirty, dirty.planet_coords[other_coord_index].monster_id);
 
                                                     if (monster_index !== -1 && dirty.monsters[monster_index].monster_type_id === 31) {
 
