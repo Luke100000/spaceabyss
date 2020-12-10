@@ -1,10 +1,3 @@
-<?php
-// TODO pretty sure client_move_start_time and client_move_pixel_amount can be deprecated fully in favor of players[index].move_start_time and players[index].move_pixel_count
-include('config.php');
-header("Access-Control-Allow-Origin: *");
-
-?>
-
 <script type="text/javascript">
     // Get settings from cookies on the client
     var debug_mode = false;
@@ -26,41 +19,25 @@ header("Access-Control-Allow-Origin: *");
         play_sounds = false;
     }
 
+    
+    const urlParams = new URLSearchParams(window.location.search);
 
+    if(urlParams.get('mobile') !== null) {
+        mobile_mode = true;
+    }
 
+    if(urlParams.get('play_sound') !== null) {
+        play_sounds = true;
+    }
 
 </script>
 
-
-<?php
-    if(isset($_GET['mobile'])) {
-        ?>
-        <script type="text/javascript">
-            mobile_mode = true;
-            console.log("Set mobile mode to true");
-        </script>
-
-
-        <?php
-    }
-
-    if(isset($_GET['play_sound'])) {
-        ?>
-        <script type="text/javascript">
-            play_sounds = true;
-            console.log("Set play sounds to true");
-        </script>
-        <?php
-    }
-?>
-
-<script src="https://space.alphacoders.com:<?php echo $port; ?>/socket.io/socket.io.js"></script>
+<script src="https://space.alphacoders.com:8000/socket.io/socket.io.js"></script>
 
 <script type="text/javascript">
     var socket = false;
     if(io) {
-        console.log("Connecting to space.alphacoders.com:<?php echo $port; ?>");
-        socket = io.connect('space.alphacoders.com:<?php echo $port; ?>', { secure: true });
+        socket = io.connect('space.alphacoders.com:8000', { secure: true });
 
         socket.on('connect', () => {
             socket.emit('ready');
@@ -83,26 +60,17 @@ header("Access-Control-Allow-Origin: *");
 
 
     <script src="//space.alphacoders.com/js/jquery-3.3.1.min.js"></script>
-    <?php
-    if($environment == "production") {
-        ?>
-        <script src="//space.alphacoders.com/js/phaser-3.15.1.min.js"></script>
-        <?php
-    } else {
-        ?>
-        <script src="//space.alphacoders.com/js/phaser-3.15.1.js"></script>
-        <?php
-    }
-    ?>
+    <script src="//space.alphacoders.com/js/phaser-3.15.1.js"></script>
+      
     
 
-    <script src="client_functions_<?php echo $client_version; ?>.js"></script>
-    <script src="client_network_<?php echo $client_version; ?>.js"></script>
-    <script src="client_click_<?php echo $client_version; ?>.js"></script>
-    <script src="effects_<?php echo $client_version; ?>.js"></script>
-    <script src="monster_<?php echo $client_version; ?>.js"></script>
-    <script src="planet_<?php echo $client_version; ?>.js"></script>
-    <script src="player_<?php echo $client_version; ?>.js"></script>
+    <script src="client_functions_dev.js"></script>
+    <script src="client_network_dev.js"></script>
+    <script src="client_click_dev.js"></script>
+    <script src="effects_dev.js"></script>
+    <script src="monster_dev.js"></script>
+    <script src="planet_dev.js"></script>
+    <script src="player_dev.js"></script>
 
 
     <link href="//space.alphacoders.com/bulma-0.7.2/css/bulma.min.css" rel="stylesheet" media="screen">
@@ -3320,14 +3288,6 @@ header("Access-Control-Allow-Origin: *");
 
     </script>
 
-
-
-
-
-
-<?php
-//include_once("" . $client_click_name);
-?>
 
 <script type="text/javascript">
 

@@ -14,6 +14,8 @@ NAMES ARRAY - We can put this directly into npc_dev.js -> spawnNpc
 GENERAL WORDS AND PHRASES
 *****************************************
 
+ACyborgReality
+CyborgUtopia
 
 Ablative shielding
 Aegean

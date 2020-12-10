@@ -1,3 +1,23 @@
+## [0.2.23] - 2020-12-10
+
+
+### Added
+- Text on screen when a player talks
+
+### Fixed
+- Larger objects that spawn objects will now correctly show if the have the spawned object and can be mined/harvested
+- Bug with mining from non-origin coords for large objects
+- Bug with researching on ships without a researching modifier
+- Issue with players showing up on your ship when they aren't on your ship
+- Bug with another player's ship not showing if they were in their ship view while you were in the galaxy view
+
+
+
+## [0.2.22] - 2020-12-5
+
+### Changed
+- I'm changing files and my build process around to hopefully get the game on itch.io
+
 ## [0.2.21] - 2020-12-2
 
 ### Added

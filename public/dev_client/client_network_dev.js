@@ -384,6 +384,64 @@ socket.on('chat', function(data){
     }
 
 
+    // If there's a source_type and source_id, we can potentially show 
+    // this text on the screen
+    if(client_player_index !== -1 && data.source_type === 'player') {
+
+        let base_x = -100;
+        let base_y = -100;
+        let text_width = 400;
+
+        // Us - we're here! Easy!
+        if(data.source_id === players[client_player_index].id) {
+            base_x = players[client_player_index].sprite.x - 48;
+            base_y = players[client_player_index].sprite.y - 48;
+            let text_width = base_x - camera.scrollX;
+        } 
+        // See if the other player has a currently drawn sprite
+        else {
+
+            for(let i = 0; i < players.length; i++) {
+                console.log("Checking player at index: " + i);
+                if(players[i].id === data.source_id && players[i].sprite) {
+                    base_x = players[i].sprite.x - 48;
+                    base_y = players[i].sprite.y - 48;
+
+                    if(players[i].sprite.x > players[client_player_index].sprite.x + 200) {
+                        base_x -= 32;
+                        text_width = 100;
+                    }
+                }
+            }
+
+        }
+
+        if(base_x !== -100) {
+            let scene_game = game.scene.getScene('sceneGame');
+
+        
+            
+            let info_number_index = info_numbers.push({ 'amount': 0, 'was_damaged_type': false, 'pixels_moved': 0}) - 1;
+            info_numbers[info_number_index].text = scene_game.add.text(base_x, base_y,
+                data.message, { fontSize: 16,
+                    padding: { x: 10, y: 5},
+                    fill: "#d9d9d9",
+                    wordWrap: { width: text_width },
+                    stroke: "#000000",
+                    strokeThickness: 4
+        
+                });
+        
+            info_numbers[info_number_index].text.setFontStyle('bold');
+        
+            // Layer above is depth 10
+            info_numbers[info_number_index].text.setDepth(11);
+        }
+
+     
+    }
+
+
 });
 
 socket.on('clear_equipment_linkers_data', function(data) {
@@ -1891,12 +1949,16 @@ socket.on('object_info', function(data) {
             }
 
             if(player.body_id === objects[object_index].id || player.ship_id === objects[object_index].id) {
-                createPlayerSprite(i);
                 let player_info = getPlayerInfo(i);
-                if(player_info.coord && player.sprite) {
-                    player.sprite.x = player_info.coord.tile_x * tile_size + tile_size / 2;
-                    player.sprite.y = player_info.coord.tile_y * tile_size + tile_size / 2;
+                if(client_player_index !== -1 && shouldDraw(client_player_info.coord, player_info.coord)) {
+                    createPlayerSprite(i);
+                
+                    if(player_info.coord && player.sprite) {
+                        player.sprite.x = player_info.coord.tile_x * tile_size + tile_size / 2;
+                        player.sprite.y = player_info.coord.tile_y * tile_size + tile_size / 2;
+                    }
                 }
+                
 
             }
         });

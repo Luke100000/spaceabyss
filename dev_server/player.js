@@ -1537,7 +1537,7 @@ async function getLevel(dirty, data) {
             if (ship_type_index !== -1 && dirty.object_types[ship_type_index].researching_modifier) {
                 level += dirty.object_types[ship_type_index].researching_modifier;
                 console.log("Ship type added: " + dirty.object_types[ship_type_index].researching_modifier + " to researching level");
-            } else {
+            } else if(ship_type_index !== -1) {
                 console.log("Didn't add from ship. ship_type_index: " + ship_type_index + " ship type researching modifier: " + dirty.object_types[ship_type_index].researching_modifier);
             }
 

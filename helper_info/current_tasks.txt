@@ -4,7 +4,14 @@ CURRENT GAMEPLAY TEST:
 
 DOING NOW:
 
-    Add in the large ice comet and push this latest update
+
+    possibly a more pronouced new message mode on chat. blinking <p>?
+
+    skyscrapers....
+
+
+    Lets see if I can't get all the php out of the client so I can do a steamlined upload to 
+        itch.io . I assume steam would have similar requirements.
 
     Have the diamond batteries spawn on machine planets once we have the Primewall/Glitched God drawn (or find another MLM)
 

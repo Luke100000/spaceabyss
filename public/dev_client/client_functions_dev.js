@@ -118,6 +118,9 @@ function addLagText() {
 
 function addPlayer(player_index, player_info) {
 
+    console.log("In addPlayer");
+    console.log(player_info);
+
 
 
     // If the player we just added is us, always show us :D
@@ -146,6 +149,7 @@ function addPlayer(player_index, player_info) {
         // Not going to have enough info to addPlayer
 
     } else if (shouldDraw(client_player_info.coord, player_info.coord)) {
+        console.log("Should draw returned true");
 
         if (!players[player_index].sprite) {
 
@@ -169,14 +173,28 @@ function addPlayer(player_index, player_info) {
             console.log("Already had a ship object id: " + objects[ship_index].id + ", but didn't know if was an active ship. Now we know it's the active ship of a player in the galaxy");
 
 
+            let ship_coord_index = -1;
             for(let i = 0; i < coords.length; i++) {
                 if(coords[i] && (coords[i].object_id === objects[ship_index].id || coords[i].belongs_to_object_id === objects[ship_index].id)) {
                     map.putTileAt(-1, coords[i].tile_x, coords[i].tile_y, false, 'layer_object');
+                    ship_coord_index = i;
                 }
             }
 
             console.log("Cleared out the ship");
-               
+
+            console.log("Ship coord index: " + ship_coord_index);
+
+            // and draw the player if we are supposed to
+            if (ship_coord_index !== -1 && shouldDraw(client_player_info.coord, coords[ship_coord_index])) {
+                console.log("Should draw returned true");
+        
+                if (!players[player_index].sprite) {
+        
+                    createPlayerSprite(player_index);
+                }
+                //movePlayerInstant(player_index, player_info.coord.tile_x * tile_size + tile_size / 2, player_info.coord.tile_y * tile_size + tile_size / 2);
+            }
 
         }
     }
@@ -896,6 +914,8 @@ function createNpcSprite(npc_index) {
 
 
 function createPlayerSprite(player_index) {
+    //console.log("In createPlayerSprite for player " + players[player_index].name);
+    //console.trace();
 
     if (typeof player_index === 'undefined' || player_index === -1) {
         console.log("Not drawing undefined/invalid player");
@@ -1139,6 +1159,57 @@ function createPlayerSprite(player_index) {
 
           
 
+        } 
+        // It's a ship sprite for another player. They are in their ship view, but we are in the galaxy view. Their ship is around us
+        else if(!player_info.coord && players[player_index].ship_coord_id && current_view === 'galaxy') {
+
+            console.log("Drawing another player in the ship view");
+            let ship_index = getObjectIndex(players[player_index].ship_id);
+
+            let ship_coord_index = getCoordIndex({'coord_id': players[player_index].coord_id });
+            if(ship_coord_index !== -1) {
+                if(scene_game.textures.exists(new_texture_key)) {
+
+                    console.log("Ship is on coord id: " + coords[ship_coord_index].id);
+
+                    players[player_index].sprite = scene_game.add.sprite(-1000, -1000, new_texture_key);
+
+                    players[player_index].sprite.anims.play(new_texture_animation_key);
+        
+                    players[player_index].sprite.x = coords[ship_coord_index].tile_x * tile_size + tile_size / 2 + new_sprite_x_offset;
+                    players[player_index].sprite.y = coords[ship_coord_index].tile_y * tile_size + tile_size / 2 + new_sprite_y_offset;
+        
+                    if (client_player_id && players[player_index].id === client_player_id) {
+                        camera.startFollow(players[player_index].sprite);
+                    }
+        
+                    players[player_index].movement_display = new_movement_display;
+                    players[player_index].sprite_x_offset = new_sprite_x_offset;
+                    players[player_index].sprite_y_offset = new_sprite_y_offset;
+        
+                    setPlayerMoveDelay(player_index);
+                } else {
+                    console.log("New player image isn't loaded yet");
+
+                    if(ship_index !== -1) {
+                        console.log("Loading Ship Sprite");
+                        loadPlayerSprites(objects[ship_index].object_type_id);
+                    } else if(used_skin) {
+                        console.log("Loading Skin Sprite");
+                        loadPlayerSprites(players[player_index].skin_object_type_id);
+                    } else if(body_index !== -1) {
+                        console.log("Loading Body Sprite");
+                        loadPlayerSprites(objects[body_index].object_type_id);
+                    }
+                    
+                    
+                }
+            } else {
+                console.log("Couldn't get ship coord index from player's coord_id: " + players[player_index].coord_id);
+            }
+                
+ 
+            
         } else {
             console.log("%c No idea where to put player sprite for player id: " + players[player_index].id + "!", log_warning);
             console.log("Player id: " + players[player_index].id + " coord_id: " + players[player_index].coord_id + 
@@ -6051,25 +6122,62 @@ function mapAddObject(object) {
     if (display_linkers.length > 0) {
 
 
-        display_linkers.forEach(function (linker) {
-            let linker_tile_x = object_info.coord.tile_x + linker.position_x;
-            let linker_tile_y = object_info.coord.tile_y + linker.position_y;
-
-            let current_tile = map.getTileAt(linker_tile_x, linker_tile_y, false, linker.layer);
-
-            // Draw it if it's not there, or we don't have an animator controlling it
-            if (!current_tile || (current_tile.index !== linker.game_file_index)) {
-                map.putTileAt(linker.game_file_index, linker_tile_x, linker_tile_y, false, linker.layer);
-
+        // If the object has a spawned object, we'll need to increase the linker game file indexes by the width of the object
+        if(notFalse(object.has_spawned_object)) {
+         
+            let object_width = 1;
+            for(let i = 0; i < display_linkers.length; i++) {
+                if(display_linkers[i].position_x + 1 > object_width) {
+                    object_width = display_linkers[i].position_x + 1;
+                }
             }
 
-        });
+            console.log("Set object with spawned object width to: " + object_width);
+
+            display_linkers.forEach(function (linker) {
+
+                let linker_final_game_file_index = linker.game_file_index + object_width;
+
+                let linker_tile_x = object_info.coord.tile_x + linker.position_x;
+                let linker_tile_y = object_info.coord.tile_y + linker.position_y;
+
+    
+                let current_tile = map.getTileAt(linker_tile_x, linker_tile_y, false, linker.layer);
+    
+                // Draw it if it's not there, or we don't have an animator controlling it
+                if (!current_tile || (current_tile.index !== linker_final_game_file_index)) {
+                    map.putTileAt(linker_final_game_file_index, linker_tile_x, linker_tile_y, false, linker.layer);
+    
+                }
+    
+            });
+        } else {
+            console.log("Display linker object does not have spawned object");
+            display_linkers.forEach(function (linker) {
+                let linker_tile_x = object_info.coord.tile_x + linker.position_x;
+                let linker_tile_y = object_info.coord.tile_y + linker.position_y;
+    
+                let current_tile = map.getTileAt(linker_tile_x, linker_tile_y, false, linker.layer);
+    
+                // Draw it if it's not there, or we don't have an animator controlling it
+                if (!current_tile || (current_tile.index !== linker.game_file_index)) {
+                    map.putTileAt(linker.game_file_index, linker_tile_x, linker_tile_y, false, linker.layer);
+    
+                }
+    
+            });
+        }
+
+
+     
 
 
     } 
     // There are a few more options for objects that aren't larger than 1x1
     else {
         if (object.has_spawned_object && (object.has_spawned_object === true || object.has_spawned_object === 1)) {
+
+
             //console.log("%c Using has_spawned_object_game_file_index", log_warning);
             //console.log("Spawned object at " + object_info.coord.tile_x);
             map.putTileAt(object_types[object_type_index].has_spawned_object_game_file_index, object_info.coord.tile_x, object_info.coord.tile_y, false, 'layer_object');
@@ -7330,7 +7438,7 @@ function initiateMovePlayerFlow(player_index, destination_coord_type, destinatio
     if (players[player_index].destination_x) {
 
         if(player_index === client_player_index) {
-            console.log("Ignoring due to player already having a destination_x");
+            //console.log("Ignoring due to player already having a destination_x");
             return false;
         } else {
 
@@ -9223,6 +9331,24 @@ function shouldDraw(base_coord, other_coord, source = false, debug = false) {
         return true;
     }
 
+    // galaxy - we're in the galaxy view and they are in the ship view
+    if(!base_coord.planet_id && !base_coord.ship_id && other_coord.ship_id) {
+        console.log("Other coord has a ship id");
+        // see if the ship is close to use
+        let other_ship_index = getObjectIndex(other_coord.ship_id);
+        if(other_ship_index !== -1) {
+            if(objects[other_ship_index].coord_id) {
+                console.log("Using the other ship to see if we draw");
+                let other_galaxy_coord = getCoordIndex({ 'coord_id': objects[other_ship_index].coord_id });
+                let new_tile_x_difference = Math.abs(base_coord.tile_x - other_galaxy_coord.tile_x);
+                let new_tile_y_difference = Math.abs(base_coord.tile_y - other_galaxy_coord.tile_y);
+                if(new_tile_x_difference <= 8 && new_tile_y_difference <= 8) {
+                    return true;
+                }
+            }
+        }
+    }
+
     // Some npcs won't actually have ships - and we just draw a pod for them in space.
     if(!base_coord.planet_id && !base_coord.ship_id && other_coord.npc_id) {
         return true;
@@ -9844,11 +9970,23 @@ function showClickMenuObject(coord) {
         }
 
         if (is_mining) {
-            $('#click_menu').append("<button id='minestop_object_" + coord.object_id + "' object_id='" + coord.object_id +
+            if(coord.object_id) {
+                $('#click_menu').append("<button id='minestop_object_" + coord.object_id + "' object_id='" + coord.object_id +
                 "' class='button is-default is-small'>Stop Mining</button><br>");
+            } else if(coord.belongs_to_object_id) {
+                $('#click_menu').append("<button id='minestop_object_" + coord.belongs_to_object_id + "' object_id='" + coord.belongs_to_object_id +
+                "' class='button is-default is-small'>Stop Mining</button><br>");
+            }
+            
         } else if (objects[object_index].has_spawned_object) {
-            $('#click_menu').append("<button id='mine_object_" + coord.object_id + "' object_id='" + coord.object_id +
+            if(coord.object_id) {
+                $('#click_menu').append("<button id='mine_object_" + coord.object_id + "' object_id='" + coord.object_id +
                 "' class='button is-default is-small'>Mine</button><br>");
+            } else if(coord.belongs_to_object_id) {
+                $('#click_menu').append("<button id='mine_object_" + coord.belongs_to_object_id + "' object_id='" + coord.belongs_to_object_id +
+                "' class='button is-default is-small'>Mine</button><br>");
+            }
+            
         }
 
 

@@ -5921,7 +5921,7 @@ exports.eat = eat;
                 }
 
             } else if(data.scope === 'global') {
-                io.emit('chat', { 'message': message, 'scope': data.scope});
+                io.emit('chat', { 'message': message, 'scope': data.scope, 'source_type': 'player', 'source_id': dirty.players[sending_player_index].id });
             } else {
                 Object.keys(io.sockets.sockets).forEach(await async function(id) {
                     let other_socket = io.sockets.connected[id];
@@ -5940,7 +5940,7 @@ exports.eat = eat;
 
                         // Galaxy - it's all local
                         if(dirty.players[sending_player_index].coord_id && dirty.players[other_player_index].coord_id) {
-                            other_socket.emit('chat', {'message': message, 'scope': data.scope });
+                            other_socket.emit('chat', {'message': message, 'scope': data.scope, 'source_type': 'player', 'source_id': dirty.players[sending_player_index].id });
                         }
                         // Planet - make sure they are on the same planet
                         else if(dirty.players[sending_player_index].planet_coord_id && dirty.players[other_player_index].planet_coord_id) {
@@ -5948,7 +5948,7 @@ exports.eat = eat;
                             let receiving_planet_coord_index = await main.getPlanetCoordIndex({'planet_coord_id': dirty.players[other_player_index].planet_coord_id });
 
                             if(dirty.planet_coords[sending_planet_coord_index].planet_id === dirty.planet_coords[receiving_planet_coord_index].planet_id) {
-                                other_socket.emit('chat', {'message': message, 'scope': data.scope });
+                                other_socket.emit('chat', {'message': message, 'scope': data.scope, 'source_type': 'player', 'source_id': dirty.players[sending_player_index].id });
                             }
                         }
                         // Ship - make sure they are on the same ship
@@ -5957,7 +5957,7 @@ exports.eat = eat;
                             let receiving_ship_coord_index = await main.getShipCoordIndex({'ship_coord_id': dirty.players[other_player_index].ship_coord_id });
 
                             if(dirty.ship_coords[sending_ship_coord_index].ship_id === dirty.ship_coords[receiving_ship_coord_index].ship_id) {
-                                other_socket.emit('chat', {'message': message, 'scope': data.scope });
+                                other_socket.emit('chat', {'message': message, 'scope': data.scope, 'source_type': 'player', 'source_id': dirty.players[sending_player_index].id });
                             }
                         }
 
