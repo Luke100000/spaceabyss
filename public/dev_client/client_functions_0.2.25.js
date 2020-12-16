@@ -6806,14 +6806,14 @@ monster_sprites.push({ 'key': 'gang-smasher',           'monster_type_id': 111, 
 monster_sprites.push({ 'key': 'gang-gunner',            'monster_type_id': 110, 'planet_type_id': 30, 'frame_width': 64, 'frame_height': 66, 'frame_count': 9, 'frame_rate': 8 });
 monster_sprites.push({ 'key': 'gang-boss',              'monster_type_id': 109, 'planet_type_id': 30, 'frame_width': 64, 'frame_height': 82, 'frame_count': 7, 'frame_rate': 8 });
 monster_sprites.push({ 'key': 'jellyfish',              'monster_type_id': 108, 'planet_type_id': 34, 'frame_width': 64, 'frame_height': 64, 'frame_count': 8, 'frame_rate': 8 });
-monster_sprites.push({ 'key': 'observer',               'monster_type_id': 121, 'ship_type_id': 351, 'frame_width': 64, 'frame_height': 64, 'frame_count': 5, 'frame_rate': 8 });
+monster_sprites.push({ 'key': 'observer',               'monster_type_id': 121, 'ship_type_id': 351, 'frame_width': 64, 'frame_height': 64, 'frame_count': 5, 'frame_rate': 6 });
 monster_sprites.push({ 'key': 'sea-urchin',             'monster_type_id': 106, 'planet_type_id': 34, 'frame_width': 64, 'frame_height': 64, 'frame_count': 12, 'frame_rate': 8 });
 monster_sprites.push({ 'key': 'take-out-drone',         'monster_type_id': 119, 'planet_type_id': 30, 'frame_width': 64, 'frame_height': 64, 'frame_count': 24, 'frame_rate': 8 });
 monster_sprites.push({ 'key': 'trae',                   'monster_type_id': 44, 'planet_type_id': 29, 'frame_width': 104, 'frame_height': 104, 'frame_count': 10, 'frame_rate': 6 });
 monster_sprites.push({ 'key': 'trae-seedling',          'monster_type_id': 48, 'planet_type_id': 29, 'frame_width': 72, 'frame_height': 72, 'frame_count': 6, 'frame_rate': 8 });
 monster_sprites.push({ 'key': 'trae-sproutling',        'monster_type_id': 101, 'planet_type_id': 29, 'frame_width': 64, 'frame_height': 64, 'frame_count': 5, 'frame_rate': 8 });
 monster_sprites.push({ 'key': 'vooard',                 'monster_type_id': 123, 'planet_type_id': 7, 'frame_width': 156, 'frame_height': 126, 'frame_count': 14, 'frame_rate': 10, 'x_offset': 0, 'y_offset': 0 });
-monster_sprites.push({ 'key': 'widden',                 'monster_type_id': 42, 'ship_type_id': 352, 'frame_width': 64, 'frame_height': 64, 'frame_count': 3, 'frame_rate': 4 });
+monster_sprites.push({ 'key': 'widden',                 'monster_type_id': 42, 'ship_type_id': 352, 'frame_width': 138, 'frame_height': 120, 'frame_count': 10, 'frame_rate': 8 });
 
 // Not sure how to do it more efficiently than just calculate the new and old level for... every skill!
 function checkLevelIncrease(old_player_data, new_player_data) {

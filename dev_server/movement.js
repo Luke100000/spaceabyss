@@ -2649,7 +2649,7 @@ const world = require('./world.js');
     async function moveThroughPortal(socket, dirty, portal_id) {
         try {
 
-            console.log("In moveThroughPortal");
+            //console.log("In moveThroughPortal");
             let portal_index = await game_object.getIndex(dirty, portal_id);
 
             if(portal_index === -1) {

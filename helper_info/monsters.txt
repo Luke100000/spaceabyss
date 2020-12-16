@@ -48,6 +48,13 @@ Slave (human)
                     Carver
                                 Slagcell Queen
 
+***************** SLERM *************************
+
+                    Blueware
+                            BlueArray
+                                    AlphaBlue
+
+
 ***************** SOKOLH ************************
 
                 Infantry

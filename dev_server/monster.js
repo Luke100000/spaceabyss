@@ -7,6 +7,7 @@ const { Worker, isMainThread, parentPort } = require('worker_threads');
 const chalk = require('chalk');
 const log = console.log;
 
+const event = require('./event.js');
 const game = require('./game.js');
 const game_object = require('./game_object.js');
 const helper = require('./helper.js');
@@ -716,11 +717,20 @@ async function deleteMonster(dirty, monster_index, data = {}) {
         // If a planet coord spawned the monster, we cam update that to false
         //console.log("Going to set spawned monster id to false");
         // TODO I believe I can deprecate this - and in fact if I can't, I should do it differently
-        let spawned_monster_planet_coord_index = await main.getPlanetCoordIndex({'spawned_monster_id': dirty.monsters[monster_index].id });
-        if(spawned_monster_planet_coord_index !== -1) {
-            dirty.planet_coords[spawned_monster_planet_coord_index].spawned_monster_id = false;
-            dirty.planet_coords[spawned_monster_planet_coord_index].has_change = true;
+        if(monster_info.scope === 'planet') {
+            let spawned_monster_planet_coord_index = await main.getPlanetCoordIndex({'spawned_monster_id': dirty.monsters[monster_index].id });
+            if(spawned_monster_planet_coord_index !== -1) {
+                dirty.planet_coords[spawned_monster_planet_coord_index].spawned_monster_id = false;
+                dirty.planet_coords[spawned_monster_planet_coord_index].has_change = true;
+            }
+        } else if(monster_info.scope === 'ship') {
+            let spawned_monster_ship_coord_index = await main.getShipCoordIndex({'spawned_monster_id': dirty.monsters[monster_index].id });
+            if(spawned_monster_ship_coord_index !== -1) {
+                dirty.ship_coords[spawned_monster_ship_coord_index].spawned_monster_id = false;
+                dirty.ship_coords[spawned_monster_ship_coord_index].has_change = true;
+            }
         }
+        
 
         let check_spawned_event_id = 0;
         if(dirty.monsters[monster_index].spawned_event_id) {
@@ -807,7 +817,7 @@ async function deleteMonster(dirty, monster_index, data = {}) {
                 check_spawned_event_data.reason_id = data.reason_id;
             }
 
-            await game.checkSpawnedEvent(dirty, check_spawned_event_id, check_spawned_event_data);
+            await event.checkSpawnedEvent(dirty, check_spawned_event_id, check_spawned_event_data);
         }
 
 
@@ -2168,7 +2178,8 @@ async function spawn(dirty, monster_type_id, data) {
                 'spawned_monster_id': new_monster_id
             });
         } else if (scope === 'ship') {
-            await main.updateCoordGeneric(false, { 'ship_coord_index': coord_index, 'monster_id': new_monster_id });
+            await main.updateCoordGeneric(false, { 'ship_coord_index': coord_index, 'monster_id': new_monster_id,
+                'spawned_monster_id': new_monster_id });
         } else if (scope === 'galaxy') {
             await main.updateCoordGeneric(false, { 'coord_index': coord_index, 'monster_id': new_monster_id });
         }

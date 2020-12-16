@@ -15,9 +15,111 @@ const npc = require('./npc.js');
 const planet = require('./planet.js');
 const world = require('./world.js');
 const player = require('./player.js');
+const { keyword } = require('chalk');
 
 
 
+// Check to see if a spawned event should be deleted
+/**
+ * @param {Object} dirty
+ * @param {number} spawned_event_id
+ * @param {Object} data
+ * @param {String=} data.reason - (deleteobject, deletemonster)
+ * @param {String=} data.reason_type - Type that caused this to happen - usually player
+ * @param {number=} data.reason_id - ID of the 
+ * 
+ */
+async function checkSpawnedEvent(dirty, spawned_event_id, data = {}) {
+
+    try {
+
+        spawned_event_id = parseInt(spawned_event_id);
+
+        let spawned_event_index = dirty.spawned_events.findIndex(function(obj) { return obj && obj.id === spawned_event_id; });
+
+        if(spawned_event_index === -1) {
+            console.log("Didn't find index. Think we already deleted this");
+            return false;
+        }
+
+
+        let event_index = getIndex(dirty, dirty.spawned_events[spawned_event_index].event_id);
+
+
+        console.log("Event despawn condition: " + dirty.events[event_index].despawn_condition);
+
+
+        // See if there are any objects or monsters left with this spawned event id
+        let objects = dirty.objects.filter(object => object.spawned_event_id === spawned_event_id);
+        let monsters = dirty.monsters.filter(monster_filter => monster_filter.spawned_event_id === spawned_event_id);
+
+        let should_delete_spawned_event = false;
+
+        if(dirty.events[event_index].despawn_condition === 'destroy_monsters' && monsters.length === 0) {
+
+            console.log("Set should_delete_spawned_event to true");
+            should_delete_spawned_event = true;
+        }
+
+        if(objects.length === 0 && monsters.length === 0) {
+            should_delete_spawned_event = true;
+        }
+
+        if(!should_delete_spawned_event) {
+            console.log("Not deleting");
+            return;
+        }
+
+
+        if(dirty.events[event_index].despawn_result === "disappear") {
+            disappear(dirty, spawned_event_index, event_index);
+            return;
+        }
+
+        // Not sure why we were putting this here
+        //let spawned_event_index = dirty.spawned_events.findIndex(function(obj) { return obj && obj.id === spawned_event_id; });
+
+        console.log("Deleting");
+
+        let delete_spawned_event_data = {};
+        if(typeof data.reason_type !== 'undefined') {
+            delete_spawned_event_data.reason_type = data.reason_type;
+        }
+
+        if(typeof data.reason_id !== 'undefined') {
+            delete_spawned_event_data.reason_id = data.reason_id;
+        }
+
+        console.log("delete_spawned_event_data:");
+        console.log(delete_spawned_event_data);
+
+        await deleteSpawnedEvent(dirty, spawned_event_index, delete_spawned_event_data);
+
+        return;
+
+
+        //log(chalk.magenta("Deleting spawned event id: " + spawned_event_id + " event name: "
+        //    + dirty.events[event_index].name + " objects/monsters" + objects.length + "/" + monsters.length));
+        // We can delete the spawned event
+        /*
+        (pool.query("DELETE FROM spawned_events WHERE id = ?", [spawned_event_id]));
+
+        if(spawned_event_index !== -1) {
+            delete dirty.spawned_events[spawned_event_index];
+        }
+        */
+
+
+    } catch(error) {
+        log(chalk.red("Error in event.checkSpawnedEvent: " + error));
+        console.error(error);
+    }
+
+
+
+}
+
+exports.checkSpawnedEvent = checkSpawnedEvent;
 
 /**
  * @param {Object} dirty
@@ -36,6 +138,17 @@ async function deleteSpawnedEvent(dirty, spawned_event_index, data = {}) {
         }
 
         let event_index = getIndex(dirty, dirty.spawned_events[spawned_event_index].event_id);
+
+        if(event_index === -1) {
+            log(chalk.yellow("Could not find event for spawned event id: " + dirty.spawned_events[spawned_event_index].id));
+            return false;
+        }
+
+        // TODO we do need a way to force the despawn for old/out of date spawned events
+        if(dirty.events[event_index].despawn_result === 'disappear') {
+            disappear(dirty, spawned_event_index, event_index);
+            return;
+        }
 
 
         //console.log("Despawning spawned event id: " + dirty.spawned_events[spawned_event_index].id);
@@ -219,6 +332,72 @@ async function deleteSpawnedEvent(dirty, spawned_event_index, data = {}) {
 
 exports.deleteSpawnedEvent = deleteSpawnedEvent;
 
+
+
+async function disappear(dirty, spawned_event_index, event_index) {
+
+    try {
+
+        console.time("timeToDisappear");
+
+
+
+        // I'm a bit worried that this will despawn parts of the spawned event
+        // Especially ship on ship stuff
+        for(let i = 0; i < dirty.objects.length; i++) {
+            if(dirty.objects[i] && dirty.objects[i].spawned_event_id === dirty.spawned_events[spawned_event_index].id) {
+
+                if(dirty.objects[i].planet_coord_id) {
+                    await game_object.removeFromCoord(dirty, i);
+                } else if(dirty.objects[i].ship_coord_id && dirty.spawned_events[spawned_event_index].origin_ship_coord_id) {
+
+                    // Lets just make sure it's the same ship we are talking about to be safe
+                    let origin_ship_coord_index = await main.getShipCoordIndex({ 'ship_coord_id': dirty.spawned_events[spawned_event_index].origin_ship_coord_id });
+                    let object_ship_coord_index = await main.getShipCoordIndex({ 'ship_coord_id': dirty.objects[i].ship_coord_id });
+
+                    if(origin_ship_coord_index !== -1 && object_ship_coord_index !== -1 && 
+                        dirty.ship_coords[origin_ship_coord_index].ship_id === dirty.ship_coords[object_ship_coord_index].ship_id) {
+                            await game_object.removeFromCoord(dirty, i);
+                    } else {
+                        log(chalk.yellow("Found an instance where we think that not checking for an identical ship would have despawned part of the event"));
+                    }
+
+                    
+                } else if(dirty.objects[i].coord_id && dirty.spawned_events[spawned_event_index].origin_coord_id) {
+                    await game_object.removeFromCoord(dirty, i);
+                }
+            }
+        }
+
+        if(dirty.spawned_events[spawned_event_index].origin_planet_coord_id) {
+
+            dirty.spawned_events[spawned_event_index].origin_planet_coord_id = false;
+
+        } else if(dirty.spawned_events[spawned_event_index].origin_ship_coord_id) {
+
+            dirty.spawned_events[spawned_event_index].origin_ship_coord_id = false;
+
+        } else if(dirty.spawned_events[spawned_event_index].origin_coord_id) {
+
+            dirty.spawned_events[spawned_event_index].origin_coord_id = false;
+        }
+
+        dirty.spawned_events[spawned_event_index].is_despawned = true;
+        dirty.spawned_events[spawned_event_index].tick_count = 1;
+        dirty.spawned_events[spawned_event_index].has_change = true;
+
+        console.timeEnd("timeToDisappear");
+
+    } catch(error) {
+        log(chalk.red("Error in event.disappear: " + error));
+        console.error(error);
+    }
+
+}
+
+exports.disappear = disappear;
+
+
 function getIndex(dirty, event_id) {
     return dirty.events.findIndex(function(obj) { return obj && obj.id === parseInt(event_id); });
 }
@@ -349,32 +528,9 @@ async function spawn(dirty, event_index, data) {
 
             }
 
-
-
-            // I don't think we need this anymore, since we are now loading ALL planet coords when the server starts
-            // This is STUPID. 
-            /*
-            if(possible_planet_coords.length === 0) {
-                log(chalk.yellow("No possible planet coords for planet event " + dirty.events[event_index].name));
-
-                // Lets randomly grab some potentially appropriate coords
-                for(let i = 0; i < 4; i++) {
-
-                    let rand_planet_level = helper.getRandomIntInclusive(dirty.planet_event_linkers[planet_event_linker_index].lowest_planet_level,
-                        dirty.planet_event_linkers[planet_event_linker_index].highest_planet_level);
-                    let new_planet_coord_index = await main.getPlanetCoordIndex({ 'planet_id': dirty.planets[planet_index].id,
-                        'planet_level': rand_planet_level, 'tile_x': helper.getRandomIntInclusive(20, 40), 'tile_y': helper.getRandomIntInclusive(20,40)
-                    });
-                }
-
-                console.log("Grabbed some potential coords for next time");
-
-                return -1;
-            }
-            */
-
             let origin_planet_coord = possible_planet_coords[Math.floor(Math.random() * possible_planet_coords.length)];
             origin_planet_coord_id = origin_planet_coord.id;
+            //console.log("got random matching planet coord Set origin planet coord_id to: " + origin_planet_coord_id);
             origin_tile_x = origin_planet_coord.tile_x;
             origin_tile_y = origin_planet_coord.tile_y;
             origin_planet_level = origin_planet_coord.level;
@@ -391,6 +547,8 @@ async function spawn(dirty, event_index, data) {
             origin_tile_x = dirty.planet_coords[data.planet_coord_index].tile_x;
             origin_tile_y = dirty.planet_coords[data.planet_coord_index].tile_y;
             origin_planet_level = dirty.planet_coords[data.planet_coord_index].level;
+            origin_planet_coord_id = dirty.planet_coords[data.planet_coord_index].id;
+            //console.log("had data.planet_coord_index. Set origin planet coord_id to: " + origin_planet_coord_id);
             event_scope = 'planet';
 
             // find the planet_event_linker
@@ -458,7 +616,7 @@ async function spawn(dirty, event_index, data) {
 
             // see how many events with this id the planet has
             let currently_spawned = dirty.spawned_events.filter(spawned_event => spawned_event.planet_event_linker_id === dirty.planet_event_linkers[planet_event_linker_index].id &&
-                spawned_event.planet_id === dirty.planets[planet_index].id);
+                spawned_event.planet_id === dirty.planets[planet_index].id && helper.isFalse(spawned_event.is_despawned));
 
             if(currently_spawned.length >= dirty.planet_event_linkers[planet_event_linker_index].limit_per_planet) {
                 can_spawn = false;
@@ -476,7 +634,8 @@ async function spawn(dirty, event_index, data) {
             let spawned_in_galaxy_count = 0;
             for(let s = 0; s < dirty.spawned_events.length; s++) {
 
-                if(dirty.spawned_events[s] && dirty.spawned_events[s].event_id === dirty.events[event_index].id) {
+                if(dirty.spawned_events[s] && dirty.spawned_events[s].event_id === dirty.events[event_index].id && 
+                    helper.isFalse(dirty.spawned_events[s].is_despawned)) {
                     spawned_in_galaxy_count++;
                 }
 
@@ -688,11 +847,106 @@ async function spawn(dirty, event_index, data) {
             log(chalk.green("Can spawn this event here!"));
         }
 
+        // See if we have a spawned_event with this event id that is despawned. We can reuse that instead of creating a new one
+        let reusing_spawned_event_index = dirty.spawned_events.findIndex(function(obj) { return obj && obj.event_id === dirty.events[event_index].id &&
+            helper.notFalse(obj.is_despawned); });
+
+        if(reusing_spawned_event_index !== -1) { 
+            log(chalk.green("Found a despawned spawned event we can use!"));
+            console.time("timetoPlaceAgain");
+
+            if(event_scope === 'planet') {
+                dirty.spawned_events[reusing_spawned_event_index].origin_planet_coord_id = origin_planet_coord_id;
+
+            } else if(event_scope === 'ship') {
+                dirty.spawned_events[reusing_spawned_event_index].origin_ship_coord_id = dirty.ship_coords[data.ship_coord_index].id;
+                
+            } else if(event_scope === 'galaxy') {
+                dirty.spawned_events[reusing_spawned_event_index].origin_coord_id = dirty.coords[origin_coord_index].id;
+            }
+
+
+
+            for(let i = 0; i < event_linkers.length; i++) {
+
+                // Things spawned off the grid will still be there from a spawned event that was only despawned
+                if(!event_linkers[i].spawns_off_grid) {
+                    
+                    // There should be an object of this type associated with the spawned_event
+                    if(event_linkers[i].object_type_id) {
+                        let disappeared_object_index = dirty.objects.findIndex(function(obj) { return obj && obj.object_type_id === event_linkers[i].object_type_id && 
+                            obj.spawned_event_id == dirty.spawned_events[reusing_spawned_event_index].id; });
+
+                        if(disappeared_object_index !== -1) {
+
+                            let tile_x = origin_tile_x + event_linkers[i].position_x;
+                            let tile_y = origin_tile_y + event_linkers[i].position_y;
+                            let tile_level = 0;
+                            if(event_scope === 'planet') {
+                                tile_level = origin_planet_level + event_linkers[i].level;
+                            } else if(event_scope === 'ship') {
+                                tile_level = origin_ship_level + event_linkers[i].level;
+                            }
+
+                            let linker_coord_index = -1;
+                            let linker_coord = false;
+                            if(event_scope === 'planet') {
+                                let planet_coord_data = { 'planet_id': dirty.planets[planet_index].id,
+                                    'planet_level': tile_level, 'tile_x': tile_x, 'tile_y': tile_y };
+                                linker_coord_index = await main.getPlanetCoordIndex(planet_coord_data);
+                                linker_coord = dirty.planet_coords[linker_coord_index];
+                            } else if(event_scope === 'ship') {
+            
+                                linker_coord_index = await main.getShipCoordIndex({
+                                    'ship_id': dirty.ship_coords[data.ship_coord_index].ship_id,
+                                    'level': tile_level, 'tile_x': tile_x, 'tile_y': tile_y
+                                });
+                                linker_coord = dirty.ship_coords[linker_coord_index];
+                            } else if(event_scope === 'galaxy') {
+                                linker_coord_index = await main.getCoordIndex({ 'tile_x': tile_x, 'tile_y': tile_y });
+                                linker_coord = dirty.coords[linker_coord_index];
+                            }
+
+                            if(event_scope === 'planet') {
+                                await game_object.place(false, dirty, { 'object_index': disappeared_object_index,
+                                    'planet_coord_index': linker_coord_index });
+    
+                                //console.log("Object's planet_coord_id: " + dirty.objects[new_object_index].planet_coord_id);
+                            } else if(event_scope === 'ship') {
+                                await game_object.place(false, dirty, { 'object_index': disappeared_object_index,
+                                    'ship_coord_index': linker_coord_index });
+    
+                                //console.log("Object's ship_coord_id: " + dirty.objects[new_object_index].ship_coord_id);
+                            } else if(event_scope === 'galaxy') {
+                                await game_object.place(false, dirty, { 'object_index': disappeared_object_index,
+                                    'coord_index': linker_coord_index });
+    
+                                //console.log("Object's coord_id: " + dirty.objects[new_object_index].coord_id);
+                            }
+                        }
+                    }
+
+                }
+
+            }
+
+            dirty.spawned_events[reusing_spawned_event_index].is_despawned = false;
+            dirty.spawned_events[reusing_spawned_event_index].has_change = true;
+
+            console.timeEnd("timetoPlaceAgain");
+
+
+            return reusing_spawned_event_index;
+
+        } 
+
 
         // Lets add a spawned event
         let sql = "";
         let inserts = "";
         if(event_scope === 'planet') {
+
+            console.log("Before insert origin_planet_coord_id: " + origin_planet_coord_id);
             sql = "INSERT INTO spawned_events(event_id,planet_id,origin_planet_coord_id,planet_event_linker_id) VALUES(?,?,?,?)";
             inserts = [dirty.events[event_index].id, dirty.planets[planet_index].id, origin_planet_coord_id, dirty.planet_event_linkers[planet_event_linker_index].id];
         } else if(event_scope === 'ship') {

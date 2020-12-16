@@ -21,6 +21,11 @@ Notes: Spawns several of the Diamond Batteries that we drew in batch #24 (https:
 but a lower tier spawner ( it spawns normal batteries ) is https://space.alphacoders.com/images/battery-deposit-animated.png for example.
 
 
+More buildings!
+    Same idea, but lets do a different color palette for these ones.
+    Gang Building
+     
+
 quick matter set (floor,wall, stairs,hole)
 
 player body that eats trash (mass of moving maggots)

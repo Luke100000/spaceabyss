@@ -2396,6 +2396,7 @@ module.exports.getPlayerRelationshipLinkerIndex = getPlayerRelationshipLinkerInd
  * @param {number=} data.level
  * @param {number=} data.tile_x
  * @param {number=} data.tile_y
+ * @param {number=} data.spawned_monster_id
  */
 async function getShipCoordIndex(data) {
 
@@ -2406,12 +2407,14 @@ async function getShipCoordIndex(data) {
             ship_coord_index = dirty.ship_coords.findIndex(function(obj) {
                 return obj && obj.id === parseInt(data.ship_coord_id);
             });
+        } else if(typeof data.spawned_monster_id !== "undefined") {
+            ship_coord_index = dirty.ship_coords.findIndex(function(obj) { return obj && obj.spawned_monster_id === parseInt(data.spawned_monster_id); });
         } else {
             ship_coord_index = dirty.ship_coords.findIndex(function(obj) {
                 return obj && obj.ship_id === parseInt(data.ship_id) && obj.level === parseInt(data.level) &&
                     obj.tile_x === parseInt(data.tile_x) && obj.tile_y === parseInt(data.tile_y)
             });
-        }
+        } 
 
         // we need to try and find it in the database
         if(ship_coord_index === -1) {
@@ -2422,6 +2425,9 @@ async function getShipCoordIndex(data) {
                 where_part = 'WHERE ship_coords.id = ?';
                 inserts = [data.ship_coord_id];
 
+            } else if(typeof data.spawned_monster_id !== "undefined") {
+                where_part = 'WHERE ship_coords.spawned_monster_id = ?';
+                inserts = [data.spawned_monster_id];
             } else {
                 where_part = 'WHERE ship_coords.ship_id = ? AND ship_coords.level = ? AND ship_coords.tile_x = ? AND ship_coords.tile_y = ?';
                 inserts = [data.ship_id, data.level, data.tile_x, data.tile_y];
@@ -4528,9 +4534,9 @@ async function writeDirty(show_output = false) {
         if(ship_coord.has_change) {
             //console.log("Ship coord has a change");
             let sql = "UPDATE ship_coords SET area_id = ?, belongs_to_monster_id = ?, belongs_to_object_id = ?, floor_type_id = ?, " +
-                "is_damaged = ?, monster_id = ?, object_amount = ?, object_id = ?, object_type_id = ?, player_id = ?, structure_id = ? WHERE id = ?";
+                "is_damaged = ?, monster_id = ?, object_amount = ?, object_id = ?, object_type_id = ?, player_id = ?, structure_id = ?, spawned_monster_id = ? WHERE id = ?";
             let inserts = [ship_coord.area_id, ship_coord.belongs_to_monster_id, ship_coord.belongs_to_objct_id, ship_coord.floor_type_id,
-                ship_coord.is_damaged, ship_coord.monster_id, ship_coord.object_amount, ship_coord.object_id, ship_coord.object_type_id, ship_coord.player_id, ship_coord.structure_id,
+                ship_coord.is_damaged, ship_coord.monster_id, ship_coord.object_amount, ship_coord.object_id, ship_coord.object_type_id, ship_coord.player_id, ship_coord.structure_id, ship_coord.spawned_monster_id,
                 ship_coord.id];
 
             pool.query(sql, inserts, function(err, result) {
@@ -4545,8 +4551,9 @@ async function writeDirty(show_output = false) {
     dirty.spawned_events.forEach(function(spawned_event, i) {
 
         if(spawned_event.has_change) {
-            let sql = "UPDATE spawned_events SET tick_count = ? WHERE id = ?";
-            let inserts = [spawned_event.tick_count, spawned_event.id];
+            //console.log("Updating spawned event id: " + spawned_event.id + " is_despawned: " + spawned_event.is_despawned);
+            let sql = "UPDATE spawned_events SET is_despawned = ?, origin_coord_id = ?, origin_planet_coord_id = ?, origin_ship_coord_id = ?, tick_count = ? WHERE id = ?";
+            let inserts = [spawned_event.is_despawned, spawned_event.origin_coord_id, spawned_event.origin_planet_coord_id, spawned_event.origin_coord_id, spawned_event.tick_count, spawned_event.id];
 
             pool.query(sql, inserts, function(err, result) {
                 if(err) throw err;

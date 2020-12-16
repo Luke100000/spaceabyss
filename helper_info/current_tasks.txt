@@ -4,25 +4,59 @@ CURRENT GAMEPLAY TEST:
 
 DOING NOW:
 
+    test widden, large ice comet
+
+    While I'm pushing the update, solidify the new build process
+
+    Need to update The Great Nomad, Desert Cruiser Wreck Interior
+
+    Test monsters spawning on ships (could possibly do The Great Nomad, or better to do the Skyscraper I think)
+        THIS ALMOST WORKS. THEY JUST KEEP SPAWNING THE MONSTER
+        I COULD LEAVE IT LIKE THIS SINCE THE MONSTERS WON'T MOVE UNLESS SOMEONE IS ON THE SHIP
+    Once we verify this works, make sure we change all relevant events
+
+
+    Need to fix dying in a portal ship thing (Corporate Headquarters)
+
+    I should build and test a volt rifle
+
+    large > medium > small goop spawning
+        mix of greyframe + creeper world
+
 
     possibly a more pronouced new message mode on chat. blinking <p>?
 
     skyscrapers....
+    add in widden image
+
+    seems like kind of a waste to spawn these big buildings full of things, and then to tear them down. Lots of ship coords over time.
 
 
-    Lets see if I can't get all the php out of the client so I can do a steamlined upload to 
-        itch.io . I assume steam would have similar requirements.
+        event > despawn_result ? (destory | disappear)
+
+        I could:
+        1. Remove from the tile they are on.
+        2. Respawn any created at
+        3. Use it the next time it spawns 
+        (despawn result - disappear or something?)
+
+
+
+        Then spawning we would need to check for spawned events matching the event being spawned, and then we can use it
+            We could MAYBE use planet_coord_id | ship_coord_id OR if that doesn't work, we can have a is_despawned or something 
+
+    Notify me when a player logs in?
+
+
 
     Have the diamond batteries spawn on machine planets once we have the Primewall/Glitched God drawn (or find another MLM)
 
     I want to build a garden ship (station)
         It's tier 5 - and none of the tier 5 materials have any organic component. Closest is Living Wood at tier 3.
         Cold Fusion
-        Life Blood (don't like the name blood) | Mana | Life Mana
+        Life Blood (don't like the name blood) | Mana | Life Mana | Mako | Lifestream | planet lifestream | gaia
 
 
-
-    Have a large AI dust spawn or two on Desert planets
 
     Test that the basics of factions works
         Maybe a faction display on the site and all that
@@ -35,10 +69,6 @@ DOING NOW:
     Sounds for the different damage types
     Background music for the different planets/galaxy
 
-
-
-
-    Once we have audio and factions, I think it'll be time to try to get the game on Itch.io
 
     
 

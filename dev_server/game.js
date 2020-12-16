@@ -144,10 +144,12 @@ const world = require('./world.js');
                                 dirty.planet_coords[checking_coord_index].has_change = true;
                             }
 
-                            if(dirty.planet_coords[checking_coord_index].spawns_monster_type_id) {
-                                dirty.planet_coords[checking_coord_index].spawns_monster_type_id = false;
-                                dirty.planet_coords[checking_coord_index].has_change = true;
-                            }
+                            // Moving forward, I believe we'll only use spawns_monster_type_id on planet coords for more specific unique/boss/event
+                            // monsters. So instead of removing the spawns_monster_type_id, we'll just let the spawn fail.
+                            //if(dirty.planet_coords[checking_coord_index].spawns_monster_type_id) {
+                            //    dirty.planet_coords[checking_coord_index].spawns_monster_type_id = false;
+                            //    dirty.planet_coords[checking_coord_index].has_change = true;
+                            //}
                         }
 
                         // lets build it!
@@ -4555,105 +4557,6 @@ exports.eat = eat;
 
 
 
-    // Check to see if a spawned event should be deleted
-    /**
-     * @param {Object} dirty
-     * @param {number} spawned_event_id
-     * @param {Object} data
-     * @param {String=} data.reason - (deleteobject, deletemonster)
-     * @param {String=} data.reason_type - Type that caused this to happen - usually player
-     * @param {number=} data.reason_id - ID of the 
-     * 
-     */
-    async function checkSpawnedEvent(dirty, spawned_event_id, data = {}) {
-
-        try {
-
-            spawned_event_id = parseInt(spawned_event_id);
-
-            let spawned_event_index = dirty.spawned_events.findIndex(function(obj) { return obj && obj.id === spawned_event_id; });
-
-            if(spawned_event_index === -1) {
-                console.log("Didn't find index. Think we already deleted this");
-                return false;
-            }
-
-
-            let event_index = event.getIndex(dirty, dirty.spawned_events[spawned_event_index].event_id);
-
-
-            console.log("Event despawn condition: " + dirty.events[event_index].despawn_condition);
-
-
-            // See if there are any objects or monsters left with this spawned event id
-            let objects = dirty.objects.filter(object => object.spawned_event_id === spawned_event_id);
-            let monsters = dirty.monsters.filter(monster_filter => monster_filter.spawned_event_id === spawned_event_id);
-
-            let should_delete_spawned_event = false;
-
-            if(dirty.events[event_index].despawn_condition === 'destroy_monsters' && monsters.length === 0) {
-
-                console.log("Set should_delete_spawned_event to true");
-            should_delete_spawned_event = true;
-            }
-
-            if(objects.length === 0 && monsters.length === 0) {
-                should_delete_spawned_event = true;
-            }
-
-            if(!should_delete_spawned_event) {
-                console.log("Not deleting");
-                return;
-            }
-
-
-            // Not sure why we were putting this here
-            //let spawned_event_index = dirty.spawned_events.findIndex(function(obj) { return obj && obj.id === spawned_event_id; });
-
-            console.log("Deleting");
-
-            let delete_spawned_event_data = {};
-            if(typeof data.reason_type !== 'undefined') {
-                delete_spawned_event_data.reason_type = data.reason_type;
-            }
-
-            if(typeof data.reason_id !== 'undefined') {
-                delete_spawned_event_data.reason_id = data.reason_id;
-            }
-
-            console.log("delete_spawned_event_data:");
-            console.log(delete_spawned_event_data);
-
-            await event.deleteSpawnedEvent(dirty, spawned_event_index, delete_spawned_event_data);
-
-            return;
-
-
-            //log(chalk.magenta("Deleting spawned event id: " + spawned_event_id + " event name: "
-            //    + dirty.events[event_index].name + " objects/monsters" + objects.length + "/" + monsters.length));
-            // We can delete the spawned event
-            /*
-            (pool.query("DELETE FROM spawned_events WHERE id = ?", [spawned_event_id]));
-
-            if(spawned_event_index !== -1) {
-                delete dirty.spawned_events[spawned_event_index];
-            }
-            */
-
-
-        } catch(error) {
-            log(chalk.red("Error in game.checkSpawnedEvent: " + error));
-            console.error(error);
-        }
-
-
-
-    }
-
-    exports.checkSpawnedEvent = checkSpawnedEvent;
-
-
-
     //  data:   planet_coord_index
     async function deletePlanetCoord(dirty, data) {
 
@@ -8641,7 +8544,7 @@ exports.eat = eat;
 
     exports.tickMining = tickMining;
 
-    /*
+    /* I'd wager that I re-coded this elsewhere, but I really should have put WHERE AND WHAT I did 
 
     async function tickMonsterSpawns(dirty) {
 
@@ -8833,7 +8736,7 @@ exports.eat = eat;
     exports.tickMoveMonsters = tickMoveMonsters;
 
 
-    /*
+    /* USING GAME.TICKSPAWNERS INSTEAD
     async function tickObjectSpawners(dirty) {
 
         try {
@@ -9222,9 +9125,12 @@ exports.eat = eat;
 
     exports.processSpawner = processSpawner;
 
+
     async function tickSpawners(dirty) {
 
         try {
+            console.time("tickSpawners");
+            console.time("originalTickSpawners");
             //log(chalk.green("In game.tickObjectSpawners"));
 
 
@@ -9395,6 +9301,21 @@ exports.eat = eat;
 
                 }
             }
+
+            console.timeEnd("originalTickSpawners");
+
+
+            for(let i = 0; i < dirty.ship_coords.length; i++) {
+
+                if(dirty.ship_coords[i] && dirty.ship_coords[i].spawns_monster_type_id && helper.isFalse(dirty.ship_coords[i].spawned_monster_id)) {
+                    monster.spawn(dirty, dirty.ship_coords[i].spawns_monster_type_id, { 'ship_coord_index': i });
+                }
+
+            }
+
+
+
+            console.timeEnd("tickSpawners");
 
         } catch(error) {
             log(chalk.red("Error in game.tickSpawners: " + error));

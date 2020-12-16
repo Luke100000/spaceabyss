@@ -1,3 +1,24 @@
+## [0.2.24] - 2020-12-16
+
+### Added
+- Ship coords can now have a fixed monster type that they spawn one at a time.
+- Corporation Headquarters (You'll find them on Corporation Planets!)
+- Ship coord support for the spawned_monster_id column, similar to planet coord support for this
+- Expanded the Desert Cruiser Wreck, The Great Nomad, Data Breach
+
+### Fixed
+- Acid Fly and Acid Fiend image
+- Large Comets can now be mined
+
+
+### Changed
+- Some types of events will now disappear instead of being fully deleted. For example, the Corporation headquarters creates a lot of 
+coords, and it's kind of a waste of server resources to just delete it all, and then re-create it when the event spawns somewhere else. 
+Now the server can re-use these!
+- Widden image
+- Removed Gange Building spawn from Corporation planets. I'm preferring the new style of having a neat image players can move onto vs spawning 
+the entire thing in real space on the world
+
 ## [0.2.23] - 2020-12-10
 
 

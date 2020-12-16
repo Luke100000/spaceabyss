@@ -5,6 +5,8 @@ var pool = database.pool;
 const chalk = require('chalk');
 const log = console.log;
 
+
+const event = require('./event.js');
 const game = require('./game.js');
 const helper = require('./helper.js');
 const inventory = require('./inventory.js');
@@ -789,7 +791,7 @@ async function deleteObject(dirty, data) {
             if(typeof data.reason_id !== 'undefined') {
                 check_spawned_event_data.reason_id = data.reason_id;
             }
-            await game.checkSpawnedEvent(dirty, check_spawned_event_id, check_spawned_event_data);
+            await event.checkSpawnedEvent(dirty, check_spawned_event_id, check_spawned_event_data);
         }
 
         console.log("Done in game_object.deleteObject");

@@ -64,13 +64,13 @@
       
     
 
-    <script src="client_functions_0.2.24.js"></script>
-    <script src="client_network_0.2.24.js"></script>
-    <script src="client_click_0.2.24.js"></script>
-    <script src="effects_0.2.24.js"></script>
-    <script src="monster_0.2.24.js"></script>
-    <script src="planet_0.2.24.js"></script>
-    <script src="player_0.2.24.js"></script>
+    <script src="client_functions_dev.js"></script>
+    <script src="client_network_dev.js"></script>
+    <script src="client_click_dev.js"></script>
+    <script src="effects_dev.js"></script>
+    <script src="monster_dev.js"></script>
+    <script src="planet_dev.js"></script>
+    <script src="player_dev.js"></script>
 
 
     <link href="//space.alphacoders.com/bulma-0.7.2/css/bulma.min.css" rel="stylesheet" media="screen">
@@ -232,7 +232,7 @@
                 <div class="message-body">
                     <h1 class="is-size-1">Disconnected</h1>
                     You have lost your connection to Space Abyss
-                    <a class="button is-warning" href="https://space.alphacoders.com/client/">Reload the page and Relogin</a><br><br>
+                    <a class="button is-warning" href="https://space.alphacoders.com/client/game.php">Reload the page and Relogin</a><br><br>
 
                     <a href="https://space.alphacoders.com" class="button is-default">Back Home</a>
                 </div>
@@ -1930,7 +1930,28 @@
             this.anims.create(player_water_ship_config);
 
 
+
+
+
+
+
             /******************* MONSTER ANIMATIONS - end is total frame count - 1 (starts at 0) **************/
+
+            let acid_fiend_config = {
+                key: 'acid-fiend-animation',
+                frames: this.anims.generateFrameNumbers('acid-fiend', { start: 0, end: 2, first: 2 }),
+                frameRate: 2,
+                repeat: -1
+            };
+            this.anims.create(acid_fiend_config);
+
+            let acid_fly_config = {
+                key: 'acid-fly-animation',
+                frames: this.anims.generateFrameNumbers('acid-fly', { start: 0, end: 2, first: 2 }),
+                frameRate: 2,
+                repeat: -1
+            };
+            this.anims.create(acid_fly_config);
 
             let ai_daemon_config = {
                 key: 'ai-daemon-animation',
