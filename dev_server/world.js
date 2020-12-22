@@ -1163,6 +1163,9 @@ async function attachShipEngines(dirty, ship_index) {
                         total_engine_power += dirty.object_types[drive_object_type_index].engine_power;
                         current_engine_energy += dirty.objects[drive_index].energy;
                         max_engine_energy += dirty.object_types[drive_object_type_index].max_energy_storage;
+
+                        // and why not let the drive know it's attached to the ship too
+                        dirty.objects[drive_index].is_engine_for_ship_index = ship_index;
                     }
 
                 } else {

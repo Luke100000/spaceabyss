@@ -12,6 +12,8 @@ idle, left, right, up, down
 ***************************************
 
 
+Some nebulae for cool backgrounds in space
+
 
 Diamond Battery Deposit
 Type: Spawner

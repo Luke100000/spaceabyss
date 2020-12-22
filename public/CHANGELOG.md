@@ -1,3 +1,34 @@
+## [0.2.25] - 2020-12-22
+
+
+### Added
+- Support for projectile type effects, and effect chaining (e.g. ball of electricity moves towards a destination, and releases the energy upon arriving at the destination)
+- Broken Giant on Machine Planets
+- Machine Hill on Azure Planets
+- You can now move through portals you are already on by right clicking on them, and clicking 'Go Back' (Similar to stairs)
+
+
+### Fixed
+- A performance issue with monster's destination x/y not being reset properly, causing the client to update effects every frame.
+- Dying in a Corporation Headquarters, or other type of spawned portal
+- Researching body can now be assembled
+- Bug with ship walls not showing up properly
+- Finished assembly info being sent
+- I THINK I have improved the issue where monsters would appear on the wrong tile.
+- Pieces of larger ships staying on the map after a player switches to them
+- Lag message after switching ships (not impossible it still shows up, but it's been improved)
+- Missing map bits after switching ships
+- Missing map bits after switching bodies
+- Destroyer image and animations
+- Researching body image and animations
+
+
+### Changed
+- Improved the language of Manufacturers to be less confusing
+- Ships now spawn with engines by default. You can still swap out the engines with a different type if you want to. Increased the engien power required for ships 
+tier 3+, reduced number of engine slots, and defaulted to thiol drives for those tier 3+ ships
+
+
 ## [0.2.24] - 2020-12-16
 
 ### Added

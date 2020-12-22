@@ -1954,7 +1954,7 @@ io.sockets.on('connection', function (socket) {
 
             } else if(data.new_view === 'galaxy') {
 
-                await movement.switchToGalaxy(socket, dirty);
+                await movement.switchToGalaxy(socket, dirty, player_index);
                 await world.setPlayerMoveDelay(socket, dirty, player_index);
                 await map.updateMap(socket, dirty);
                 //movement.launchFromPlanet(socket, dirty);

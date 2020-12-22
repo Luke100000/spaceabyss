@@ -404,6 +404,13 @@ function getIndex(dirty, event_id) {
 
 exports.getIndex = getIndex;
 
+
+function getSpawnedEventIndex(dirty, spawned_event_id) {
+    return dirty.spawned_events.findIndex(function(obj) { return obj && obj.id === parseInt(spawned_event_id); });
+}
+
+exports.getSpawnedEventIndex = getSpawnedEventIndex;
+
 /**
  *
  * @param {Object} dirty

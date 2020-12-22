@@ -134,6 +134,11 @@ Pod (DRAWN)
                     Asteroid Station (medium)
                             City Station (have 1 image idea) (large)
 
+
+                Glass City (have 1 image idea)
+
+                                        Infinity City (have 1 image idea )
+
 NPC SHIPS
     Prisonship
     Knightship

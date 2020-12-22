@@ -633,6 +633,11 @@ const world = require('./world.js');
                 //console.log("Setting flavor text to: " + flavor_text);
             }
 
+            let damage_effect = '';
+            if(monster_attack.damage_effect) {
+                damage_effect = monster_attack.damage_effect;
+            }
+
 
             // TODO add
             let defense = await game_object.calculateDefense(dirty, object_index, monster_attack.damage_type);
@@ -645,7 +650,8 @@ const world = require('./world.js');
 
             await game_object.damage(dirty, object_index, damage_amount, {
             'damage_types': [monster_attack.damage_type],
-            'battle_linker': battle_linker, 'object_info': object_info, 'calculating_range': calculating_range });
+            'battle_linker': battle_linker, 'object_info': object_info, 'calculating_range': calculating_range,
+            'damage_effect': damage_effect });
 
         } catch(error) {
             log(chalk.red("Error in battle.monsterAttackObject: " + error));
@@ -729,7 +735,7 @@ const world = require('./world.js');
 
             let monster_attack = await getMonsterAttack(dirty, monster_index, calculating_range);
 
-            let flavor_text = false;
+            let flavor_text = '';
             if(monster_attack.flavor_text) {
                 flavor_text = monster_attack.flavor_text;
                 //console.log("Setting flavor text to: " + flavor_text);
@@ -749,11 +755,16 @@ const world = require('./world.js');
 
 
             if(monster_attack.damage_amount <= defense) {
+
+                let sending_damage_types = [monster_attack.damage_type];
+                if(helper.notFalse(monster_attack.damage_effect)) {
+                    sending_damage_types = [monster_attack.damage_effect];
+                }
                 //console.log("attack was less than defense: " + monster_attack.damage_amount + " < " + defense);
                 io.to(player_info.room).emit('damaged_data',
                     {'player_id': dirty.players[player_index].id, 'damage_amount': 0, 'was_damaged_type': 'hp',
                         'damage_source_type':'monster', 'damage_source_id': dirty.monsters[monster_index].id,
-                        'damage_types': [monster_attack.damage_type],
+                        'damage_types': sending_damage_types,
                         'calculating_range': calculating_range, 'flavor_text': flavor_text, 'additional_effect': monster_attack.additional_effect });
                 return false;
             }
@@ -807,7 +818,7 @@ const world = require('./world.js');
 
             await player.damage(dirty, { 'player_index': player_index, 'damage_amount': damage_amount,
                 'battle_linker': battle_linker, 'damage_types': [monster_attack.damage_type],
-                'calculating_range': calculating_range, 'flavor_text': flavor_text });
+                'calculating_range': calculating_range, 'flavor_text': flavor_text, 'damage_effect': monster_attack.damage_effect });
 
 
 

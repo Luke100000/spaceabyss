@@ -4,48 +4,33 @@ CURRENT GAMEPLAY TEST:
 
 DOING NOW:
 
-    test widden, large ice comet
 
-    While I'm pushing the update, solidify the new build process
+    If a destroyer is placed on Gabriel's space station, it can't ever leave! (space around is full)
 
-    Need to update The Great Nomad, Desert Cruiser Wreck Interior
+    See why the galaxy event system is halted
 
-    Test monsters spawning on ships (could possibly do The Great Nomad, or better to do the Skyscraper I think)
-        THIS ALMOST WORKS. THEY JUST KEEP SPAWNING THE MONSTER
-        I COULD LEAVE IT LIKE THIS SINCE THE MONSTERS WON'T MOVE UNLESS SOMEONE IS ON THE SHIP
-    Once we verify this works, make sure we change all relevant events
+    We commonly have more spawned events than actually show up - desert cruiser wrecks is an example of that. Look into it.
 
+    Have a more clear 'galactic emperor goal' on the leaderboard
 
-    Need to fix dying in a portal ship thing (Corporate Headquarters)
+    Fix mining level on top players page
+
 
     I should build and test a volt rifle
 
     large > medium > small goop spawning
         mix of greyframe + creeper world
 
+        Have them mostly coded - mostly just need the images.
+
 
     possibly a more pronouced new message mode on chat. blinking <p>?
 
-    skyscrapers....
-    add in widden image
-
-    seems like kind of a waste to spawn these big buildings full of things, and then to tear them down. Lots of ship coords over time.
-
-
-        event > despawn_result ? (destory | disappear)
-
-        I could:
-        1. Remove from the tile they are on.
-        2. Respawn any created at
-        3. Use it the next time it spawns 
-        (despawn result - disappear or something?)
-
-
-
-        Then spawning we would need to check for spawned events matching the event being spawned, and then we can use it
-            We could MAYBE use planet_coord_id | ship_coord_id OR if that doesn't work, we can have a is_despawned or something 
 
     Notify me when a player logs in?
+
+    I want a snow effect on the frozen planet!!!!!
+        (it's for phaser 2, but I'm sure I can figure out how to do it with phaser 3 https://phaser.io/examples/v2/particles/rain , https://phaser.io/examples/v2/particles/snow )
 
 
 
@@ -133,9 +118,7 @@ DOING NOW:
 
     laser sound is a pew, laser sprite is a beam
 
-    To upgrade to phaser 3.24.1:
-        Have to extrude floor tiles ( at the very least )
-        Figure out new input
+
 
 
 

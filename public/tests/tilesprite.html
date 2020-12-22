@@ -1,0 +1,131 @@
+<!doctype html>
+<html lang="en">
+    <head>
+        <meta charset="UTF-8" />
+
+
+        <script src="//space.alphacoders.com/js/phaser-3.15.1.js"></script>
+
+
+
+        <script type="text/javascript">
+
+
+
+            var mining_sprite;
+            var mining_tilesprite;
+
+            var mining_sprite_short;
+            var mining_tilesprite_short;
+            var frame_counter = 1;
+            var total_counter = 1;
+            var frame_delay = 300;
+            var last_frame_update = 0;          // Used for animation our tilemap stuff
+
+
+            var SceneGame = new Phaser.Class({
+                Extends: Phaser.Scene,
+
+                initialize:
+
+                function SceneGame() {
+                    Phaser.Scene.call(this, { key: 'sceneGame', 'active': true });
+                },
+
+                preload: function() {
+                    this.load.spritesheet('mining-effect', 'https://space.alphacoders.com/images/mining-beam.png', {
+                        frameWidth: 192, frameHeight: 64, endFrame: 6
+                    });
+                },
+
+            create: function() {
+
+                var mining_effect_config = {
+                    key: 'mining-effect-animation',
+                    frames: this.anims.generateFrameNumbers('mining-effect', { start: 0, end: 5, first: 0 } ),
+                    frameRate: 4,
+                    repeat: -1
+                };
+
+                this.anims.create(mining_effect_config);
+
+                mining_sprite = this.add.sprite(100, 100, 'mining-effect');
+                mining_sprite.displayWidth = 400;
+                mining_sprite.play('mining-effect-animation');
+
+                mining_tilesprite = this.add.tileSprite(100, 150, 400, 64, 'mining-effect');
+                //mining_tilesprite.play('mining-effect-animation');
+
+
+                mining_sprite_short = this.add.sprite(100, 300, 'mining-effect');
+                mining_sprite_short.displayWidth = 16;
+
+                mining_tilesprite_short = this.add.tileSprite(100, 400, 16, 64, 'mining-effect');
+
+
+
+            },
+
+            update: function(time, delta) {
+
+                if(time > frame_delay + last_frame_update) {
+                    last_frame_update = time;
+
+                    mining_tilesprite.setTexture('mining-effect',  frame_counter);
+
+                    frame_counter++;
+
+                    if(frame_counter > 5) {
+                        frame_counter = 0;
+                    }
+                }
+
+                /*
+                
+                if(total_counter % 8 === 0) {
+
+                    mining_tilesprite.setTexture('mining-effect',  frame_counter);
+
+                    frame_counter++;
+
+                    if(frame_counter > 5) {
+                        frame_counter = 0;
+                    }
+                }
+
+
+                total_counter++;
+                */
+                
+                
+            }
+
+        });
+
+
+        var config = {
+                type: Phaser.WEBGL,
+                width: 704,
+                height: 576,
+                backgroundColor: '#000000',
+                parent: 'the_game',
+                pixelArt: true,
+                scene: [ SceneGame ]
+            };
+
+
+
+        game = new Phaser.Game(config);
+
+
+
+    </script>
+
+
+    </head>
+
+    <body>
+        <div id="the_game"></div>
+    </body>
+
+</html>

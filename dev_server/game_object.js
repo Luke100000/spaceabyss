@@ -399,6 +399,7 @@ exports.canPlaceAround = canPlaceAround;
  * @param {Array=} data.damage_types
  * @param {Object=} data.battle_linker
  * @param {number=} data.calculating_range
+ * @param {String=} data.damage_effect - This is a value that a monster can potentially set to change the effect type sent to the client for visual purposes
  * @param {String=} data.reason
  */
 async function damage(dirty, object_index, damage_amount, data) {
@@ -413,12 +414,20 @@ async function damage(dirty, object_index, damage_amount, data) {
 
         let new_object_hp = dirty.objects[object_index].current_hp - damage_amount;
 
+
+        let sending_damage_types = data.damage_types;
+
+        // We're going to override the damage types
+        if(typeof data.damage_effect !== 'undefined' && helper.notFalse(data.damage_effect)) {
+            sending_damage_types = [data.damage_effect];
+        }
+
         // send new object info to the room
         if(data.battle_linker) {
             io.to(data.object_info.room).emit('damaged_data',
                 {'object_id': dirty.objects[object_index].id, 'damage_amount': damage_amount, 'was_damaged_type': 'hp',
                     'damage_source_type': data.battle_linker.attacking_type, 'damage_source_id': data.battle_linker.attacking_id,
-                    'damage_types': data.damage_types,
+                    'damage_types': sending_damage_types,
                     'calculating_range': data.calculating_range });
 
         }
@@ -427,14 +436,14 @@ async function damage(dirty, object_index, damage_amount, data) {
             io.to(data.object_info.room).emit('damaged_data',
                 {'object_id': dirty.objects[object_index].id, 'damage_amount': damage_amount, 'was_damaged_type': 'hp',
                     'damage_source_type': data.damage_source_type, 'damage_source_id': data.damage_source_id,
-                    'damage_types': data.damage_types,
+                    'damage_types': sending_damage_types,
                     'calculating_range': data.calculating_range });
         }
 
         else {
             io.to(data.object_info.room).emit('damaged_data',
                 {   'object_id': dirty.objects[object_index].id, 'damage_amount': damage_amount,
-                    'was_damaged_type': 'hp', 'damage_types': data.damage_types });
+                    'was_damaged_type': 'hp', 'damage_types': sending_damage_types });
 
         }
 
@@ -1712,8 +1721,8 @@ async function updateType(dirty, object_type_id) {
 
         }
 
-        if(dirty.object_types[object_type_index].id !== 351) {
-            log(chalk.yellow("Object Type was not The Great Nomad: " + object_type_id));
+        if(helper.isFalse(dirty.object_types[object_type_index].is_ship)) {
+            log(chalk.yellow("Object type is not a ship: " + object_type_id));
             return false;
         }
 

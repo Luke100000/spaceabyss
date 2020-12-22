@@ -6,6 +6,7 @@ var pool = database.pool;
 const chalk = require('chalk');
 const log = console.log;
 
+const event = require('./event.js');
 const game_object = require('./game_object.js');
 const helper = require('./helper.js');
 const main = require('./space_abyss' + process.env.FILE_SUFFIX + '.js');
@@ -865,7 +866,7 @@ const world = require('./world.js');
 
             // If our ship type is a dockable ship type
             if(dirty.object_types[player_ship_type_index].is_dockable) {
-                log(chalk.cyan("Dockable ship moved. CODE THIS!"));
+                log(chalk.cyan("Dockable ship moved. I think we need to code in changing the coord_id for any ship docked here"));
 
                 // Don't like filters anymore
                 let docked_ships = dirty.objects.filter(object => object.docked_at_object_id === dirty.objects[player_ship_index].id);
@@ -3087,13 +3088,12 @@ const world = require('./world.js');
 
     exports.switchToPlanetNpc = switchToPlanetNpc;
 
-    async function switchToGalaxy(socket, dirty, reason = false) {
+    async function switchToGalaxy(socket, dirty, player_index, reason = false) {
 
         try {
 
-            let player_index = await player.getIndex(dirty, {'player_id':socket.player_id});
 
-            if(player_index === -1) {
+            if(!dirty.players[player_index]) {
                 log(chalk.yellow("Could not get player"));
                 return false;
             }
@@ -3178,6 +3178,7 @@ const world = require('./world.js');
             }
             // Switching to galaxy from ship
             else if (dirty.players[player_index].ship_coord_id) {
+                console.log("In movement.switchToGalaxy - ship_coord_id");
 
                 let ship_coord_index = await main.getShipCoordIndex({ 'ship_coord_id': dirty.players[player_index].ship_coord_id });
 
@@ -3207,15 +3208,85 @@ const world = require('./world.js');
                 let ship_galaxy_coord_index = await main.getCoordIndex({ 'coord_id': dirty.objects[ship_index].coord_id });
 
                 if(ship_galaxy_coord_index === -1) {
+                    console.log("Ship is not IN the galaxy...")
 
 
                     // Normally we would place somewhere randomly in the galaxy. If we are on The Great Nomad - we're stuck out of the galaxy for now
                     if(dirty.objects[ship_index].object_type_id === 351) {
 
+
                         socket.emit('result_info', { 'status': 'failure', 'text': 'The Great Nomad is currently out beyond our galaxy' });
                         return false;
 
-                    } else {
+                    } else if(helper.notFalse(dirty.objects[ship_index].spawned_event_id)) {
+                        console.log("ship with no galaxy coord has a spawned event id!");
+                        let spawned_event_index = await event.getSpawnedEventIndex(dirty, dirty.objects[ship_index].spawned_event_id);
+
+                        if(spawned_event_index === -1) {
+                            log(chalk.yellow("Unable to find the spawned_event"));
+                            return false;
+                        } 
+
+
+                        if(dirty.spawned_events[spawned_event_index].planet_id) {
+                            let planet_index = await planet.getIndex(dirty, { 'planet_id': dirty.spawned_events[spawned_event_index].planet_id});
+                            if(planet_index !== -1) {
+                                let potential_coord_indexes = [];
+                                let coord_index = await main.getCoordIndex({ 'coord_id': dirty.planets[planet_index].coord_id });
+                                potential_coord_indexes.push(coord_index);
+                
+                                // assuming a 3x3 planet.... eeek....
+                                let bottom_right_tile_x = dirty.coords[coord_index].tile_x + 3;
+                                let bottom_right_tile_y = dirty.coords[coord_index].tile_y + 3;
+                                let bottom_right_coord_index = await main.getCoordIndex({ 'tile_x': bottom_right_tile_x, 'tile_y': bottom_right_tile_y});
+                                //console.log("Bottom right coord index: " + bottom_right_coord_index);
+                                potential_coord_indexes.push(bottom_right_coord_index);
+                
+                                let warp_to_coord_index = -1;
+                
+                                for(let i = 0; i < potential_coord_indexes.length && warp_to_coord_index === -1; i++) {
+                                    if(potential_coord_indexes[i] === -1 ) {
+                                        log(chalk.yellow("Invalid potential_coord_index"));
+                                    } else {
+                                        //console.log("Trying to warp to tile_x,tile_y: " + dirty.coords[coord_index].tile_x + "," + dirty.coords[coord_index].tile_y);
+                                        warp_to_coord_index = await warpTo(socket, dirty, { 'player_index': player_index, 'warping_to': 'galaxy', 'base_coord_index': potential_coord_indexes[i] });
+                                    }
+                
+                                }
+                
+                
+                                if(warp_to_coord_index === -1) {
+                                    log(chalk.yellow("Warp failed"));
+                                    socket.emit('chat', { 'message': "The area of space around the planet is too full for your ship to launch" });
+                                    socket.emit('result_info', { 'status': 'failure', 'text': "Space around planet is too full", 'scope': 'system' });
+                                    return false;
+                                }
+                
+                                socket.map_needs_cleared = true;
+                
+                                dirty.objects[ship_index].docked_at_planet_id = false;
+                                dirty.objects[ship_index].has_change = true;
+                
+                                world.removeBattleLinkers(dirty, { 'player_id': dirty.players[player_index].id });
+                
+                
+                                //socket.emit('launched_data');
+                
+                
+                                socket.emit('view_change_data', { 'view': 'galaxy' });
+                
+                                await map.updateMap(socket, dirty);
+                
+                                await world.setPlayerMoveDelay(socket, dirty, player_index);
+
+
+                                return true;
+                            }
+                            
+                        }
+                    }
+                    
+                    else {
                         log(chalk.yellow("Could not find the galaxy coord that the ship is on. Placing randomly in galaxy"));
 
                         // We gotta randomly place it SOMEWHERE!!!!
@@ -3359,10 +3430,12 @@ const world = require('./world.js');
                     await map.updateMap(socket, dirty);
                 }
 
-            } else {
+            }
+            /// EHH???? Switch to galaxy from... galaxy?
+            else {
                 
                 await switchToShip(socket, dirty);
-                await switchToGalaxy(socket, dirty);
+                await switchToGalaxy(socket, dirty, player_index);
             }
 
 

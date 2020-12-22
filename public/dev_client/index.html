@@ -64,13 +64,13 @@
       
     
 
-    <script src="client_functions_0.2.24.js"></script>
-    <script src="client_network_0.2.24.js"></script>
-    <script src="client_click_0.2.24.js"></script>
-    <script src="effects_0.2.24.js"></script>
-    <script src="monster_0.2.24.js"></script>
-    <script src="planet_0.2.24.js"></script>
-    <script src="player_0.2.24.js"></script>
+    <script src="client_functions_0.2.26.js"></script>
+    <script src="client_network_0.2.26.js"></script>
+    <script src="client_click_0.2.26.js"></script>
+    <script src="effects_0.2.26.js"></script>
+    <script src="monster_0.2.26.js"></script>
+    <script src="planet_0.2.26.js"></script>
+    <script src="player_0.2.26.js"></script>
 
 
     <link href="//space.alphacoders.com/bulma-0.7.2/css/bulma.min.css" rel="stylesheet" media="screen">
@@ -741,6 +741,7 @@
     var effect_sprites = [];
 
 
+    var active_projectile_count = 0;
     var airlock_display_needs_regeneration = false;
     var audio_loaded = false;
     var client_move_coord_id;
@@ -929,9 +930,6 @@
             this.load.spritesheet('player-cargo-ship', 'https://space.alphacoders.com/images/cargo-ship-animated.png',
                 { 'frameWidth': 64, 'frameHeight': 64, endFrame: 16 });
 
-            this.load.spritesheet('player-destroyer', 'https://space.alphacoders.com/images/destroyer-animated.png',
-                { 'frameWidth': 128, 'frameHeight': 128, endFrame: 2 });
-
             this.load.spritesheet('player-fighter', 'https://space.alphacoders.com/images/fighter-animated.png',
             { 'frameWidth': 64, 'frameHeight': 64, endFrame: 16 });
 
@@ -1071,6 +1069,10 @@
 
             this.load.spritesheet('electric-effect', 'https://space.alphacoders.com/images/electric-effect.png', {
                 frameWidth: 64, frameHeight: 64, endFrame: 6
+            });
+
+            this.load.spritesheet('electric-ball-effect', 'https://space.alphacoders.com/images/electric-ball-effect.png', {
+                frameWidth: 64, frameHeight: 64, endFrame: 4
             });
 
             this.load.spritesheet('explosion-effect', 'https://space.alphacoders.com/images/explosion-effect.png', {
@@ -1335,41 +1337,6 @@
             };
 
             this.anims.create(player_cutter_down_config);
-
-
-
-            // PLAYER DESTROYER
-            let player_destroyer_up_config = {
-                key: 'player-destroyer-up-animation',
-                frames: this.anims.generateFrameNumbers('player-destroyer', { start: 0, end: 0, first: 0 }),
-                frameRate: 2,
-                repeat: -1
-            };
-            this.anims.create(player_destroyer_up_config);
-
-            let player_destroyer_down_config = {
-                key: 'player-destroyer-down-animation',
-                frames: this.anims.generateFrameNumbers('player-destroyer', { start: 0, end: 0, first: 0 }),
-                frameRate: 2,
-                repeat: -1
-            };
-            this.anims.create(player_destroyer_down_config);
-
-            let player_destroyer_left_config = {
-                key: 'player-destroyer-left-animation',
-                frames: this.anims.generateFrameNumbers('player-destroyer', { start: 1, end: 1, first: 1 }),
-                frameRate: 2,
-                repeat: -1
-            };
-            this.anims.create(player_destroyer_left_config);
-
-            let player_destroyer_right_config = {
-                key: 'player-destroyer-right-animation',
-                frames: this.anims.generateFrameNumbers('player-destroyer', { start: 1, end: 1, first: 1 }),
-                frameRate: 2,
-                repeat: -1
-            };
-            this.anims.create(player_destroyer_right_config);
 
 
             // PLAYER FIGHTER (A SHIP!)
@@ -2332,6 +2299,15 @@
 
             this.anims.create(electric_effect_config);
 
+            var electric_ball_effect_config = {
+                key: 'electric-ball-effect-animation',
+                frames: this.anims.generateFrameNumbers('electric-ball-effect', { start: 0, end: 3, first: 3 } ),
+                frameRate: 10,
+                repeat: -1
+            };
+
+            this.anims.create(electric_ball_effect_config);
+
             var energy_effect_config = {
                 key: 'energy-effect-animation',
                 frames: this.anims.generateFrameNumbers('energy-effect', { start: 0, end: 2, first: 0 } ),
@@ -2654,7 +2630,8 @@
                         } 
                         else if(players[i].sprite.texture.key === 'player-reinforced-human') {
                             players[i].sprite.anims.play('player-reinforced-human-idle-animation');
-                        } else if(players[i].sprite.texture.key === 'player-researching') {
+                        } 
+                        else if(players[i].sprite.texture.key === 'player-researching') {
                             players[i].sprite.anims.play('player-researching-idle-animation');
                         }
                         else if(players[i].sprite.texture.key === 'player-ruel') {
@@ -2900,7 +2877,6 @@
 
                     }
 
-
                     updateEffectSprites('player', i);
 
                     if(current_view === 'galaxy') {
@@ -2997,11 +2973,11 @@
             let monster_move_speed = 2;
             for(let i = 0; i < monsters.length; i++) {
 
-                if(monsters[i] && monsters[i].sprite && monsters[i].destination_x !== false && typeof monsters[i].destination_x !== 'undefined') {
+                if(monsters[i] && monsters[i].sprite && ( notFalse(monsters[i].destination_x) || notFalse(monsters[i].destination_y) ) ) {
                     moved_a_monster = true;
 
 
-                    if(monsters[i].sprite.x < monsters[i].destination_x) {
+                    if(notFalse(monsters[i].destination_x) && monsters[i].sprite.x < monsters[i].destination_x) {
 
                         if(monsters[i].sprite.x + monster_move_speed > monsters[i].destination_x) {
                             monsters[i].sprite.x = monsters[i].destination_x;
@@ -3010,7 +2986,7 @@
                             monsters[i].sprite.x += monster_move_speed;
                         }
 
-                    } else if(monsters[i].sprite.x > monsters[i].destination_x) {
+                    } else if(notFalse(monsters[i].destination_x) && monsters[i].sprite.x > monsters[i].destination_x) {
 
                         if(monsters[i].sprite.x - monster_move_speed < monsters[i].destination_x) {
                             monsters[i].sprite.x = monsters[i].destination_x;
@@ -3020,7 +2996,11 @@
                         }
 
 
-                    } else if(monsters[i].sprite.y < monsters[i].destination_y) {
+                    } else if(notFalse(monsters[i].destination_x)) {
+                        monsters[i].destination_x = false;
+                    }
+                    
+                    else if(notFalse(monsters[i].destination_y) && monsters[i].sprite.y < monsters[i].destination_y) {
 
                         if(monsters[i].sprite.y + monster_move_speed > monsters[i].destination_y) {
                             monsters[i].sprite.y = monsters[i].destination_y;
@@ -3029,7 +3009,7 @@
                             monsters[i].sprite.y += monster_move_speed;
                         }
 
-                    } else if(monsters[i].sprite.y > monsters[i].destination_y) {
+                    } else if(notFalse(monsters[i].destination_y) && monsters[i].sprite.y > monsters[i].destination_y) {
 
                         if(monsters[i].sprite.y - monster_move_speed < monsters[i].destination_y) {
                             monsters[i].sprite.y = monsters[i].destination_y;
@@ -3038,6 +3018,8 @@
                             monsters[i].sprite.y -= monster_move_speed;
                         }
 
+                    } else if( notFalse(monsters[i].destination_y) ) {
+                        monsters[i].destination_y = false;
                     }
 
                     updateEffectSprites('monster', i);
@@ -3225,6 +3207,11 @@
                 text_admin_time = false;
                 text_admin.setVisible(false);
             }
+
+            if(active_projectile_count > 0) {
+                updateEffectSprites('', -1);
+            }
+            
 
         }
 

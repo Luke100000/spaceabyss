@@ -1043,7 +1043,8 @@ const world = require('./world.js');
                     // Switch our ship to the new pod and put it in space near our other ship
                     await player.switchShip(socket, dirty, { 'ship_id': new_object_id });
                     await movement.warpTo(socket, dirty, { 'player_index': player_index, 'warping_to': 'galaxy', 'base_coord_index': coord_index });
-                    await map.updateMap(socket, dirty);
+                    // Doing this IN player.switchShip
+                    //await map.updateMap(socket, dirty);
 
                 } else {
 
@@ -1470,6 +1471,8 @@ const world = require('./world.js');
 
                             let i = 0;
                             input_paid = true;
+                            console.log("Starting energy is: " + dirty.objects[converter_object_index].energy);
+                            let starting_storage_amount = dirty.objects[converter_object_index].energy;
                             new_storage_amount = dirty.objects[converter_object_index].energy;
                             while(i < dirty.inventory_items[inventory_item_index].amount && 
                                 new_storage_amount < dirty.object_types[converter_object_type_index].max_energy_storage) {
@@ -1479,6 +1482,8 @@ const world = require('./world.js');
                                 if(new_storage_amount >= dirty.object_types[converter_object_type_index].max_energy_storage) {
                                     new_storage_amount = dirty.object_types[converter_object_type_index].max_energy_storage;
                                 }
+
+                                console.log("New storage amount is: " + new_storage_amount);
 
                                 // and remove
                                 await inventory.removeFromInventory(socket, dirty, { 'inventory_item_id': dirty.inventory_items[inventory_item_index].id, 'amount': 1 });
@@ -1491,6 +1496,17 @@ const world = require('./world.js');
                                 socket.emit('result_info', { 'status': 'success', 'text': 'Energy was full' });
                             } else {
                                 socket.emit('result_info', { 'status': 'success', 'text': "Converted " + i + " into energy" });
+                            }
+
+                            game_object.sendInfo(socket, false, dirty, converter_object_index);
+
+                            // It's possible this converter object is a ship engine
+                            if(typeof dirty.objects[converter_object_index].is_engine_for_ship_index !== 'undefined') {
+                                log(chalk.cyan("Converter is a ship engine!"));
+                                let difference = new_storage_amount - starting_storage_amount;
+                                dirty.objects[dirty.objects[converter_object_index].is_engine_for_ship_index].current_engine_energy += difference;
+                                game_object.sendInfo(socket, '', dirty, dirty.objects[converter_object_index].is_engine_for_ship_index);
+                                
                             }
 
                         }
@@ -2233,7 +2249,7 @@ const world = require('./world.js');
                         if(player_index !== -1) {
                             let player_socket = world.getPlayerSocket(dirty, player_index);
 
-                            await movement.switchToGalaxy(player_socket, dirty);
+                            await movement.switchToGalaxy(player_socket, dirty, player_index);
                         }
 
                     }
@@ -4662,9 +4678,9 @@ exports.eat = eat;
 
                             // This player doesn't have this ship set as their ship, punt them back to the galaxy
                             if(other_player_index !== -1 && dirty.players[other_player_index].ship_id !== ship_coord.ship_id) {
-                                other_player_socket = await world.getPlayerSocket(dirty, other_player_index);
+                                let other_player_socket = await world.getPlayerSocket(dirty, other_player_index);
                                 if(other_player_socket) {
-                                    movement.switchToGalaxy(other_player_socket, dirty, false);
+                                    movement.switchToGalaxy(other_player_socket, dirty, other_player_index, false);
                                 }
 
                             }
@@ -7165,12 +7181,14 @@ exports.eat = eat;
                     }
 
                     if(!assembly_is_finished) {
+
                         dirty.assemblies[i].current_tick_count++;
                         dirty.assemblies[i].has_change = true;
 
                         if(assembler_object_info) {
                             io.to(assembler_object_info.room).emit('assembly_info', { 'assembly': assembly });
                         }
+
                         return;
                     }
 
@@ -7189,11 +7207,13 @@ exports.eat = eat;
                         await (pool.query("DELETE FROM assemblies WHERE id = ?", [dirty.assemblies[i].id]));
 
                         let temp_assembly = dirty.assemblies[i];
-            
-                        delete dirty.assemblies[i];
 
                         // let the room know the assembly is finished
                         io.to(assembler_object_info.room).emit('assembly_info', { 'assembly': dirty.assemblies[i], 'finished': true });
+            
+                        delete dirty.assemblies[i];
+
+
 
                         // Set it to not active if it isn't already deleted
                         if(dirty.objects[assembler_object_index]) {
@@ -10872,6 +10892,7 @@ exports.eat = eat;
 
             }
 
+            await map.updateMap(socket, dirty);
 
             // All the equipment_linkers will have changed
             socket.emit('clear_equipment_linkers_data');
@@ -10881,7 +10902,7 @@ exports.eat = eat;
             await player.getEquipment(dirty, dirty.players[player_index].body_id);
 
             // move inventory if the player wanted to
-            console.log("move_inventory: " + move_inventory);
+            //console.log("move_inventory: " + move_inventory);
             if(move_inventory === 'yes') {
                 console.log("Moving inventory too!");
 
@@ -10894,13 +10915,16 @@ exports.eat = eat;
                 }
 
             } else {
-                console.log("Not moving inventory");
+                //console.log("Not moving inventory");
             }
+
+
 
             // gotta re-calculate stats
             await calculatePlayerStats(socket, dirty);
 
             await sendPlayerStats(socket, dirty);
+            
 
 
         } catch(error) {

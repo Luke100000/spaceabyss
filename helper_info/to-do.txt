@@ -1,0 +1,19 @@
+********************* TODO LATER ********************
+
+
+To upgrade to phaser 3.24.1:
+    Have to extrude floor tiles ( at the very least )
+    Figure out new input
+
+
+
+
+for our lasers and beams, should I be using a tilesprite?
+    So I know how to do it, lets see how ACTUALLY doing it would work
+
+    Need effect_sprites AND effect tilesprites
+
+    An interesting alternative would be to just have a couple of different versions of the normal sprite.
+        if displayWidth > 200% texture width, we just use a longer one
+
+    There is also a plugin for stuff like this: https://github.com/nkholski/phaser-animated-tiles

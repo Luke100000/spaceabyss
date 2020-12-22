@@ -11,6 +11,7 @@ const game_object = require('./game_object.js');
 const helper = require('./helper.js');
 const inventory = require('./inventory.js');
 const main = require('./space_abyss' + process.env.FILE_SUFFIX + '.js');
+const map = require('./map.js');
 const movement = require('./movement.js');
 const planet = require('./planet.js');
 const world = require('./world.js');
@@ -984,6 +985,7 @@ exports.claimShip = claimShip;
  * @param {Object=} data.battle_linker
  * @param {number=} data.calculating_range
  * @param {String=} data.flavor_text
+ * @param {String=} data.damage_effect;
  */
 async function damage(dirty, data) {
     try {
@@ -1011,8 +1013,15 @@ async function damage(dirty, data) {
             //console.log("In player.damage with flavor text: " + data.flavor_text);
         }
 
-        if(!data.damage_types) {
-            data.damage_types = ['normal'];
+        let sending_damage_types = ['normal'];
+        if(typeof data.damage_types !== 'undefined') {
+            sending_damage_types = data.damage_types;
+        }
+
+
+        // We're going to override the damage types
+        if(typeof data.damage_effect !== 'undefined' && helper.notFalse(data.damage_effect)) {
+            sending_damage_types = [data.damage_effect];
         }
 
         let player_socket = false;
@@ -1037,7 +1046,7 @@ async function damage(dirty, data) {
                     io.sockets.connected[data.battle_linker.being_attacked_socket_id].emit('damaged_data', {
                         'player_id': dirty.players[data.player_index].id, 'damage_amount': data.damage_amount, 'was_damaged_type': 'hp',
                         'damage_source_type': data.battle_linker.attacking_type, 'damage_source_id': data.battle_linker.attacking_id,
-                        'damage_types': data.damage_types,
+                        'damage_types': sending_damage_types,
                         'calculating_range': data.calculating_range, 'flavor_text': data.flavor_text
                     });
                 }
@@ -1048,7 +1057,7 @@ async function damage(dirty, data) {
                 if(player_socket) {
                     player_socket.emit('damaged_data', {
                         'player_id': dirty.players[data.player_index].id, 'damage_amount': data.damage_amount,
-                        'damage_types': data.damage_types, 'was_damaged_type': 'hp',
+                        'damage_types': sending_damage_types, 'was_damaged_type': 'hp',
                     })
                 }
 
@@ -1860,8 +1869,6 @@ async function kill(dirty, player_index) {
         }
 
 
-        console.log("Unequipped everything from the dead body");
-
         for(let i = 0; i < dirty.inventory_items.length; i++) {
             if(dirty.inventory_items[i] && dirty.inventory_items[i].player_id === dirty.players[player_index].id) {
 
@@ -1882,7 +1889,7 @@ async function kill(dirty, player_index) {
         }
 
 
-        console.log("Moved inventory items into dead body");
+        //console.log("Moved inventory items into dead body");
 
         // delete the old body
         console.log("Going to delete the old body. Body index: " + body_index);
@@ -1906,7 +1913,7 @@ async function kill(dirty, player_index) {
 
         
         if(helper.notFalse(player_socket)) {
-            await movement.switchToGalaxy(player_socket, dirty, 'death');
+            await movement.switchToGalaxy(player_socket, dirty, player_index, 'death');
             player_socket.emit('message_data', { 'message': "Your body was killed", 'scope': 'system' });
         }
         
@@ -2155,8 +2162,9 @@ exports.sendShips = sendShips;
                 dirty.players[player_index].previous_ship_coord_id = false;
                 dirty.players[player_index].has_change = true;
                 await sendInfo(socket, "galaxy", dirty, dirty.players[player_index].id);
-
+                await map.updateMap(socket, dirty);
                 world.setPlayerMoveDelay(socket, dirty, player_index);
+                
 
 
 

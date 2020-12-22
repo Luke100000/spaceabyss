@@ -594,7 +594,7 @@ async function removeFromInventory(socket, dirty, data) {
 
             // send new inventory item data
             if(dirty.inventory_items[inventory_item_index].player_id && dirty.inventory_items[inventory_item_index].player_id === socket.player_id) {
-                console.log("Telling client to remove inventory item");
+                //console.log("Telling client to remove inventory item");
                 socket.emit('inventory_item_info', { 'remove': true, 'inventory_item': dirty.inventory_items[inventory_item_index] });
             }
 
