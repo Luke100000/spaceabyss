@@ -497,11 +497,21 @@ function canPlacePlayer(scope, coord, player_index, show_output = false) {
         // || checking_coord.belongs_to_planet_id
         if (scope === 'galaxy' && checking_coord.planet_id) {
 
+            /*
             if (show_output) {
                 console.log("Returning false on " + checking_coord.tile_x + "," + checking_coord.tile_y + " planet");
             }
 
             return false;
+            */
+            let planet_index = getPlanetIndex({ 'planet_id': checking_coord.planet_id });
+            if(planets[planet_index].planet_type_id === 26) {
+                if (show_output) {
+                    console.log("Returning false on forming planet");
+                }
+                return false;   
+            }
+
         }
 
 
@@ -528,9 +538,10 @@ function canPlacePlayer(scope, coord, player_index, show_output = false) {
                     if (display_linker_index !== -1 && !planet_type_display_linkers[display_linker_index].only_visual) {
 
                         if (show_output) {
-                            console.log("Something about visual stuff");
+                            console.log("Move would have the ship overlap with the planet (aren't we just going to land on it then?)");
                         }
-                        return false;
+                        // I honestly am not sure why I was returning false here. Seeing how things are with this commented out
+                        //return false;
                     }
 
 
@@ -558,7 +569,7 @@ function canPlacePlayer(scope, coord, player_index, show_output = false) {
 
 
             // We allow it!
-            if (document.cookie.split(';').filter((item) => item.includes('thegreatnomad=1')).length) {
+            if (localStorage.getItem("allowthegreatnomad") === "true") {
 
             } 
             // Players need to confirm
@@ -789,6 +800,7 @@ function createMonsterSprite(monster_index) {
         if (scene_game.textures.exists(new_texture_key)) {
             monsters[monster_index].sprite = scene_game.add.sprite(-1000, -1000, new_texture_key);
             monsters[monster_index].sprite.anims.play(new_texture_animation_key);
+            monsters[monster_index].sprite.setDepth(3);
 
             // and move it to where it needs to be
             let monster_info = getMonsterInfo(monster_index);
@@ -833,11 +845,6 @@ function createMonsterSprite(monster_index) {
 
 function createNpcSprite(npc_index) {
 
-
-
-    console.log("In createNpcSprite for npc id: " + npcs[npc_index].id);
-
-
     //console.log("In craeteMonsterSprite");
 
 
@@ -876,7 +883,7 @@ function createNpcSprite(npc_index) {
 
     // Straight create
     if (!npcs[npc_index].sprite) {
-        console.log("Creating npc sprite with new_texture_key: " + new_texture_key);
+        //console.log("Creating npc sprite with new_texture_key: " + new_texture_key);
         npcs[npc_index].sprite = scene_game.add.sprite(-1000, -1000, new_texture_key);
         npcs[npc_index].sprite.anims.play(new_texture_animation_key);
 
@@ -886,7 +893,7 @@ function createNpcSprite(npc_index) {
     }
     // Update
     else if (npcs[npc_index].sprite.texture.key !== new_texture_key) {
-        console.log("Updating npc sprite with new_texture_key: " + new_texture_key);
+        //console.log("Updating npc sprite with new_texture_key: " + new_texture_key);
         npcs[npc_index].sprite.setTexture(new_texture_key);
         npcs[npc_index].sprite.anims.play(new_texture_animation_key);
     }
@@ -2883,16 +2890,16 @@ function generateAirlockDisplay() {
         on_ship_is_dockable = true;
     }
 
+    let docked_ships = [];
 
     // We're on a ship that is dockable - a few more options
     if (on_ship_is_dockable) {
         // show the docked ships the player has here
-        let docked_ships = objects.filter(obj => obj.player_id === client_player_id && obj.docked_at_object_id === client_player_info.coord.ship_id);
+        docked_ships = objects.filter(obj => obj.player_id === client_player_id && obj.docked_at_object_id === client_player_info.coord.ship_id);
 
         let has_pod = false;
 
         if (docked_ships.length > 0) {
-            console.log("Player has at least one ship docked at this station");
 
             $('#launch').append("<br>");
 
@@ -2914,7 +2921,7 @@ function generateAirlockDisplay() {
         // we should only let the player have one pod at a spaceport
         // TODO check this on the server side David!
         if (!has_pod) {
-            $('#launch').append('<button class="button is-default" id="buy_pod" object_type_id="114">Buy A Pod</button>');
+            //$('#launch').append('<button class="button is-default" id="buy_pod" object_type_id="114">Buy A Pod</button>');
         }
 
         // If we own the station, we can switch to that too
@@ -2957,8 +2964,21 @@ function generateAirlockDisplay() {
 
 
     if (ship_coord_index !== -1 && ship_coords[ship_coord_index].object_type_id === 266) {
+
+
+        let show_emergency_pod = true;
+
+        if(on_ship_is_dockable && docked_ships.length > 0) {
+            show_emergency_pod = false;
+        }
+
+        // Lets only show the Use Emergency Pod button if the player doesn't have another ship they can undock with
         //console.log("Player is on an airlock");
-        $('#launch').append('<button class="button is-danger" id="buy_pod" object_type_id="114">Use Emergency Pod</button>');
+        if(show_emergency_pod) {
+            console.log("Showing emergency pod button");
+            $('#launch').append('<button class="button is-danger" id="buy_pod" object_type_id="114">Use Emergency Pod</button>');
+        }
+        
 
     } else {
         //console.log("Player ship coord id: " + players[client_player_index].ship_coord_id);
@@ -6228,7 +6248,7 @@ function mapAddObject(object) {
 
 function mapAddWall(coord, object_type_index, tile_x, tile_y) {
 
-    let debug_coord_ids = [13305, 13306];
+    let debug_coord_ids = [];
 
     if(debug_coord_ids.indexOf(coord.id) !== -1) {
         console.log("%c In mapAddWall for debug coord id: " + coord.id, log_warning);
@@ -6402,9 +6422,6 @@ function checkForClientMove(time, tile_x = false, tile_y = false) {
 
     let debug_moving = false;
 
-    if(debug_moving) {
-        console.log("In checkForClientMove");
-    }
 
     if (client_player_index === -1) {
 
@@ -6416,10 +6433,6 @@ function checkForClientMove(time, tile_x = false, tile_y = false) {
 
     if (!upKey.isDown && !downKey.isDown && !leftKey.isDown && !rightKey.isDown) {
 
-        if(debug_moving) {
-            console.log("No arrow keys are pressed");
-        }
-        
         return false;
     }
 
@@ -6721,7 +6734,11 @@ function checkForClientMove(time, tile_x = false, tile_y = false) {
         // Normal cases
         else {
 
-            let can_place_result = canPlacePlayer('galaxy', coords[checking_coord_index], client_player_index);
+            let show_can_place_debug = false;
+            if(debug_moving) {
+                show_can_place_debug = true;
+            }
+            let can_place_result = canPlacePlayer('galaxy', coords[checking_coord_index], client_player_index, show_can_place_debug);
 
 
             if (can_place_result === false) {
@@ -6840,12 +6857,14 @@ monster_sprites.push({ 'key': 'burger-drone',           'monster_type_id': 118, 
 monster_sprites.push({ 'key': 'burster',                'monster_type_id': 120, 'planet_type_id': 7, 'frame_width': 64, 'frame_height': 64, 'frame_count': 11, 'frame_rate': 8 });
 monster_sprites.push({ 'key': 'cherree',                'monster_type_id': 117, 'planet_type_id': 29, 'frame_width': 64, 'frame_height': 64, 'frame_count': 3, 'frame_rate': 8 });
 monster_sprites.push({ 'key': 'construction-worker',    'monster_type_id': 112, 'planet_type_id': 30, 'frame_width': 64, 'frame_height': 66, 'frame_count': 7, 'frame_rate': 8 });
+monster_sprites.push({ 'key': 'crystal-guard',          'monster_type_id': 51,  'frame_width': 64, 'frame_height': 64, 'frame_count': 8, 'frame_rate': 8 });
 monster_sprites.push({ 'key': 'data-guard',             'monster_type_id': 136, 'planet_type_id': 19, 'frame_width': 64, 'frame_height': 68, 'frame_count': 8, 'frame_rate': 8 });
 monster_sprites.push({ 'key': 'frost-spider',           'monster_type_id': 114, 'planet_type_id': 11, 'frame_width': 64, 'frame_height': 64, 'frame_count': 3, 'frame_rate': 8 });
 monster_sprites.push({ 'key': 'gang-smasher',           'monster_type_id': 111, 'planet_type_id': 30, 'frame_width': 64, 'frame_height': 68, 'frame_count': 8, 'frame_rate': 8 });
 monster_sprites.push({ 'key': 'gang-gunner',            'monster_type_id': 110, 'planet_type_id': 30, 'frame_width': 64, 'frame_height': 66, 'frame_count': 9, 'frame_rate': 8 });
 monster_sprites.push({ 'key': 'gang-boss',              'monster_type_id': 109, 'planet_type_id': 30, 'frame_width': 64, 'frame_height': 82, 'frame_count': 7, 'frame_rate': 8 });
 monster_sprites.push({ 'key': 'jellyfish',              'monster_type_id': 108, 'planet_type_id': 34, 'frame_width': 64, 'frame_height': 64, 'frame_count': 8, 'frame_rate': 8 });
+monster_sprites.push({ 'key': 'primewall',              'monster_type_id': 134, 'frame_width': 160, 'frame_height': 122, 'frame_count': 13, 'frame_rate': 8 });
 monster_sprites.push({ 'key': 'observer',               'monster_type_id': 121, 'ship_type_id': 351, 'frame_width': 64, 'frame_height': 64, 'frame_count': 5, 'frame_rate': 6 });
 monster_sprites.push({ 'key': 'sea-urchin',             'monster_type_id': 106, 'planet_type_id': 34, 'frame_width': 64, 'frame_height': 64, 'frame_count': 12, 'frame_rate': 8 });
 monster_sprites.push({ 'key': 'take-out-drone',         'monster_type_id': 119, 'planet_type_id': 30, 'frame_width': 64, 'frame_height': 64, 'frame_count': 24, 'frame_rate': 8 });
@@ -6854,6 +6873,7 @@ monster_sprites.push({ 'key': 'trae-seedling',          'monster_type_id': 48, '
 monster_sprites.push({ 'key': 'trae-sproutling',        'monster_type_id': 101, 'planet_type_id': 29, 'frame_width': 64, 'frame_height': 64, 'frame_count': 5, 'frame_rate': 8 });
 monster_sprites.push({ 'key': 'vooard',                 'monster_type_id': 123, 'planet_type_id': 7, 'frame_width': 156, 'frame_height': 126, 'frame_count': 14, 'frame_rate': 10, 'x_offset': 0, 'y_offset': 0 });
 monster_sprites.push({ 'key': 'widden',                 'monster_type_id': 42, 'ship_type_id': 352, 'frame_width': 138, 'frame_height': 120, 'frame_count': 10, 'frame_rate': 8 });
+monster_sprites.push({ 'key': 'warmind',                'monster_type_id': 24, 'frame_width': 72, 'frame_height': 148, 'frame_count': 10, 'frame_rate': 8, 'y_offset': -32 });
 
 // Not sure how to do it more efficiently than just calculate the new and old level for... every skill!
 function checkLevelIncrease(old_player_data, new_player_data) {
@@ -7230,8 +7250,9 @@ function loadMonsterSprites(type, type_id) {
             !scene_game.textures.exists(monster_sprites[i].key)) {
 
             scene_game.load.on('filecomplete', processFile, this);
+            console.log("")
             scene_game.load.spritesheet(monster_sprites[i].key, "https://space.alphacoders.com/images/" + monster_sprites[i].key + ".png",
-                { frameWidth: monster_sprites[i].frame_width, frame_height: monster_sprites[i].frame_height, endFrame: monster_sprites[i].frame_count });
+                { frameWidth: monster_sprites[i].frame_width, frameHeight: monster_sprites[i].frame_height, endFrame: monster_sprites[i].frame_count });
             scene_game.load.start();
         }
     }
@@ -8401,6 +8422,7 @@ function redrawBars(source = '') {
             return false;
         }
 
+        graphics.depth = 1;
 
         // TODO NPCS!!!!!
 
@@ -11762,7 +11784,6 @@ function updatePlayer(data, player_index) {
 
 function updatePlayerClient(data) {
 
-    console.log("In updatePlayerClient");
 
     let update_spaceport_display = false;
     let updated_client_planet_coord_id = false;
@@ -11998,7 +12019,7 @@ function updatePlayerClient(data) {
     // Galaxy view and we moved
     else if (current_view === 'galaxy' && data.player.coord_id && data.player.coord_id !== client_player_info.coord.id) {
         
-        console.log("Server sent that client moved in galaxy to coord id: " + data.player.coord_id);
+
         let coord_index = coords.findIndex(function (obj) { return obj && obj.id === data.player.coord_id; });
 
 

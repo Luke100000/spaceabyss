@@ -5,16 +5,22 @@ CURRENT GAMEPLAY TEST:
 DOING NOW:
 
 
-    If a destroyer is placed on Gabriel's space station, it can't ever leave! (space around is full)
+    Update image for Warmind
+    Image for Crystal Guard
 
-    See why the galaxy event system is halted
-
-    We commonly have more spawned events than actually show up - desert cruiser wrecks is an example of that. Look into it.
 
     Have a more clear 'galactic emperor goal' on the leaderboard
+        galactic emperor/empress
 
-    Fix mining level on top players page
+        System King/Queen
 
+        Plantary King/Queen
+
+
+
+
+    We commonly have more spawned events than actually show up - desert cruiser wrecks is an example of that. Look into it.
+        It was fine on dev :/
 
     I should build and test a volt rifle
 
@@ -54,7 +60,9 @@ DOING NOW:
     Sounds for the different damage types
     Background music for the different planets/galaxy
 
-
+    no large ice comets!
+        They were instantly turning into 100 ice
+        Re-check on this around mid January
     
 
     I really like the idea of a fast/slow growth mode for algae vats... so they make a bunch while you are sleeping

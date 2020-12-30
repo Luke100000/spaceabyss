@@ -12,6 +12,7 @@ const main = require('./space_abyss' + process.env.FILE_SUFFIX + '.js');
 const npc = require('./npc.js');
 const player = require('./player.js');
 const world = require('./world.js');
+const { assemble } = require('./game.js');
 
 
 /**
@@ -87,6 +88,13 @@ async function addToInventory(socket, dirty, data) {
             let inserts;
 
             let object_index = await game_object.getIndex(dirty, data.object_id);
+
+            if(object_index === -1) {
+
+                socket.emit('result_info', { 'status': 'failure', 'text': "It looks like that inventory item decayed" });
+                return false;
+            }
+
             let object_type_index = main.getObjectTypeIndex(dirty.objects[object_index].object_type_id);
             // Lets grab it
             if(!data.object_type_id) {
@@ -784,7 +792,12 @@ async function take(socket, dirty, inventory_item_id, amount) {
                 'object_type_id': dirty.inventory_items[inventory_item_index].object_type_id, 'amount':take_amount };
 
             // Trying to not await for these two. Since they do mysql inserts and deletes
-            await addToInventory(socket, dirty, adding_to_data);
+            let added_result = await addToInventory(socket, dirty, adding_to_data);
+
+            if(added_result === false) {
+                socket.emit('inventory_item_info', { 'remove': true, 'inventory_item': { 'id': inventory_item_id } });
+                return false;
+            }
             await removeFromInventory(socket, dirty, { 'inventory_item_id': dirty.inventory_items[inventory_item_index].id,
                 'amount': dirty.inventory_items[inventory_item_index].amount });
 

@@ -1241,13 +1241,14 @@ $(document).on('click', 'button', function () {
         $('#click_menu').hide();
     }
 
-    // Toggle debug mode
+    // The player wants to dock at The Great Nomad after understanding the risks
     if(split_name[0] === 'thegreatnomad') {
 
         $('#click_menu').empty();
         $('#click_menu').hide();
 
-        document.cookie = "thegreatnomad=1";
+        //document.cookie = "thegreatnomad=1";
+        localStorage.setItem('allowthegreatnomad', true);
 
     }
 

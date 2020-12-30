@@ -2,7 +2,16 @@
 ************************** MONSTERS ***************************
 *****************************************
 
+HP / Attack / EXP Ratio
 
+Base is:
+    Attack * 10 = HP
+    Attack * 2 = EXP
+10 / 1 / 2
+e.g. 100 HP, 10 Attack, 20 Exp
+e.g. 50 HP, 5 Attack, 10 Exp
+e.g. 125 HP, 12 Attack, 25 EXP
+e.g. 250 HP, 25 Attack, 50 EXP
 
 ***************** HUMAN ***************************
 

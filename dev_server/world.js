@@ -2655,6 +2655,17 @@ async function generateShip(dirty, ship_index, data = {}) {
 exports.generateShip = generateShip;
 
 
+/**
+* @param {Object} dirty
+* @param {String} coord_type
+* @param {number} base_coord_index
+* @param {('player'|'object'|'object_type'|'monster'|'monster_type')} placing_type
+* @param {number} placing_index
+* @param {number} distance_left
+* @param {Array=} block_directions
+* @returns {Promise<number>} - coord_index
+*/
+
 async function getOpenCoordIndex(dirty, coord_type, base_coord_index, placing_type, placing_index, distance_left, block_directions = []) {
 
     try {
@@ -2670,6 +2681,18 @@ async function getOpenCoordIndex(dirty, coord_type, base_coord_index, placing_ty
             base_coord = dirty.coords[base_coord_index];
         } else if(coord_type === 'virtual') {
             base_coord = dirty.virtual_coords[base_coord_index];
+        }
+
+        if(helper.isFalse(base_coord)) {
+            log(chalk.yellow("Invalid base coord sent into getOpenCoordIndex"));
+            console.trace("this");
+            return -1;
+        }
+
+        if(placing_type === 'object_type' && helper.isFalse(dirty.object_types[placing_index])) {
+            log(chalk.yellow("Invalid object type sent in getOpenCoordIndex."));
+            console.trace("here");
+            return -1;
         }
 
         // If there's no block direction, try the base coord. Otherwise we will have already tried the base coord
@@ -2689,6 +2712,18 @@ async function getOpenCoordIndex(dirty, coord_type, base_coord_index, placing_ty
                 }
             } else if(placing_type === 'object_type') {
                 let can_place_result = await game_object.canPlace(dirty, coord_type, base_coord,  {'object_type_id': dirty.object_types[placing_index].id } );
+                
+                if(can_place_result === true) {
+                    return base_coord_index;
+                }
+            } else if(placing_type === 'monster') {
+                let can_place_result = await monster.canPlace(dirty, coord_type, base_coord,  {'monster_index': placing_index } );
+                
+                if(can_place_result === true) {
+                    return base_coord_index;
+                }
+            } else if(placing_type === 'monster_type') {
+                let can_place_result = await monster.canPlace(dirty, coord_type, base_coord,  {'monster_type_id': dirty.monster_types[placing_index].id } );
                 
                 if(can_place_result === true) {
                     return base_coord_index;
@@ -2736,6 +2771,18 @@ async function getOpenCoordIndex(dirty, coord_type, base_coord_index, placing_ty
                         console.log("Can place result was true");
                         return base_coord.left_coord_index;
                     }
+                } else if(placing_type === 'monster') {
+                    let can_place_result = await monster.canPlace(dirty, coord_type, left_coord,  {'monster_index': placing_index } );
+                    
+                    if(can_place_result === true) {
+                        return base_coord_index;
+                    }
+                } else if(placing_type === 'monster_type') {
+                    let can_place_result = await monster.canPlace(dirty, coord_type, left_coord,  {'monster_type_id': dirty.monster_types[placing_index].id } );
+                    
+                    if(can_place_result === true) {
+                        return base_coord_index;
+                    }
                 }
                 
             }
@@ -2746,77 +2793,108 @@ async function getOpenCoordIndex(dirty, coord_type, base_coord_index, placing_ty
         if(!block_directions.includes('right')) {
             await map.getCoordNeighbor(dirty, coord_type, base_coord_index, 'right');
 
-            let right_coord = {};
+            if(base_coord.right_coord_index !== -1) {
+                let right_coord = {};
     
-            if(coord_type === 'ship') {
-                right_coord = dirty.ship_coords[dirty.ship_coords[base_coord_index].right_coord_index];
-            } else if(coord_type === 'planet') {
-                right_coord = dirty.planet_coords[dirty.planet_coords[base_coord_index].right_coord_index];
-            } else if(coord_type === 'galaxy') {
-                right_coord = dirty.coords[dirty.coords[base_coord_index].right_coord_index];
-            } else if(coord_type === 'virtual') {
-                right_coord = dirty.virtual_coords[dirty.virtual_coords[base_coord_index].right_coord_index];
-            }
-    
-    
-            if(placing_type === 'player') {
-                let can_place_result = await player.canPlace(dirty, coord_type, right_coord, placing_index);
-    
-                if(can_place_result === true) {
-                    return base_coord.right_coord_index;
+                if(coord_type === 'ship') {
+                    right_coord = dirty.ship_coords[dirty.ship_coords[base_coord_index].right_coord_index];
+                } else if(coord_type === 'planet') {
+                    right_coord = dirty.planet_coords[dirty.planet_coords[base_coord_index].right_coord_index];
+                } else if(coord_type === 'galaxy') {
+                    right_coord = dirty.coords[dirty.coords[base_coord_index].right_coord_index];
+                } else if(coord_type === 'virtual') {
+                    right_coord = dirty.virtual_coords[dirty.virtual_coords[base_coord_index].right_coord_index];
                 }
-            } else if(placing_type === 'object') {
-                let can_place_result = await game_object.canPlace(dirty, coord_type, right_coord,  {'object_index': placing_index } );
-
-                if(can_place_result === true) {
-                    return base_coord.right_coord_index;
+        
+        
+                if(placing_type === 'player') {
+                    let can_place_result = await player.canPlace(dirty, coord_type, right_coord, placing_index);
+        
+                    if(can_place_result === true) {
+                        return base_coord.right_coord_index;
+                    }
+                } else if(placing_type === 'object') {
+                    let can_place_result = await game_object.canPlace(dirty, coord_type, right_coord,  {'object_index': placing_index } );
+    
+                    if(can_place_result === true) {
+                        return base_coord.right_coord_index;
+                    }
+                } else if(placing_type === 'object_type') {
+                    let can_place_result = await game_object.canPlace(dirty, coord_type, right_coord,  {'object_type_id': dirty.object_types[placing_index].id } );
+                    
+                    if(can_place_result === true) {
+                        return base_coord.right_coord_index;
+                    }
+                } else if(placing_type === 'monster') {
+                    let can_place_result = await monster.canPlace(dirty, coord_type, right_coord,  {'monster_index': placing_index } );
+                    
+                    if(can_place_result === true) {
+                        return base_coord_index;
+                    }
+                } else if(placing_type === 'monster_type') {
+                    let can_place_result = await monster.canPlace(dirty, coord_type, right_coord,  {'monster_type_id': dirty.monster_types[placing_index].id } );
+                    
+                    if(can_place_result === true) {
+                        return base_coord_index;
+                    }
                 }
-            } else if(placing_type === 'object_type') {
-                let can_place_result = await game_object.canPlace(dirty, coord_type, right_coord,  {'object_type_id': dirty.object_types[placing_index].id } );
-                
-                if(can_place_result === true) {
-                    return base_coord.right_coord_index;
-                }
-            }
+            } 
         }
         
 
         // up
         if(!block_directions.includes('up')) {
+
             await map.getCoordNeighbor(dirty, coord_type, base_coord_index, 'up');
 
-            let up_coord = {};
+            if(base_coord.up_coord_index !== -1) {
+                let up_coord = {};
     
-            if(coord_type === 'ship') {
-                up_coord = dirty.ship_coords[dirty.ship_coords[base_coord_index].up_coord_index];
-            } else if(coord_type === 'planet') {
-                up_coord = dirty.planet_coords[dirty.planet_coords[base_coord_index].up_coord_index];
-            } else if(coord_type === 'galaxy') {
-                up_coord = dirty.coords[dirty.coords[base_coord_index].up_coord_index];
-            } else if(coord_type === 'virtual') {
-                up_coord = dirty.virtual_coords[dirty.virtual_coords[base_coord_index].up_coord_index];
-            }
-    
-    
-            if(placing_type === 'player') {
-                let can_place_result = await player.canPlace(dirty, coord_type, up_coord, placing_index);
-    
-                if(can_place_result === true) {
-                    return base_coord.up_coord_index;
+                if(coord_type === 'ship') {
+                    up_coord = dirty.ship_coords[dirty.ship_coords[base_coord_index].up_coord_index];
+                } else if(coord_type === 'planet') {
+                    up_coord = dirty.planet_coords[dirty.planet_coords[base_coord_index].up_coord_index];
+                } else if(coord_type === 'galaxy') {
+                    up_coord = dirty.coords[dirty.coords[base_coord_index].up_coord_index];
+                } else if(coord_type === 'virtual') {
+                    up_coord = dirty.virtual_coords[dirty.virtual_coords[base_coord_index].up_coord_index];
                 }
-            } else if(placing_type === 'object') {
-                let can_place_result = await game_object.canPlace(dirty, coord_type, up_coord,  {'object_index': placing_index } );
+        
+        
+                if(placing_type === 'player') {
+                    let can_place_result = await player.canPlace(dirty, coord_type, up_coord, placing_index);
+        
+                    if(can_place_result === true) {
+                        return base_coord.up_coord_index;
+                    }
+                } else if(placing_type === 'object') {
+                    let can_place_result = await game_object.canPlace(dirty, coord_type, up_coord,  {'object_index': placing_index } );
+    
+                    if(can_place_result === true) {
+                        return base_coord.up_coord_index;
+                    }
+                } else if(placing_type === 'object_type') {
+                    let can_place_result = await game_object.canPlace(dirty, coord_type, up_coord,  {'object_type_id': dirty.object_types[placing_index].id } );
+                    
+                    if(can_place_result === true) {
+                        return base_coord.up_coord_index;
+                    }
+                } else if(placing_type === 'monster') {
+                    let can_place_result = await monster.canPlace(dirty, coord_type, up_coord,  {'monster_index': placing_index } );
+                    
+                    if(can_place_result === true) {
+                        return base_coord_index;
+                    }
+                } else if(placing_type === 'monster_type') {
+                    let can_place_result = await monster.canPlace(dirty, coord_type, up_coord,  {'monster_type_id': dirty.monster_types[placing_index].id } );
+                    
+                    if(can_place_result === true) {
+                        return base_coord_index;
+                    }
+                }
+            }
 
-                if(can_place_result === true) {
-                    return base_coord.up_coord_index;
-                }
-            } else if(placing_type === 'object_type') {
-                let can_place_result = await game_object.canPlace(dirty, coord_type, up_coord,  {'object_type_id': dirty.object_types[placing_index].id } );
-                
-                if(can_place_result === true) {
-                    return base_coord.up_coord_index;
-                }
-            }
+            
         }
         
 
@@ -2824,38 +2902,53 @@ async function getOpenCoordIndex(dirty, coord_type, base_coord_index, placing_ty
         if(!block_directions.includes('down')) {
             await map.getCoordNeighbor(dirty, coord_type, base_coord_index, 'down');
 
-            let down_coord = {};
+            if(base_coord.down_coord_index !== -1) {
+                let down_coord = {};
     
-            if(coord_type === 'ship') {
-                down_coord = dirty.ship_coords[dirty.ship_coords[base_coord_index].down_coord_index];
-            } else if(coord_type === 'planet') {
-                down_coord = dirty.planet_coords[dirty.planet_coords[base_coord_index].down_coord_index];
-            } else if(coord_type === 'galaxy') {
-                down_coord = dirty.coords[dirty.coords[base_coord_index].down_coord_index];
-            } else if(coord_type === 'virtual') {
-                down_coord = dirty.virtual_coords[dirty.virtual_coords[base_coord_index].down_coord_index];
+                if(coord_type === 'ship') {
+                    down_coord = dirty.ship_coords[dirty.ship_coords[base_coord_index].down_coord_index];
+                } else if(coord_type === 'planet') {
+                    down_coord = dirty.planet_coords[dirty.planet_coords[base_coord_index].down_coord_index];
+                } else if(coord_type === 'galaxy') {
+                    down_coord = dirty.coords[dirty.coords[base_coord_index].down_coord_index];
+                } else if(coord_type === 'virtual') {
+                    down_coord = dirty.virtual_coords[dirty.virtual_coords[base_coord_index].down_coord_index];
+                }
+        
+        
+                if(placing_type === 'player') {
+                    let can_place_result = await player.canPlace(dirty, coord_type, down_coord, placing_index);
+        
+                    if(can_place_result === true) {
+                        return base_coord.down_coord_index;
+                    }
+                } else if(placing_type === 'object') {
+                    let can_place_result = await game_object.canPlace(dirty, coord_type, down_coord,  {'object_index': placing_index } );
+    
+                    if(can_place_result === true) {
+                        return base_coord.down_coord_index;
+                    }
+                } else if(placing_type === 'object_type') {
+                    let can_place_result = await game_object.canPlace(dirty, coord_type, down_coord,  {'object_type_id': dirty.object_types[placing_index].id } );
+                    
+                    if(can_place_result === true) {
+                        return base_coord.down_coord_index;
+                    }
+                } else if(placing_type === 'monster') {
+                    let can_place_result = await monster.canPlace(dirty, coord_type, down_coord,  {'monster_index': placing_index } );
+                    
+                    if(can_place_result === true) {
+                        return base_coord_index;
+                    }
+                } else if(placing_type === 'monster_type') {
+                    let can_place_result = await monster.canPlace(dirty, coord_type, down_coord,  {'monster_type_id': dirty.monster_types[placing_index].id } );
+                    
+                    if(can_place_result === true) {
+                        return base_coord_index;
+                    }
+                }
             }
-    
-    
-            if(placing_type === 'player') {
-                let can_place_result = await player.canPlace(dirty, coord_type, down_coord, placing_index);
-    
-                if(can_place_result === true) {
-                    return base_coord.down_coord_index;
-                }
-            } else if(placing_type === 'object') {
-                let can_place_result = await game_object.canPlace(dirty, coord_type, down_coord,  {'object_index': placing_index } );
-
-                if(can_place_result === true) {
-                    return base_coord.down_coord_index;
-                }
-            } else if(placing_type === 'object_type') {
-                let can_place_result = await game_object.canPlace(dirty, coord_type, down_coord,  {'object_type_id': dirty.object_types[placing_index].id } );
-                
-                if(can_place_result === true) {
-                    return base_coord.down_coord_index;
-                }
-            }
+            
         }
         
 
@@ -2864,7 +2957,7 @@ async function getOpenCoordIndex(dirty, coord_type, base_coord_index, placing_ty
         // Didn't find a coord, and we have some disance left we can go
         if(distance_left > 0) {
 
-            //console.log("Going to new base coords. Distance left: " + distance_left);
+            console.log("Going to new base coords. Distance left: " + distance_left);
             console.log(block_directions);
             let new_distance = distance_left - 1;
 
@@ -4596,10 +4689,21 @@ async function skinUse(socket, dirty, skin_object_type_id) {
 exports.skinUse = skinUse;
 
 
-//  data:   scope   |   base_coord_index   | spawning_type   |   spawning_type_id   |   spawning_amount
+/**
+ * @param {Object} dirty
+ * @param {Object} data
+ * @param {('planet'|'ship')} data.scope
+ * @param {number} data.base_coord_index
+ * @param {('object'|'monster')} data.spawning_type
+ * @param {number} data.spawning_type_id
+ * @param {number} data.spawning_amount
+ */
 async function spawnAdjacent(dirty, data) {
     try {
 
+        //log(chalk.cyan("Starting up spawnAdjacent"));
+
+        //console.time("spawnAdjacent");
         let base_coord = {};
         if (data.scope === 'planet') {
             base_coord = dirty.planet_coords[data.base_coord_index];
@@ -4607,10 +4711,47 @@ async function spawnAdjacent(dirty, data) {
             base_coord = dirty.ship_coords[data.base_coord_index];
         }
 
+        if(helper.isFalse(base_coord)) {
+            log(chalk.yellow("Invalid base coord sent into world.spawnAdjacent"));
+            console.trace("here");
+            return false;
+        }
 
-        let placing_coord_index = -1;
-        let placing_coord = false;
+
+        // spawnAdjacent won't know if an object type spawn is JUST an object type, or could be an object too
+        // I don't think there are any instances of us actually spawning an object
+        let placing_index = -1;
+        let spawning_type_for_get_open_coord_index = data.spawning_type;
+        if(spawning_type_for_get_open_coord_index === 'object') {
+            let object_type_index = main.getObjectTypeIndex(data.spawning_type_id);
+
+            if(dirty.object_types[object_type_index].assembled_as_object) {
+                log(chalk.yellow("We don't support spawning objects adjacent - only object types!"));
+                return false;
+            }
+            spawning_type_for_get_open_coord_index = 'object_type';
+            placing_index = object_type_index;
+        } else if(spawning_type_for_get_open_coord_index === 'monster') {
+
+            let monster_type_index = main.getMonsterTypeIndex(data.spawning_type_id);
+            placing_index = monster_type_index;
+
+            spawning_type_for_get_open_coord_index = 'monster_type';
+
+
+        }
+
+
+
+        //let placing_coord_index = -1;
+        //let placing_coord = false;
+
+        let placing_coord = {};
+        let placing_coord_index = await getOpenCoordIndex(dirty, data.scope, data.base_coord_index, spawning_type_for_get_open_coord_index, placing_index, 1);
+
+
         /** STEP 1: FIND A SPOT WE CAN PLACE ON **/
+        /*
         for (let x = base_coord.tile_x - 1; x <= base_coord.tile_x + 1 && placing_coord_index === -1; x++) {
             for (let y = base_coord.tile_y - 1; y <= base_coord.tile_y + 1 && placing_coord_index === -1; y++) {
 
@@ -4661,10 +4802,18 @@ async function spawnAdjacent(dirty, data) {
 
             }
         }
+        */
 
         if (placing_coord_index === -1) {
             log(chalk.yellow("No space around to spawn"));
             return false;
+        }
+
+        if(data.scope === 'planet') {
+
+            placing_coord = dirty.planet_coords[placing_coord_index];
+        } else if(data.scope === 'ship') {
+            placing_coord = dirty.ship_coords[placing_coord_index];
         }
 
         if (data.spawning_type === 'object') {
@@ -4732,6 +4881,8 @@ async function spawnAdjacent(dirty, data) {
             return true;
 
         }
+
+        //console.timeEnd("spawnAdjacent");
 
 
     } catch (error) {
@@ -5051,24 +5202,27 @@ async function tickStorytellers(dirty, force_event_id = 0) {
                 console.log("Rand chance: " + rand_chance);
                 if(rand_chance < 4 || force_event_id) {
 
-                    let difficulty_ceiling = dirty.storytellers[i].previous_difficulty;
-                    let difficulty_floor = dirty.storytellers[i].previous_difficulty - 10;
+                    let difficulty_ceiling = 5;
+                    let difficulty_floor = 0;
 
-                    // If the previous event took a long time for players to remove, we can tick difficulty down a bit
-                    if(dirty.storytellers[i].previous_event_ticks > 100) {
-
-                        // While we don't have events we're basically manually switching to a 5 difficulty event instead of the 10 difficulty 
-                        if(difficulty_ceiling === 10) {
-                            difficulty_ceiling = 5;
-                            difficulty_floor = 5;
-                        }
-                    } 
-                    // Previous event was taken out fast, we can move difficulty up
-                    else {
-                        difficulty_ceiling = 10;
+                    if(dirty.storytellers[i].previous_difficulty && dirty.storytellers[i].previous_difficulty > 5) {
+                        difficulty_ceiling = dirty.storytellers[i].previous_difficulty;
+                        difficulty_floor = difficulty_ceiling - 5;
                     }
 
 
+                    // If the previous event took a long time for players to remove, we can tick difficulty down a bit
+                    if(dirty.storytellers[i].previous_difficulty && dirty.storytellers[i].previous_event_ticks > 100 && difficulty_ceiling > 5) {
+                        difficulty_ceiling -= 5;
+                        difficulty_floor -= 5;
+
+                    } 
+                    // Players took care of this fast, we can increase difficulty
+                    else if(dirty.storytellers[i].previous_difficulty) {
+                        difficulty_ceiling += 5;
+                        difficulty_floor += 5;
+                    }
+    
 
                     let possible_events = dirty.events.filter(event_filter => event_filter.difficulty <= difficulty_ceiling);
                     if(possible_events.length > 0) {
@@ -5105,7 +5259,7 @@ async function tickStorytellers(dirty, force_event_id = 0) {
                         
         
                     } else {
-                        console.log("No possible events");
+                        log(chalk.yellow("WARNING! Storyteller has no events in the difficult range " + difficulty_floor + " - " + difficulty_ceiling))
                     }
 
 

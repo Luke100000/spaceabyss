@@ -18,367 +18,654 @@ const player = require('./player.js');
 const world = require('./world.js');
 
 
-    async function adminMoveNpc(socket, dirty, npc_id, planet_coord_id) {
-        try {
+async function adminMoveNpc(socket, dirty, npc_id, planet_coord_id) {
+    try {
 
-            log(chalk.red("CODE IT!"));
-        } catch(error) {
-            log(chalk.red("Error in movement.adminMoveNpc: " + error));
-        }
+        log(chalk.red("CODE IT!"));
+    } catch(error) {
+        log(chalk.red("Error in movement.adminMoveNpc: " + error));
     }
+}
 
 
 
-    function checkCanWalkOn(dirty, coord) {
-        let can_walk_on = true;
+function checkCanWalkOn(dirty, coord) {
+    let can_walk_on = true;
 
-        // If there's an object type, check that
-        if(coord.object_type_id) {
-            let object_type_index = main.getObjectTypeIndex(coord.object_type_id);
-            if(!dirty.object_types[object_type_index].can_walk_on) {
-                can_walk_on = false;
-            }
-        }
-
-        // And always check the floor
-        let floor_type_index = main.getFloorTypeIndex(coord.floor_type_id);
-        if(!dirty.floor_types[floor_type_index].can_walk_on) {
+    // If there's an object type, check that
+    if(coord.object_type_id) {
+        let object_type_index = main.getObjectTypeIndex(coord.object_type_id);
+        if(!dirty.object_types[object_type_index].can_walk_on) {
             can_walk_on = false;
         }
-
-        return can_walk_on;
     }
 
+    // And always check the floor
+    let floor_type_index = main.getFloorTypeIndex(coord.floor_type_id);
+    if(!dirty.floor_types[floor_type_index].can_walk_on) {
+        can_walk_on = false;
+    }
 
-    async function checkObjectMovementRules(socket, dirty, object_id) {
-        try {
-
-            let passed_rules = false;
-            let object_index = await game_object.getIndex(dirty, object_id);
-
-            let object_player_index = await player.getIndex(dirty, { 'player_id': dirty.objects[object_index].player_id });
-            let socket_player_index = await player.getIndex(dirty, { 'player_id': socket.player_id });
+    return can_walk_on;
+}
 
 
-            // go through the object's rules, and as long as one matches, we are fine
-            let object_rules = dirty.rules.filter(rule => rule.object_id === dirty.objects[object_index].id);
-            if(object_rules.length > 0) {
-                for(let rule of object_rules) {
 
-                    // If we made the door and there's an allow creator rule
-                    if(rule.rule === "allow_creator" && socket.player_id === dirty.objects[object_index].player_id) {
-                        passed_rules = true;
+async function checkDocking(socket, dirty, ship_index, previous_coord_index, coord_index) {
+    try {
+
+
+        // Lets get the single ship coord
+        if(typeof dirty.objects[ship_index].current_coords === "undefined" || dirty.objects[ship_index].current_coords.length === 0) {
+
+            let coord_object_index = -1
+
+            if(dirty.coords[coord_index].object_id && dirty.coords[coord_index].object_id !== dirty.objects[ship_index].id) {
+                coord_object_index = await game_object.getIndex(dirty, dirty.coords[coord_index].object_id);
+            } else if(dirty.coords[coord_index].belongs_to_object_id && dirty.coords[coord_index].belongs_to_object_id !== dirty.objects[ship_index].id) {
+                coord_object_index = await game_object.getIndex(dirty, dirty.coords[coord_index].belongs_to_object_id);
+            }
+
+
+            if(coord_object_index !== -1) {
+
+                let coord_object_type_index = main.getObjectTypeIndex(dirty.objects[coord_object_index].object_type_id);
+
+
+                if(dirty.object_types[coord_object_type_index].is_dockable) {
+    
+                    let player_ship_type_index = main.getObjectTypeIndex(dirty.objects[ship_index].object_type_id);
+    
+                    if(dirty.object_types[player_ship_type_index].is_dockable) {
+                        return 'failedtodock';
+                       
+                    } else {
+                        dockOnShip(socket, dirty, dirty.objects[coord_object_index].id);
+                        return 'docked';
                     }
-
-                    // If we are of the same faction and there's a faction rule
-                    if(rule.rule === "allow_faction_players" && dirty.players[object_player_index].faction_id === dirty.players[socket_player_index].faction_id) {
-                        passed_rules = true;
-                    }
-
-                    if(rule.rule === "allow_all_players") {
-                        passed_rules = true;
-                    }
+    
                 }
             }
 
-            return passed_rules;
-        } catch(error) {
-            log(chalk.red("Error in movement.checkObjectMovementRules: " + error));
+
+            
+
+        } 
+        // DOCKING FOR A LARGE SHIP
+        else {
+
+            let x_modification = 0;
+            let y_modification = 0;
+            // right
+            if(dirty.coords[coord_index].tile_x > dirty.coords[previous_coord_index].tile_x) {
+                x_modification++;
+            } else if(dirty.coords[coord_index].tile_x < dirty.coords[previous_coord_index].tile_x) {
+                x_modification--;
+            } else if(dirty.coords[coord_index].tile_y > dirty.coords[previous_coord_index].tile_y) {
+                y_modification++;
+            }else if(dirty.coords[coord_index].tile_y < dirty.coords[previous_coord_index].tile_y) {
+                y_modification--;
+            } 
+
+            
+            //  Go through each of the coords the ship would be on after the move. If one is 
+            // dockable, we'll be going there now!
+            for(let i = 0; i < dirty.objects[ship_index].current_coords.length; i++) {
+
+                let checking_coord_index = -1;
+
+                if(x_modification > 0) {
+                    await map.getCoordNeighbor(dirty, 'galaxy', dirty.objects[ship_index].current_coords[i].coord_index, 'right');
+                    checking_coord_index = dirty.coords[dirty.objects[ship_index].current_coords[i].coord_index].right_coord_index;
+
+                } else if(x_modification < 0) {
+                    await map.getCoordNeighbor(dirty, 'galaxy', dirty.objects[ship_index].current_coords[i].coord_index, 'left');
+                    checking_coord_index = dirty.coords[dirty.objects[ship_index].current_coords[i].coord_index].left_coord_index;
+                } else if(y_modification > 0) {
+                    await map.getCoordNeighbor(dirty, 'galaxy', dirty.objects[ship_index].current_coords[i].coord_index, 'down');
+                    checking_coord_index = dirty.coords[dirty.objects[ship_index].current_coords[i].coord_index].down_coord_index;
+
+                } else if(y_modification < 0) {
+                    await map.getCoordNeighbor(dirty, 'galaxy', dirty.objects[ship_index].current_coords[i].coord_index, 'up');
+                    checking_coord_index = dirty.coords[dirty.objects[ship_index].current_coords[i].coord_index].up_coord_index;
+                }
+
+                if(checking_coord_index !== -1) {
+                    let coord_object_index = -1
+
+                    if(dirty.coords[checking_coord_index].object_id && dirty.coords[checking_coord_index].object_id !== dirty.objects[ship_index].id) {
+                        coord_object_index = await game_object.getIndex(dirty, dirty.coords[checking_coord_index].object_id);
+                    } else if(dirty.coords[checking_coord_index].belongs_to_object_id && dirty.coords[checking_coord_index].belongs_to_object_id !== dirty.objects[ship_index].id) {
+                        coord_object_index = await game_object.getIndex(dirty, dirty.coords[checking_coord_index].belongs_to_object_id);
+                    }
+
+                    if(coord_object_index !== -1) {
+                        let coord_object_type_index = main.getObjectTypeIndex(dirty.objects[coord_object_index].object_type_id);
+
+
+                        if(dirty.object_types[coord_object_type_index].is_dockable) {
+    
+                            let player_ship_type_index = main.getObjectTypeIndex(dirty.objects[ship_index].object_type_id);
+    
+                            if(dirty.object_types[player_ship_type_index].is_dockable) {
+                                return 'failedtodock';
+                            
+                            } else {
+                                dockOnShip(socket, dirty, dirty.objects[coord_object_index].id);
+                                return 'docked';
+                            }
+    
+                        }
+                    }
+
+                   
+                }
+                
+            }
         }
 
+
+        return 'nodocking';
+
+    } catch(error) {
+        log(chalk.red("Error in movement.checkDocking: " + error));
+        console.error(error);
+
+    }
+}
+
+
+
+
+async function checkObjectMovementRules(socket, dirty, object_id) {
+    try {
+
+        let passed_rules = false;
+        let object_index = await game_object.getIndex(dirty, object_id);
+
+        let object_player_index = await player.getIndex(dirty, { 'player_id': dirty.objects[object_index].player_id });
+        let socket_player_index = await player.getIndex(dirty, { 'player_id': socket.player_id });
+
+
+        // go through the object's rules, and as long as one matches, we are fine
+        let object_rules = dirty.rules.filter(rule => rule.object_id === dirty.objects[object_index].id);
+        if(object_rules.length > 0) {
+            for(let rule of object_rules) {
+
+                // If we made the door and there's an allow creator rule
+                if(rule.rule === "allow_creator" && socket.player_id === dirty.objects[object_index].player_id) {
+                    passed_rules = true;
+                }
+
+                // If we are of the same faction and there's a faction rule
+                if(rule.rule === "allow_faction_players" && dirty.players[object_player_index].faction_id === dirty.players[socket_player_index].faction_id) {
+                    passed_rules = true;
+                }
+
+                if(rule.rule === "allow_all_players") {
+                    passed_rules = true;
+                }
+            }
+        }
+
+        return passed_rules;
+    } catch(error) {
+        log(chalk.red("Error in movement.checkObjectMovementRules: " + error));
     }
 
-    async function dockOnShip(socket, dirty, object_id) {
+}
 
-        try {
+async function checkPlanetLanding(socket, dirty, ship_index, previous_coord_index, coord_index) {
+    try {
 
-            log(chalk.green("Docking on a dockable ship! (SPACE STATION!?!)"));
+        // Lets get the single ship coord out of the way
+        if(typeof dirty.objects[dirty.players[socket.player_index].ship_index].current_coords === "undefined" || dirty.objects[ship_index].current_coords.length === 0) {
 
-            let player_index = await player.getIndex(dirty, { 'player_id': socket.player_id });
 
-            if(player_index === -1) {
-                log(chalk.yellow("Could not find player"));
-                return false;
+            let planet_index = -1;
+            let linker_visual_only = false;
+            if(dirty.coords[coord_index].planet_id) {
+                planet_index = await planet.getIndex(dirty, { 'planet_id': dirty.coords[coord_index].planet_id });
+            } else if(dirty.coords[coord_index].belongs_to_planet_id) {
+                planet_index = await planet.getIndex(dirty, { 'planet_id': dirty.coords[coord_index].belongs_to_planet_id });
+
+                // make sure it's not just a visual thing
+                
+                let planet_coord_index = await main.getCoordIndex({ 'coord_id': dirty.planets[planet_index].coord_id });
+
+                let planet_type_index = dirty.planet_types.findIndex(function(obj) { return obj && obj.id === dirty.planets[planet_index].planet_type_id; });
+
+                let x_difference = dirty.coords[coord_index].tile_x - dirty.coords[planet_coord_index].tile_x;
+                let y_difference = dirty.coords[coord_index].tile_y - dirty.coords[planet_coord_index].tile_y;
+
+                let display_linker_index = dirty.planet_type_display_linkers.findIndex(function(obj) {
+                    return obj && obj.planet_type_id === dirty.planet_types[planet_type_index].id &&
+                        obj.position_x === x_difference && obj.position_y === y_difference; });
+
+                if(display_linker_index !== -1 && dirty.planet_type_display_linkers[display_linker_index].only_visual) {
+                    linker_visual_only = true;
+                    //console.log("Set linker_visual_only to true");
+                } 
             }
 
-            let object_index = await game_object.getIndex(dirty, object_id);
-            if(object_index === -1) {
-                log(chalk.yellow("Could not find ship (object) we are docking with"));
-                return false;
+
+            if(planet_index !== -1 && !linker_visual_only) {
+                let player_ship_type_index = main.getObjectTypeIndex(dirty.objects[ship_index].object_type_id);
+
+                if(dirty.object_types[player_ship_type_index].is_dockable) {
+                    return 'failedtoland';
+                
+                } else {
+                    switchToPlanet(socket, dirty, { 'planet_id': dirty.planets[planet_index].id,
+                        'previous_coord_index': previous_coord_index });
+                    return 'landed';
+                }
             }
 
 
-            // we need to find a ship coord to place the player on
-            let ship_coord_index = dirty.ship_coords.findIndex(function(obj) {
-                return obj && obj.ship_id === dirty.objects[object_index].id && !obj.object_type_id && !obj.object_id && !obj.player_id && !obj.monster_id; });
+        } 
+        // LARGE SHIP - NEED TO CHECK ALL NEW COORDS
+        else {
+
+            let x_modification = 0;
+            let y_modification = 0;
+            // right
+            if(dirty.coords[coord_index].tile_x > dirty.coords[previous_coord_index].tile_x) {
+                x_modification++;
+            } else if(dirty.coords[coord_index].tile_x < dirty.coords[previous_coord_index].tile_x) {
+                x_modification--;
+            } else if(dirty.coords[coord_index].tile_y > dirty.coords[previous_coord_index].tile_y) {
+                y_modification++;
+            }else if(dirty.coords[coord_index].tile_y < dirty.coords[previous_coord_index].tile_y) {
+                y_modification--;
+            } 
+
+            //  Go through each of the coords the ship would be on after the move. If one is 
+            // dockable, we'll be going there now!
+            for(let i = 0; i < dirty.objects[ship_index].current_coords.length; i++) {
+
+                let checking_coord_index = -1;
+
+                if(x_modification > 0) {
+                    await map.getCoordNeighbor(dirty, 'galaxy', dirty.objects[ship_index].current_coords[i].coord_index, 'right');
+                    checking_coord_index = dirty.coords[dirty.objects[ship_index].current_coords[i].coord_index].right_coord_index;
+
+                } else if(x_modification < 0) {
+                    await map.getCoordNeighbor(dirty, 'galaxy', dirty.objects[ship_index].current_coords[i].coord_index, 'left');
+                    checking_coord_index = dirty.coords[dirty.objects[ship_index].current_coords[i].coord_index].left_coord_index;
+                } else if(y_modification > 0) {
+                    await map.getCoordNeighbor(dirty, 'galaxy', dirty.objects[ship_index].current_coords[i].coord_index, 'down');
+                    checking_coord_index = dirty.coords[dirty.objects[ship_index].current_coords[i].coord_index].down_coord_index;
+
+                } else if(y_modification < 0) {
+                    
+                    await map.getCoordNeighbor(dirty, 'galaxy', dirty.objects[ship_index].current_coords[i].coord_index, 'up');
+                    checking_coord_index = dirty.coords[dirty.objects[ship_index].current_coords[i].coord_index].up_coord_index;
+                    //console.log("up movement checking_coord_index: " + checking_coord_index);
+                }
+
+                if(checking_coord_index !== -1) {
+                    //console.log("Checking coord tile_x,y: " + dirty.coords[checking_coord_index].tile_x + "," + dirty.coords[checking_coord_index].tile_y);
+                    let planet_index = -1;
+                    let linker_visual_only = false;
+                    if(dirty.coords[checking_coord_index].planet_id) {
+                        planet_index = await planet.getIndex(dirty, { 'planet_id': dirty.coords[checking_coord_index].planet_id });
+                    } else if(dirty.coords[checking_coord_index].belongs_to_planet_id) {
+                        //console.log("A coord has a belongs_to_planet_id");
+                        planet_index = await planet.getIndex(dirty, { 'planet_id': dirty.coords[checking_coord_index].belongs_to_planet_id });
+
+                        // make sure it's not just a visual thing
+                        
+                        let planet_coord_index = await main.getCoordIndex({ 'coord_id': dirty.planets[planet_index].coord_id });
+
+                        let planet_type_index = dirty.planet_types.findIndex(function(obj) { return obj && obj.id === dirty.planets[planet_index].planet_type_id; });
+
+                        let x_difference = dirty.coords[checking_coord_index].tile_x - dirty.coords[planet_coord_index].tile_x;
+                        let y_difference = dirty.coords[checking_coord_index].tile_y - dirty.coords[planet_coord_index].tile_y;
+
+                        let display_linker_index = dirty.planet_type_display_linkers.findIndex(function(obj) {
+                            return obj && obj.planet_type_id === dirty.planet_types[planet_type_index].id &&
+                                obj.position_x === x_difference && obj.position_y === y_difference; });
+
+                        if(display_linker_index !== -1) {
+                            //console.log(dirty.planet_type_display_linkers[display_linker_index]);
+                        } else {
+                            log(chalk.yellow("Did not find the display linker index"));
+                        }
+                        
+
+                        if(display_linker_index !== -1 && dirty.planet_type_display_linkers[display_linker_index].only_visual) {
+                            linker_visual_only = true;
+                            //console.log("Set linker_visual_only to true");
+                        } 
+                    }
 
 
-            if(ship_coord_index === -1) {
-                log(chalk.yellow("Could not find ship coord to place player on. Ship id: " + dirty.objects[object_index].id));
+                    if(planet_index !== -1 && !linker_visual_only) {
+                        let player_ship_type_index = main.getObjectTypeIndex(dirty.objects[ship_index].object_type_id);
 
-                // Count how many coords are in memory
-                let ship_coord_count = 0;
-                for(let ship_coord of dirty.ship_coords) {
-                    if(ship_coord.ship_id === dirty.objects[object_index].id) {
-                        ship_coord_count++;
+                        if(dirty.object_types[player_ship_type_index].is_dockable) {
+                            return 'failedtoland';
+                        
+                        } else {
+                            console.log("going to switch to planet!");
+                            switchToPlanet(socket, dirty, { 'planet_id': dirty.planets[planet_index].id,
+                                'previous_coord_index': previous_coord_index });
+                            return 'landed';
+                        }
                     }
                 }
-                console.log("Have " + ship_coord_count + " coords from this ship in memory");
-                return false;
+                
             }
-
-            console.log("going to place player on ship coord id: " + dirty.ship_coords[ship_coord_index].id);
-
-
-            // get the galaxy coord that the player was on
-            let coord_index = await main.getCoordIndex({'coord_id': dirty.players[player_index].coord_id });
-
-            if(coord_index === -1) {
-                log(chalk.yellow("Could not find galaxy coord that the player is moving from"));
-                return false;
-            }
-
-            await main.updateCoordGeneric(socket, { 'coord_index': coord_index, 'player_id': false, 'object_id': false });
-            await main.updateCoordGeneric(socket, { 'ship_coord_index': ship_coord_index, 'player_id': dirty.players[socket.player_index].id });
-
-
-            dirty.players[player_index].previous_coord_id = false;
-            dirty.players[player_index].coord_id = false;
-            dirty.players[player_index].ship_coord_id = dirty.ship_coords[ship_coord_index].id;
-            dirty.players[player_index].has_change = true;
-            await player.sendInfo(socket, "ship_" + dirty.ship_coords[ship_coord_index].ship_id, dirty, dirty.players[player_index].id);
-            await player.sendInfo(false, "galaxy", dirty, dirty.players[player_index].id);
-
-            socket.leave("galaxy");
-            socket.join("ship_" + dirty.ship_coords[ship_coord_index].ship_id);
-
-            socket.emit('view_change_data', { 'view': 'ship'});
-            map.updateMap(socket, dirty);
-
-            // give the player's ship that they just used to enter the spaceport an attached to
-            let ship_index = await game_object.getIndex(dirty, dirty.players[player_index].ship_id);
-
-            // The ship is now docked at this other ship, make sure the player knows
-            if(ship_index !== -1) {
-                dirty.objects[ship_index].docked_at_object_id = dirty.ship_coords[ship_coord_index].ship_id;
-                dirty.objects[ship_index].has_change = true;
-                await game_object.sendInfo(socket, false, dirty, ship_index, 'movement.dockOnShip');
-            }
-
-
-
-        } catch(error) {
-            log(chalk.red("Error in game.dockOnShip: " + error));
         }
 
 
+        return 'nolanding';
+    } catch(error) {
+        log(chalk.red("Error in movement.checkPlanetLanding: " + error));
+        console.error(error);
+
+    }
+}
+
+
+async function dockOnShip(socket, dirty, object_id) {
+
+    try {
+
+        log(chalk.green("Docking on a dockable ship! (SPACE STATION!?!)"));
+
+        let player_index = await player.getIndex(dirty, { 'player_id': socket.player_id });
+
+        if(player_index === -1) {
+            log(chalk.yellow("Could not find player"));
+            return false;
+        }
+
+        let object_index = await game_object.getIndex(dirty, object_id);
+        if(object_index === -1) {
+            log(chalk.yellow("Could not find ship (object) we are docking with"));
+            return false;
+        }
+
+
+        // we need to find a ship coord to place the player on
+        let ship_coord_index = dirty.ship_coords.findIndex(function(obj) {
+            return obj && obj.ship_id === dirty.objects[object_index].id && !obj.object_type_id && !obj.object_id && !obj.player_id && !obj.monster_id; });
+
+
+        if(ship_coord_index === -1) {
+            log(chalk.yellow("Could not find ship coord to place player on. Ship id: " + dirty.objects[object_index].id));
+
+            // Count how many coords are in memory
+            let ship_coord_count = 0;
+            for(let ship_coord of dirty.ship_coords) {
+                if(ship_coord.ship_id === dirty.objects[object_index].id) {
+                    ship_coord_count++;
+                }
+            }
+            console.log("Have " + ship_coord_count + " coords from this ship in memory");
+            return false;
+        }
+
+        console.log("going to place player on ship coord id: " + dirty.ship_coords[ship_coord_index].id);
+
+
+        // get the galaxy coord that the player was on
+        let coord_index = await main.getCoordIndex({'coord_id': dirty.players[player_index].coord_id });
+
+        if(coord_index === -1) {
+            log(chalk.yellow("Could not find galaxy coord that the player is moving from"));
+            return false;
+        }
+
+        await main.updateCoordGeneric(socket, { 'coord_index': coord_index, 'player_id': false, 'object_id': false });
+        await main.updateCoordGeneric(socket, { 'ship_coord_index': ship_coord_index, 'player_id': dirty.players[socket.player_index].id });
+
+
+        dirty.players[player_index].previous_coord_id = false;
+        dirty.players[player_index].coord_id = false;
+        dirty.players[player_index].coord_index = -1;
+        dirty.players[player_index].ship_coord_id = dirty.ship_coords[ship_coord_index].id;
+        dirty.players[player_index].has_change = true;
+        await player.sendInfo(socket, "ship_" + dirty.ship_coords[ship_coord_index].ship_id, dirty, dirty.players[player_index].id);
+        await player.sendInfo(false, "galaxy", dirty, dirty.players[player_index].id);
+
+        socket.leave("galaxy");
+        socket.join("ship_" + dirty.ship_coords[ship_coord_index].ship_id);
+
+        socket.emit('view_change_data', { 'view': 'ship'});
+        map.updateMap(socket, dirty);
+
+        // give the player's ship that they just used to enter the spaceport an attached to
+        let ship_index = await game_object.getIndex(dirty, dirty.players[player_index].ship_id);
+
+        // The ship is now docked at this other ship, make sure the player knows
+        if(ship_index !== -1) {
+            await game_object.removeFromCoord(dirty, ship_index);
+            dirty.objects[ship_index].docked_at_object_id = dirty.ship_coords[ship_coord_index].ship_id;
+            
+            dirty.objects[ship_index].coord_id = false;
+            dirty.objects[ship_index].current_coords = [];
+            dirty.objects[ship_index].has_change = true;
+            await game_object.sendInfo(socket, false, dirty, ship_index, 'movement.dockOnShip');
+            
+        }
+
+
+
+    } catch(error) {
+        log(chalk.red("Error in game.dockOnShip: " + error));
     }
 
-    /*
-        data:   |   movement_direction   |   destination_coord_type   |   destination_coord_id
-     */
 
-    /**
-     * @param {Object} socket
-     * @param {Object} dirty
-     * @param {Object} data
-     * @param {String} data.movement_direction
-     * @param {String=} data.destination_coord_type
-     * @param {number=} data.destination_coord_id
-     * @param {String=} data.source
+}
 
-     */
-    async function move(socket, dirty, data) {
+/*
+    data:   |   movement_direction   |   destination_coord_type   |   destination_coord_id
+*/
 
-        try {
+/**
+ * @param {Object} socket
+ * @param {Object} dirty
+ * @param {Object} data
+ * @param {String} data.movement_direction
+ * @param {String=} data.destination_coord_type
+ * @param {number=} data.destination_coord_id
+ * @param {String=} data.source
 
+*/
+async function move(socket, dirty, data) {
 
-            //console.log("In movement.move");
-            //if(data.source) {
-            //    console.log("source:" + data.source);
-            //    console.trace("here");
-            //}
-
-            // TODO don't allow warp hacking. Putting in a destination coord we couldn't really put it
-
-            //let start = new process.hrtime();
-
-            if(typeof socket.player_index === "undefined") {
-                return false;
-            }
-
-            let player_index = socket.player_index;
+    try {
 
 
-            //console.log("In movement.move with socket id: " + socket.id + " player_id: " + dirty.players[socket.player_index].id +
-            //    " socket.player_index: " + socket.player_index + " destination coord_id: " + data.destination_coord_id);
+        //console.log("In movement.move");
+        //if(data.source) {
+        //    console.log("source:" + data.source);
+        //    console.trace("here");
+        //}
+
+        // TODO don't allow warp hacking. Putting in a destination coord we couldn't really put it
+
+        //let start = new process.hrtime();
+
+        if(typeof socket.player_index === "undefined") {
+            return false;
+        }
+
+        let player_index = socket.player_index;
 
 
-            if(data.destination_coord_type && data.destination_coord_type === 'planet' && !dirty.players[player_index].planet_coord_id ||
-                data.destination_coord_type === 'ship' && !dirty.players[player_index].ship_coord_id ||
-                data.destination_coord_type === 'galaxy' && !dirty.players[player_index].coord_id) {
-                log(chalk.yellow("destination coord type mismatch!"));
-                return false;
-            }
+        //console.log("In movement.move with socket id: " + socket.id + " player_id: " + dirty.players[socket.player_index].id +
+        //    " socket.player_index: " + socket.player_index + " destination coord_id: " + data.destination_coord_id);
 
 
-            if(!socket.move_delay) {
-                socket.move_delay = 500;
-            }
-
-            // The player is trying to move a ship with no engines
-            if(socket.move_delay === 1000000) {
-                //console.log("Player is trying to move a ship with no engines");
-
-                socket.emit('result_info', { 'status': 'failure', 'text': 'Your ship needs engines!' });
-                socket.emit('move_failure', { 'failed_coord_id': data.destination_coord_id,
-                'return_to_coord_id': dirty.players[player_index].coord_id });
-                return false;
-            }
-
-            let movement_delay = socket.move_delay;
-
-            // We have a temporary movement modifier. Maybe a tile we are on is slowing us down (water for most body types)
-            // or maybe even an enemy effect (spider web!)
-
-            if(socket.movement_modifier) {
-
-                movement_delay = movement_delay / socket.movement_modifier;
-                //console.log("Socket has movement modifier: " + socket.movement_modifier + ". Changed movement delay to: " + movement_delay);
-            }
+        if(data.destination_coord_type && data.destination_coord_type === 'planet' && !dirty.players[player_index].planet_coord_id ||
+            data.destination_coord_type === 'ship' && !dirty.players[player_index].ship_coord_id ||
+            data.destination_coord_type === 'galaxy' && !dirty.players[player_index].coord_id) {
+            log(chalk.yellow("destination coord type mismatch!"));
+            return false;
+        }
 
 
-            let time_allowed = true;
+        if(!socket.move_delay) {
+            socket.move_delay = 500;
+        }
 
-            // Not sure why we were doing the line below
-            // let current_timestamp = Math.floor(new Date());
-            let current_timestamp = Date.now();
-            let next_move_available_at = socket.last_move_time + movement_delay;
+        // The player is trying to move a ship with no engines
+        if(socket.move_delay === 1000000) {
+            //console.log("Player is trying to move a ship with no engines");
 
-            if (socket.last_move_time) {
+            socket.emit('result_info', { 'status': 'failure', 'text': 'Your ship needs engines!' });
+            socket.emit('move_failure', { 'failed_coord_id': data.destination_coord_id,
+            'return_to_coord_id': dirty.players[player_index].coord_id });
+            return false;
+        }
 
-            } else {
-                //socket.last_move_time = Math.floor(new Date());
-                socket.last_move_time = Date.now();
-            }
+        let movement_delay = socket.move_delay;
 
-            if(!time_allowed) {
+        // We have a temporary movement modifier. Maybe a tile we are on is slowing us down (water for most body types)
+        // or maybe even an enemy effect (spider web!)
 
-                console.log("Client can't move yet");
+        if(socket.movement_modifier) {
 
-                // If we are within 200 ms of our next move, queue this up at a next move
-                /*
-                if(socket.last_move_time + movement_delay - 200 < current_timestamp) {
-                    //console.log("Adding to player's next move queue!");
-                    let next_move_index = dirty.next_moves.findIndex(function(obj) { return obj && obj.player_id === socket.player_id; });
-
-                    let next_move_time = socket.last_move_time + movement_delay;
-                    let waiting_time = next_move_time - current_timestamp;
-                    //console.log("Set waiting time to: " + waiting_time);
-                    if(next_move_index === -1) {
-                        dirty.next_moves.push({ 'player_id': socket.player_id, 'movement': data.movement, 'waiting_time': waiting_time });
-                    }
-                }
-
-                */
-
-                return false;
-            }
-
-            // Re-calculate the socket's average move time
-            if(!socket.move_totals) {
-                socket.move_totals = 0;
-            }
-            let time_since_last_move = current_timestamp - socket.last_move_time;
-            //console.log("Time since last move: " + time_since_last_move);
-            socket.move_totals += time_since_last_move;
-            //console.log("Socket move totals: " + socket.move_totals);
-            if(!socket.move_count) {
-                socket.move_count = 1;
-            } else {
-                socket.move_count++;
-            }
-
-            //console.log("Socket move count: " + socket.move_count);
-
-            let average_move_delay = socket.move_totals / socket.move_count;
-            //console.log("Socket average move delay: " + average_move_delay);
-            if(socket.move_count > 10 && average_move_delay < movement_delay) {
-                log(chalk.yellow("Client is repeatedly moving too fast! average: " + average_move_delay + " socket move delay: " + movement_delay));
-                // send a move denied info to the client
-
-                console.log(data.destination_coord_type);
-                if(data.destination_coord_type === 'planet') {
-                    socket.emit('move_failure', { 'failed_planet_coord_id': data.destination_coord_id,
-                        'return_to_planet_coord_id': dirty.players[player_index].planet_coord_id });
-
-                } else if(data.destination_coord_type === 'ship') {
-                    socket.emit('move_failure', { 'failed_ship_coord_id': data.destination_coord_id,
-                        'return_to_ship_coord_id': dirty.players[player_index].ship_coord_id });
-                } else if(data.destination_coord_type === 'galaxy') {
-                    socket.emit('move_failure', { 'failed_coord_id': data.destination_coord_id,
-                        'return_to_coord_id': dirty.players[player_index].coord_id });
-                }
-
-                return false;
-
-            }
+            movement_delay = movement_delay / socket.movement_modifier;
+            //console.log("Socket has movement modifier: " + socket.movement_modifier + ". Changed movement delay to: " + movement_delay);
+        }
 
 
-            //console.log("Setting last move time and removing movement modifier");
+        let time_allowed = true;
+
+        // Not sure why we were doing the line below
+        // let current_timestamp = Math.floor(new Date());
+        let current_timestamp = Date.now();
+        let next_move_available_at = socket.last_move_time + movement_delay;
+
+        if (socket.last_move_time) {
+
+        } else {
             //socket.last_move_time = Math.floor(new Date());
-            //console.log("Accepted move: " + data.destination_coord_type + " " + data.destination_coord_id);
             socket.last_move_time = Date.now();
+        }
 
-            if(typeof socket.movement_modifier === "undefined") {
-                socket.movement_modifier = 1.00;    
-            }
+        if(!time_allowed) {
 
+            console.log("Client can't move yet");
 
+            // If we are within 200 ms of our next move, queue this up at a next move
+            /*
+            if(socket.last_move_time + movement_delay - 200 < current_timestamp) {
+                //console.log("Adding to player's next move queue!");
+                let next_move_index = dirty.next_moves.findIndex(function(obj) { return obj && obj.player_id === socket.player_id; });
 
-            // not sure with all the different conditions we should put this here
-            //socket.emit('show_move_data', {'direction': data.movement});
-
-            // remove an autopilot if this was a manual move and we are in the galaxy view
-            if(data.source && data.source === 'manual' && !dirty.players[player_index].ship_coord_id) {
-                let autopilot_index = dirty.autopilots.findIndex(function(obj) { return obj && obj.player_id === dirty.players[player_index].id; });
-
-                if(autopilot_index !== -1) {
-                    console.log("Manual move removing autopilot");
-                    dirty.autopilots.splice(autopilot_index, 1);
+                let next_move_time = socket.last_move_time + movement_delay;
+                let waiting_time = next_move_time - current_timestamp;
+                //console.log("Set waiting time to: " + waiting_time);
+                if(next_move_index === -1) {
+                    dirty.next_moves.push({ 'player_id': socket.player_id, 'movement': data.movement, 'waiting_time': waiting_time });
                 }
             }
 
+            */
 
-            // Right now, the only case where we don't have a destination_coord_id is when there was no coord found next to a +1 or above
-            // planet coord and the player may be falling.
-            if(data.movement_direction && typeof data.destination_coord_id === 'undefined') {
-                await movePlanetFall(socket, dirty, {'player_index': player_index, 'movement_direction': data.movement_direction });
-            } else if(dirty.players[player_index].virtual_coord_id) {
-                await moveVirtual(socket, dirty, data.destination_coord_id, data.movement_direction);
-            } else if (dirty.players[player_index].planet_coord_id) {
-                await movePlanet(socket, dirty, data.destination_coord_id, data.movement_direction);
-            } else if (dirty.players[player_index].ship_coord_id) {
-                await moveShip(socket, dirty, data.destination_coord_id, data.movement_direction);
-            } else {
+            return false;
+        }
 
-                // TODO need to use data.movement direction to get neighbor coord if possible
-                let new_coord_index = await main.getCoordIndex({ 'coord_id': data.destination_coord_id });
+        // Re-calculate the socket's average move time
+        if(!socket.move_totals) {
+            socket.move_totals = 0;
+        }
+        let time_since_last_move = current_timestamp - socket.last_move_time;
+        //console.log("Time since last move: " + time_since_last_move);
+        socket.move_totals += time_since_last_move;
+        //console.log("Socket move totals: " + socket.move_totals);
+        if(!socket.move_count) {
+            socket.move_count = 1;
+        } else {
+            socket.move_count++;
+        }
 
-                await moveGalaxy(socket, dirty, new_coord_index);
+        //console.log("Socket move count: " + socket.move_count);
+
+        let average_move_delay = socket.move_totals / socket.move_count;
+        //console.log("Socket average move delay: " + average_move_delay);
+        if(socket.move_count > 10 && average_move_delay < movement_delay) {
+            log(chalk.yellow("Client is repeatedly moving too fast! average: " + average_move_delay + " socket move delay: " + movement_delay));
+            // send a move denied info to the client
+
+            console.log(data.destination_coord_type);
+            if(data.destination_coord_type === 'planet') {
+                socket.emit('move_failure', { 'failed_planet_coord_id': data.destination_coord_id,
+                    'return_to_planet_coord_id': dirty.players[player_index].planet_coord_id });
+
+            } else if(data.destination_coord_type === 'ship') {
+                socket.emit('move_failure', { 'failed_ship_coord_id': data.destination_coord_id,
+                    'return_to_ship_coord_id': dirty.players[player_index].ship_coord_id });
+            } else if(data.destination_coord_type === 'galaxy') {
+                socket.emit('move_failure', { 'failed_coord_id': data.destination_coord_id,
+                    'return_to_coord_id': dirty.players[player_index].coord_id });
             }
 
+            return false;
 
-        } catch(error) {
-            log(chalk.red("Error in movement.move: " + error));
-            console.error(error);
+        }
+
+
+        //console.log("Setting last move time and removing movement modifier");
+        //socket.last_move_time = Math.floor(new Date());
+        //console.log("Accepted move: " + data.destination_coord_type + " " + data.destination_coord_id);
+        socket.last_move_time = Date.now();
+
+        if(typeof socket.movement_modifier === "undefined") {
+            socket.movement_modifier = 1.00;    
         }
 
 
 
+        // not sure with all the different conditions we should put this here
+        //socket.emit('show_move_data', {'direction': data.movement});
+
+        // remove an autopilot if this was a manual move and we are in the galaxy view
+        if(data.source && data.source === 'manual' && !dirty.players[player_index].ship_coord_id) {
+            let autopilot_index = dirty.autopilots.findIndex(function(obj) { return obj && obj.player_id === dirty.players[player_index].id; });
+
+            if(autopilot_index !== -1) {
+                console.log("Manual move removing autopilot");
+                dirty.autopilots.splice(autopilot_index, 1);
+            }
+        }
+
+
+        // Right now, the only case where we don't have a destination_coord_id is when there was no coord found next to a +1 or above
+        // planet coord and the player may be falling.
+        if(data.movement_direction && typeof data.destination_coord_id === 'undefined') {
+            await movePlanetFall(socket, dirty, {'player_index': player_index, 'movement_direction': data.movement_direction });
+        } else if(dirty.players[player_index].virtual_coord_id) {
+            await moveVirtual(socket, dirty, data.destination_coord_id, data.movement_direction);
+        } else if (dirty.players[player_index].planet_coord_id) {
+            await movePlanet(socket, dirty, data.destination_coord_id, data.movement_direction);
+        } else if (dirty.players[player_index].ship_coord_id) {
+            await moveShip(socket, dirty, data.destination_coord_id, data.movement_direction);
+        } else {
+
+            // TODO need to use data.movement direction to get neighbor coord if possible
+            let new_coord_index = await main.getCoordIndex({ 'coord_id': data.destination_coord_id });
+
+            await moveGalaxy(socket, dirty, new_coord_index);
+        }
+
+
+    } catch(error) {
+        log(chalk.red("Error in movement.move: " + error));
+        console.error(error);
     }
 
-    exports.move = move;
+
+
+}
+
+exports.move = move;
 
     async function moveEntirePlanet(socket, dirty, planet_id, destination_coord_id) {
         try {
@@ -502,6 +789,307 @@ const world = require('./world.js');
 
     async function moveGalaxy(socket, dirty, coord_index) {
         try {
+            //console.time("moveGalaxy");
+
+            if(typeof socket.player_index === 'undefined') {
+                log(chalk.yellow("Can't move in galaxy. No socket.player_index yet"));
+                return false;
+            }
+
+            if(typeof dirty.players[socket.player_index].ship_index === "undefined" || dirty.players[socket.player_index].ship_index === -1 ) {
+                log(chalk.yellow("Player doesn't seem to have a ship index set"));
+                await player.setShipIndex(socket, dirty);
+            }
+
+            // Going to use this in the function to reduce the complexity of reading the code below
+            let ship_index = dirty.players[socket.player_index].ship_index;
+
+            let player_ship_type_index = main.getObjectTypeIndex(dirty.objects[ship_index].object_type_id);
+
+            if(player_ship_type_index === -1) {
+                log(chalk.yellow("Could not find the type of ship the player has"));
+                return false;
+            }
+
+            // get the coord the player is currently on
+            let previous_coord_index = -1;
+            if(typeof dirty.players[socket.player_index].coord_index !== "undefined" && dirty.players[socket.player_index].coord_index !== -1) {
+                previous_coord_index = dirty.players[socket.player_index].coord_index;
+            } else {
+                log(chalk.yellow("Player did not have a coord_index - having to grab the coord index"));
+                previous_coord_index = await main.getCoordIndex({'coord_id': dirty.players[socket.player_index].coord_id});
+                dirty.players[socket.player_index].coord_index = previous_coord_index;
+            }
+            
+
+            if(previous_coord_index === -1) {
+                log(chalk.yellow("Unable to find coord player was previously on in movement.moveGalaxy"));
+                return false;
+            }
+
+            // Make sure the coords are close enough
+            if( Math.abs(dirty.coords[previous_coord_index].tile_x - dirty.coords[coord_index].tile_x) > 1 ||
+                Math.abs(dirty.coords[previous_coord_index].tile_y - dirty.coords[coord_index].tile_y) > 1) {
+                log(chalk.yellow("Move is too far away. In moveGalaxy"));
+                console.log("Player id: " + dirty.players[socket.player_index].id + " tried to move from x,y: " +
+                    dirty.coords[previous_coord_index].tile_x + "," + dirty.coords[previous_coord_index].tile_y + " to x,y: "
+                    + dirty.coords[coord_index].tile_x + "," + dirty.coords[coord_index].tile_y);
+                return false;
+            }
+
+            // get the display linkers, if there are any, and determine the movement tile width/height
+            let ship_display_linkers = dirty.object_type_display_linkers.filter(linker =>
+                linker.object_type_id === dirty.object_types[player_ship_type_index].id);
+
+            // For ships larger than a single tile, we need to make sure we have all the current coords for the ship
+            if(ship_display_linkers.length > 0 && (typeof dirty.objects[ship_index].current_coords === "undefined" || ship_display_linkers.length !== dirty.objects[ship_index].current_coords.length) ) {
+                //console.log("Ship needs current coords updated");
+                await game_object.getShipCurrentCoords(socket, dirty, ship_display_linkers);
+                //console.log(dirty.objects[ship_index].current_coords);
+                
+            }
+
+            /******* DOCKING ***************/
+            let docked_result = await checkDocking(socket, dirty, ship_index, previous_coord_index, coord_index);
+
+
+            if(docked_result === 'docked') {
+                return true;
+            } else if(docked_result === 'failedtodock') {
+                socket.emit('chat', { 'message': "You cannot dock on another ship with a dockable ship", 'scope': 'system' });
+                socket.emit('move_failure', { 'failed_coord_id': dirty.coords[coord_index].id,
+                    'return_to_coord_id': dirty.coords[previous_coord_index].id });
+                socket.emit('result_info', { 'status': 'failure', 'text': "Dockable ships can't dock" });
+                return false;
+            }
+
+            /******* LANDING ON PLANET ***************/
+            let landed_result = await checkPlanetLanding(socket, dirty, ship_index, previous_coord_index, coord_index);
+
+            //console.log("Landed Result: " + landed_result);
+
+            if(landed_result === 'landed') {
+                return true;
+            } else if(landed_result === 'failedtoland') {
+                socket.emit('chat', { 'message': "You cannot land on a planet with a large, dockable ship", 'scope': 'system' });
+                    socket.emit('move_failure', { 'failed_coord_id': dirty.coords[coord_index].id,
+                        'return_to_coord_id': dirty.coords[previous_coord_index].id });
+                    socket.emit('result_info', { 'status': 'failure', 'text': "Dockable ships can't land" });
+            }
+
+            // TODO I would eventually like to get to the point of using our neighbor system with this
+            let can_place = await player.canPlace(dirty, 'galaxy', dirty.coords[coord_index], socket.player_index, false);
+
+            if(!can_place) {
+
+                console.log("Can't do the move in moveGalaxy");
+                return false;
+            }
+
+            let paid_for_move = await payForGalaxyMove(socket, dirty, ship_index);
+
+            if(paid_for_move === false) {
+                console.log("Engine has no energy");
+                socket.emit('chat', { 'message': "Your engines need more fuel. Refuel, or jump out the airlock and come back with fuel", 'scope': 'system' });
+                socket.emit('result_info', { 'status': 'failure', 'text': "No fuel" });
+                socket.emit('move_failure', { 'failed_coord_id': dirty.coords[coord_index].id,
+                    'return_to_coord_id': dirty.coords[previous_coord_index].id });
+                return false;
+            }
+
+            /***** MOVE IS VALID - GRABBING AND SENDING NEW COORDS BEFORE THE MOVE *******/
+            let starting_y = -1;
+            let ending_y = -1;
+            let starting_x = -1;
+            let ending_x = -1;
+
+            // We only need to send new planet coords to the client
+            if(dirty.coords[coord_index].tile_y < dirty.coords[previous_coord_index].tile_y) {
+
+                starting_y = dirty.coords[coord_index].tile_y - Math.floor(global.show_rows / 2);
+                ending_y = starting_y;
+                starting_x = dirty.coords[coord_index].tile_x - Math.floor(global.show_cols / 2);
+                ending_x = dirty.coords[coord_index].tile_x + Math.floor(global.show_cols / 2);
+
+            } else if(dirty.coords[coord_index].tile_y > dirty.coords[previous_coord_index].tile_y) {
+                starting_y = dirty.coords[coord_index].tile_y + Math.floor(global.show_rows / 2);
+                ending_y = starting_y;
+                starting_x = dirty.coords[coord_index].tile_x - Math.floor(global.show_cols / 2);
+                ending_x = dirty.coords[coord_index].tile_x + Math.floor(global.show_cols / 2);
+            } else if(dirty.coords[coord_index].tile_x < dirty.coords[previous_coord_index].tile_x) {
+                starting_x = dirty.coords[coord_index].tile_x - Math.floor(global.show_cols / 2);
+                ending_x = starting_x;
+                starting_y = dirty.coords[coord_index].tile_y - Math.floor(global.show_rows / 2);
+                ending_y = dirty.coords[coord_index].tile_y + Math.floor(global.show_rows / 2);
+            } if(dirty.coords[coord_index].tile_x > dirty.coords[previous_coord_index].tile_x) {
+                starting_x = dirty.coords[coord_index].tile_x + Math.floor(global.show_cols / 2);
+                ending_x = starting_x;
+                starting_y = dirty.coords[coord_index].tile_y - Math.floor(global.show_rows / 2);
+                ending_y = dirty.coords[coord_index].tile_y + Math.floor(global.show_rows / 2);
+            }
+
+            //console.log("Movement has us sending new coords from x: " + starting_x + " - " + ending_x + " y: " + starting_y + " - " + ending_y);
+
+            for(let i = starting_x; i <= ending_x; i++) {
+                for(let j = starting_y; j <= ending_y; j++) {
+
+                    // coords don't exist < 0
+                    if(i >= 0 && j >= 0) {
+                        //console.log("Sending planet coord x,y: " + i + "," + j + " due to move");
+                        let galaxy_coord_data = {  'tile_x': i, 'tile_y': j };
+                        let galaxy_coord_index = await main.getCoordIndex(galaxy_coord_data);
+
+                        if(galaxy_coord_index !== -1) {
+
+                            // Send the socket the planet too
+                            if(dirty.coords[galaxy_coord_index].planet_id && dirty.coords[galaxy_coord_index].planet_id !== 0) {
+                                await planet.sendInfo(socket, false, dirty,
+                                    { 'planet_id': dirty.coords[galaxy_coord_index].planet_id, 'source': 'movement.moveGalaxy' });
+                            }
+
+                            socket.emit('coord_info', { 'coord': dirty.coords[galaxy_coord_index] });
+
+
+                        }
+                    }
+
+                }
+            }
+
+
+
+            // Just a small ship. EASY MOVE!
+            if(ship_display_linkers.length === 0) {
+                await main.updateCoordGeneric(socket, { 'coord_index': previous_coord_index, 'player_id': false,
+                    'object_id': false });
+                await main.updateCoordGeneric(socket, { 'coord_index': coord_index,
+                    'player_id': dirty.players[socket.player_index].id, 'object_id': dirty.players[socket.player_index].ship_id });
+
+                dirty.players[socket.player_index].coord_id = dirty.coords[coord_index].id;
+                dirty.players[socket.player_index].coord_index = coord_index;
+                dirty.players[socket.player_index].has_change = true;
+                await player.sendInfo(socket, "galaxy", dirty, dirty.players[socket.player_index].id);
+
+                dirty.objects[ship_index].coord_id = dirty.coords[coord_index].id;
+                dirty.objects[ship_index].has_change = true;
+                await game_object.sendInfo(socket, "galaxy", dirty, ship_index, 'movement.moveGalaxy');
+
+                await player.calculateMovementModifier(socket, dirty, 'galaxy', coord_index);
+                //console.timeEnd("moveGalaxy");
+                return;
+            }
+
+            /************** MOVING A LARGER SHIP ***************/
+
+            let current_coords = [];
+
+            for(let linker of ship_display_linkers) {
+                let linker_tile_x = dirty.coords[previous_coord_index].tile_x + linker.position_x;
+                let linker_tile_y = dirty.coords[previous_coord_index].tile_y + linker.position_y;
+
+                current_coords.push({ 'tile_x': linker_tile_x, 'tile_y': linker_tile_y, 'still_used': false });
+            }
+
+
+            for(let linker of ship_display_linkers) {
+                let linker_tile_x = dirty.coords[coord_index].tile_x + linker.position_x;
+                let linker_tile_y = dirty.coords[coord_index].tile_y + linker.position_y;
+
+                let placing_coord_index = await main.getCoordIndex({ 'tile_x': linker_tile_x, 'tile_y': linker_tile_y });
+
+                // If it's the previous coord we were on, we need the player_id and object_id to be false
+                // and switch it to a belongs_to_object_id
+                if(linker_tile_x === dirty.coords[previous_coord_index].tile_x &&
+                    linker_tile_y === dirty.coords[previous_coord_index].tile_y) {
+
+                    await main.updateCoordGeneric(false, { 'coord_index': placing_coord_index, 'player_id': false, 'object_id': false });
+                    await main.updateCoordGeneric(false, { 'coord_index': placing_coord_index,
+                        'belongs_to_object_id': dirty.players[socket.player_index].ship_id });
+
+                }
+                // It's the coord we are moving to
+                else if(linker_tile_x === dirty.coords[coord_index].tile_x && linker_tile_y === dirty.coords[coord_index].tile_y) {
+
+                    if(dirty.coords[placing_coord_index].belongs_to_object_id) {
+                        await main.updateCoordGeneric(false, { 'coord_index': placing_coord_index,
+                            'belongs_to_object_id': false });
+                    }
+
+                    await main.updateCoordGeneric(false, { 'coord_index': placing_coord_index,
+                        'player_id': dirty.players[socket.player_index].id, 'object_id': dirty.players[socket.player_index].ship_id });
+                }
+
+                // Standard belongs to update
+                else {
+                    await main.updateCoordGeneric(false, { 'coord_index': placing_coord_index,
+                        'belongs_to_object_id': dirty.players[socket.player_index].ship_id });
+                }
+
+                let current_coord_index = current_coords.findIndex(function(obj) { return obj &&
+                    obj.tile_x === linker_tile_x && obj.tile_y === linker_tile_y });
+                if(current_coord_index !== -1) {
+                    current_coords[current_coord_index].still_used = true;
+                }
+            }
+
+
+            // foreach current coords not used, remove it!
+            for(let old_coord of current_coords) {
+                if(old_coord.still_used === false) {
+
+                    let old_coord_index = await main.getCoordIndex({ 'tile_x': old_coord.tile_x, 'tile_y': old_coord.tile_y });
+
+                    await main.updateCoordGeneric(false, { 'coord_index': old_coord_index,
+                        'player_id': false, 'object_id': false, 'belongs_to_object_id': false });
+
+                }
+            }
+
+            dirty.players[socket.player_index].coord_id = dirty.coords[coord_index].id;
+            dirty.players[socket.player_index].coord_index = coord_index;
+            dirty.players[socket.player_index].has_change = true;
+
+            await player.sendInfo(socket, "galaxy", dirty, dirty.players[socket.player_index].id);
+
+            dirty.objects[ship_index].coord_id = dirty.coords[coord_index].id;
+            dirty.objects[ship_index].has_change = true;
+            await game_object.sendInfo(socket, "galaxy", dirty, ship_index, 'movement.moveGalaxy');
+
+            //await map.updateMap(socket, dirty);
+
+
+            // If our ship type is a dockable ship type
+            if(dirty.object_types[player_ship_type_index].is_dockable) {
+                log(chalk.cyan("Dockable ship moved. I think we need to code in changing the coord_id for any ship docked here"));
+
+                // Here I was thinking I might need to move the coord_id of the ships that are docked, but anymore I think we have all that
+                // reset. I don't BELIEVE I need to do anything with the idea below.
+                // Don't like filters anymore
+                //let docked_ships = dirty.objects.filter(object => object.docked_at_object_id === dirty.objects[ship_index].id);
+
+            }
+
+
+            await player.calculateMovementModifier(socket, dirty, 'galaxy', coord_index);
+            await game_object.getShipCurrentCoords(socket, dirty, ship_display_linkers);
+
+            //console.timeEnd("moveGalaxy");
+
+        } catch(error) {
+            log(chalk.red("Error in movement.moveGalaxy: " + error));
+            console.error(error);
+        }
+
+
+    }
+
+    exports.moveGalaxy = moveGalaxy;
+
+
+    async function moveGalaxyOld(socket, dirty, coord_index) {
+        try {
+
+            console.time("moveGalaxyOld");
 
             //console.log("in moveGalaxy for player id:" + dirty.players[socket.player_index].id + " socket.player_index: " +
             //    socket.player_index + " socket id: " + socket.id + " destination_coord_id: " + dirty.coords[coord_index].id);
@@ -546,8 +1134,18 @@ const world = require('./world.js');
             }
 
             // get the display linkers, if there are any, and determine the movement tile width/height
+            console.time("getDisplayLinkers");
             let ship_display_linkers = dirty.object_type_display_linkers.filter(linker =>
                 linker.object_type_id === dirty.object_types[player_ship_type_index].id);
+            console.timeEnd("getDisplayLinkers");
+
+
+            // MAKE SURE SHIP KNOWS WHERE IT IS (ALL COORDS)
+
+
+            // DOCKABLE STATION CHECK FOR ANY COORDS IT IS MOVING TO
+
+            // LANDING ON PLANET CHECK FOR ANY COORDS IT IS MOVING TO
 
             let current_coords = [];
             for(let linker of ship_display_linkers) {
@@ -561,12 +1159,14 @@ const world = require('./world.js');
             /************** STEP 1. GET ALL THE INFO ABOUT THE DESTINATION COORD ******************/
             // Notes: Can place grabs the ship linkers
 
-
             let object_index = -1;
             let object_type_index = -1;
+            let planet_index = -1;
+            let planet_type_index = -1;
+            let planet_visual_only = false;
 
-            // If there's an object - lets get some info about it
-            if(dirty.coords[coord_index].object_id) {
+             // If there's an object - lets get some info about it
+             if(dirty.coords[coord_index].object_id && dirty.coords[coord_index].object_id !== dirty.objects[player_ship_index].id) {
                 object_index = await game_object.getIndex(dirty, dirty.coords[coord_index].object_id);
 
                 // The object that was there no longer exists
@@ -579,7 +1179,7 @@ const world = require('./world.js');
                 }
 
                 object_type_index = main.getObjectTypeIndex(dirty.objects[object_index].object_type_id);
-            } else if(dirty.coords[coord_index].belongs_to_object_id) {
+            } else if(dirty.coords[coord_index].belongs_to_object_id && dirty.coords[coord_index].belongs_to_object_id !== dirty.objects[player_ship_index].id) {
                 object_index = await game_object.getIndex(dirty, dirty.coords[coord_index].belongs_to_object_id);
 
                 // The object that was there no longer exists
@@ -594,6 +1194,94 @@ const world = require('./world.js');
                 object_type_index = main.getObjectTypeIndex(dirty.objects[object_index].object_type_id);
             }
 
+            if(dirty.coords[coord_index].planet_id) {
+                planet_index = await planet.getIndex(dirty, { 'planet_id': dirty.coords[coord_index].planet_id });
+            } else if(dirty.coords[coord_index].belongs_to_planet_id) {
+                planet_index = await planet.getIndex(dirty, { 'planet_id': dirty.coords[coord_index].belongs_to_planet_id });
+
+                // make sure it's not just a visual thing
+                
+                let planet_coord_index = await main.getCoordIndex({ 'coord_id': dirty.planets[planet_index].coord_id });
+
+                planet_type_index = dirty.planet_types.findIndex(function(obj) { return obj && obj.id === dirty.planets[planet_index].planet_type_id; });
+
+                let x_difference = dirty.coords[coord_index].tile_x - dirty.coords[planet_coord_index].tile_x;
+                let y_difference = dirty.coords[coord_index].tile_y - dirty.coords[planet_coord_index].tile_y;
+
+                let display_linker_index = dirty.planet_type_display_linkers.findIndex(function(obj) {
+                    return obj && obj.planet_type_id === dirty.planet_types[planet_type_index].id &&
+                        obj.position_x === x_difference && obj.position_y === y_difference; });
+
+                if(display_linker_index !== -1 && dirty.planet_type_display_linkers[display_linker_index].only_visual) {
+                    planet_visual_only = true;
+                    console.log("Set planet visual only to true");
+                } 
+            }
+
+
+            // With a big ship, lets also check an additional coord in the direction of movement. No 3x3 ships should be able to land on planets
+            if(current_coords.length !== 0 && object_index === -1) {
+
+                console.log("Move with a big ship!, and origin coord didn't have an object");
+
+                let additional_coord = {};
+
+                // move to the right
+                if(dirty.coords[coord_index].tile_x > dirty.coords[previous_coord_index].tile_x) {
+                    await map.getCoordNeighbor(dirty, 'galaxy', coord_index, 'right');
+
+                    if(dirty.coords[coord_index].right_coord_index !== -1) {
+                        additional_coord = dirty.coords[dirty.coords[coord_index].right_coord_index];
+                    }
+                } else if(dirty.coords[coord_index].tile_y > dirty.coords[previous_coord_index].tile_y) {
+                    await map.getCoordNeighbor(dirty, 'galaxy', coord_index, 'down');
+
+                    if(dirty.coords[coord_index].down_coord_index !== -1) {
+                        additional_coord = dirty.coords[dirty.coords[coord_index].down_coord_index];
+                    }
+                }
+
+                // If there's an object - lets get some info about it
+                if(additional_coord.object_id) {
+                    console.log("Additional coord had an object_id");
+                    object_index = await game_object.getIndex(dirty, additional_coord.object_id);
+    
+                    object_type_index = main.getObjectTypeIndex(dirty.objects[object_index].object_type_id);
+                } else if(additional_coord.belongs_to_object_id) {
+                    console.log("Additional coord had a belongs_to_object_id");
+                    object_index = await game_object.getIndex(dirty, additional_coord.belongs_to_object_id);
+                    object_type_index = main.getObjectTypeIndex(dirty.objects[object_index].object_type_id);
+                }
+
+                if(additional_coord.planet_id) {
+                    console.log("Additional coord has planet id");
+                    planet_index = await planet.getIndex(dirty, { 'planet_id': additional_coord.planet_id });
+                } else if(additional_coord.belongs_to_planet_id) {
+                    console.log("Additional coord has belongs to planet id");
+                    planet_index = await planet.getIndex(dirty, { 'planet_id': additional_coord.belongs_to_planet_id });
+
+                    let planet_coord_index = await main.getCoordIndex({ 'coord_id': dirty.planets[planet_index].coord_id });
+
+                    planet_type_index = dirty.planet_types.findIndex(function(obj) { return obj && obj.id === dirty.planets[planet_index].planet_type_id; });
+    
+                    let x_difference = additional_coord.tile_x - dirty.coords[planet_coord_index].tile_x;
+                    let y_difference = additional_coord.tile_y - dirty.coords[planet_coord_index].tile_y;
+    
+                    let display_linker_index = dirty.planet_type_display_linkers.findIndex(function(obj) {
+                        return obj && obj.planet_type_id === dirty.planet_types[planet_type_index].id &&
+                            obj.position_x === x_difference && obj.position_y === y_difference; });
+    
+                    if(display_linker_index && dirty.planet_type_display_linkers[display_linker_index].only_visual) {
+                        console.log("Set planet visual only to true");
+                        planet_visual_only = true;
+                    } else if(display_linker_index !== -1 && planet_visual_only === true && !dirty.planet_type_display_linkers[display_linker_index].only_visual) {
+                        console.log("Additional coord overrode planet_visual_only - set it back to false");
+                        planet_visual_only = false;
+                    }
+                }
+            }
+           
+
 
 
             /******************* STEP 2. SEE IF WE CAN PLACE ******************/
@@ -601,7 +1289,7 @@ const world = require('./world.js');
             // If there's an object there, see if it's a dockable ship, and try to dock if we aren't, ourselves, in
             // something like a space station
             if(object_index !== -1 && object_index !== player_ship_index && dirty.object_types[object_type_index].is_dockable) {
-
+                console.log("Destination coords have object");
 
                 if(dirty.object_types[player_ship_type_index].is_dockable) {
                     socket.emit('chat', { 'message': "You cannot dock on another ship with a dockable ship", 'scope': 'system' });
@@ -616,9 +1304,8 @@ const world = require('./world.js');
 
             }
             // The potential to land on the planet - if we aren't piloting a dockable ship ourselves
-            else if( (dirty.coords[coord_index].planet_id && dirty.coords[coord_index].planet_type !== "Forming") ||
-                dirty.coords[coord_index].belongs_to_planet_id) {
-            
+            else if( planet_index !== -1 && !planet_visual_only && dirty.planets[planet_index].planet_type_id !== 26) {
+                console.log("THere's a planet we can dock at");
 
                 if(dirty.object_types[player_ship_type_index].is_dockable) {
                     socket.emit('chat', { 'message': "You cannot land on a planet with a large, dockable ship", 'scope': 'system' });
@@ -626,33 +1313,11 @@ const world = require('./world.js');
                         'return_to_coord_id': dirty.coords[previous_coord_index].id });
                     socket.emit('result_info', { 'status': 'failure', 'text': "Dockable ships can't land" });
                     return;
-                } else if(dirty.coords[coord_index].planet_id) {
-                    //console.log("Sending landing on planet " + dirty.coords[coord_index].planet_id);
-                    await switchToPlanet(socket, dirty, { 'planet_id': dirty.coords[coord_index].planet_id,
+                } 
+                
+                await switchToPlanet(socket, dirty, { 'planet_id': dirty.planets[planet_index].id,
                         'previous_coord_index': previous_coord_index });
-                    return;
-                } else if(dirty.coords[coord_index].belongs_to_planet_id) {
-                    // make sure it's not just a visual thing
-                    let planet_index = await planet.getIndex(dirty, { 'planet_id': dirty.coords[coord_index].belongs_to_planet_id });
-                    let planet_coord_index = await main.getCoordIndex({ 'coord_id': dirty.planets[planet_index].coord_id });
-
-                    let planet_type_index = dirty.planet_types.findIndex(function(obj) { return obj && obj.id === dirty.planets[planet_index].planet_type_id; });
-
-                    let x_difference = dirty.coords[coord_index].tile_x - dirty.coords[planet_coord_index].tile_x;
-                    let y_difference = dirty.coords[coord_index].tile_y - dirty.coords[planet_coord_index].tile_y;
-
-                    let display_linker_index = dirty.planet_type_display_linkers.findIndex(function(obj) {
-                        return obj && obj.planet_type_id === dirty.planet_types[planet_type_index].id &&
-                            obj.position_x === x_difference && obj.position_y === y_difference; });
-
-                    if(display_linker_index && !dirty.planet_type_display_linkers[display_linker_index].only_visual) {
-                        //console.log("Sending landing on planet (via belong to) " + dirty.coords[coord_index].belongs_to_planet_id);
-                        await switchToPlanet(socket, dirty, { 'planet_id': dirty.coords[coord_index].belongs_to_planet_id,
-                            'previous_coord_index': previous_coord_index });
-                        return;
-                    }
-
-                }
+                return;
 
             }
 
@@ -660,7 +1325,7 @@ const world = require('./world.js');
             // THIS CHECKS ALL THE COORDS
 
 
-            let can_place = await player.canPlace(dirty, 'galaxy', dirty.coords[coord_index], socket.player_index);
+            let can_place = await player.canPlace(dirty, 'galaxy', dirty.coords[coord_index], socket.player_index, true);
             //let can_place = await main.canPlace('galaxy', dirty.coords[coord_index], 'player', dirty.players[player_index].id);
 
             if(!can_place) {
@@ -793,7 +1458,7 @@ const world = require('./world.js');
                 await game_object.sendInfo(socket, "galaxy", dirty, player_ship_index, 'movement.moveGalaxy');
 
                 await player.calculateMovementModifier(socket, dirty, 'galaxy', coord_index);
-
+                console.timeEnd("moveGalaxyOld");
                 return;
             }
 
@@ -887,6 +1552,7 @@ const world = require('./world.js');
 
             /******************************************* END TEMP THING ************************************************************/
 
+            console.timeEnd("moveGalaxyOld");
 
         } catch(error) {
             log(chalk.red("Error in movement.moveGalaxy: " + error));
@@ -896,7 +1562,7 @@ const world = require('./world.js');
 
     }
 
-    exports.moveGalaxy = moveGalaxy;
+    exports.moveGalaxyOld = moveGalaxyOld;
 
     async function moveGalaxyObject(dirty, object_index, previous_coord_index, coord_index) {
         try {
@@ -2725,7 +3391,8 @@ const world = require('./world.js');
                 dirty.players[player_index].planet_coord_id = temp_coord.id;
                 dirty.players[player_index].ship_coord_id = false;
                 dirty.players[player_index].previous_ship_coord_id = false;
-                dirty.players[player_index].coord_id = false;
+                dirty.players[player_index].coord_index = -1;
+                dirty.players[player_index].coord_index = false;
                 dirty.players[player_index].has_change = true;
                 await player.sendInfo(socket, "planet_" + temp_coord.planet_id, dirty, dirty.players[player_index].id);
 
@@ -2742,6 +3409,7 @@ const world = require('./world.js');
 
                 dirty.players[player_index].ship_coord_id = temp_coord.id;
                 dirty.players[player_index].coord_id = false;
+                dirty.players[player_index].coord_index = -1;
                 dirty.players[player_index].planet_coord_id = false;
                 dirty.players[player_index].previous_planet_coord_id = false;
                 dirty.players[player_index].has_change = true;
@@ -2777,6 +3445,51 @@ const world = require('./world.js');
     }
 
 
+async function payForGalaxyMove(socket, dirty, ship_index) {
+    try {
+
+        let paid_for_move = false;
+        let ship_type_index = main.getObjectTypeIndex(dirty.objects[ship_index].object_type_id);
+
+        if(dirty.objects[ship_index].engine_indexes) {
+            for(let i = 0; i < dirty.objects[ship_index].engine_indexes.length; i++) {
+                if(!paid_for_move && dirty.objects[dirty.objects[ship_index].engine_indexes[i]].energy >= 1) {
+                    dirty.objects[dirty.objects[ship_index].engine_indexes[i]].energy--;
+                    dirty.objects[dirty.objects[ship_index].engine_indexes[i]].has_change = true;
+                    dirty.objects[ship_index].current_engine_energy--;
+                    game_object.sendInfo(socket, false, dirty, dirty.objects[ship_index].engine_indexes[i]);
+
+                    if(dirty.objects[dirty.objects[ship_index].engine_indexes[i]].object_type_id === 265 && dirty.objects[dirty.objects[ship_index].engine_indexes[i]].energy === 200) {
+                        socket.emit('result_info', {'status': 'failure', 'text': 'Engine Low On Fuel' });
+                    }
+
+                    if(dirty.objects[dirty.objects[ship_index].engine_indexes[i]].object_type_id === 265 && dirty.objects[dirty.objects[ship_index].engine_indexes[i]].energy === 100) {
+                        socket.emit('result_info', {'status': 'failure', 'text': 'Dock At Planet Soon!' });
+                    }
+
+                    if(dirty.objects[dirty.objects[ship_index].engine_indexes[i]].object_type_id === 265 && dirty.objects[dirty.objects[ship_index].engine_indexes[i]].energy === 50) {
+                        socket.emit('result_info', {'status': 'failure', 'text': 'Engine Critically Low On Fuel' });
+                    }
+
+                    paid_for_move = true;
+                }
+
+            }
+        }
+        
+
+        // Some ships don't need engines
+        if(!dirty.object_types[ship_type_index].needs_engines || dirty.objects[ship_index].id < 81089) {
+            paid_for_move = true;
+        }
+
+        return paid_for_move;
+
+    } catch(error) {
+        log(chalk.red("Error in movement.payForGalaxyMove: " + error));
+        console.error(error);
+    }
+}
 
     /*
             DATA
@@ -2932,7 +3645,17 @@ const world = require('./world.js');
             // The ship is now docked at this planet, make sure the player knows
             if(ship_index !== -1) {
                 dirty.objects[ship_index].docked_at_planet_id = dirty.planet_coords[spaceport_index].planet_id;
+
+                // and we need to remove the ship from the galaxy coords its on
+                await game_object.removeFromCoord(dirty, ship_index);
+
+
                 dirty.objects[ship_index].coord_id = false;
+                dirty.objects[ship_index].current_coords = [];
+                dirty.objects[ship_index].has_change = true;
+                dirty.players[player_index].coord_id = false;
+                dirty.players[player_index].coord_index = -1;
+                dirty.players.has_change = true;
 
                 // If the ship has an ion drive, the spaceport fills it back up
 
@@ -2973,6 +3696,9 @@ const world = require('./world.js');
 
                 dirty.objects[ship_index].has_change = true;
                 await game_object.sendInfo(socket, false, dirty, ship_index, 'movement.switchToPlanet');
+
+
+
             }
 
             // We're going to get the planet so we can send a planet type - so we know what monster sprites to dynamically load
@@ -3091,6 +3817,9 @@ const world = require('./world.js');
     async function switchToGalaxy(socket, dirty, player_index, reason = false) {
 
         try {
+
+
+            console.time("switchToGalaxy");
 
 
             if(!dirty.players[player_index]) {
@@ -3335,10 +4064,10 @@ const world = require('./world.js');
                 if(dirty.objects[player_ship_index].docked_at_object_id) {
                     console.log("Launching FROM docked ship. Docked ship is on galaxy coord id: " + dirty.coords[ship_galaxy_coord_index].id);
 
-                    let tile_x_start = dirty.coords[ship_galaxy_coord_index].tile_x - 1;
-                    let tile_y_start = dirty.coords[ship_galaxy_coord_index].tile_y - 1;
-                    let tile_x_end = tile_x_start + 2;
-                    let tile_y_end = tile_y_start + 2;
+                    let tile_x_start = dirty.coords[ship_galaxy_coord_index].tile_x - 2;
+                    let tile_y_start = dirty.coords[ship_galaxy_coord_index].tile_y - 2;
+                    let tile_x_end = tile_x_start + 3;
+                    let tile_y_end = tile_y_start + 3;
 
                     console.log("Checking coords: " + tile_x_start + "," + tile_y_start + " to " + tile_x_end + "," + tile_y_end);
 
@@ -3368,7 +4097,8 @@ const world = require('./world.js');
                     }
 
                     if(!found_galaxy_coord) {
-                        socket.emit('chat', { 'message': 'The space around the ship you are docked at is currently full' });
+                        socket.emit('chat', { 'scope': 'system', 'message': 'The space around the ship you are docked at is currently full' });
+                        console.timeEnd("switchToGalaxy");
                         return false;
                     }
 
@@ -3382,6 +4112,7 @@ const world = require('./world.js');
                     dirty.players[player_index].previous_ship_coord_id = false;
                     dirty.players[player_index].ship_coord_id = false;
                     dirty.players[socket.player_index].coord_id = dirty.coords[placing_galaxy_coord_index].id;
+                    dirty.players[player_index].coord_index = placing_galaxy_coord_index;
                     dirty.players[socket.player_index].planet_coord_id = false;
                     dirty.players[socket.player_index].has_change = true;
 
@@ -3392,8 +4123,9 @@ const world = require('./world.js');
 
 
                     await main.updateCoordGeneric(socket, { 'ship_coord_index':ship_coord_index, 'player_id': false });
-                    await main.updateCoordGeneric(socket, { 'coord_index': placing_galaxy_coord_index, 'player_id': socket.player_id,
-                        'object_id': dirty.players[player_index].ship_id});
+                    await game_object.place(socket, dirty, { 'object_index': player_ship_index, 'coord_index': placing_galaxy_coord_index });
+                    //await main.updateCoordGeneric(socket, { 'coord_index': placing_galaxy_coord_index, 'player_id': socket.player_id,
+                    //    'object_id': dirty.players[player_index].ship_id});
                     await player.sendInfo(socket, "galaxy", dirty, dirty.players[player_index].id);
                     await player.sendInfo(socket, "ship_" + dirty.ship_coords[ship_coord_index].ship_id, dirty, dirty.players[player_index].id);
 
@@ -3412,6 +4144,7 @@ const world = require('./world.js');
                     dirty.players[player_index].previous_ship_coord_id = dirty.players[player_index].ship_coord_id;
                     dirty.players[player_index].ship_coord_id = false;
                     dirty.players[player_index].coord_id = dirty.coords[ship_galaxy_coord_index].id;
+                    dirty.players[player_index].coord_index = ship_galaxy_coord_index;
                     dirty.players[player_index].planet_coord_id = false;
                     dirty.players[player_index].has_change = true;
 
@@ -3437,6 +4170,8 @@ const world = require('./world.js');
                 await switchToShip(socket, dirty);
                 await switchToGalaxy(socket, dirty, player_index);
             }
+
+            console.timeEnd("switchToGalaxy");
 
 
 
@@ -3777,8 +4512,8 @@ const world = require('./world.js');
     exports.warpShipToAzurePlanet = warpShipToAzurePlanet;
 
 
-    // Currently I think this is basically just used for dying and stuff
-    //  data:   ( (player_index | npc_index)   |   (player_id | npc_id ) )  /   warping_to (spaceport | galaxy)  /   planet_id   /   base_coord_index
+    // Currently I think this is basically just used for dying, and launching from a planet
+
     /**
      * @param {Object} socket
      * @param {Object} dirty
@@ -4120,6 +4855,12 @@ const world = require('./world.js');
                 if(helper.notFalse(socket)) {
                     socket.emit('view_change_data', { 'view': 'galaxy' });
                 }
+
+                // I believe we need to place the player's ship here too
+                if(placing_type === 'player') {
+                    log(chalk.cyan("Worried about this. Placing the ship there too!"));
+                    game_object.place(socket, dirty, { 'object_index': dirty.players[player_index].ship_index, 'coord_index': destination_coord_index });
+                }
                 
             } else if(data.warping_to === 'spaceport') {
                 await main.updateCoordGeneric(socket, placing_data);
@@ -4169,6 +4910,7 @@ const world = require('./world.js');
     module.exports = {
         move,
         moveGalaxy,
+        moveGalaxyOld,
         moveGalaxyNpc,
         moveGalaxyObjects,
         movePlanetNpc,

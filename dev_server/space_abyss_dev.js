@@ -1530,7 +1530,7 @@ io.sockets.on('connection', function (socket) {
         if(data.inventory_item_id) {
             inventory.buy(socket, dirty, data);
         }
-        // currently just used to let players buy pods on stations
+        // currently used to let players buy pods on stations AND emergency pods.....
         else if(data.object_type_id) {
             game.buyObjectType(socket, dirty, data);
         }
@@ -2701,6 +2701,8 @@ async function loginPlayer(socket, dirty, data) {
             await getShipCoords(ship_index);
         }
 
+        dirty.players[player_index].ship_index = ship_index;
+
         if(dirty.players[player_index].previous_planet_coord_id) {
             log(chalk.green("Trying to set player on planet. have previous planet coord id: " + dirty.players[player_index].previous_planet_coord_id));
 
@@ -3343,6 +3345,7 @@ async function disconnectPlayer(socket) {
             // But we do lose the coord the player was on
             //dirty.players[player_index].previous_ship_coord_id = false;
             dirty.players[player_index].coord_id = false;
+            dirty.players[player_index].coord_index = -1;
             dirty.players[player_index].has_change = true;
 
 
@@ -3358,9 +3361,13 @@ async function disconnectPlayer(socket) {
                     await updateCoordGeneric(socket, {'coord_index': coord_index, 'object_id': false });
 
                     // and make sure the ship knows it isn't there anymore
+                    await game_object.removeFromCoord(dirty, ship_index);
                     dirty.objects[ship_index].coord_id = false;
+                    dirty.objects[ship_index].coord_index = -1
                     dirty.objects[ship_index].has_change = true;
                     await game_object.sendInfo(false, "galaxy", dirty, ship_index);
+                    log(chalk.yellow("Removing ship from ALL coords?"));
+                    
                 }
 
                 console.log("Should have removed the player from the coord, the ship from the coord, and sent the info to the room");

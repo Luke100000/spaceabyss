@@ -419,11 +419,11 @@ const world = require('./world.js');
 
         try {
 
-            log(chalk.green("Attempting to place portal!"));
+            //log(chalk.green("Attempting to place portal!"));
 
             let object_type_index = main.getObjectTypeIndex(dirty.objects[object_index].object_type_id);
 
-            console.log("Portal type: " + dirty.object_types[object_type_index].name);
+            //console.log("Portal type: " + dirty.object_types[object_type_index].name);
 
 
             if(typeof data.planet_coord_index !== "undefined") {
@@ -465,7 +465,7 @@ const world = require('./world.js');
             // This object will take up multiple tiles of space
             if(display_linkers.length > 0) {
 
-                console.log("Portal has display linkers");
+                //console.log("Portal has display linkers");
 
                 let origin_coord;
                 if(typeof data.planet_coord_index !== 'undefined') {
@@ -481,7 +481,7 @@ const world = require('./world.js');
 
                     } else {
 
-                        console.log("On non-origin display linker");
+                        //console.log("On non-origin display linker");
                         // get the coord that the display linker is about
                         let tile_x = origin_coord.tile_x + linker.position_x;
                         let tile_y = origin_coord.tile_y + linker.position_y;
@@ -524,7 +524,7 @@ const world = require('./world.js');
 
 
             if(unattached_portal_index === -1) {
-                log(chalk.yellow("Could not find an unattached portal!!"));
+                //log(chalk.yellow("Could not find an unattached portal!!"));
                 return;
             }
 
@@ -543,7 +543,7 @@ const world = require('./world.js');
             
 
 
-            console.log("Finished in game.addPortal");
+            //console.log("Finished in game.placePortal");
 
 
 
@@ -718,7 +718,7 @@ const world = require('./world.js');
             await game_object.sendInfo(socket, room, dirty, new_object_index, 'game.addPortal');
             await game_object.sendInfo(socket, room, dirty, unattached_portal_index, 'game.addPortal');
 
-            console.log("Finished in game.addPortal");
+            //console.log("Finished in game.addPortal");
 
 
         } catch(error) {
@@ -1036,15 +1036,86 @@ const world = require('./world.js');
                 // If we're on an airlock, JUMP OUT BOY!
                 if(dirty.ship_coords[ship_coord_index].object_type_id === 266) {
 
+                    console.log("Using emergency pod");
+
                     // get the galaxy coord of the ship we are on
                     let ship_index = await game_object.getIndex(dirty, dirty.ship_coords[ship_coord_index].ship_id);
                     let coord_index = await main.getCoordIndex({ 'coord_id': dirty.objects[ship_index].coord_id });
 
-                    // Switch our ship to the new pod and put it in space near our other ship
-                    await player.switchShip(socket, dirty, { 'ship_id': new_object_id });
-                    await movement.warpTo(socket, dirty, { 'player_index': player_index, 'warping_to': 'galaxy', 'base_coord_index': coord_index });
-                    // Doing this IN player.switchShip
-                    //await map.updateMap(socket, dirty);
+                    let tile_x_start = dirty.coords[coord_index].tile_x - 2;
+                    let tile_y_start = dirty.coords[coord_index].tile_y - 2;
+                    let tile_x_end = tile_x_start + 3;
+                    let tile_y_end = tile_y_start + 3;
+
+                    console.log("Checking coords: " + tile_x_start + "," + tile_y_start + " to " + tile_x_end + "," + tile_y_end);
+
+                    let placing_galaxy_coord_index = -1;
+                    let found_galaxy_coord = false;
+                    for(let i = tile_x_start; i < tile_x_end; i++) {
+                        for(let j = tile_y_start; j < tile_y_end; j++) {
+                            if(!found_galaxy_coord) {
+
+                                let possible_coord_index = await main.getCoordIndex({'tile_x': i, 'tile_y': j});
+
+                                if(possible_coord_index !== -1) {
+
+                                    let can_place_result = await player.canPlace(dirty, 'galaxy', dirty.coords[possible_coord_index], player_index);
+                                    //let can_place_result = await main.canPlace('galaxy', dirty.coords[possible_coord_index], 'player', dirty.players[player_index].id);
+                                    //console.log("Can place result: " + can_place_result);
+                                    if(can_place_result === true) {
+                                        placing_galaxy_coord_index = possible_coord_index;
+                                        //console.log("Found a galaxy coord to place the player at. ID: " + dirty.coords[placing_galaxy_coord_index].id);
+                                        found_galaxy_coord = true;
+                                    }
+                                }
+
+
+                            }
+                        }
+                    }
+
+
+                    if(placing_galaxy_coord_index !== -1) {
+
+
+                        console.log("Found a a galaxy coord where we can put the pod");
+                        game_object.place(socket, dirty, { 'object_index': new_object_index, 'coord_index': placing_galaxy_coord_index });
+
+                        // Switch our ship to the new pod and put it in space near our other ship
+                        await player.switchShip(socket, dirty, { 'ship_id': new_object_id });
+                        console.log("Switched ship");
+                        //await movement.warpTo(socket, dirty, { 'player_index': player_index, 'warping_to': 'galaxy', 'base_coord_index': placing_galaxy_coord_index });
+                        //console.log("Warped player to new galaxy coord");
+                        socket.map_needs_cleared = true;
+
+                        dirty.players[player_index].on_ship_id = dirty.objects[new_object_index].id;
+                        dirty.players[player_index].previous_ship_coord_id = false;
+                        dirty.players[player_index].ship_coord_id = false;
+                        dirty.players[socket.player_index].coord_id = dirty.coords[placing_galaxy_coord_index].id;
+                        dirty.players[socket.player_index].coord_index = placing_galaxy_coord_index;
+                        dirty.players[socket.player_index].planet_coord_id = false;
+                        dirty.players[socket.player_index].has_change = true;
+                        player.sendInfo(socket, false, dirty, dirty.players[socket.player_index].id);
+
+                        world.removeBattleLinkers(dirty, { 'player_id': dirty.players[player_index].id });
+
+                        //socket.emit('launched_data');
+
+                        socket.emit('view_change_data', { 'view': 'galaxy' });
+
+                        await map.updateMap(socket, dirty);
+
+                        await world.setPlayerMoveDelay(socket, dirty, player_index);
+
+                        // Doing this IN player.switchShip
+                        //await map.updateMap(socket, dirty);
+                    } else {
+                        log(chalk.yellow("Could not find a galaxy coord to put the emergency pod on"));
+                    }
+
+
+
+
 
                 } else {
 
@@ -3360,6 +3431,11 @@ exports.eat = eat;
 
             if(data.monster_index) {
                 spawner_info = await monster.getCoordAndRoom(dirty, data.monster_index);
+
+                if(spawner_info.coord_index === -1) {
+                    log(chalk.yellow("Could not get the coord index for monster id: " + dirty.monsters[data.monster_index]));
+                    return false;
+                }
             }
 
             // HAS SPAWNED OBJECT
@@ -3418,6 +3494,15 @@ exports.eat = eat;
                 }
 
 
+                /*
+                if(data.monster_index) {
+                    log(chalk.cyan("Monser id: " + dirty.monsters[data.monster_index].id + " is spawning something"));
+                } else if(data.object_index) {
+                    console.log("Object id: " + dirty.objects[data.object_index].id + " is spawning something");
+                }
+                console.log("Spawn linker id: " + dirty.spawn_linkers[data.spawn_linker_index].id + " Going to call spawnAdjacent with:");
+                console.log(spawn_adjacent_data);
+                */
                 await world.spawnAdjacent(dirty, spawn_adjacent_data);
             } else if(dirty.spawn_linkers[data.spawn_linker_index].spawns_location === 'self') {
                 if(typeof data.object_index !== "undefined" && dirty.objects[data.object_index].object_type_id === debug_object_type_id) {
@@ -4680,11 +4765,18 @@ exports.eat = eat;
                             if(other_player_index !== -1 && dirty.players[other_player_index].ship_id !== ship_coord.ship_id) {
                                 let other_player_socket = await world.getPlayerSocket(dirty, other_player_index);
                                 if(other_player_socket) {
-                                    movement.switchToGalaxy(other_player_socket, dirty, other_player_index, false);
+                                    await movement.switchToGalaxy(other_player_socket, dirty, other_player_index, false);
                                 }
 
                             }
 
+                        }
+
+                        if(ship_coord.monster_id) {
+                            let monster_index = await monster.getIndex(dirty, ship_coord.monster_id);
+                            if(monster_index === -1) {
+                                await monster.deleteMonster(dirty, monster_index);
+                            }
                         }
 
                         delete dirty.ship_coords[i];
@@ -8564,116 +8656,6 @@ exports.eat = eat;
 
     exports.tickMining = tickMining;
 
-    /* I'd wager that I re-coded this elsewhere, but I really should have put WHERE AND WHAT I did 
-
-    async function tickMonsterSpawns(dirty) {
-
-        try {
-
-            let spawning_monster_types = [];
-
-            for(let i = 0; i < dirty.monster_types.length; i++) {
-
-                if(dirty.monster_types[i].spawns_object_type_id) {
-                    spawning_monster_types.push(dirty.monster_types[i].id);
-
-                }
-
-                if(dirty.monster_types[i].spawns_monster_type_id) {
-                    spawning_monster_types.push(dirty.monster_types[i].id);
-
-                }
-            }
-
-            for(let i = 0; i < dirty.monsters.length; i++) {
-                if(dirty.monsters[i] && spawning_monster_types.indexOf(dirty.monsters[i].monster_type_id) !== -1) {
-
-                    let spawner_monster_info = await world.getMonsterCoordAndRoom(dirty, i);
-
-                    let spawner_monster_type_index = main.getMonsterTypeIndex(dirty.monsters[i].monster_type_id);
-
-                    // Monster spawns objects!
-                    if(dirty.monster_types[spawner_monster_type_index].spawns_object_type_id) {
-
-
-                        if(dirty.monster_types[spawner_monster_type_index].spawns_object_type_location === 'adjacent') {
-
-
-                            let spawn_adjacent_data = {
-                                'scope': spawner_monster_info.scope, 'base_coord_index': spawner_monster_info.coord_index,
-                                'spawning_type': 'object', 'spawning_type_id': dirty.monster_types[spawner_monster_type_index].spawns_object_type_id,
-                                'spawning_amount': dirty.monster_types[spawner_monster_type_index].spawns_object_type_amount };
-
-                            world.spawnAdjacent(dirty, spawn_adjacent_data);
-                        }
-                        // Normal, just use has_spawned_object
-                        else {
-                            if(!dirty.monsters[i].has_spawned_object) {
-                                console.log("Monster is spawning stuff!");
-                                dirty.monsters[i].has_spawned_object = true;
-                                dirty.monsters[i].spawned_object_type_amount = dirty.monster_types[spawner_monster_type_index].spawns_object_type_amount;
-                                dirty.monsters[i].has_change = true;
-
-                                world.sendMonsterInfo(false, spawner_monster_info.room, dirty, { 'monster_index': i });
-
-                            }
-                        }
-
-
-                    }
-
-
-                    // Monster spawns another monster!
-                    if(dirty.monster_types[spawner_monster_type_index].spawns_monster_type_id) {
-
-                        // delete us
-                        if(dirty.monster_types[spawner_monster_type_index].spawns_monster_type_location === 'self') {
-
-                            let spawned_event_id = false;
-                            if(dirty.monsters[i].spawned_event_id) {
-                                spawned_event_id = dirty.objects[i].spawned_event_id;
-                            }
-
-                            await deleteMonster(dirty, { 'monster_index': i });
-
-                            let spawn_monster_data = {'monster_type_id': dirty.monster_types[spawner_monster_type_index].spawns_monster_type_id, 'spawned_event_id': spawned_event_id };
-
-                            if(spawner_monster_info.scope === 'planet') {
-                                spawn_monster_data.planet_coord_index = spawner_monster_info.coord_index;
-                            } else if(spawner_monster_info.scope === 'ship') {
-                                spawn_monster_data.ship_coord_index = spawner_monster_info.coord_index;
-                            }
-
-                            world.spawnMonster(dirty, spawn_monster_data);
-
-
-                        }
-                        // Spawns around us
-                        else if(dirty.monster_types[spawner_monster_type_index].spawns_monster_type_location === 'adjacent') {
-                            let spawn_adjacent_data = {
-                                'scope': spawner_monster_info.scope, 'base_coord_index': spawner_monster_info.coord_index,
-                                'spawning_type': 'monster', 'spawning_type_id': dirty.monster_types[spawner_monster_type_index].spawns_monster_type_id };
-
-                            world.spawnAdjacent(dirty, spawn_adjacent_data);
-                        }
-                    }
-
-                }
-            }
-
-
-        } catch(error) {
-            log(chalk.red("Error in game.tickMonsterSpawns: " + error));
-            console.error(error);
-        }
-
-
-    }
-
-    exports.tickMonsterSpawns = tickMonsterSpawns;
-
-
-    */
 
 
     // want to avoid monster moving onto tiles that other monsters have moved onto
@@ -8754,148 +8736,6 @@ exports.eat = eat;
     }
 
     exports.tickMoveMonsters = tickMoveMonsters;
-
-
-    /* USING GAME.TICKSPAWNERS INSTEAD
-    async function tickObjectSpawners(dirty) {
-
-        try {
-            //log(chalk.green("In game.tickObjectSpawners"));
-
-
-            let spawning_object_types = [];
-
-            for(let i = 0; i < dirty.object_types.length; i++) {
-
-                if(dirty.object_types[i].spawns_object_type_id) {
-
-                    spawning_object_types.push(dirty.object_types[i].id);
-
-                }
-
-                if(dirty.object_types[i].spawns_monster_type_id) {
-                    spawning_object_types.push(dirty.object_types[i].id);
-
-                }
-            }
-
-            for(let i = 0; i < dirty.objects.length; i++) {
-                if(dirty.objects[i] && spawning_object_types.indexOf(dirty.objects[i].object_type_id) !== -1) {
-
-                    let spawner_object_info = await world.getObjectCoordAndRoom(dirty, i);
-
-
-                    let spawner_object_type_index = main.getObjectTypeIndex(dirty.objects[i].object_type_id);
-
-
-                    // Object spawns objects!
-                    if(dirty.object_types[spawner_object_type_index].spawns_object_type_id) {
-
-                        if(dirty.object_types[spawner_object_type_index].spawns_object_type_location === 'adjacent') {
-
-
-                            let spawn_adjacent_data = {
-                                'scope': spawner_object_info.scope, 'base_coord_index': spawner_object_info.coord_index,
-                                'spawning_type': 'object', 'spawning_type_id': dirty.object_types[spawner_object_type_index].spawns_object_type_id,
-                                'spawning_amount': dirty.object_types[spawner_object_type_index].spawns_object_type_amount };
-
-                            world.spawnAdjacent(dirty, spawn_adjacent_data);
-
-
-                        }
-                        // Normal, just use has_spawned_object
-                        else {
-                            if(!dirty.objects[i].has_spawned_object) {
-                                console.log("Object is spawning stuff!");
-                                dirty.objects[i].has_spawned_object = true;
-                                dirty.objects[i].spawned_object_type_amount = dirty.object_types[spawner_object_type_index].spawns_object_type_amount;
-                                dirty.objects[i].has_change = true;
-
-                                game_object.sendInfo(false, spawner_object_info.room, dirty, i);
-
-                                // We need to send the updated object info!
-
-                                if(dirty.objects[i].planet_coord_id) {
-                                    world.checkPlanetImpact(dirty, { 'object_type_id': dirty.object_types[spawner_object_type_index].spawns_object_type_id,
-                                        'amount': dirty.object_types[spawner_object_type_index].spawns_object_type_amount, 'planet_coord_id': dirty.objects[i].planet_coord_id });
-                                }
-
-                            }
-                        }
-
-
-
-                    }
-
-
-                    // Object spawn a monster!
-                    if(dirty.object_types[spawner_object_type_index].spawns_monster_type_id) {
-
-                        // delete us, and put the monster where we are
-                        if(dirty.object_types[spawner_object_type_index].spawns_monster_location === 'self') {
-
-
-
-                            let spawned_event_id = false;
-                            if(dirty.objects[i].spawned_event_id) {
-                                spawned_event_id = dirty.objects[i].spawned_event_id;
-                            }
-
-                            await deleteObject(dirty, { 'object_index': i });
-
-                            let spawn_monster_data = { 'monster_type_id': dirty.object_types[spawner_object_type_index].spawns_monster_type_id,
-                                'spawned_event_id': spawned_event_id };
-
-                            if(spawner_object_info.scope === 'planet') {
-                                spawn_monster_data.planet_coord_index = spawner_object_info.coord_index;
-                            } else if(spawner_object_info.scope === 'ship') {
-                                spawn_monster_data.ship_coord_index = spawner_object_info.coord_index;
-                            }
-
-                            world.spawnMonster(dirty, spawn_monster_data);
-
-                        }
-                        // Spawns next to us
-                        else if(dirty.object_types[spawner_object_type_index].spawns_monster_location === 'adjacent') {
-
-
-                            let spawn_adjacent_data = {
-                                'scope': spawner_object_info.scope, 'base_coord_index': spawner_object_info.coord_index,
-                                'spawning_type': 'monster', 'spawning_type_id': dirty.object_types[spawner_object_type_index].spawns_monster_type_id };
-
-                            world.spawnAdjacent(dirty, spawn_adjacent_data);
-
-                        }
-
-
-                        else {
-                            log(chalk.yellow("Haven't coded when objects spawn monsters at: " + dirty.object_types[spawner_object_type_index].spawns_monster_location));
-
-
-                            // try and find an adjacent spot to put the monster
-                            // TODO CODE THIS :/ *future self hatred intensifies*
-                        }
-
-
-                    }
-                }
-            }
-
-
-        } catch(error) {
-            log(chalk.red("Error in game.tickObjectSpawners: " + error));
-            console.error(error);
-        }
-
-
-
-    }
-
-    exports.tickObjectSpawners = tickObjectSpawners;
-
-
-    */
-
 
     async function tickRepairs(dirty) {
 
@@ -9157,6 +8997,7 @@ exports.eat = eat;
             let spawning_object_type_ids = [];
             let spawning_monster_type_ids = [];
             let debug_object_type_id = 0;
+            let debug_monster_type_ids = [86,113];
             let debug_monster_type_id = 0;
 
             for(let i = 0; i < dirty.spawn_linkers.length; i++) {
@@ -9167,12 +9008,13 @@ exports.eat = eat;
                     spawning_object_type_ids.push(dirty.spawn_linkers[i].object_type_id);
                 }
 
-                if(dirty.spawn_linkers[i].monster_type_id) {
+                if(helper.notFalse(dirty.spawn_linkers[i].monster_type_id)) {
                     spawning_monster_type_ids.push(dirty.spawn_linkers[i].monster_type_id);
                 }
             }
 
 
+            console.time("tickSpawners.objects");
             // Go through our objects
             for(let i = 0; i < dirty.objects.length; i++) {
 
@@ -9225,16 +9067,24 @@ exports.eat = eat;
                 }
             }
 
+            console.timeEnd("tickSpawners.objects");
+
+            console.time("tickSpawners.monsters");
+            
+
+
 
             // Go through our monsters
             for(let i = 0; i < dirty.monsters.length; i++) {
 
-                // We have a has_spawned_object limit here, since we can't hold multiple things in has_spawned_object
-                if(dirty.monsters[i] &&
-                    (!dirty.monsters[i].has_spawned_object || dirty.monsters[i].has_spawned_object === 0) &&
-                    spawning_monster_type_ids.indexOf(dirty.monsters[i].monster_type_id) !== -1) {
 
-                    if(dirty.monsters[i].id === 6943) {
+
+                // We have a has_spawned_object limit here, since we can't hold multiple things in has_spawned_object
+                if(dirty.monsters[i] && spawning_monster_type_ids.indexOf(dirty.monsters[i].monster_type_id) !== -1 &&
+                    (!dirty.monsters[i].has_spawned_object || dirty.monsters[i].has_spawned_object === 0)
+                    ) {
+
+                    if(debug_monster_type_ids.indexOf(dirty.monsters[i].mosnter_type_id) !== -1) {
                         console.log("Trying to spawn something for monster id: " + dirty.monsters[i].id);
                     }
 
@@ -9242,7 +9092,7 @@ exports.eat = eat;
                     // We are set on a spawn linker that takes multiple ticks to complete
                     if( helper.notFalse(dirty.monsters[i].current_spawn_linker_id) ) {
 
-                        if(dirty.monsters[i].monster_type_id === debug_monster_type_id) {
+                        if(debug_monster_type_ids.indexOf(dirty.monsters[i].mosnter_type_id) !== -1) {
                             console.log("Monster already has a spawn linker id!");
                         }
 
@@ -9275,9 +9125,10 @@ exports.eat = eat;
                     // Monster doesn't have an existing spawn_linker that it is working on
                     else {
 
-                        if(dirty.monsters[i].id === 6943) {
+                        if(debug_monster_type_ids.indexOf(dirty.monsters[i].mosnter_type_id) !== -1) {
                             console.log("No spawn linker id");
                         }
+
 
                         let monster_type_index = main.getMonsterTypeIndex(dirty.monsters[i].monster_type_id);
 
@@ -9321,6 +9172,8 @@ exports.eat = eat;
 
                 }
             }
+
+            console.timeEnd("tickSpawners.monsters");
 
             console.timeEnd("originalTickSpawners");
 

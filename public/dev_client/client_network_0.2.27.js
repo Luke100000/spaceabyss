@@ -1442,7 +1442,7 @@ socket.on('monster_info', function(data) {
             }
         }
         // Monster moved on a ship
-         else if(monster_moved && monsters[monster_index].ship_coord_id) {
+         else if(should_draw_result && monster_moved && monsters[monster_index].ship_coord_id) {
 
 
             let new_ship_coord_index = ship_coords.findIndex(function(obj) { return obj && obj.id === data.monster.ship_coord_id; });
@@ -1654,11 +1654,7 @@ socket.on('news', function (data) {
 
 socket.on('npc_info', function(data) {
 
-    //console.log("Got npc info for npc id: " + data.npc.id);
-
     data.npc.id = parseInt(data.npc.id);
-
-    //console.log("Received npc_info for npc id: " + data.npc.id);
 
     let npc_index = npcs.findIndex(function(obj) { return obj && obj.id === data.npc.id; });
 
@@ -1670,36 +1666,26 @@ socket.on('npc_info', function(data) {
     client_player_info = getPlayerInfo(client_player_index);
 
     if(npc_index === -1) {
-        //console.log("Pushing npc");
         npc_index = npcs.push(data.npc) - 1;
         npcs[npc_index].id = parseInt(npcs[npc_index].id);
 
         let npc_info = getNpcInfo(npc_index);
 
         if(shouldDraw(client_player_info.coord, npc_info.coord, "npc_info")) {
-            console.log("Should draw npc");
             createNpcSprite(npc_index);
 
             if(npcs[npc_index].current_hp !== npcs[npc_index].max_hp) {
                 console.log("redrawing bars due to npc hp");
                 redrawBars();
             }
-        } else {
-            //console.log("Not drawing this npc right now");
+        } 
 
-        }
     } else {
-        //console.log("Got updated npc info");
 
         let npc_info = getNpcInfo(npc_index);
 
         if(shouldDraw(client_player_info.coord, npc_info.coord, "npc_info")) {
-            //console.log("Should draw npc");
             createNpcSprite(npc_index);
-        } else {
-            //console.log("Not drawing");
-            //console.log(client_player_info.coord);
-            //console.log(npc_info.coord);
         }
 
         // Npc moved on a planet
@@ -3569,6 +3555,8 @@ socket.on('view_change_data', function(data) {
     });
 
     if(data.view === 'galaxy') {
+
+        console.log("Got view change data - galaxy");
 
         on_planet = false;
 

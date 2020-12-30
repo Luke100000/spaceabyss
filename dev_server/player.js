@@ -789,10 +789,14 @@ async function canPlace(dirty, scope, coord, player_index, show_output = false) 
 
                     if(object_index !== -1) {
                         let object_type_index = main.getObjectTypeIndex(dirty.objects[object_index].object_type_id);
+                        
+                        // Previously I tried allowing the move if it was a dockable ship - HOWEVER - that ends up just making us disappear the dockable ship from space
+                        // Instead we want to focus on having the player dock/land on planet in movement.moveGalaxy BEFORE we reach the point of checking in this function
+                        // as it's more about actually PLACING the object on the coord
                         if(!dirty.object_types[object_type_index].can_walk_on) {
 
                             if(show_output) {
-                                console.log("Returning false");
+                                console.log("Returning false - object we can't walk on");
                             }
 
                             return false;
@@ -838,8 +842,9 @@ async function canPlace(dirty, scope, coord, player_index, show_output = false) 
                         if(display_linker_index !== -1 && !dirty.planet_type_display_linkers[display_linker_index].only_visual) {
 
                             if(show_output) {
-                                console.log("Returning false on " + checking_coord.tile_x + "," + checking_coord.tile_y + " belongs to planet");
+                                console.log("Returning false on " + checking_coord.tile_x + "," + checking_coord.tile_y + " belongs to planet (not doing that anymore)");
                             }
+                            // Same deal with the client - why and I returning false on an only visual coord?
                             return false;
                         }
 
@@ -866,6 +871,10 @@ async function canPlace(dirty, scope, coord, player_index, show_output = false) 
                 let area_index = await main.getAreaIndex(checking_coord.area_id);
 
                 if(dirty.players[player_index].id !== dirty.areas[area_index].owner_id && dirty.players[player_index].id !== dirty.areas[area_index].renting_player_id) {
+
+                    if(show_output) {
+                        console.log("Returning false. Player doesn't have access to that area");
+                    }
                     return false;
                 }
             }
@@ -886,6 +895,7 @@ async function canPlace(dirty, scope, coord, player_index, show_output = false) 
 }
 
 exports.canPlace = canPlace;
+
 
 
 /**
@@ -2008,306 +2018,287 @@ async function sendShips(socket, dirty, player_index) {
 exports.sendShips = sendShips;
 
 
-    // There are two general scenarios where this is called
-    // 1. Claiming and switching to a ship in the galaxy mode
-    // 2. Switching to a different ship at a spaceport
-    /**
-     * @param {Object} socket
-     * @param {Object} dirty
-     * @param {Object} data
-     * @param {number} data.ship_id
-     */
-    async function switchShip(socket, dirty, data) {
-        try {
-            log(chalk.cyan("Player is switching to ship(object) with id: " + data.ship_id));
+async function setShipIndex(socket, dirty) {
 
-            let player_index = await getIndex(dirty, { 'player_id': socket.player_id });
+    try {
 
-            if(player_index === -1) {
-                log(chalk.yellow("Could not find player. Returning false"));
-                return false;
-            }
+        let player_ship_index = await game_object.getIndex(dirty, dirty.players[socket.player_index].ship_id);
+        dirty.players[socket.player_index].ship_index = player_ship_index;
+        return true;
+    } catch(error) {
+        log(chalk.red("Error in player.setShipIndex: " + error));
+        console.error(error);
+    }
+}
 
-            // So lets go through the various scenarios
-            // 1. Player was on a pod, now they aren't
-            // 2. Player was already on another ship
+exports.setShipIndex = setShipIndex;
 
 
-            // ship is an object, and we store it as the player's ship_id
-            let old_ship_index = await game_object.getIndex(dirty, dirty.players[player_index].ship_id);
-            let new_ship_index = await game_object.getIndex(dirty, parseInt(data.ship_id));
+// There are two general scenarios where this is called
+// 1. Claiming and switching to a ship in the galaxy mode
+// 2. Switching to a different ship at a spaceport
+/**
+ * @param {Object} socket
+ * @param {Object} dirty
+ * @param {Object} data
+ * @param {number} data.ship_id
+ */
+async function switchShip(socket, dirty, data) {
+    try {
+        log(chalk.cyan("Player is switching to ship(object) with id: " + data.ship_id));
 
-            if(!old_ship_index) {
-                log(chalk.yellow("Couldn't find old ship index"));
-                return false;
-            }
+        let player_index = await getIndex(dirty, { 'player_id': socket.player_id });
 
-            if(dirty.objects[old_ship_index].id === dirty.objects[new_ship_index].id) {
-                console.log("Can't claim your current ship");
-                socket.emit('chat', { 'message': "Can't reclaim your current ship", 'scope':'system' });
-                return false;
-            }
+        if(player_index === -1) {
+            log(chalk.yellow("Could not find player. Returning false"));
+            return false;
+        }
 
-            // Make sure the new ship isn't owned by someone already
-            if(dirty.objects[new_ship_index].player_id && dirty.objects[new_ship_index].player_id !== socket.player_id) {
-                console.log("Can't claim a ship that is already owned by someone");
-                socket.emit('chat', { 'message': "Can't claim ship. Already owned", 'scope':'system' });
-                return false;
-            }
-
-            let new_ship_object_type_index = main.getObjectTypeIndex(dirty.objects[new_ship_index].object_type_id);
-
-            if(!dirty.object_types[new_ship_object_type_index].can_be_claimed) {
-                console.log("This cannot be claimed");
-                socket.emit('chat', { 'message': "Cannot be claimed", 'scope':'system' });
-                return false; 
-            }
+        // So lets go through the various scenarios
+        // 1. Player was on a pod, now they aren't
+        // 2. Player was already on another ship
 
 
+        // ship is an object, and we store it as the player's ship_id
+        let old_ship_index = await game_object.getIndex(dirty, dirty.players[player_index].ship_id);
+        let new_ship_index = await game_object.getIndex(dirty, parseInt(data.ship_id));
+
+        if(!old_ship_index) {
+            log(chalk.yellow("Couldn't find old ship index"));
+            return false;
+        }
+
+        if(dirty.objects[old_ship_index].id === dirty.objects[new_ship_index].id) {
+            console.log("Can't claim your current ship");
+            socket.emit('chat', { 'message': "Can't reclaim your current ship", 'scope':'system' });
+            return false;
+        }
+
+        // Make sure the new ship isn't owned by someone already
+        if(dirty.objects[new_ship_index].player_id && dirty.objects[new_ship_index].player_id !== socket.player_id) {
+            console.log("Can't claim a ship that is already owned by someone");
+            socket.emit('chat', { 'message': "Can't claim ship. Already owned", 'scope':'system' });
+            return false;
+        }
+
+        let new_ship_object_type_index = main.getObjectTypeIndex(dirty.objects[new_ship_index].object_type_id);
+
+        if(!dirty.object_types[new_ship_object_type_index].can_be_claimed) {
+            console.log("This cannot be claimed");
+            socket.emit('chat', { 'message': "Cannot be claimed", 'scope':'system' });
+            return false; 
+        }
 
 
-            // Switch is happening in a spaceport
-            if(dirty.players[player_index].planet_coord_id) {
-                dirty.players[player_index].ship_id = dirty.objects[new_ship_index].id;
-                dirty.players[player_index].ship_coord_id = false;
-                dirty.players[player_index].previous_ship_coord_id = false;
-                dirty.players[player_index].has_change = true;
-                await sendInfo(socket, false, dirty, dirty.players[player_index].id);
-            }
-            // Switch is happening on a ship
-            // 1. Switching to the ship our other ship is docked at, since we own both
-            // 2. Switching between two ships docked at a station we are on
-            // 3. Jumping out of a ship via an emergency pod
-            if(dirty.players[player_index].ship_coord_id) {
 
-                console.log("Player is switching to ship: " + dirty.objects[new_ship_index].id + " while on another ship");
 
-                dirty.players[player_index].ship_id = dirty.objects[new_ship_index].id;
-                dirty.players[player_index].has_change = true;
+        // Switch is happening in a spaceport
+        if(dirty.players[player_index].planet_coord_id) {
+            dirty.players[player_index].ship_id = dirty.objects[new_ship_index].id;
+            dirty.players[player_index].ship_index = new_ship_index;
+            dirty.players[player_index].ship_coord_id = false;
+            dirty.players[player_index].previous_ship_coord_id = false;
+            dirty.players[player_index].has_change = true;
+            await sendInfo(socket, false, dirty, dirty.players[player_index].id);
+        }
+        // Switch is happening on a ship
+        // 1. Switching to the ship our other ship is docked at, since we own both
+        // 2. Switching between two ships docked at a station we are on
+        // 3. Jumping out of a ship via an emergency pod
+        if(dirty.players[player_index].ship_coord_id) {
 
-                // We switched ships while on a ship that isn't dockable - meaning we jumped out!
-                /*
-                if(!dirty.objects[old_ship_index].is_dockable) {
+            console.log("Player is switching to ship: " + dirty.objects[new_ship_index].id + " while on another ship");
 
-                    let previous_ship_coord_index = await main.getShipCoordIndex({ 'ship_coord_id': dirty.players[player_index].ship_coord_id });
+            dirty.players[player_index].ship_id = dirty.objects[new_ship_index].id;
+            dirty.players[player_index].ship_index = new_ship_index;
+            dirty.players[player_index].has_change = true;
 
-                    main.updateCoordGeneric(socket, { 'ship_coord_index': previous_ship_coord_index, 'player_id': false });
+            // We switched ships while on a ship that isn't dockable - meaning we jumped out!
+            
+            if(!dirty.objects[old_ship_index].is_dockable && dirty.objects[new_ship_index].object_type_id === 114 && 
+                helper.notFalse(dirty.objects[new_ship_index].coord_id) && dirty.objects[new_ship_index].coord_id !== dirty.objects[old_ship_index].coord_id) {
+                log(chalk.cyan("An emergency pod was used!"));
 
-                    dirty.players[player_index].ship_coord_id = false;
-                    dirty.players[player_index].previous_ship_coord_id = false;
-                    dirty.players[player_index].has_change = true;
+                console.log("Old ship is on coord id: " + dirty.objects[old_ship_index].coord_id);
+                let old_ship_coord_index = await main.getCoordIndex({ 'coord_id': dirty.objects[old_ship_index].coord_id });
+                if(old_ship_coord_index !== -1) {
+                    main.updateCoordGeneric(socket, { 'coord_index': old_ship_coord_index, 'object_id': dirty.objects[old_ship_index].id });
                 }
 
-                // We're still at the same place on the ship we are currently on
-                else {
+                let previous_ship_coord_index = await main.getShipCoordIndex({ 'ship_coord_id': dirty.players[player_index].ship_coord_id });
 
-                    console.log("Just set a new ship_id for the player");
-
-                }
-                */
-
-
-                await sendInfo(socket, false, dirty, dirty.players[player_index].id);
-
-                // If our new ship is docked at something, we remove our player from the galaxy coord
-                if(dirty.players[player_index].coord_id && dirty.objects[new_ship_index].docked_at_object_id) {
-
-                    let coord_index = await main.getCoordIndex({ 'coord_id': dirty.players[player_index].coord_id });
-                    await main.updateCoordGeneric(socket, { 'coord_index': coord_index, 'player_id': false });
-
-                    dirty.players[player_index].coord_id = false;
-                    dirty.players[player_index].has_change = true;
-                    await sendInfo(socket, "galaxy", dirty, dirty.players[player_index].id);
-                    await sendInfo(socket, "ship_" + dirty.objects[new_ship_index].id, dirty, dirty.players[player_index].id);
-                }
-
-
-            }
-
-            // Switching ships could happen on a planet, or on a galaxy
-            // If we are on the galaxy, we are moving the player to the coord with the new ship
-            else if(dirty.objects[new_ship_index].coord_id) {
-
-                let new_ship_coord_index = await main.getCoordIndex({'coord_id': dirty.objects[new_ship_index].coord_id});
-                let old_player_coord_index = await main.getCoordIndex({'coord_id': dirty.players[player_index].coord_id});
-
-                if(new_ship_coord_index === -1 || old_player_coord_index === -1) {
-                    return false;
-                }
-
-                // The old ship is now on a coord (set in updateCoordGeneric)
-                // If it's a pod, we remove the player from it
-                if(dirty.objects[old_ship_index].object_type_id === 114) {
-                    dirty.objects[old_ship_index].player_id = false;
-                    dirty.objects[old_ship_index].has_change = true;
-                    await game_object.sendInfo(socket, "galaxy", dirty, old_ship_index);
-                }
+                main.updateCoordGeneric(socket, { 'ship_coord_index': previous_ship_coord_index, 'player_id': false });
                 
 
-
-
-                // The player leaves the old ship on the coord they were on (leaving that coord)
-                await main.updateCoordGeneric(socket, { 'coord_index': old_player_coord_index,
-                    'object_id': dirty.objects[old_ship_index].id, 'player_id': false });
-
-                // And moves to the new ship
-                await main.updateCoordGeneric(socket, { 'coord_index': new_ship_coord_index, 'object_id': false,
-                    'player_id': dirty.players[player_index].id });
-
-
-                // The player now owns the new ship, and moves to the coord where it was
-                dirty.players[player_index].ship_id = dirty.objects[new_ship_index].id;
-                dirty.players[player_index].coord_id = dirty.coords[new_ship_coord_index].id;
                 dirty.players[player_index].ship_coord_id = false;
                 dirty.players[player_index].previous_ship_coord_id = false;
+                dirty.players[player_index].has_change = true;
+
+            }
+
+            
+
+            // We're still at the same place on the ship we are currently on
+            else {
+
+                console.log("Just set a new ship_id for the player");
+
+            }
+            
+
+
+            await sendInfo(socket, false, dirty, dirty.players[player_index].id);
+
+            // If our new ship is docked at something, we remove our player from the galaxy coord
+            if(dirty.players[player_index].coord_id && dirty.objects[new_ship_index].docked_at_object_id) {
+
+                let coord_index = await main.getCoordIndex({ 'coord_id': dirty.players[player_index].coord_id });
+                await main.updateCoordGeneric(socket, { 'coord_index': coord_index, 'player_id': false });
+
+                dirty.players[player_index].coord_id = false;
+                dirty.players[player_index].coord_index = -1;
                 dirty.players[player_index].has_change = true;
                 await sendInfo(socket, "galaxy", dirty, dirty.players[player_index].id);
-                await map.updateMap(socket, dirty);
-                world.setPlayerMoveDelay(socket, dirty, player_index);
-                
+                await sendInfo(socket, "ship_" + dirty.objects[new_ship_index].id, dirty, dirty.players[player_index].id);
+            }
 
 
+        }
 
-            } else if(dirty.objects[new_ship_index].planet_coord_id) {
-                log(chalk.red("Not sure we are supporting ships showing up on planets right now"));
+        // Switching ships could happen on a planet, or on a galaxy
+        // If we are on the galaxy, we are moving the player to the coord with the new ship
+        else if(dirty.objects[new_ship_index].coord_id) {
+
+            let new_ship_coord_index = await main.getCoordIndex({'coord_id': dirty.objects[new_ship_index].coord_id});
+            let old_player_coord_index = await main.getCoordIndex({'coord_id': dirty.players[player_index].coord_id});
+
+            if(new_ship_coord_index === -1 || old_player_coord_index === -1) {
                 return false;
-                /*
-                let new_ship_planet_coord_index = await main.getPlanetCoordIndex({ 'planet_coord_id': dirty.objects[new_ship_index].planet_coord_id });
-                let old_player_planet_coord_index = await main.getPlanetCoordIndex({'planet_coord_id': dirty.players[player_index].planet_coord_id });
+            }
 
-                if(new_ship_planet_coord_index === -1 || old_player_planet_coord_index === -1) {
-                    return false;
-                }
-
-                // The player leaves the old ship on the coord they were on (leaving that coord)
-                await main.updateCoordGeneric(socket, { 'coord_index': old_player_planet_coord_index,
-                    'object_id': dirty.objects[old_ship_index].id, 'player_id': false });
-
-                // And moves to the new ship
-                await main.updateCoordGeneric(socket, { 'coord_index': new_ship_planet_coord_index, 'object_id': false,
-                    'player_id': dirty.players[player_index].id });
-
-
-                console.log("Sent old ship object info with player_id = false when player_id used to be " + dirty.objects[old_ship_index].player_id);
-                // The old ship is now on a coord (set in updateCoordGeneric), without a player
+            // The old ship is now on a coord (set in updateCoordGeneric)
+            // If it's a pod, we remove the player from it
+            if(dirty.objects[old_ship_index].object_type_id === 114) {
                 dirty.objects[old_ship_index].player_id = false;
                 dirty.objects[old_ship_index].has_change = true;
-                await game_object.sendInfo(socket, "planet_" + dirty.planet_coords[new_ship_planet_coord_index].planet_id, dirty, old_ship_index);
-
-
-                // The new ship is now not on any coord, since it's controlled by the player
-                dirty.objects[new_ship_index].planet_coord_id = false;
-                dirty.objects[new_ship_index].player_id = dirty.players[player_index].id;
-                dirty.objects[new_ship_index].has_change = true;
-                await game_object.sendInfo(socket, "planet_" + dirty.planet_coords[new_ship_planet_coord_index].planet_id, dirty, new_ship_index);
-
-
-                // The player now owns the new ship, and moves to the coord where it was
-                dirty.players[player_index].ship_id = dirty.objects[new_ship_index].id;
-                dirty.players[player_index].ship_coord_id = false;
-                dirty.players[player_index].planet_coord_id = dirty.planet_coords[new_ship_planet_coord_index].id;
-                dirty.players[player_index].has_change = true;
-                await world.sendPlayerInfo(socket, "planet_" + dirty.planet_coords[new_ship_planet_coord_index].planet_id, dirty, dirty.players[player_index].id);
-
-                // Bounce the player to the galaxy
-                movement.switchToGalaxy(socket, dirty);
-
-                // We change the socket move delay to the move delay of the ship the player is now at
-                let new_ship_object_type_index = main.getObjectTypeIndex(dirty.objects[new_ship_index].object_type_id);
-
-                // deprecated. Use world.setPlayerMoveDelay
-                if(dirty.object_types[new_ship_object_type_index].move_delay) {
-                    socket.move_delay = dirty.object_types[new_ship_object_type_index].move_delay;
-                }
-
-                */
-
+                await game_object.sendInfo(socket, "galaxy", dirty, old_ship_index);
             }
+            
 
 
-            // Finally, we want to switch the airlock and the engines over to the player that now owns the ship ( if it's a different player for this ship )
-            if(dirty.objects[new_ship_index].player_id !== dirty.players[player_index].id) {
+            console.log("Old coord should still have the old ship on it");
+            // The player leaves the old ship on the coord they were on (leaving that coord)
+            await main.updateCoordGeneric(socket, { 'coord_index': old_player_coord_index,
+                'object_id': dirty.objects[old_ship_index].id, 'player_id': false });
 
-                // The new ship is now controlled by the player
-                dirty.objects[new_ship_index].player_id = dirty.players[player_index].id;
-                dirty.objects[new_ship_index].has_change = true;
-
-                await game_object.sendInfo(socket, "galaxy", dirty, new_ship_index);
+            // And moves to the new ship
+            await main.updateCoordGeneric(socket, { 'coord_index': new_ship_coord_index, 'object_id': false,
+                'player_id': dirty.players[player_index].id });
 
 
-                for(let i = 0; i < dirty.ship_coords.length; i++) {
-                    if(dirty.ship_coords[i] && dirty.ship_coords[i].ship_id === dirty.objects[new_ship_index].id) {
+            // The player now owns the new ship, and moves to the coord where it was
+            dirty.players[player_index].ship_id = dirty.objects[new_ship_index].id;
+            dirty.players[player_index].ship_index = new_ship_index;
+            dirty.players[player_index].coord_id = dirty.coords[new_ship_coord_index].id;
+            dirty.players[player_index].coord_index = new_ship_coord_index;
+            dirty.players[player_index].ship_coord_id = false;
+            dirty.players[player_index].previous_ship_coord_id = false;
+            dirty.players[player_index].has_change = true;
+            await sendInfo(socket, "galaxy", dirty, dirty.players[player_index].id);
+            await map.updateMap(socket, dirty);
+            world.setPlayerMoveDelay(socket, dirty, player_index);
+            
 
-                        if(dirty.ship_coords[i].object_type_id === 265 || dirty.ship_coords[i].object_type_id === 266) {
-                            let changing_object_index = await game_object.getIndex(dirty, dirty.ship_coords[i].object_id);
-                            if(changing_object_index !== -1) {
-                                dirty.objects[changing_object_index].player_id = dirty.players[player_index].id;
-                                dirty.objects[changing_object_index].has_change = true;
-                            }
+
+
+        }
+
+        dirty.players[player_index].ship_index = new_ship_index;
+
+
+        // Finally, we want to switch the airlock and the engines over to the player that now owns the ship ( if it's a different player for this ship )
+        if(dirty.objects[new_ship_index].player_id !== dirty.players[player_index].id) {
+
+            // The new ship is now controlled by the player
+            dirty.objects[new_ship_index].player_id = dirty.players[player_index].id;
+            dirty.objects[new_ship_index].has_change = true;
+
+            await game_object.sendInfo(socket, "galaxy", dirty, new_ship_index);
+
+
+            for(let i = 0; i < dirty.ship_coords.length; i++) {
+                if(dirty.ship_coords[i] && dirty.ship_coords[i].ship_id === dirty.objects[new_ship_index].id) {
+
+                    if(dirty.ship_coords[i].object_type_id === 265 || dirty.ship_coords[i].object_type_id === 266) {
+                        let changing_object_index = await game_object.getIndex(dirty, dirty.ship_coords[i].object_id);
+                        if(changing_object_index !== -1) {
+                            dirty.objects[changing_object_index].player_id = dirty.players[player_index].id;
+                            dirty.objects[changing_object_index].has_change = true;
                         }
-
                     }
+
                 }
             }
-
-
-
-
-
-
-
-        } catch(error) {
-            log(chalk.red("Error in player.switchShip: " + error));
-            console.error(error);
-        }
-    }
-
-    exports.switchShip = switchShip;
-
-
-
-    async function unequip(socket, dirty, equipment_linker_id) {
-
-        try {
-
-            equipment_linker_id = parseInt(equipment_linker_id);
-
-            console.log("Player is unequipping equipment_linker_id: " + equipment_linker_id);
-
-            let equipment_linker_index = dirty.equipment_linkers.findIndex(function(obj) { return obj && obj.id === equipment_linker_id; });
-
-            if(equipment_linker_index === -1) {
-                return false;
-            }
-
-
-            if(dirty.equipment_linkers[equipment_linker_index].object_id) {
-                let adding_to_data = { 'adding_to_type': 'player', 'adding_to_id': socket.player_id,
-                    'object_id': dirty.equipment_linkers[equipment_linker_index].object_id,
-                    'object_type_id': dirty.equipment_linkers[equipment_linker_index].object_type_id, 'amount':1 };
-                await inventory.addToInventory(socket, dirty, adding_to_data);
-            } else {
-                let adding_to_data = { 'adding_to_type': 'player', 'adding_to_id': socket.player_id,
-                    'object_type_id': dirty.equipment_linkers[equipment_linker_index].object_type_id, 'amount': dirty.equipment_linkers[equipment_linker_index].amount };
-                await inventory.addToInventory(socket, dirty, adding_to_data);
-            }
-
-            // emit equipment data
-            socket.emit('equipment_linker_info', { 'remove': true, 'equipment_linker': dirty.equipment_linkers[equipment_linker_index] });
-
-
-            await (pool.query("DELETE FROM equipment_linkers WHERE id = ?", [dirty.equipment_linkers[equipment_linker_index].id]));
-
-            delete dirty.equipment_linkers[equipment_linker_index];
-
-
-        } catch(error) {
-            log(chalk.red("Error in player.unequip: " + error));
-            console.error(error);
         }
 
+
+
+
+
+
+
+    } catch(error) {
+        log(chalk.red("Error in player.switchShip: " + error));
+        console.error(error);
     }
-    exports.unequip = unequip;
+}
+
+exports.switchShip = switchShip;
+
+
+
+async function unequip(socket, dirty, equipment_linker_id) {
+
+    try {
+
+        equipment_linker_id = parseInt(equipment_linker_id);
+
+        console.log("Player is unequipping equipment_linker_id: " + equipment_linker_id);
+
+        let equipment_linker_index = dirty.equipment_linkers.findIndex(function(obj) { return obj && obj.id === equipment_linker_id; });
+
+        if(equipment_linker_index === -1) {
+            return false;
+        }
+
+
+        if(dirty.equipment_linkers[equipment_linker_index].object_id) {
+            let adding_to_data = { 'adding_to_type': 'player', 'adding_to_id': socket.player_id,
+                'object_id': dirty.equipment_linkers[equipment_linker_index].object_id,
+                'object_type_id': dirty.equipment_linkers[equipment_linker_index].object_type_id, 'amount':1 };
+            await inventory.addToInventory(socket, dirty, adding_to_data);
+        } else {
+            let adding_to_data = { 'adding_to_type': 'player', 'adding_to_id': socket.player_id,
+                'object_type_id': dirty.equipment_linkers[equipment_linker_index].object_type_id, 'amount': dirty.equipment_linkers[equipment_linker_index].amount };
+            await inventory.addToInventory(socket, dirty, adding_to_data);
+        }
+
+        // emit equipment data
+        socket.emit('equipment_linker_info', { 'remove': true, 'equipment_linker': dirty.equipment_linkers[equipment_linker_index] });
+
+
+        await (pool.query("DELETE FROM equipment_linkers WHERE id = ?", [dirty.equipment_linkers[equipment_linker_index].id]));
+
+        delete dirty.equipment_linkers[equipment_linker_index];
+
+
+    } catch(error) {
+        log(chalk.red("Error in player.unequip: " + error));
+        console.error(error);
+    }
+
+}
+exports.unequip = unequip;
 
 module.exports = {
     calculateAttack,
@@ -2327,6 +2318,7 @@ module.exports = {
     kill,
     sendInfo,
     sendShips,
+    setShipIndex,
     switchShip,
     unequip
 }

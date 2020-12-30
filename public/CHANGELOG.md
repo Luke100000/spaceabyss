@@ -1,3 +1,28 @@
+## [0.2.26] - 2020-12-30
+
+### Added
+- Primewall
+
+### Fixed
+- Monsters from ships showing up on planets (I did manually push this into a hotfix for 0.2.25 already )
+- Temp fix for ships destroyer size and larger for undocking from space stations. Eventually I want to code this differently
+- Medium sized ships being able to dock at Space Stations from the left or top. Re-coded a significant portion of how ships move through the galaxy.
+- Bug with using an emergency pod removing the previous ship the player was on from the galaxy
+- Issue with taking decayed inventory items (algae vats that were left in the manufacturer for a long time)
+- Issue with the storyteller finding an event when there is no previous difficulty (for some reason)
+- Large ice comets were just spawning ice at their location and disappearing. New ones will need to be mined like normal
+- Stairs out showing up on Machine Hills
+- Thiol Canisters can now be picked up
+- Monsters not being deleted when a ship is deleted
+- Crystal Guard image
+
+### Changed
+- Increased Vooard base attack range from 1 to 2
+- Verification for The Great Nomad from cookie to localstorage
+- The lookups that monsters use when spawning things. There was a rogue monster taking 600ms to constantly try and fail spawning something
+- Warmind from taking up two vertical tiles to one vertical tile 
+- Warmind sprite
+
 ## [0.2.25] - 2020-12-22
 
 

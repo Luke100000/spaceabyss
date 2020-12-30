@@ -669,40 +669,45 @@ async function deleteMonster(dirty, monster_index, data = {}) {
 
         // grab the drop linkers for the monster type
         //console.log("Getting all drop linkers for monster type id: " + dirty.monster_types[monster_type_index].id);
-        let drop_linkers = dirty.drop_linkers.filter(drop_linker => drop_linker.monster_type_id === dirty.monster_types[monster_type_index].id);
-        if(drop_linkers.length > 0) {
-
-            // get a random drop linker - and it will drop that
-            let drop_linker = drop_linkers[Math.floor(Math.random() * drop_linkers.length)];
-            //console.log("Going to drop object_type_id: " + drop_linker.dropped_object_type_id);
-
-
-            let drop_success = await placeDrop(dirty, monster_info.scope, drop_linker, monster_info.coord_index);
-
-            if(drop_success === false && monster_info.coord.left_coord_index !== -1) {
-                drop_success = await placeDrop(dirty, monster_info.scope, drop_linker, monster_info.coord.left_coord_index);
-            }
-
-            if(drop_success === false && monster_info.coord.right_coord_index !== -1) {
-                drop_success = await placeDrop(dirty, monster_info.scope, drop_linker, monster_info.coord.right_coord_index);
-            }
-
-           
-            if(drop_success === false) {
-                log(chalk.green("Put something in the waiting drops!"));
-                // We... couldn't find a spot!
-                if(monster_info.scope === "planet") {
-                    dirty.waiting_drops.push({'object_type_id': drop_linker.dropped_object_type_id, 'amount': drop_linker.amount, 'planet_coord_index': monster_info.coord_index });
-                } else if(monster_info.scope === "ship") {
-                    dirty.waiting_drops.push({'object_type_id': drop_linker.dropped_object_type_id, 'amount': drop_linker.amount, 'ship_coord_index': monster_info.coord_index });
+        if(monster_info.coord_index !== -1) {
+            let drop_linkers = dirty.drop_linkers.filter(drop_linker => drop_linker.monster_type_id === dirty.monster_types[monster_type_index].id);
+            if(drop_linkers.length > 0) {
+    
+                // get a random drop linker - and it will drop that
+                let drop_linker = drop_linkers[Math.floor(Math.random() * drop_linkers.length)];
+                //console.log("Going to drop object_type_id: " + drop_linker.dropped_object_type_id);
+    
+    
+                let drop_success = await placeDrop(dirty, monster_info.scope, drop_linker, monster_info.coord_index);
+    
+                if(drop_success === false && monster_info.coord.left_coord_index !== -1) {
+                    drop_success = await placeDrop(dirty, monster_info.scope, drop_linker, monster_info.coord.left_coord_index);
                 }
-
+    
+                if(drop_success === false && monster_info.coord.right_coord_index !== -1) {
+                    drop_success = await placeDrop(dirty, monster_info.scope, drop_linker, monster_info.coord.right_coord_index);
+                }
+    
+               
+                if(drop_success === false) {
+                    log(chalk.green("Put something in the waiting drops!"));
+                    // We... couldn't find a spot!
+                    if(monster_info.scope === "planet") {
+                        dirty.waiting_drops.push({'object_type_id': drop_linker.dropped_object_type_id, 'amount': drop_linker.amount, 'planet_coord_index': monster_info.coord_index });
+                    } else if(monster_info.scope === "ship") {
+                        dirty.waiting_drops.push({'object_type_id': drop_linker.dropped_object_type_id, 'amount': drop_linker.amount, 'ship_coord_index': monster_info.coord_index });
+                    }
+    
+                }
+    
+    
+            } else {
+                //console.log("Monster type id: " + dirty.monster_types[monster_type_index].id + " doesn't drop anything");
             }
-
-
         } else {
-            //console.log("Monster type id: " + dirty.monster_types[monster_type_index].id + " doesn't drop anything");
+            console.log("Did not try and drop anything for monster id: " + dirty.monsters[monster_index].id + " because we could not find the coord it is on");
         }
+        
 
 
 
@@ -846,9 +851,15 @@ async function fix(dirty, monster_index) {
             if(!dirty.monsters[monster_index].room) {
 
                 if(dirty.monsters[monster_index].ship_coord_id) {
-                    console.log("Monster's ship_coord doesn't seem to exist anymore");
+                    console.log("Monster's ship_coord id: " + dirty.monsters[monster_index].ship_coord_id + " doesn't seem to exist anymore");
                     deleteMonster(dirty, monster_index);
 
+                } else if(dirty.monsters[monster_index].planet_coord_id) {
+                    console.log("Monster's planet_coord id: " + dirty.monsters[monster_index].planet_coord_id + " doesn't seem to exist anymore");
+                    deleteMonster(dirty, monster_index);
+                } else {
+                    console.log("Monster did not have a ship or planet coord?");
+                    deleteMonster(dirty, monster_index);
                 }
 
             }
@@ -875,7 +886,7 @@ async function getCoordAndRoom(dirty, monster_index) {
 
         // Monster isn't here
         if(!dirty.monsters[monster_index]) {
-            log(chalk.yellow("Trying to delete a monster that we couldn't find. monster_index: " + monster_index));
+            log(chalk.yellow("Trying to get a monster that we couldn't find (being deleted?). monster_index: " + monster_index));
             return { 'room': room, 'coord_index': coord_index, 'coord': coord, 'scope': scope };
         }
 

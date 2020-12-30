@@ -11,6 +11,7 @@ const game = require('./game.js');
 const helper = require('./helper.js');
 const inventory = require('./inventory.js');
 const main = require('./space_abyss' + process.env.FILE_SUFFIX + '.js');
+const map = require('./map.js');
 const planet = require('./planet.js');
 const player = require('./player.js');
 const world = require('./world.js');
@@ -103,6 +104,12 @@ async function calculateDefense(dirty, object_index, damage_types = []) {
  */
 async function canPlace(dirty, scope, coord, data) {
     try {
+
+        if(helper.isFalse(coord)) {
+            log(chalk.yellow("Invalid coord sent into game_object.canPlace"));
+            console.trace("here");
+            return false;
+        }
 
         let debug_object_type_id = 0;
 
@@ -1012,8 +1019,68 @@ async function getCoordAndRoom(dirty, object_index) {
 exports.getCoordAndRoom = getCoordAndRoom;
 
 
+async function getShipCurrentCoords(socket, dirty, display_linkers) {
 
-/**
+    try {
+
+        //console.log("In getShipCurrentCoords");
+        //console.time("getShipCurrentCoords");
+
+        dirty.objects[dirty.players[socket.player_index].ship_index].current_coords = [];
+        
+
+        let base_coord_index = dirty.players[socket.player_index].coord_index;
+        //console.log("Base coord tile_x/y: " + dirty.coords[base_coord_index].tile_x + "," + dirty.coords[base_coord_index].tile_y);
+
+        for(let i = 0; i < display_linkers.length; i++) {
+            let x_difference = display_linkers[i].position_x;
+            let y_difference = display_linkers[i].position_y;
+            //console.log("Working on dislpay linker position: " + x_difference + "," + y_difference);
+            let linker_coord_index = base_coord_index;
+
+            while(x_difference !== 0 || y_difference !== 0) {
+
+                if(x_difference > 0) {
+                    await map.getCoordNeighbor(dirty, 'galaxy', linker_coord_index, 'right');
+                    linker_coord_index = dirty.coords[linker_coord_index].right_coord_index;
+                    x_difference--;
+                } else if(y_difference > 0) {
+                    await map.getCoordNeighbor(dirty, 'galaxy', linker_coord_index, 'down');
+                    linker_coord_index = dirty.coords[linker_coord_index].down_coord_index;
+                    y_difference--;
+                } else if(x_difference < 0) {
+                    await map.getCoordNeighbor(dirty, 'galaxy', linker_coord_index, 'left');
+                    linker_coord_index = dirty.coords[linker_coord_index].left_coord_index;
+                    x_difference++;
+                } else if(y_difference < 0) {
+                    await map.getCoordNeighbor(dirty, 'galaxy', linker_coord_index, 'up');
+                    linker_coord_index = dirty.coords[linker_coord_index].up_coord_index;
+                    y_difference++;
+                }
+
+                
+
+            }
+
+            dirty.objects[dirty.players[socket.player_index].ship_index].current_coords.push( {'coord_index': linker_coord_index, 
+                    'position_x': display_linkers[i].position_x, 'position_y': display_linkers[i].position_y });
+
+
+        }
+
+        //console.timeEnd("getShipCurrentCoords");
+
+    } catch(error) {
+        log(chalk.red("Error in game_object.getShipCurrentCoords: " + error));
+        console.error(error);
+    }
+
+}
+
+exports.getShipCurrentCoords = getShipCurrentCoords;
+
+
+/** Places an object on a coord
  *
  * @param socket
  * @param dirty
