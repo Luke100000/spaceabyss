@@ -24,7 +24,17 @@ const player = require('./player.js');
 
 
 /*
- data:       attacking_id   |   attacking_type   |   ?attacking_socket_id?   |   being_attacked_id   |   being_attacked_type   |   ?being_attacked_socket_id?
+ data:       attacking_id   |   attacking_type   |    being_attacked_id   |   being_attacked_type   |   ?being_attacked_socket_id?
+ */
+/**
+ * @param {Object} socket
+ * @param {Object} dirty
+ * @param {Object} data
+ * @param {number} data.attacking_id
+ * @param {String} data.attacking_type
+ * @param {number} data.being_attacked_id
+ * @param {String} data.being_attacked_type
+ * @param {number=} data.being_attacked_socket_id
  */
 async function addBattleLinker(socket, dirty, data) {
 
@@ -1915,6 +1925,7 @@ async function createShipCoord(dirty, ship_index, linker, data = {}) {
                 console.log("Adding default allow creator rule to airlock");
                 addRule({}, dirty, { 'object_id': dirty.objects[new_object_index].id, 'new_rule': 'allow_creator',
                     'allow': true });
+                dirty.objects[ship_index].airlock_index = new_ship_coord_index;
             }
         }
     } catch(error) {
@@ -2768,7 +2779,7 @@ async function getOpenCoordIndex(dirty, coord_type, base_coord_index, placing_ty
                     let can_place_result = await game_object.canPlace(dirty, coord_type, left_coord,  {'object_type_id': dirty.object_types[placing_index].id } );
                     
                     if(can_place_result === true) {
-                        console.log("Can place result was true");
+                        //console.log("Can place result was true");
                         return base_coord.left_coord_index;
                     }
                 } else if(placing_type === 'monster') {
@@ -2957,12 +2968,12 @@ async function getOpenCoordIndex(dirty, coord_type, base_coord_index, placing_ty
         // Didn't find a coord, and we have some disance left we can go
         if(distance_left > 0) {
 
-            console.log("Going to new base coords. Distance left: " + distance_left);
-            console.log(block_directions);
+            //console.log("Going to new base coords. Distance left: " + distance_left);
+            //console.log(block_directions);
             let new_distance = distance_left - 1;
 
             if(base_coord.left_coord_index !== -1 && !block_directions.includes('left')) {
-                console.log("left");
+                //console.log("left");
                 let new_block_directions = [...block_directions];
                 new_block_directions.push('right');
                 let found_coord_index = await getOpenCoordIndex(dirty, coord_type, base_coord.left_coord_index, placing_type, placing_index, new_distance, block_directions);
@@ -2972,7 +2983,7 @@ async function getOpenCoordIndex(dirty, coord_type, base_coord_index, placing_ty
             }
 
             //console.log("Done with left on Distance left: " + distance_left);
-            console.log(block_directions);
+            //console.log(block_directions);
 
             if(base_coord.right_coord_index !== -1 && !block_directions.includes('right')) {
                 //console.log("right");
@@ -2985,7 +2996,7 @@ async function getOpenCoordIndex(dirty, coord_type, base_coord_index, placing_ty
             }
 
             //console.log("Done with right on Distance left: " + distance_left);
-            console.log(block_directions);
+            //console.log(block_directions);
 
             if(base_coord.up_coord_index !== -1 && !block_directions.includes('up')) {
                 //console.log("up");
@@ -5249,7 +5260,17 @@ async function tickStorytellers(dirty, force_event_id = 0) {
 
                                 let planet_type_index = main.getPlanetTypeIndex(dirty.planets[chosen_planet_index].planet_type_id);
                                 // add a player log!!
-                                addPlayerLog(dirty, -1, "The " + dirty.planet_types[planet_type_index].name + " planet " + dirty.planets[chosen_planet_index].name + " is being attacked by bugs",
+
+                                let player_log_message = "The " + dirty.planet_types[planet_type_index].name + " planet " + dirty.planets[chosen_planet_index].name;
+
+                                if(dirty.events[event_index].id === 90) {
+                                    player_log_message += " is being attacked by bugs";
+                                } else if(dirty.events[event_index].id === 22) {
+                                    player_log_message += " is being attacked by an Acid Fiend";
+                                }
+
+
+                                addPlayerLog(dirty, -1,  player_log_message,
                                     { 'planet_id': dirty.planets[chosen_planet_index].id, 'event_id': chosen_event.id });
                             }
                         } else {

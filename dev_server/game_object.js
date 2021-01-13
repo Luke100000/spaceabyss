@@ -505,7 +505,7 @@ async function deleteObject(dirty, data) {
 
     try {
 
-        console.log("In deleteObject");
+        //console.log("In deleteObject");
 
         if(data.object_index === -1 || !dirty.objects[data.object_index]) {
             console.log("Did not find an object there at dirty.objects");
@@ -810,7 +810,7 @@ async function deleteObject(dirty, data) {
             await event.checkSpawnedEvent(dirty, check_spawned_event_id, check_spawned_event_data);
         }
 
-        console.log("Done in game_object.deleteObject");
+        //console.log("Done in game_object.deleteObject");
 
         return true;
     } catch(error) {
@@ -1443,8 +1443,8 @@ async function removeFromCoord(dirty, object_index) {
 
     try {
 
-        console.log("In game_object.removeFromCoord");
-        console.time("removeFromCoord");
+        //console.log("In game_object.removeFromCoord");
+        //console.time("removeFromCoord");
 
         let has_display_linkers = false;
         let display_linkers = [];
@@ -1458,7 +1458,7 @@ async function removeFromCoord(dirty, object_index) {
         }
 
         if(!has_display_linkers) {
-            console.log("No display linkers. Simple remove");
+            //console.log("No display linkers. Simple remove");
             if(dirty.objects[object_index].coord_id) {
                 let object_coord_index = await main.getCoordIndex({'coord_id': dirty.objects[object_index].coord_id});
                 if(object_coord_index !== -1) {
@@ -1589,7 +1589,7 @@ async function removeFromCoord(dirty, object_index) {
 
         }
 
-        console.timeEnd("removeFromCoord");
+        //console.timeEnd("removeFromCoord");
 
     } catch(error) {
         log(chalk.red("Error in game_object.removeFromCoord: " + error));

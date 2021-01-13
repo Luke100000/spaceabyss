@@ -1,3 +1,33 @@
+## [0.2.27] - 2021-01-13
+
+### Added
+- The first actual use of a projectile effect! The Volt Rifle now throws an electrical bolt at enemies.
+- Hack Dust
+- Gaian Plasma Deposit
+- Gaian Plasma
+- Admin ability to manually tick decay
+- Monsters will now attack player built objects if those player built objects aren't preventing them from attacking a player they are 
+engaged with combat.
+- Green Juice
+- Blue Juice
+- Garden Ship
+
+
+### Fixed
+- Bug when rules are deleted (hotfixed in 0.2.26)
+- Bug when going through a portal location on a planet then leaving that planet and trying to move your ship (hotfixed in 0.2.26)
+- Bug where being addicted to something without a valid race eating linker would cause you to not be able to attack
+- Some fixes with the storytelling system
+- Image for Large Ice Comet
+- Bug with newly created ships not seeing their airlock in some instances
+
+
+### Changed
+- Wreck object type now drops some nicer stuff than just Territe
+- Acid Egg event is no longer part of the storytellers
+- Some of the text surrounding the storytelling system
+- Increased Algae Puffs tick count from 20 to 40
+
 ## [0.2.26] - 2020-12-30
 
 ### Added

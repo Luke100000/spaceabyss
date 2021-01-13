@@ -388,10 +388,28 @@ async function dockOnShip(socket, dirty, object_id) {
             return false;
         }
 
+        let ship_coord_index = -1;
 
-        // we need to find a ship coord to place the player on
-        let ship_coord_index = dirty.ship_coords.findIndex(function(obj) {
-            return obj && obj.ship_id === dirty.objects[object_index].id && !obj.object_type_id && !obj.object_id && !obj.player_id && !obj.monster_id; });
+        // try and place around the airlock if the ship has one
+        if(typeof dirty.objects[object_index].airlock_index !== 'undefined' && dirty.objects[object_index].airlock_index !== -1) {
+            console.log("Dockable station has an airlock");
+
+            //console.log("Ship has an airlock: " + dirty.objects[ship_index].airlock_index);
+
+            ship_coord_index = await world.getOpenCoordIndex(dirty, 'ship', dirty.objects[object_index].airlock_index, 'player', player_index, 2);
+
+            console.log("ship_coord_index from getting around airlock is: " + ship_coord_index);
+
+        } 
+
+        if(ship_coord_index === -1) {
+            // we need to find a ship coord to place the player on
+            ship_coord_index = dirty.ship_coords.findIndex(function(obj) {
+                return obj && obj.ship_id === dirty.objects[object_index].id && !obj.object_type_id && !obj.object_id && !obj.player_id && !obj.monster_id; });
+        }
+
+
+        
 
 
         if(ship_coord_index === -1) {
@@ -815,8 +833,9 @@ exports.move = move;
             let previous_coord_index = -1;
             if(typeof dirty.players[socket.player_index].coord_index !== "undefined" && dirty.players[socket.player_index].coord_index !== -1) {
                 previous_coord_index = dirty.players[socket.player_index].coord_index;
+                //console.log("Set previous_coord_index to: " + previous_coord_index);
             } else {
-                log(chalk.yellow("Player did not have a coord_index - having to grab the coord index"));
+                //log(chalk.yellow("Player did not have a coord_index - having to grab the coord index"));
                 previous_coord_index = await main.getCoordIndex({'coord_id': dirty.players[socket.player_index].coord_id});
                 dirty.players[socket.player_index].coord_index = previous_coord_index;
             }
@@ -1856,14 +1875,14 @@ exports.move = move;
             }
             // HOLES
             else if (dirty.planet_coords[planet_coord_index].object_type_id && dirty.object_types[object_type_index].is_hole) {
-                console.log("Player is trying to go down a hole");
+                //console.log("Player is trying to go down a hole");
 
                 let new_planet_level = dirty.planet_coords[previous_planet_coord_index].level - 1;
                 let stairs_index = await main.getPlanetCoordIndex({'planet_id': dirty.planet_coords[planet_coord_index].planet_id,
                     'planet_level': new_planet_level, 'tile_x': dirty.planet_coords[planet_coord_index].tile_x, 'tile_y': dirty.planet_coords[planet_coord_index].tile_y});
 
                 if(stairs_index !== -1) {
-                    console.log("Found stairs");
+                    //console.log("Found stairs");
 
                     let moving_to_coord_index = -1;
 
@@ -2692,14 +2711,14 @@ exports.move = move;
             }
             // HOLES
             else if (dirty.ship_coords[ship_coord_index].object_type_id && dirty.object_types[object_type_index].is_hole) {
-                console.log("Player is trying to go down a hole");
+                //console.log("Player is trying to go down a hole");
 
                 let new_ship_level = dirty.ship_coords[previous_ship_coord_index].level - 1;
                 let stairs_index = await main.getShipCoordIndex({'ship_id': dirty.ship_coords[ship_coord_index].ship_id,
                     'level': new_ship_level, 'tile_x': dirty.ship_coords[ship_coord_index].tile_x, 'tile_y': dirty.ship_coords[ship_coord_index].tile_y});
 
                 if(stairs_index !== -1) {
-                    console.log("Found stairs");
+                    //console.log("Found stairs");
 
                     let moving_to_coord_index = -1;
 
@@ -3392,7 +3411,6 @@ exports.move = move;
                 dirty.players[player_index].ship_coord_id = false;
                 dirty.players[player_index].previous_ship_coord_id = false;
                 dirty.players[player_index].coord_index = -1;
-                dirty.players[player_index].coord_index = false;
                 dirty.players[player_index].has_change = true;
                 await player.sendInfo(socket, "planet_" + temp_coord.planet_id, dirty, dirty.players[player_index].id);
 
@@ -3819,7 +3837,7 @@ async function payForGalaxyMove(socket, dirty, ship_index) {
         try {
 
 
-            console.time("switchToGalaxy");
+            //console.time("switchToGalaxy");
 
 
             if(!dirty.players[player_index]) {
@@ -3907,7 +3925,7 @@ async function payForGalaxyMove(socket, dirty, ship_index) {
             }
             // Switching to galaxy from ship
             else if (dirty.players[player_index].ship_coord_id) {
-                console.log("In movement.switchToGalaxy - ship_coord_id");
+                //console.log("In movement.switchToGalaxy - ship_coord_id");
 
                 let ship_coord_index = await main.getShipCoordIndex({ 'ship_coord_id': dirty.players[player_index].ship_coord_id });
 
@@ -4055,21 +4073,22 @@ async function payForGalaxyMove(socket, dirty, ship_index) {
                     
                 }
 
-                // OK LETS REDO THE STUPID ASS SCENARIOS
+                // OK LETS REDO THE STUPID SCENARIOS
                 // 1. Our current ship is docked at another ship
                 // 2. It's just us and our ship, change the view
 
 
                 // 1. OUR SHIP IS DOCKED
+                // TODO REDO THIS WITH world.getOpenCoordIndex
                 if(dirty.objects[player_ship_index].docked_at_object_id) {
-                    console.log("Launching FROM docked ship. Docked ship is on galaxy coord id: " + dirty.coords[ship_galaxy_coord_index].id);
+                    //console.log("Launching FROM docked ship. Docked ship is on galaxy coord id: " + dirty.coords[ship_galaxy_coord_index].id);
 
                     let tile_x_start = dirty.coords[ship_galaxy_coord_index].tile_x - 2;
                     let tile_y_start = dirty.coords[ship_galaxy_coord_index].tile_y - 2;
                     let tile_x_end = tile_x_start + 3;
                     let tile_y_end = tile_y_start + 3;
 
-                    console.log("Checking coords: " + tile_x_start + "," + tile_y_start + " to " + tile_x_end + "," + tile_y_end);
+                    //console.log("Checking coords: " + tile_x_start + "," + tile_y_start + " to " + tile_x_end + "," + tile_y_end);
 
                     let placing_galaxy_coord_index = -1;
                     let found_galaxy_coord = false;
@@ -4171,7 +4190,7 @@ async function payForGalaxyMove(socket, dirty, ship_index) {
                 await switchToGalaxy(socket, dirty, player_index);
             }
 
-            console.timeEnd("switchToGalaxy");
+            //console.timeEnd("switchToGalaxy");
 
 
 
@@ -4250,14 +4269,14 @@ async function payForGalaxyMove(socket, dirty, ship_index) {
             }
 
             // see if we can place the player where they were previously on the ship
-            console.log("Trying to find ship coord with this player on it already");
+            //console.log("Trying to find ship coord with this player on it already");
             let ship_coord_index = -1;
             if(dirty.players[player_index].previous_ship_coord_id) {
                 ship_coord_index = await main.getShipCoordIndex({ 'ship_coord_id': dirty.players[player_index].previous_ship_coord_id });
             }
 
 
-            console.log("ship_coord_index: " + ship_coord_index);
+            //console.log("ship_coord_index: " + ship_coord_index);
 
             // well - lets find one then
             if(ship_coord_index === -1) {
@@ -4274,36 +4293,6 @@ async function payForGalaxyMove(socket, dirty, ship_index) {
                     //console.log("Ship has an airlock: " + dirty.objects[ship_index].airlock_index);
 
                     ship_coord_index = await world.getOpenCoordIndex(dirty, 'ship', dirty.objects[ship_index].airlock_index, 'player', player_index, 2);
-
-                    //console.log("world.getOpenCoordIndex returned: " + ship_coord_index);
-
-                    // TODO I need to find a better way of doing this. Something like placeAround - base coord index, placing_width_height
-                    /*
-
-                    // try left
-                    await map.getCoordNeighbor(dirty, 'ship', dirty.objects[ship_index].airlock_index, 'left');
-                    if(dirty.ship_coords[dirty.objects[ship_index].airlock_index].left_coord_index !== -1) {
-                        let can_place_result = await player.canPlace(dirty, 'ship', dirty.ship_coords[dirty.ship_coords[dirty.objects[ship_index].airlock_index].left_coord_index], player_index);
-
-                        if(can_place_result === true) {
-                            ship_coord_index = dirty.ship_coords[dirty.objects[ship_index].airlock_index].left_coord_index;
-                            console.log("Using ship coord find near airlock");
-                        }
-                    }
-
-                    // try right
-                    if(ship_coord_index === -1) {
-                        await map.getCoordNeighbor(dirty, 'ship', dirty.objects[ship_index].airlock_index, 'right');
-                        if(dirty.ship_coords[dirty.objects[ship_index].airlock_index].right_coord_index !== -1) {
-                            let can_place_result = await player.canPlace(dirty, 'ship', dirty.ship_coords[dirty.ship_coords[dirty.objects[ship_index].airlock_index].right_coord_index], player_index);
-
-                            if(can_place_result === true) {
-                                ship_coord_index = dirty.ship_coords[dirty.objects[ship_index].airlock_index].right_coord_index;
-                                console.log("Using ship coord find near airlock");
-                            }
-                        }
-                    }
-                    */
 
                 } 
                 // otherwise, we just try and place anywhere

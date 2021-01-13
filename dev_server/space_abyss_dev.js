@@ -1548,7 +1548,6 @@ io.sockets.on('connection', function (socket) {
     });
 
     socket.on('convert_data', async function(data) {
-        console.log("Got convert_data");
         await game.convert(socket, dirty, data);
     });
 
@@ -1627,7 +1626,6 @@ io.sockets.on('connection', function (socket) {
     });
 
     socket.on('mine_stop_data', function(data) {
-        console.log("Got mine_stop_data");
         game.mineStop(socket, dirty, data);
     });
 
@@ -3258,7 +3256,7 @@ module.exports.canPlace = canPlace;
 // We keep the coord value in the player, so that when the player logs back on, we have a place to put them again.
 async function disconnectPlayer(socket) {
     try {
-        console.log("Disconnecting player");
+        //console.log("Disconnecting player");
 
         if(!socket.player_id) {
             console.log("Socket was never associated with a player");
@@ -3267,7 +3265,7 @@ async function disconnectPlayer(socket) {
 
         let player_index = await player.getIndex(dirty, { 'player_id': socket.player_id, 'source': 'main.disconnectPlayer' });
 
-        console.log("Got player index as: " + player_index);
+        //console.log("Got player index as: " + player_index);
         if(player_index === -1) {
             log(chalk.yellow("Unable to find that player"));
             return false;
@@ -3282,13 +3280,13 @@ async function disconnectPlayer(socket) {
 
         let player_info = await player.getCoordAndRoom(dirty, player_index);
 
-        console.log("player id: " + dirty.players[player_index].id + " name: " + dirty.players[player_index].name);
-        console.log("player planet_coord_id: " + dirty.players[player_index].planet_coord_id);
-        console.log("player ship_coord_id: " + dirty.players[player_index].ship_coord_id);
-        console.log("player coord_id: " + dirty.players[player_index].coord_id);
+        //console.log("player id: " + dirty.players[player_index].id + " name: " + dirty.players[player_index].name);
+        //console.log("player planet_coord_id: " + dirty.players[player_index].planet_coord_id);
+        //console.log("player ship_coord_id: " + dirty.players[player_index].ship_coord_id);
+        //console.log("player coord_id: " + dirty.players[player_index].coord_id);
 
         if(dirty.players[player_index].planet_coord_id) {
-            console.log("Disconnecting player was on a planet. Removing from that planet coord");
+            //console.log("Disconnecting player was on a planet. Removing from that planet coord");
 
             let planet_coord_index = await getPlanetCoordIndex({ 'planet_coord_id': dirty.players[player_index].planet_coord_id });
 
@@ -3314,7 +3312,7 @@ async function disconnectPlayer(socket) {
 
             let ship_coord_index = await getShipCoordIndex({ 'ship_coord_id': dirty.players[player_index].ship_coord_id });
 
-            console.log("Going to set previous_ship_coord_id");
+            //console.log("Going to set previous_ship_coord_id");
 
             // Trying to get placing the player back in the galaxy based on the player, not the ship ( since we can't leave it on the coord )
             if(dirty.players[player_index].coord_id) {
@@ -3337,7 +3335,7 @@ async function disconnectPlayer(socket) {
 
             let coord_index = await getCoordIndex({ 'coord_id': dirty.players[player_index].coord_id });
 
-            console.log("Going to set previous_coord_id");
+            //console.log("Going to set previous_coord_id");
 
             dirty.players[player_index].previous_coord_id = dirty.players[player_index].coord_id;
             dirty.players[player_index].previous_planet_coord_id = false;
@@ -3370,17 +3368,17 @@ async function disconnectPlayer(socket) {
                     
                 }
 
-                console.log("Should have removed the player from the coord, the ship from the coord, and sent the info to the room");
-                console.log("Coord object id: " + dirty.coords[coord_index].object_id);
+                //console.log("Should have removed the player from the coord, the ship from the coord, and sent the info to the room");
+                //console.log("Coord object id: " + dirty.coords[coord_index].object_id);
 
 
             }
 
-            console.log("Set player's previous_coord_id to: " + dirty.players[player_index].previous_coord_id);
+            //console.log("Set player's previous_coord_id to: " + dirty.players[player_index].previous_coord_id);
 
         }
 
-        console.log("Sending updated player info to the room");
+        //console.log("Sending updated player info to the room");
 
         await player.sendInfo(socket, player_info.room, dirty, dirty.players[player_index].id);
         io.to(player_info.room).emit('logout_info', { 'player_id': dirty.players[player_index].id });
@@ -4709,6 +4707,15 @@ async function tickAddictions(dirty) {
 
 }
 
+async function tickAI(dirty) {
+    try {
+        await game.tickAI(dirty);
+    } catch(error) {
+        log(chalk.red("Error in main.tickAI: " + error));
+        console.error(error);
+    }
+}
+
 async function tickAssemblies(dirty) {
     //console.log("In tickAssemblies");
 
@@ -4764,7 +4771,7 @@ async function tickBattleLinkers(dirty, pool) {
 
         }
 
-        await game.tickAI(dirty);
+
 
     } catch(error) {
         log(chalk.red("Error calling battle.doLinkers: " + error));
@@ -5079,6 +5086,7 @@ setInterval(writeDirty, 20000);
 // 30 seconds
 setInterval(tickResearches, 30000, dirty);
 setInterval(tickMonsterDecay, 30000, dirty);
+setInterval(tickAI, 30000, dirty);
 
 
 // 60 seconds

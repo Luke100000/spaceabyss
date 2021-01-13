@@ -5,24 +5,9 @@ CURRENT GAMEPLAY TEST:
 DOING NOW:
 
 
-    Update image for Warmind
-    Image for Crystal Guard
+    dock at airlocks???
+        movement.dockOnShip
 
-
-    Have a more clear 'galactic emperor goal' on the leaderboard
-        galactic emperor/empress
-
-        System King/Queen
-
-        Plantary King/Queen
-
-
-
-
-    We commonly have more spawned events than actually show up - desert cruiser wrecks is an example of that. Look into it.
-        It was fine on dev :/
-
-    I should build and test a volt rifle
 
     large > medium > small goop spawning
         mix of greyframe + creeper world
@@ -42,10 +27,6 @@ DOING NOW:
 
     Have the diamond batteries spawn on machine planets once we have the Primewall/Glitched God drawn (or find another MLM)
 
-    I want to build a garden ship (station)
-        It's tier 5 - and none of the tier 5 materials have any organic component. Closest is Living Wood at tier 3.
-        Cold Fusion
-        Life Blood (don't like the name blood) | Mana | Life Mana | Mako | Lifestream | planet lifestream | gaia
 
 
 

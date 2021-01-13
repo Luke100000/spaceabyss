@@ -5,6 +5,44 @@
 Send the player body frames in the order:
 idle, left, right, up, down
 
+SPRITE SIZES:
+Standard Player is: 32x32
+A decent 'large object' size is 24x24 (asteroids)
+A decent size for producing/manufacturing objects is 26x26
+22x22
+    medium monster 
+20x20
+    small monster (process, rat, something else small)
+    pistol type weapons
+18x18
+    small objects (eggs)
+
+wide:
+    28x18 (rifles and such)
+
+
+Something really small, like an egg: 18x18
+
+
+STRUCTURE FOR SENDING AN ITEM
+
+MONSTER
+BlueWare: Design
+Type: Monster
+Size: 20x20 max
+Frames Needed: 1-2 designs
+Attacks:
+Reference Images: 
+Current Sprite: 
+
+
+SPAWNER
+Diamond Deposit
+Type: Spawner
+Size: Max 30x30
+Frame Count: 1 empty frame, 1 full frame. Same idea as Territe Deposit and Exodium Deposit
+Current Sprite: None
+
 
 
 ***************************************
@@ -15,12 +53,48 @@ idle, left, right, up, down
 Some nebulae for cool backgrounds in space
 
 
+Blossomtis: Design
+Type: Monster
+Frames Needed: 1-2 Designs
+
+Cherree: Design
+Type: Monster
+Frames Needed: 1-2 Designs
+
+Converted Mechanoid: Design
+Type: Monster
+Frames Needed: 1-2 Designs
+
+Forest Prince: Design
+Type: Monster
+Frames Needed: 1-2 Designs
+
+Gaian Plasma Deposit
+Type: Spawner
+Frames Needed: 1 empty frame, one full frame
+Current Sprite: https://space.alphacoders.com/images/gaian-plasma-deposit-all.png
+Flavor Text: A vein of some special part of a Biogrove Planet. The life energy eminating from it is immense.
+
 Diamond Battery Deposit
 Type: Spawner
 Size: 30x30 max
 Frames Needed: 1 empty frame, 1 full frame
 Notes: Spawns several of the Diamond Batteries that we drew in batch #24 (https://space.alphacoders.com/images/diamond-battery.png) I don't have an image for it,
 but a lower tier spawner ( it spawns normal batteries ) is https://space.alphacoders.com/images/battery-deposit-animated.png for example.
+
+
+Power Cell
+Type: Object
+Size: About same as current sprite
+Frames Needed: 1-2 Designs
+
+Hack Dust
+Type: Player Weapon
+Size: 20x20 max
+Frames Needed: 1-2 Designs
+Flavor Text: A weapon consisting of millions of nanobots that attach themselves to an enemy, release a viral/malware/electric payload, lift off, and then re-attach to a different part of the enemy. It's the machine equivilent of being stung by a neverending swarm of hornets.
+(like a metal ball with little bits off of it)
+
 
 
 More buildings!

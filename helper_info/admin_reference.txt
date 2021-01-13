@@ -26,6 +26,7 @@ game.processAdminChatMessage
 /spawnmonster MONSTER_TYPE_NAME
 /spawnnpc NPC_JOB_ID
 /spawnobject AMOUNT OBJECT_TYPE_NAME
+/dickdecay
 /tickEvents
 /tickspawners
 /tickthegreatnomad

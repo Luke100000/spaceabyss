@@ -278,13 +278,14 @@ async function deleteSpawnedEvent(dirty, spawned_event_index, data = {}) {
             if(dirty.storytellers[i].current_spawned_event_id === dirty.spawned_events[spawned_event_index].id) {
 
                 console.log("The spawned event we are deleting is part of a storyteller!");
+                let player_log_data = { 'event_id': dirty.spawned_events[spawned_event_index].event_id};
 
                 // If this event had a difficulty associated with it, we add a 'hero' player log
                 if(dirty.events[event_index].difficulty && typeof data.reason_type !== 'undefined' && data.reason_type === 'player') {
 
                     
                     let player_index = await player.getIndex(dirty, { 'player_id': data.reason_id });
-                    let player_log_data = { 'event_id': dirty.spawned_events[spawned_event_index].event_id};
+                    
 
                     let message = "The heroic " + dirty.players[player_index].name ;
 
@@ -298,6 +299,10 @@ async function deleteSpawnedEvent(dirty, spawned_event_index, data = {}) {
 
                     if(dirty.spawned_events[spawned_event_index].event_id === 90) {
                         message += " from the bugs!";
+                    } else if(dirty.spawned_events[spawned_event_index].event_id === 22) {
+                        message += " from the Acid Fiend!";
+                    } else {
+                        message += " from the threat.";
                     }
 
 
@@ -305,6 +310,29 @@ async function deleteSpawnedEvent(dirty, spawned_event_index, data = {}) {
                     
 
 
+                } else {
+
+                    let message = "";
+
+                    if(dirty.spawned_events[spawned_event_index].planet_id) {
+                        let planet_index = await planet.getIndex(dirty, { 'planet_id': dirty.spawned_events[spawned_event_index].planet_id })
+                        if(planet_index !== -1) {
+                            message += "The planet " + dirty.planets[planet_index].name;
+                            player_log_data.planet_id = dirty.planets[planet_index].id;
+                        }
+                    }
+
+                    if(dirty.spawned_events[spawned_event_index].event_id === 90) {
+                        message += " is no longer being attacked by bugs.";
+                    } else if(dirty.spawned_events[spawned_event_index].event_id === 22) {
+                        message += " is no longer being attacked by an Acid Fiend.";
+                    } else {
+                        message +=" is no longer in danger.";
+                    }
+
+
+                    world.addPlayerLog(dirty, -1, message, player_log_data);
+                    log(chalk.yellow("NO PLAYER FOR STORYTELLER EVENT ENDING????"));
                 }
 
                 dirty.storytellers[i].current_spawned_event_id = 0;
@@ -953,7 +981,7 @@ async function spawn(dirty, event_index, data) {
         let inserts = "";
         if(event_scope === 'planet') {
 
-            console.log("Before insert origin_planet_coord_id: " + origin_planet_coord_id);
+            //console.log("Before insert origin_planet_coord_id: " + origin_planet_coord_id);
             sql = "INSERT INTO spawned_events(event_id,planet_id,origin_planet_coord_id,planet_event_linker_id) VALUES(?,?,?,?)";
             inserts = [dirty.events[event_index].id, dirty.planets[planet_index].id, origin_planet_coord_id, dirty.planet_event_linkers[planet_event_linker_index].id];
         } else if(event_scope === 'ship') {
@@ -1277,7 +1305,7 @@ async function spawnOnPlanet(dirty, i, debug_planet_type_id) {
 
                 if(spawned_event_index !== -1 && random_planet_event_linker.is_regular_monster_spawn) {
                     dirty.planets[i].current_regular_monster_count++;
-                    console.log("Increased the regular monster count on planet id: " + dirty.planets[i].id + " to: " + dirty.planets[i].current_regular_monster_count);
+                    //console.log("Increased the regular monster count on planet id: " + dirty.planets[i].id + " to: " + dirty.planets[i].current_regular_monster_count);
                 } else if(random_planet_event_linker.is_regular_monster_spawn) {
                     //log(chalk.yellow("Linker is a regular monster spawn, but we did not increment the current_regular_monster_count. Planet id: " + dirty.planets[i].id + " spawned_event_index: " + spawned_event_index));
                 }

@@ -138,7 +138,7 @@ async function addToInventory(socket, dirty, data) {
                 }
 
                 sendInventoryItem(socket, sending_to_room, dirty, new_inventory_item_index, 'take');
-                console.log("Sent new inventory item to socket");
+                //console.log("Sent new inventory item to socket");
 
 
 

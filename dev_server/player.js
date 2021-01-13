@@ -347,23 +347,23 @@ async function calculateAttack(dirty, player_index, player_body_index, calculati
             for(let eating_linker of body_eating_linkers) {
                 if(eating_linker.eating_object_type_id === addiction_linker.addicted_to_object_type_id) {
                     still_eating = true;
-                    console.log("Player is still eating thing causing addiction");
+                    //console.log("Player is still eating thing causing addiction");
                 }
             }
 
             if(!still_eating) {
 
-                console.log("Player is not eating something they are addicted to");
+                //console.log("Player is not eating something they are addicted to");
 
                 let race_linker_index = main.getRaceEatingLinkerIndex({
                     'race_id': dirty.object_types[player_body_type_index].race_id, 'object_type_id': addiction_linker.addicted_to_object_type_id
                 });
 
-                if(dirty.race_eating_linkers[race_linker_index].attack) {
-                    console.log("Reduced player attacked due to addiction linker");
+                if(race_linker_index !== -1 && dirty.race_eating_linkers[race_linker_index].attack) {
+                    //console.log("Reduced player attacked due to addiction linker");
                     damage_amount -= addiction_linker.addiction_level * dirty.race_eating_linkers[race_linker_index].attack;
                 } else {
-                    console.log("Addiction did not influence attack");
+                    //console.log("Addiction did not influence attack");
                 }
 
             }

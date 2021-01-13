@@ -557,7 +557,7 @@ const world = require('./world.js');
     async function monsterAttackObject(dirty, battle_linker) {
 
         try {
-            log(chalk.green("Monster " + battle_linker.attacking_id + " is attacking object " + battle_linker.being_attacked_id));
+            //log(chalk.green("Monster " + battle_linker.attacking_id + " is attacking object " + battle_linker.being_attacked_id));
 
             battle_linker.turn_count += 1;
 
@@ -1756,11 +1756,11 @@ const world = require('./world.js');
 
             // Gotta see if there is something that would be blocking us
             if(calculating_range > 1) {
-                console.time("hasLineOfSight");
+                //console.time("hasLineOfSight");
                 let has_line_of_sight = await game.hasLineOfSight(dirty, player_info.scope, player_info.coord_index, monster_info.coord_index);
-                console.timeEnd("hasLineOfSight");
+                //console.timeEnd("hasLineOfSight");
                 if(!has_line_of_sight) {
-                    console.log("Something is blocking ranged line of sight. Removing battle linker");
+                    //console.log("Something is blocking ranged line of sight. Removing battle linker");
                     world.removeBattleLinkers(dirty, { 'battle_linker_id': battle_linker.id });
                     return false;
                 }

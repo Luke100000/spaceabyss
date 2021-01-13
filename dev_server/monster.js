@@ -329,7 +329,7 @@ async function canPlace(dirty, scope, coord, data) {
                         let passed_rules = false;
 
                         for(let r = 0; r < dirty.rules.length; r++) {
-                            if(dirty.rules[r].object_id === checking_coord.object_id) {
+                            if(dirty.rules[r] && dirty.rules[r].object_id === checking_coord.object_id) {
                                 if(dirty.rules[r].rule === "allow_monsters") {
                                     passed_rules = true;
                                 }
@@ -1584,6 +1584,28 @@ async function move(dirty, i, data) {
                 //console.log("Monster path failed");
                 dirty.monsters[i].path = [];
                 dirty.monsters[i].ticks_until_next_path = 8;
+            }
+
+            // If we can't place due to a player made object, lets switch and attack that object instead!
+            // TODO if we had canPlace return an array including 
+            if(battle_linker_index !== -1 && dirty.battle_linkers[battle_linker_index].being_attacked_type === 'player') {
+                //console.log("Monster can't move and is attacking player");
+                if(scope === 'planet' && dirty.planet_coords[new_coord_index].object_id) {
+                    let object_index = await game_object.getIndex(dirty, dirty.planet_coords[new_coord_index].object_id);
+                    if(object_index !== -1) {
+                        if(dirty.objects[object_index].player_id) {
+                            console.log("A player built object is blocking the monster. The monster is now going to attack it");
+
+                            // remove the previous battle linker
+                            await world.removeBattleLinkers(dirty, { 'battle_linker_id': dirty.battle_linkers[battle_linker_index].id });
+
+                            // add in the new battle linker
+                            await world.addBattleLinker({}, dirty, { 'attacking_id': dirty.monsters[i].id, 'attacking_type': 'monster',
+                                'being_attacked_id': dirty.objects[object_index].id, 'being_attacked_type': 'object' });
+
+                        }
+                    }
+                }
             }
 
             //if(dirty.monsters[i].id === 5128) {

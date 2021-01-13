@@ -747,7 +747,7 @@ const world = require('./world.js');
 
         try {
 
-            console.log("data.being_assembled_in_object_id: " + data.being_assembled_in_object_id);
+            //console.log("data.being_assembled_in_object_id: " + data.being_assembled_in_object_id);
 
             let player_index = await player.getIndex(dirty, { 'player_id': socket.player_id });
 
@@ -849,8 +849,8 @@ const world = require('./world.js');
                         }
                     }
 
-                    console.log("Based on the player inventory they can assemble at least: " + minimum_amount_available + " of " + dirty.object_types[object_type_index].name);
-                    console.log("The player is wanting to assemble : " + amount);
+                    //console.log("Based on the player inventory they can assemble at least: " + minimum_amount_available + " of " + dirty.object_types[object_type_index].name);
+                    //console.log("The player is wanting to assemble : " + amount);
 
                     let actual_amount_being_assembled = 0;
                     // We now take the smaller of the two
@@ -868,7 +868,7 @@ const world = require('./world.js');
                         }
                     }
 
-                    console.log("Actual amount we are assembling: " + actual_amount_being_assembled);
+                    //console.log("Actual amount we are assembling: " + actual_amount_being_assembled);
 
                     if(actual_amount_being_assembled === 0) {
                         log(chalk.yellow("We can't assemble any of that"));
@@ -1425,7 +1425,7 @@ const world = require('./world.js');
     async function convert(socket, dirty, data) {
         try {
 
-            console.log("In game.convert");
+            //console.log("In game.convert");
 
             let converter_object_index = await game_object.getIndex(dirty, parseInt(data.converter_object_id));
 
@@ -1447,7 +1447,7 @@ const world = require('./world.js');
             // STEP 2: Parse any other data that was sent in
             let inventory_item_index = -1;
             if(data.inventory_item_id) {
-                console.log("inventory_item_id passed in");
+                //console.log("inventory_item_id passed in");
                 inventory_item_index = await main.getInventoryItemIndex(parseInt(data.inventory_item_id));
 
                 // Make sure the inventory item belongs to the player or npc
@@ -1476,8 +1476,8 @@ const world = require('./world.js');
                     linker.object_type_id === dirty.object_types[converter_object_type_index].id &&
                     linker.input_type === "hp");
             } else if(data.input_type === "inventory_item" && inventory_item_index !== -1) {
-                console.log("Looking up via inventory item. trying to match conversion linker with object_type_id: " + dirty.object_types[converter_object_type_index].id +
-                    " and input_object_type_id: " + dirty.inventory_items[inventory_item_index].object_type_id);
+                //console.log("Looking up via inventory item. trying to match conversion linker with object_type_id: " + dirty.object_types[converter_object_type_index].id +
+                //    " and input_object_type_id: " + dirty.inventory_items[inventory_item_index].object_type_id);
                 conversion_linkers = dirty.object_type_conversion_linkers.filter(linker =>
                     linker.object_type_id === dirty.object_types[converter_object_type_index].id &&
                     linker.input_object_type_id === dirty.inventory_items[inventory_item_index].object_type_id);
@@ -1573,7 +1573,7 @@ const world = require('./world.js');
 
                             // It's possible this converter object is a ship engine
                             if(typeof dirty.objects[converter_object_index].is_engine_for_ship_index !== 'undefined') {
-                                log(chalk.cyan("Converter is a ship engine!"));
+                                //log(chalk.cyan("Converter is a ship engine!"));
                                 let difference = new_storage_amount - starting_storage_amount;
                                 dirty.objects[dirty.objects[converter_object_index].is_engine_for_ship_index].current_engine_energy += difference;
                                 game_object.sendInfo(socket, '', dirty, dirty.objects[converter_object_index].is_engine_for_ship_index);
@@ -1764,7 +1764,7 @@ const world = require('./world.js');
 
                     }
 
-                    log(chalk.cyan("Updated HP to: " + new_converter_object_hp));
+                    //log(chalk.cyan("Updated HP to: " + new_converter_object_hp));
                     dirty.objects[converter_object_index].current_hp = new_converter_object_hp;
                     dirty.objects[converter_object_index].has_change = true;
 
@@ -1993,131 +1993,6 @@ const world = require('./world.js');
         }
     }
 
-
-    async function decayObjectType(dirty, object_type_index) {
-
-        try {
-
-            let decay_linkers = dirty.object_type_decay_linkers.filter(linker => linker.object_type_id === dirty.object_types[object_type_index].id);
-
-            for(let i = 0; i < dirty.objects.length; i++) {
-
-                if(dirty.objects[i] && dirty.objects[i].object_type_id === dirty.object_types[object_type_index].id) {
-
-                    let object_info = await game_object.getCoordAndRoom(dirty, i);
-
-
-
-                    let decay_rate = dirty.object_types[object_type_index].default_decay_rate;
-                    // see if the object is on a floor type that changes the decay rate
-
-                    if(decay_linkers.length > 0) {
-
-                        let object_floor_type_index = main.getFloorTypeIndex(object_info.coord.floor_type_id);
-
-                        for(let decay_linker of decay_linkers) {
-
-                            if(helper.notFalse(decay_linker.floor_type_id) && decay_linker.floor_type_id === object_info.coord.floor_type_id) {
-                                decay_rate = decay_linker.decay_rate;
-                            }
-
-                            if(helper.notFalse(decay_linker.floor_type_class) && dirty.floor_types[object_floor_type_index] &&
-                                decay_linker.floor_type_class === dirty.floor_types[object_floor_type_index].class) {
-                                decay_rate = decay_linker.decay_rate;
-                            }
-
-                            if(decay_linker.decays_when_abandoned && !dirty.objects[i].player_id) {
-                                decay_rate = decay_linker.decay_rate;
-                            }
-                        }
-
-                        //
-                    }
-
-
-                    if(decay_rate > 0) {
-                        let hp_decay = Math.ceil(dirty.object_types[object_type_index].hp * (decay_rate / 100) );
-
-                        //console.log("Got hp_decay as: " + hp_decay);
-
-
-
-                        let new_object_hp = dirty.objects[i].current_hp - hp_decay;
-                        //console.log("Object is going from: " + dirty.objects[i].current_hp + " to " + new_object_hp);
-
-                        await game_object.damage(dirty, i, hp_decay, {'object_info': object_info, 'reason': 'decay' });
-
-                    }
-
-                }
-            }
-
-            // It's also possible that the object type isn't assembled as an object, and can decay. Life water. So we
-            // Go through the planet coords and ship coords
-
-            if(!dirty.object_types[object_type_index].assembled_as_object) {
-                for(let i = 0; i < dirty.planet_coords.length; i++) {
-                    if(dirty.planet_coords[i] && dirty.planet_coords[i].object_type_id === dirty.object_types[object_type_index].id &&
-                        !dirty.planet_coords[i].object_id) {
-
-                        let decay_rate = dirty.object_types[object_type_index].default_decay_rate;
-                        // see if the object is on a floor type that changes the decay rate
-
-                        if(decay_linkers.length > 0) {
-                            for(let decay_linker of decay_linkers) {
-                                if(decay_linker.floor_type_id === dirty.planet_coords[i].floor_type_id) {
-                                    decay_rate = decay_linker.decay_rate;
-                                }
-                            }
-                        }
-
-
-                        if(decay_rate > 0) {
-
-                            // See if it drops anything
-                            // Rarity roll
-                            let rarity_roll = helper.rarityRoll();
-
-                            console.log("Getting all drop linkers for object type id: " + dirty.object_types[object_type_index].id);
-                            let drop_linkers = dirty.drop_linkers.filter(drop_linker =>
-                                drop_linker.object_type_id === dirty.object_types[object_type_index].id &&
-                                drop_linker.reason === 'decay' && drop_linker.rarity <= rarity_roll);
-                            if(drop_linkers.length > 0) {
-
-
-                                let drop_linker = drop_linkers[Math.floor(Math.random() * drop_linkers.length)];
-
-
-                                if(drop_linker.dropped_monster_type_id) {
-
-                                    await main.updateCoordGeneric(false, { 'planet_coord_index': i, 'object_type_id': false });
-
-                                    monster.spawn(dirty, drop_linker.dropped_monster_type_id,
-                                        { 'planet_coord_id': dirty.planet_coords[i].id });
-
-
-                                } else if(drop_linker.dropped_object_type_id) {
-
-                                    await main.updateCoordGeneric(false, { 'planet_coord_index': i,
-                                        'object_type_id': drop_linker.dropped_object_type_id, 'amount': drop_linker.amount });
-
-                                }
-
-
-                            }
-
-                        }
-
-                    }
-                }
-            }
-
-
-        } catch(error) {
-            log(chalk.red("Error in game.decayObjectType: " + error));
-            console.error(error);
-        }
-    }
 
 
     // We use the npc_id instead of npc_index since if things went wrong maybe we don't actually have the NPC anymore but
@@ -2743,7 +2618,7 @@ exports.eat = eat;
             let dropping_y = parseInt(data.y);
 
 
-            log(chalk.green("\nDropping " + dropping_inventory_item_id + " at " + dropping_x + "x" + dropping_y + " amount: " + data.amount));
+            //log(chalk.green("\nDropping " + dropping_inventory_item_id + " at " + dropping_x + "x" + dropping_y + " amount: " + data.amount));
 
             let inventory_item_index = await main.getInventoryItemIndex(dropping_inventory_item_id);
 
@@ -4337,7 +4212,7 @@ exports.eat = eat;
                 if(distance_x <= 2 && distance_y <= 2) {
                     return true;
                 } else {
-                    console.log("Too far away");
+                    //console.log("Too far away");
                     return false;
                 }
 
@@ -4359,7 +4234,7 @@ exports.eat = eat;
                 if(distance_x <= 2 && distance_y <= 2) {
                     return true;
                 } else {
-                    console.log("Too far away");
+                    //console.log("Too far away");
                     return false;
                 }
 
@@ -4620,7 +4495,6 @@ exports.eat = eat;
     async function mineStop(socket, dirty, data) {
         try {
 
-            log(chalk.green("Got mine stop request"));
 
             let mining_linker_index = -1;
 
@@ -5655,7 +5529,7 @@ exports.eat = eat;
 
 
                 if(found_coord_index === -1) {
-                    console.log("Did not find a coord to spawn the object on");
+                    console.log("Did not find a coord to spawn the monster on");
                     return false;
                 }
 
@@ -5844,6 +5718,8 @@ exports.eat = eat;
 
 
 
+            } else if(data.message.includes("/tickdecay")) {
+                await tickDecay(dirty);
             } else if(data.message.includes("/tickthegreatnomad")) {
 
                 await main.tickNomad(dirty, true);
@@ -7142,7 +7018,7 @@ exports.eat = eat;
 
                                 // Player has this body equippped
                                 if(dirty.players[player_index].body_id === addiction_linker.addicted_body_id) {
-                                    console.log("Reduced player hp due to addiction linker");
+                                    //console.log("Reduced player hp due to addiction linker");
 
                                     // Something like poison will have -HP - we don't want poison to heal in this case.
                                     
@@ -7581,7 +7457,7 @@ exports.eat = eat;
                         // If it was a food processer, we use the cooking skill
                         // It's possible the assembling objet is already deleted at this point
                         if(assembler_object_type_id === 119) {
-                            log(chalk.cyan("Assembly finished in a food processor"));
+                            //log(chalk.cyan("Assembly finished in a food processor"));
                             dirty.players[player_index].cooking_skill_points += dirty.object_types[assembled_object_type_index].complexity;
                         } else {
                             // Otherwise we use the manufcaturing skill points
@@ -7627,6 +7503,7 @@ exports.eat = eat;
     // Totally not super obvious - but we tick the AI's energy up slowly up to the max energy provided by batteries
     async function tickAI(dirty) {
 
+        //console.time("tickAI");
         // to start with just load the AIs that are in memory already
         // TODO we want to always load all AIs when the server starts up
 
@@ -7660,10 +7537,16 @@ exports.eat = eat;
 
             if(ai.energy < ai_max_energy) {
                 //console.log("Increasing energy for ai");
-                ai.energy++;
+                ai.energy += 6;
                 ai.has_change = true;
             }
+
+            if(ai.energy > ai_max_energy) {
+                ai.energy = ai_max_energy;
+            }
         });
+
+        //console.timeEnd("tickAI");
 
     }
 
@@ -7697,11 +7580,144 @@ exports.eat = eat;
         try {
 
             //log(chalk.green("In game.tickDecay"));
+            console.time("tickDecay");
+
+            let decaying_object_type_ids = []
 
             for(let i = 0; i < dirty.object_types.length; i++) {
                 if(dirty.object_types[i].can_decay) {
 
-                    await decayObjectType(dirty, i);
+                    decaying_object_type_ids.push(dirty.object_types[i].id);
+
+                }
+            }
+
+            for(let i = 0; i < dirty.objects.length; i++) {
+                if(dirty.objects[i] && decaying_object_type_ids.indexOf(dirty.objects[i].object_type_id) !== -1) {
+
+                    let object_info = await game_object.getCoordAndRoom(dirty, i);
+                    let object_type_index = main.getObjectTypeIndex(dirty.objects[i].object_type_id);
+
+                    let decay_rate = dirty.object_types[object_type_index].default_decay_rate;
+                    let object_floor_type_index = main.getFloorTypeIndex(object_info.coord.floor_type_id);
+
+                    for(let d = 0; d < dirty.object_type_decay_linkers.length; d++) {
+                        if(dirty.object_type_decay_linkers[d] && dirty.object_type_decay_linkers[d].object_type_id === dirty.object_types[object_type_index].id) {
+                            if(helper.notFalse(dirty.object_type_decay_linkers[d].floor_type_id) && dirty.object_type_decay_linkers[d].floor_type_id === object_info.coord.floor_type_id) {
+                                decay_rate = dirty.object_type_decay_linkers[d].decay_rate;
+                            }
+
+                            if(helper.notFalse(dirty.object_type_decay_linkers[d].floor_type_class) && dirty.floor_types[object_floor_type_index] &&
+                            dirty.object_type_decay_linkers[d].floor_type_class === dirty.floor_types[object_floor_type_index].class) {
+                                decay_rate = dirty.object_type_decay_linkers[d].decay_rate;
+                            }
+
+                            if(dirty.object_type_decay_linkers[d].decays_when_abandoned && !dirty.objects[i].player_id) {
+                                decay_rate = dirty.object_type_decay_linkers[d].decay_rate;
+                            }
+
+                        }
+                    }
+
+                    // If the 
+                    
+                    if(object_info.scope === 'ship') {
+                        let ship_index = await game_object.getIndex(dirty, object_info.coord.ship_id);
+                        if(ship_index !== -1) {
+                            let ship_type_index = main.getObjectTypeIndex(dirty.objects[ship_index].object_type_id);
+                            
+                            if(dirty.object_types[ship_type_index].decay_modifier) {
+                                //console.log("Object is on a ship that has a decay_modifier");
+                                
+                                // Object types can have a decay_modifier
+                                // A decay_modifier of 50 means that 50% of the time, the ship will skip a decay tick
+                                // A decay_modifier of 30 means 30% of the time, a decay_modifier of 90 means 90% of the time
+                                let ship_rand_result = helper.getRandomIntInclusive(1,100);
+
+                                if(ship_rand_result < dirty.object_types[ship_type_index].decay_modifier) {
+                                    //console.log("Ship is skipping decaying this time!")
+                                    decay_rate = 0;
+                                }
+
+                            }
+                        }
+                        
+                    }
+
+
+                    if(decay_rate > 0) {
+
+                    
+                        let hp_decay = Math.ceil(dirty.object_types[object_type_index].hp * (decay_rate / 100) );
+
+                        //console.log("Got hp_decay as: " + hp_decay);
+
+                        let new_object_hp = dirty.objects[i].current_hp - hp_decay;
+                        //console.log("Object is going from: " + dirty.objects[i].current_hp + " to " + new_object_hp);
+
+                        await game_object.damage(dirty, i, hp_decay, {'object_info': object_info, 'reason': 'decay' });
+
+                    }
+
+
+                    // It's also possible that the object type isn't assembled as an object, and can decay. Life water. So we
+                    // Go through the planet coords and ship coords
+
+                    if(!dirty.object_types[object_type_index].assembled_as_object) {
+                        for(let p = 0; p < dirty.planet_coords.length; p++) {
+                            if(dirty.planet_coords[p] && dirty.planet_coords[p].object_type_id === dirty.object_types[object_type_index].id &&
+                                !dirty.planet_coords[p].object_id) {
+
+                                let decay_rate = dirty.object_types[object_type_index].default_decay_rate;
+                                // see if the object is on a floor type that changes the decay rate
+
+                                for(let d = 0; d < dirty.object_type_decay_linkers.length; d++) {
+                                    if(dirty.object_type_decay_linkers[d] && dirty.object_type_decay_linkers[d].floor_type_id === dirty.planet_coords[p].floor_type_id) {
+                                        decay_rate = dirty.object_type_decay_linkers[d].decay_rate;
+                                    }
+                                }
+
+
+                                if(decay_rate > 0) {
+
+                                    // See if it drops anything
+                                    // Rarity roll
+                                    let rarity_roll = helper.rarityRoll();
+
+                                    console.log("Getting all drop linkers for object type id: " + dirty.object_types[object_type_index].id);
+                                    let drop_linkers = dirty.drop_linkers.filter(drop_linker =>
+                                        drop_linker.object_type_id === dirty.object_types[object_type_index].id &&
+                                        drop_linker.reason === 'decay' && drop_linker.rarity <= rarity_roll);
+                                    if(drop_linkers.length > 0) {
+
+
+                                        let drop_linker = drop_linkers[Math.floor(Math.random() * drop_linkers.length)];
+
+
+                                        if(drop_linker.dropped_monster_type_id) {
+
+                                            await main.updateCoordGeneric(false, { 'planet_coord_index': i, 'object_type_id': false });
+
+                                            monster.spawn(dirty, drop_linker.dropped_monster_type_id,
+                                                { 'planet_coord_id': dirty.planet_coords[i].id });
+
+
+                                        } else if(drop_linker.dropped_object_type_id) {
+
+                                            await main.updateCoordGeneric(false, { 'planet_coord_index': i,
+                                                'object_type_id': drop_linker.dropped_object_type_id, 'amount': drop_linker.amount });
+
+                                        }
+
+
+                                    }
+
+                                }
+
+                            }
+                        }
+                    }
+
                 }
             }
 
@@ -7731,13 +7747,15 @@ exports.eat = eat;
 
                         let planet_coord_index = await main.getPlanetCoordIndex({ 'planet_coord_id': planet_coord.id });
 
-                        await main.updateCoordGeneric(socket, { 'planet_coord_index': planet_coord_index, 'floor_type_id': new_floor_type_id });
+                        await main.updateCoordGeneric({}, { 'planet_coord_index': planet_coord_index, 'floor_type_id': new_floor_type_id });
                     }
 
                 }
 
 
             }
+
+            console.timeEnd("tickDecay");
 
         } catch(error) {
             log(chalk.red("Error in game.tickDecay: " + error));
@@ -8989,8 +9007,8 @@ exports.eat = eat;
     async function tickSpawners(dirty) {
 
         try {
-            console.time("tickSpawners");
-            console.time("originalTickSpawners");
+            //console.time("tickSpawners");
+            //console.time("originalTickSpawners");
             //log(chalk.green("In game.tickObjectSpawners"));
 
 
@@ -9014,7 +9032,7 @@ exports.eat = eat;
             }
 
 
-            console.time("tickSpawners.objects");
+            //console.time("tickSpawners.objects");
             // Go through our objects
             for(let i = 0; i < dirty.objects.length; i++) {
 
@@ -9067,9 +9085,9 @@ exports.eat = eat;
                 }
             }
 
-            console.timeEnd("tickSpawners.objects");
+            //console.timeEnd("tickSpawners.objects");
 
-            console.time("tickSpawners.monsters");
+            //console.time("tickSpawners.monsters");
             
 
 
@@ -9173,9 +9191,9 @@ exports.eat = eat;
                 }
             }
 
-            console.timeEnd("tickSpawners.monsters");
+            //console.timeEnd("tickSpawners.monsters");
 
-            console.timeEnd("originalTickSpawners");
+            //console.timeEnd("originalTickSpawners");
 
 
             for(let i = 0; i < dirty.ship_coords.length; i++) {
@@ -9188,7 +9206,7 @@ exports.eat = eat;
 
 
 
-            console.timeEnd("tickSpawners");
+            //console.timeEnd("tickSpawners");
 
         } catch(error) {
             log(chalk.red("Error in game.tickSpawners: " + error));
@@ -9392,7 +9410,7 @@ exports.eat = eat;
 
 
             if(!can_interact) {
-                log(chalk.yellow("Player cannot interact with that coord"));
+                //log(chalk.yellow("Player cannot interact with that coord"));
                 socket.emit('result_info', { 'status': 'failure', 'text': "Too far away" });
                 return false;
             }
@@ -10594,7 +10612,7 @@ exports.eat = eat;
     async function switchBody(socket, dirty, new_body_id, move_inventory) {
         try {
 
-            log(chalk.green("Player is switching bodies"));
+            //log(chalk.green("Player is switching bodies"));
 
             if(typeof socket.player_index === "undefined") {
                 log(chalk.yellow("Socket doesn't have player - can't switch bodies"));
@@ -10665,7 +10683,7 @@ exports.eat = eat;
                 return false;
             }
 
-            console.log("Body switch is a go!");
+            //console.log("Body switch is a go!");
 
 
             // Store the old body id
@@ -10686,7 +10704,7 @@ exports.eat = eat;
             // switch the coord that the player is on
             if(dirty.players[player_index].planet_coord_id) {
 
-                console.log("Updating player and coords");
+                //console.log("Updating player and coords");
 
                 dirty.players[player_index].planet_coord_id = dirty.planet_coords[new_body_coord_index].id;
                 dirty.players[player_index].has_change = true;
@@ -10715,14 +10733,14 @@ exports.eat = eat;
 
 
             } else if(dirty.players[player_index].ship_coord_id) {
-                console.log("Updating player, coords, and objects");
+                //console.log("Updating player, coords, and objects");
 
-                console.log("Old player ship coord id: " + dirty.players[player_index].ship_coord_id);
+                //console.log("Old player ship coord id: " + dirty.players[player_index].ship_coord_id);
 
                 dirty.players[player_index].ship_coord_id = dirty.ship_coords[new_body_coord_index].id;
                 dirty.players[player_index].has_change = true;
                 main.clearPlayerExtraCoords(player_index);
-                console.log("Updated player id: " + dirty.players[player_index].id + " to ship coord id: " + dirty.players[player_index].ship_coord_id);
+                //console.log("Updated player id: " + dirty.players[player_index].id + " to ship coord id: " + dirty.players[player_index].ship_coord_id);
 
                 // update the old ship coord
                 await main.updateCoordGeneric(socket, { 'ship_coord_index': old_player_coord_index,
