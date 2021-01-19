@@ -612,6 +612,19 @@ async function deleteMonster(dirty, monster_index, data = {}) {
 
         let monster_info = await getCoordAndRoom(dirty, monster_index);
 
+        // No battle linker was passed in - something like decay could have killed this monster
+        // But that doesn't mean it isn't engaged in battle. See if there is a relevant battle linker
+        // Currently this is only for AI based monsters - I can't immediately think of a scenario that would warrant this 
+        // for normal monsters
+        if(typeof data.battle_linker === "undefined" && (dirty.monsters[monster_index].monster_type_id === 33 || 
+            dirty.monsters[monster_index].monster_type_id === 57 || dirty.monsters[monster_index].monster_type_id === 107) ) {
+            let battle_linker_index = dirty.battle_linkers.findIndex(function(obj) { return obj && obj.attacking_type === 'monster' && obj.attacking_id == dirty.monsters[monster_index].id; });
+            if(battle_linker_index !== -1) {
+                console.log("Monster died of something like decay, but we found a battle linker for this AI based monster");
+                data.battle_linker = dirty.battle_linkers[battle_linker_index];
+            }
+        }
+
 
 
         // If the monster is associate with a coord, remove it from that coord
@@ -719,7 +732,7 @@ async function deleteMonster(dirty, monster_index, data = {}) {
         let monster_id = dirty.monsters[monster_index].id;
 
 
-        // If a planet coord spawned the monster, we cam update that to false
+        // If a planet coord spawned the monster, we can update that to false
         //console.log("Going to set spawned monster id to false");
         // TODO I believe I can deprecate this - and in fact if I can't, I should do it differently
         if(monster_info.scope === 'planet') {
@@ -758,7 +771,7 @@ async function deleteMonster(dirty, monster_index, data = {}) {
 
         // If this monster was spawned from an AI, we will have the AI escalate if it's able to
         // If we are an AI Daemon, we attempt to spawn the next level of AI helper, the AI....
-        if(dirty.monster_types[monster_type_index].id === 33) {
+        if( (dirty.monster_types[monster_type_index].id === 33 || dirty.monster_types[monster_type_index].id === 57) && helper.notFalse(data.battle_linker)) {
             log(chalk.cyan("AI is trying to advance attack/defense to the next level due to daemon death"));
 
             let ai_id = 0;
@@ -767,15 +780,29 @@ async function deleteMonster(dirty, monster_index, data = {}) {
                 let planet_index = await planet.getIndex(dirty, { 'planet_id': dirty.planet_coords[monster_info.coord_index].planet_id, 'source': 'game.deleteMonster' });
                 ai_id = dirty.planets[planet_index].ai_id;
 
-                // and try and attack the attacking player - WHO IS THE ATTACKER IN THIS FUNCTION
-                let attack_data = {
-                    'ai_id': ai_id,
-                    'attacking_type': data.battle_linker.attacking_type,
-                    'attacking_id': data.battle_linker.attacking_id,
-                    'attack_level': 2
-                };
+                if(data.battle_linker.attacking_type === "monster") {
+                    // and try and attack the attacking player - WHO IS THE ATTACKER IN THIS FUNCTION
+                    let attack_data = {
+                        'ai_id': ai_id,
+                        'attacking_type': data.battle_linker.being_attacked_type,
+                        'attacking_id': data.battle_linker.being_attacked_id,
+                        'attack_level': 2
+                    };
 
-                await world.aiAttack(dirty, attack_data);
+                    await world.aiAttack(dirty, attack_data);
+                } else {
+                    // and try and attack the attacking player - WHO IS THE ATTACKER IN THIS FUNCTION
+                    let attack_data = {
+                        'ai_id': ai_id,
+                        'attacking_type': data.battle_linker.attacking_type,
+                        'attacking_id': data.battle_linker.attacking_id,
+                        'attack_level': 2
+                    };
+
+                    await world.aiAttack(dirty, attack_data);
+                }
+
+
 
             } else if(monster_info.scope === "ship") {
                 let ship_index = await game_object.getIndex(dirty, dirty.ship_coords[monster_info.coord_index].ship_id);
@@ -857,8 +884,13 @@ async function fix(dirty, monster_index) {
                 } else if(dirty.monsters[monster_index].planet_coord_id) {
                     console.log("Monster's planet_coord id: " + dirty.monsters[monster_index].planet_coord_id + " doesn't seem to exist anymore");
                     deleteMonster(dirty, monster_index);
-                } else {
-                    console.log("Monster did not have a ship or planet coord?");
+                } else if(dirty.monsters[monster_index].coord_id) {
+                    console.log("Monster's coord id: " + dirty.monsters[monster_index].coord_id + " doesn't seem to exist anymore");
+                    deleteMonster(dirty, monster_index);
+                }
+                
+                else {
+                    console.log("Monster did not have a galaxy, ship or planet coord? Just deleting");
                     deleteMonster(dirty, monster_index);
                 }
 
@@ -1107,6 +1139,18 @@ async function move(dirty, i, data) {
             old_coord_index = ship_coord_index;
             scope = 'ship';
             room = "ship_" + old_coord.ship_id;
+        } else if(dirty.monsters[i].coord_id) {
+            let coord_index = await main.getCoordIndex(
+                { 'coord_id': dirty.monsters[i].coord_id });
+
+            if(coord_index === -1) {
+                return false;
+            }
+
+            old_coord = dirty.coords[coord_index];
+            old_coord_index = coord_index;
+            scope = 'galaxy';
+            room = "galaxy";
         }
 
 
@@ -1184,6 +1228,10 @@ async function move(dirty, i, data) {
                         let object_ship_coord_index = await main.getShipCoordIndex({ 'ship_coord_id': dirty.objects[object_index].ship_coord_id });
                         attacking_coord = dirty.ship_coords[object_ship_coord_index];
                         attacking_coord_index = object_ship_coord_index;
+                    } else if(dirty.objects[object_index].coord_id) {
+                        let object_coord_index = await main.getCoordIndex({ 'coord_id': dirty.objects[object_index].coord_id });
+                        attacking_coord = dirty.coords[object_coord_index];
+                        attacking_coord_index = object_coord_index;
                     }
                 }
 
@@ -1466,6 +1514,27 @@ async function move(dirty, i, data) {
 
                                     }
 
+                                } else if(scope === 'galaxy') {
+                                    console.log("Monster is warp moving in galaxy");
+
+                                    let checking_data = { 'tile_x': x, 'tile_y':y };
+                                    let checking_coord_index = await main.getCoordIndex(checking_data);
+
+                                    let monster_can_place_result = await canPlace(dirty, 'galaxy',
+                                        dirty.coords[checking_coord_index], { 'monster_index': i });
+
+                                    if(checking_coord_index !== -1 && monster_can_place_result === true ) {
+
+                                        new_x = dirty.coords[checking_coord_index].tile_x;
+                                        new_y = dirty.coords[checking_coord_index].tile_y;
+
+                                        change_x = new_x - old_coord.tile_x;
+                                        change_y = new_y - old_coord.tile_y;
+
+                                        found_coord = true;
+                                        console.log("Found new coord to place at!");
+
+                                    }
                                 }
 
 
@@ -1564,6 +1633,48 @@ async function move(dirty, i, data) {
                 }
     
                 new_coord = dirty.planet_coords[new_coord_index];
+            } else if(dirty.monsters[i].coord_id) {
+
+                console.log("Trying to move monster in the galaxy!")
+
+                // We've lost any direction information at this point - so we can just check for x,y changes to see if we can pull neighbor coords
+                let used_new_system = false;
+                // UP
+                if(old_coord.tile_x === new_x && old_coord.tile_y === (new_y + 1) ) {
+                    await map.getCoordNeighbor(dirty, 'galaxy', old_coord_index, 'up');
+                    new_coord_index = old_coord.up_coord_index;
+                    used_new_system = true;
+                }
+                // DOWN
+                else if(old_coord.tile_x === new_x && old_coord.tile_y === (new_y - 1) ) {
+                    await map.getCoordNeighbor(dirty, 'galaxy', old_coord_index, 'down');
+                    new_coord_index = old_coord.down_coord_index;
+                    used_new_system = true;
+                }
+                // LEFT
+                else if(old_coord.tile_y === new_y && old_coord.tile_x === (new_x + 1) ) {
+                    await map.getCoordNeighbor(dirty, 'galaxy', old_coord_index, 'left');
+                    new_coord_index = old_coord.left_coord_index;
+                    used_new_system = true;
+                }
+                // RIGHT
+                else if(old_coord.tile_y === new_y && old_coord.tile_x === (new_x - 1) ) {
+                    await map.getCoordNeighbor(dirty, 'galaxy', old_coord_index, 'right');
+                    new_coord_index = old_coord.right_coord_index;
+                    used_new_system = true;
+                }
+                
+    
+                if(!used_new_system) {
+                    new_coord_index = await main.getCoordIndex({ 'tile_x': new_x, 'tile_y': new_y });
+                }
+                    
+    
+                if(new_coord_index === -1) {
+                    return false;
+                }
+    
+                new_coord = dirty.coords[new_coord_index];
             }
         }
 
@@ -1711,6 +1822,12 @@ async function move(dirty, i, data) {
                             current_coords.push({ 'ship_coord_id': dirty.ship_coords[current_ship_coord_index].id,
                                 'ship_coord_index': current_ship_coord_index, 'still_used': false });
                         }
+                    } else if(dirty.monsters[i].coord_id) {
+                        let current_coord_index = await main.getCoordIndex({ 'tile_x': ox, 'tile_y': oy });
+                        if(current_coord_index !== -1) {
+                            current_coords.push({ 'coord_id': dirty.coords[current_coord_index].id,
+                                'coord_index': current_coord_index, 'still_used': false });
+                        } 
                     }
 
                     //current_coords.push({ 'tile_x': ox, 'tile_y': oy, 'still_used': false });
@@ -1725,6 +1842,9 @@ async function move(dirty, i, data) {
                     'still_used': false });
             } else if(dirty.monsters[i].ship_coord_id) {
                 current_coords.push({ 'ship_coord_id': old_coord.id, 'ship_coord_index': old_coord_index,
+                    'still_used': false });
+            } else if(dirty.monsters[i].coord_id) {
+                current_coords.push({ 'coord_id': old_coord.id, 'coord_index': old_coord_index,
                     'still_used': false });
             }
 
@@ -1755,6 +1875,12 @@ async function move(dirty, i, data) {
                     });
 
                     update_data.ship_coord_index = placing_coord_index;
+                } else if(dirty.monsters[i].coord_id) {
+                    placing_coord_index = await main.getCoordIndex({
+                        'tile_x': x, 'tile_y': y
+                    });
+
+                    update_data.coord_index = placing_coord_index;
                 }
 
 
@@ -1788,6 +1914,9 @@ async function move(dirty, i, data) {
                 } else if(dirty.monsters[i].ship_coord_id) {
                     current_coord_index = current_coords.findIndex(function(obj) { return obj &&
                         obj.ship_coord_index === placing_coord_index; });
+                } else if(dirty.monsters[i].coord_id) {
+                    current_coord_index = current_coords.findIndex(function(obj) { return obj &&
+                        obj.coord_index === placing_coord_index; });
                 }
 
                 if(current_coord_index !== -1) {
@@ -1809,6 +1938,8 @@ async function move(dirty, i, data) {
                     update_data.planet_coord_index = current_coords[oc].planet_coord_index;
                 } else if(typeof current_coords[oc].ship_coord_index !== 'undefined') {
                     update_data.ship_coord_index = current_coords[oc].ship_coord_index;
+                } else if(typeof current_coords[oc].coord_index !== 'undefined') {
+                    update_data.coord_index = current_coords[oc].coord_index;
                 }
 
                 update_data.monster_id = false;
@@ -1828,6 +1959,11 @@ async function move(dirty, i, data) {
             dirty.monsters[i].ship_coord_id = new_coord.id;
             dirty.monsters[i].ship_coord_index = new_coord_index;
             dirty.monsters[i].has_change = true;
+        } else if(scope === 'galaxy') {
+            dirty.monsters[i].coord_id = new_coord.id;
+            dirty.monsters[i].coord_index = new_coord_index;
+            dirty.monsters[i].has_change = true;
+            console.log("End of monster.move. Updated monster coord id to: " + dirty.monsters[i].coord_id);
         }
 
         // update the room with the move
@@ -2118,7 +2254,7 @@ async function spawn(dirty, monster_type_id, data) {
         }
         // GALAXY
         else if (data.coord_id) {
-            coord_index = await main.getCoordIndex({ 'coord_id': data.ship_coord_id });
+            coord_index = await main.getCoordIndex({ 'coord_id': data.coord_id });
             scope = 'galaxy';
             placing_coord = dirty.coords[coord_index];
         } else if (data.coord_index) {

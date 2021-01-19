@@ -546,7 +546,7 @@ socket.on('damaged_data', function(data) {
         }
     } else if(data.planet_id) {
 
-        console.log("Got damaged data with planet id! " + data.planet_id);
+        //console.log("Got damaged data with planet id! " + data.planet_id);
 
         let planet_index = getPlanetIndex({ 'planet_id': data.planet_id });
 
@@ -567,7 +567,7 @@ socket.on('damaged_data', function(data) {
             // The + 64 is trying to center on the planet a little more
             drawing_x = tileToPixel(planet_info.coord.tile_x) + 96;
             drawing_y = tileToPixel(planet_info.coord.tile_y) + 96;
-            console.log("Got drawing_x,y: " + drawing_x + "," + drawing_y);
+            //console.log("Got drawing_x,y: " + drawing_x + "," + drawing_y);
         } else {
             console.log("%c Could not get planet coord.", log_warning);
         }
@@ -634,7 +634,7 @@ socket.on('damaged_data', function(data) {
 
 
     // If the damage is coming from us, and we have a volt rifle equipped, change an 'electric' to 'electric-ball'
-    if(effect_data.damage_source_type === 'player' && effect_data.damage_source_id === players[client_player_index].id) {
+    if(effect_data.damage_source_type === 'player' && effect_data.damage_source_id === players[client_player_index].id && effect_data.damage_types) {
 
         let first_electric_damage_index = effect_data.damage_types.findIndex(function(obj) { return obj && obj === "electric"; });
         if(first_electric_damage_index !== -1) {
@@ -884,6 +884,22 @@ socket.on('coord_info', function (data) {
         }
     }
 
+
+      // In the case that we got the monster info before we got the coord the monster was on
+    // we want to now show the monster since we have complete information
+    if(coords[coord_index].monster_id) {
+        let monster_index = getMonsterIndex(coords[coord_index].monster_id);
+        if(monster_index !== -1) {
+            let monster_info = getMonsterInfo(monster_index);
+
+            if(shouldDraw(client_player_info.coord, monster_info.coord, "monster_info")) {
+                createMonsterSprite(monster_index);
+            } else {
+                //console.log("Not drawing monster");
+            }
+        }
+    }
+
 });
 
 socket.on('faction_info', function(data) {
@@ -983,7 +999,7 @@ socket.on('inventory_item_info', function(data) {
             }
 
             if(inventory_item.price !== inventory_items[inventory_index].price) {
-                inventory_items[inventory_index].price - inventory_item.price;
+                inventory_items[inventory_index].price = inventory_item.price;
                 inventory_item_updated = true;
             }
 
@@ -1374,6 +1390,11 @@ socket.on('monster_info', function(data) {
 
         }
 
+        // Monster moved in the galaxy
+        if(monsters[monster_index].coord_id && monsters[monster_index].coord_id !== data.monster.coord_id) {
+            monster_moved = true;
+        }
+
         // selectively push new values that would have changed from the server
 
         let need_redraw_bars = false;
@@ -1489,6 +1510,35 @@ socket.on('monster_info', function(data) {
 
             }
 
+        } else if(should_draw_result && monster_moved && monsters[monster_index].coord_id) {
+            let new_coord_index = coords.findIndex(function(obj) { return obj && obj.id === data.monster.coord_id; });
+
+            if(new_coord_index !== -1) {
+                createMonsterSprite(monster_index);
+                moveMonsterFlow(monster_index, coords[new_coord_index]);
+
+                /*
+                let old_ship_coord_index = ship_coords.findIndex(function(obj) { return obj && obj.id === monsters[monster_index].ship_coord_id; });
+                if(old_ship_coord_index !== -1) {
+                    map.putTileAt(-1, ship_coords[old_ship_coord_index].tile_x, ship_coords[old_ship_coord_index].tile_y, false, 'layer_being');
+                }
+                */
+
+                // It's possible the monster moved to where the client is trying to move to, but the monster got there first
+                //      snap the player back
+                if(coords[new_coord_index].id === client_move_coord_id && client_move_coord_id !== players[client_player_index].coord_id) {
+
+                    let return_to_coord_index = coords.findIndex(function(obj) { return obj && obj.id === players[client_player_index].coord_id; });
+                    if(return_to_coord_index !== -1) {
+                        let return_x = coords[return_to_coord_index].tile_x * tile_size + tile_size / 2;
+                        let return_y = coords[return_to_coord_index].tile_y * tile_size + tile_size / 2;
+                        client_move_coord_id = players[client_player_index].coord_id;
+                        movePlayerInstant(client_player_index, return_x, return_y);
+                    }
+
+                }
+
+            }
         } else if(should_draw_result === true) {
             createMonsterSprite(monster_index);
         } else {

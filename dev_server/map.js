@@ -601,6 +601,13 @@ async function updateMapGalaxy(socket, dirty) {
                             { 'planet_id': dirty.coords[other_coord_index].planet_id, 'source': 'map.updateMapGalaxy' });
                     }
 
+                    if(dirty.coords[other_coord_index].monster_id) {
+                        await monster.sendInfo(socket, false, dirty, { 'monster_id': dirty.coords[other_coord_index].monster_id });
+                        // Not sure we currently have a scenario that would use this
+                        //await world.checkMonsterBattleConditions(dirty, dirty.planet_coords[sending_coord_index].monster_id, 'player', socket.player_id, socket);
+                    }
+
+
                 }
             }
         }

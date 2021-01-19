@@ -1,3 +1,35 @@
+## [0.2.28] - 2021-01-19
+
+
+### Added
+- Take 100 button
+- You can hold shift to keep the take/buy menu open
+- Personal player logs when you are killed by something ( you can see these on your player's profile )
+- Setup daily offsite backups (this type of stuff isn't shown in the code)
+
+
+### Fixed
+- Dying only moves the objects in your now dead body, not ALL of your bodies (hotfixed in 0.2.27)
+- Planets not spawning some objects properly (e.g. Desert planet not having as many Dust Growths as I told it to )
+- Dockable ships being able to dock at the Azure planet via the 'Dock At Azure Planet' command
+- You can now no longer swap bodies if the old body is on an object/object type (this causes the object/object type to disappear)
+- Several issues with AI spawning it's daemons and edifices
+- Issue where giving a body to someone else would cause addictions to not properly see the body as equipped, 
+and potentially kill the body without dropping like an equipped body
+- If you happen to have an extra coord assigned to your player on your ship, you can now walk through the fake you (kind of a bandaid type of fix)
+- Manufacturing augment display
+- Monsters bypassing AI rules
+- AI Space Construct bypassing shields
+- AI Space Construct moving in the galaxy
+
+### Changed
+- Vending Machine is now made in the Manufacturer, and costs 2 refined territe instead of 100 credits
+- Living Wood ship now additionally has a chance to delay decay (similar to the Garden Ship)
+- Complexity of Green Juice and Blue Juice increased to match their tier, instead of being just 1
+- You can't take items from a vending machine if you aren't the owner of the vending machine
+- Bulk Container can be salvaged
+- Updated Forge, Research Station, and Food Replicator sprites
+
 ## [0.2.27] - 2021-01-13
 
 ### Added

@@ -148,6 +148,8 @@ function addEffect(data) {
         } */ else if(data.damage_types[i] === 'energy') {
             new_texture_key = 'energy-effect';
             new_texture_animation_key = 'energy-effect-animation';
+            data.x += 32;
+            data.y += 32;
         } else if(data.damage_types[i] === 'explosion') {
             new_texture_key = 'explosion-effect';
             new_texture_animation_key = 'explosion-effect-animation';

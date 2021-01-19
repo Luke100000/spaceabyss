@@ -397,6 +397,7 @@ exports.addObjectToShipCoord = addObjectToShipCoord;
  * @param {number=} data.ship_id
  * @param {number=} data.planet_id
  * @param {number=} data.event_id
+ * @param {String=} data.scope
  */
 async function addPlayerLog(dirty, player_index, message, data = {}) {
 
@@ -434,6 +435,13 @@ async function addPlayerLog(dirty, player_index, message, data = {}) {
         if(data.event_id) {
             let sql = "UPDATE player_logs SET event_id = ? WHERE id = ?";
             let inserts = [data.event_id, new_player_log_id];
+    
+            let [result] = await (pool.query(sql, inserts));
+        }
+
+        if(data.scope) {
+            let sql = "UPDATE player_logs SET scope = ? WHERE id = ?";
+            let inserts = [data.scope, new_player_log_id];
     
             let [result] = await (pool.query(sql, inserts));
         }
@@ -729,6 +737,28 @@ async function aiAttack(dirty, data) {
             origin_tile_x = dirty.coords[being_attacked_coord_index].tile_x;
             origin_tile_y = dirty.coords[being_attacked_coord_index].tile_y;
 
+        } else if(data.attacking_type === 'monster' && dirty.monsters[being_attacked_index].planet_coord_id) {
+            console.log("Set scope to planet");
+            scope = 'planet';
+            being_attacked_coord_index = await main.getPlanetCoordIndex(
+                { 'planet_coord_id': dirty.monsters[being_attacked_index].planet_coord_id });
+            if(being_attacked_coord_index === -1) {
+                log(chalk.yellow("Could not find that planet coord"));
+                return false;
+            }
+            origin_tile_x = dirty.planet_coords[being_attacked_coord_index].tile_x;
+            origin_tile_y = dirty.planet_coords[being_attacked_coord_index].tile_y;
+        } else if(data.attacking_type === 'monster' && dirty.monsters[being_attacked_index].ship_coord_id) {
+            console.log("Set scope to ship");
+            scope = 'ship';
+            being_attacked_coord_index = await main.getShipCoordIndex(
+                { 'ship_coord_id': dirty.monsters[being_attacked_index].ship_coord_id });
+            if(being_attacked_coord_index === -1) {
+                log(chalk.yellow("Could not find that ship coord"));
+                return false;
+            }
+            origin_tile_x = dirty.ship_coords[being_attacked_coord_index].tile_x;
+            origin_tile_y = dirty.ship_coords[being_attacked_coord_index].tile_y;
         } else {
 
             console.log("Did not set scope");
@@ -826,7 +856,17 @@ async function aiAttack(dirty, data) {
 
         // If we can't place, open up a rift in FREAKING SPACE TIME AND GRAVITY THE CLEVER GIRL!
         if(placing_coord_index === -1) {
-            log(chalk.yellow("MAKE THE AI DO SOMETHING STILL!!"));
+            log(chalk.cyan("AI IS DIRECLTY DOING DAMAGE BABY!! BUG OR CLEVER PLAYER!?!"));
+
+            // AI attacks directly without using an edifice. 
+            if(data.attacking_type === 'player') {
+                player.damage(dirty, { 'player_index': being_attacked_index, 'damage_amount': 50, 'damage_types': [] });
+            } else if(data.attacking_type === 'object') {
+                let object_info = await game_object.getCoordAndRoom(dirty, being_attacked_index);
+                game_object.damage(dirty, being_attacked_index, 50, { 'object_info': object_info });
+            } else if(data.attacking_type === 'monster') {
+                monster.damage(dirty, being_attacked_index, 50, {});
+            }
             return false;
         }
 
@@ -1122,7 +1162,7 @@ async function aiRetaliate(dirty, ai_index, attacking_type, attacking_id) {
 
             aiAttack(dirty, attack_data);
         } else {
-            console.log("AI is already attacking.");
+            //console.log("AI is already attacking.");
         }
     } catch(error) {
         log(chalk.red("Error in world.aiRetaliate: " + error));
@@ -1445,7 +1485,8 @@ async function checkMonsterBattleConditions(dirty, monster_id, checking_type, ch
             'id': uuidv1(),
             'attacking_id': monster_id, 'attacking_type': 'monster', 'being_attacked_id': checking_id,
             'being_attacked_type': checking_type,
-            'room': monster_info.room
+            'room': monster_info.room,
+            'turn_count': 0
         };
 
         let player_socket = getPlayerSocket(dirty, player_index);
@@ -1558,7 +1599,8 @@ async function checkObjectBattleConditions(socket, dirty, object_id, checking_ty
             'id': uuidv1(),
             'attacking_id': object_id, 'attacking_type': 'object', 'being_attacked_id': checking_id,
             'being_attacked_type': checking_type,
-            'room': player_info.room
+            'room': player_info.room,
+            'turn_count': 0
         };
 
         if (socket !== false) {
@@ -5046,6 +5088,7 @@ async function shielded(dirty, damage_amount, object_index) {
 
     } catch (error) {
         log(chalk.red("Error in world.shielded: " + error));
+        console.error(error);
     }
 
 }

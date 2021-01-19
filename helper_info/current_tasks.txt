@@ -4,9 +4,26 @@ CURRENT GAMEPLAY TEST:
 
 DOING NOW:
 
+    make sure editing factions works
+    
+    admin player search. admin player list
 
-    dock at airlocks???
-        movement.dockOnShip
+    fighter costs 5 refined territe, but up to 199 refined territe to repair....
+        It's fine if it's more expensive... .but not THAT MUCH. Holy poop
+
+
+    community feature - report - and potentially ban a player ( ban for name, spamming chat, other things I suppose )
+
+    Game isn't saying that the machine planet is under attack
+
+    Make it easy for players to exchange ships (buying/selling?)
+
+    explain ai more  each part
+
+
+    protect faction members
+
+    research body not being able to be picked up? Not sure if I meant for that to be intentional or not with bodies
 
 
     large > medium > small goop spawning

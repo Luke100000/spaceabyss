@@ -1924,11 +1924,19 @@ function generateDiscoveryDisplay(object_type_id) {
 }
 
 function generateEatingLinkerDisplay() {
+
+    if(client_player_index === -1 || !players[client_player_index]) {
+        return false;
+    }
     //console.log("In generateEatingLinkerDisplay");
 
     $('#eating_data').empty();
 
     let player_index = players.findIndex(function (obj) { return obj && obj.id === player_id; });
+
+    if(player_index === -1) {
+        return false;
+    }
     let body_index = objects.findIndex(function (obj) { return obj && obj.id === players[player_index].body_id; });
     let body_type_index = object_types.findIndex(function (obj) { return obj && obj.id === objects[body_index].object_type_id; });
 
@@ -5520,6 +5528,137 @@ function generateShipManagementDisplay() {
     $('#ship_management').append(html_string);
 }
 
+function generateTakeBuyMenu(object_id) {
+
+    let object_index = getObjectIndex(object_id);
+
+    let take_string = "<div class='message is-success'>";
+        take_string += "<div class='message-header'>Take/Buy</div>";
+
+
+        // get anything that is in this object, and add in a take option
+        let object_inventory_items = inventory_items.filter(inventory_item => inventory_item.owned_by_object_id === objects[object_index].id);
+
+        object_inventory_items.forEach(function (inventory_item) {
+            //console.log("Has inventory item id: " + inventory_item.id);
+            let inventory_item_object_type_index = object_types.findIndex(function (obj) { return obj && obj.id === inventory_item.object_type_id; });
+            if (inventory_item_object_type_index !== -1) {
+
+                // It's ours - we can take from it
+                if (objects[object_index].player_id === client_player_id || (!inventory_item.player_id && !inventory_item.npc_id && !inventory_item.price)) {
+
+
+                    if(objects[object_index].object_type_id === 92) {
+                        take_string += "<div style='display:block;'>";
+                    }
+
+
+
+
+
+                    if(objects[object_index].object_type_id !== 92 || 
+                        (objects[object_index].object_type_id === 92 && players[client_player_index].id === objects[object_index].player_id) ) {
+
+
+                            take_string += "<div style='display:inline-block; position:relative; width:172px; height:74px; " +
+                            " background-image: url(https://space.alphacoders.com/images/" +
+                            urlName(object_types[inventory_item_object_type_index].name) + ".png); background-repeat: no-repeat; " +
+                            " background-position: top; " +
+                            " border: 1px #c8c1c1 solid; border-radius:6px; margin:2px;'>";
+    
+    
+                            take_string += "<div style='position:absolute; right: 4px; top: 0;'>" + inventory_item.amount + "</div>";
+        
+                            take_string += "<div style='position:absolute; right: 4px; bottom: 0;'>";
+
+
+                            if (inventory_item.amount === 1) {
+                                take_string += "<button id='take_" + inventory_item.id + "_all' class='button is-default is-small' " +
+                                    " storage_object_id='" + objects[object_index].id + "' " +
+                                    " inventory_item_id='" + inventory_item.id + "' amount='all'>Take</button>";
+                            } else {
+                                take_string += "Take:";
+        
+                                take_string += "<button id='take_" + inventory_item.id + "_all' class='button is-default is-small' " +
+                                    " storage_object_id='" + objects[object_index].id + "' " +
+                                    " inventory_item_id='" + inventory_item.id + "' amount='all'>All</button>";
+        
+                                if (inventory_item.amount >= 100) {
+                                    take_string += "<button id='take_" + inventory_item.id + "_100' class='button is-default is-small' " +
+                                        " storage_object_id='" + objects[object_index].id + "' " +
+                                        " inventory_item_id='" + inventory_item.id + "' amount='100'>100</button>";
+        
+                                }
+        
+                                if (inventory_item.amount >= 10) {
+                                    take_string += "<button id='take_" + inventory_item.id + "_10' class='button is-default is-small' " +
+                                        " storage_object_id='" + objects[object_index].id + "' " +
+                                        " inventory_item_id='" + inventory_item.id + "' amount='10'>10</button>";
+        
+                                }
+        
+                                take_string += "<button id='take_" + inventory_item.id + "_1' class='button is-default is-small' " +
+                                    " storage_object_id='" + objects[object_index].id + "' " +
+                                    " inventory_item_id='" + inventory_item.id + "' amount='1'>1</button>";
+                            }
+
+
+                            take_string += "</div>";
+
+
+                            take_string += "</div>";
+        
+
+                        }
+                  
+
+
+                    if(objects[object_index].object_type_id === 92 && client_player_id === objects[object_index].player_id) {
+                        take_string += "<div style='display:inline-block; position:relative; width:146px; height:74px; " +
+                        " border: 1px #c8c1c1 solid; border-radius:6px; margin:2px; margin-top:-102px;'>";
+                        
+
+                        take_string += "<strong>Sell Each For:</strong>";
+                        take_string += "<form action='#'>";
+                        take_string += "<div class='field is-horizontal'>";
+                        let inventory_price = 0;
+                        if(inventory_item.price) {
+                            inventory_price = inventory_item.price;
+                        }
+                        take_string += "<input type='text' class='input' style='width:84px;' name='price_" + inventory_item.id + "' id='price_" + inventory_item.id +"' value='" + inventory_price +"'>";
+                        take_string += "<input class='button is-default' onclick=\"submitPriceUpdate(" + inventory_item.id + "); return false;\" type=\"submit\" value=\"Sell\">";
+                        take_string += "</div>";
+                        take_string += "</form>";
+
+                        take_string += "</div>";
+                    }
+
+                    if(objects[object_index].object_type_id === 92) {
+                        take_string += "</div>";
+                    }
+
+
+                }
+                // It's something that is being sold
+                else if (inventory_item.price) {
+                    take_string += "<img style='width:28px;' src='https://space.alphacoders.com/images/" + urlName(object_types[inventory_item_object_type_index].name) + ".png'>" +
+                        "<button class='button is-default' id='buy_" + inventory_item.id + "' storage_object_id='" + objects[object_index].id + "' " +
+                        " inventory_item_id='" + inventory_item.id + "'>Buy $" + inventory_item.price + "</button><br>";
+                } 
+
+
+
+            }
+        });
+
+        take_string += "</div>";
+
+        $('#click_menu').append(take_string);
+
+        $('#click_menu').append("<br>");
+
+}
+
 
 function generateTaskDisplay() {
 
@@ -6714,6 +6853,17 @@ function checkForClientMove(time, tile_x = false, tile_y = false) {
     // ship_coord_id before coord_id is important since being on our ship is a view - ship is still on a galaxy coord
     if (players[client_player_index].ship_coord_id) {
 
+        let can_place_result = canPlacePlayer('ship', ship_coords[checking_coord_index], client_player_index);
+
+        if (can_place_result === false) {
+
+            if(debug_moving) {
+                console.log("Can place in galaxy result false");
+            }
+            deny_move = true;
+        }
+
+        /* Removed this in favor of using our canPlacePlaceFunction. Only keeping in 0.2.28 incase we are missing some case in canPlacePlayer.
         if (ship_coords[checking_coord_index] && ship_coords[checking_coord_index].object_type_id) {
             let object_type_index = object_types.findIndex(function (obj) { return obj && obj.id === ship_coords[checking_coord_index].object_type_id; });
 
@@ -6733,6 +6883,7 @@ function checkForClientMove(time, tile_x = false, tile_y = false) {
         if(ship_coords[checking_coord_index].monster_id) {
             deny_move = true;
         }
+        */
     } else if (players[client_player_index].coord_id) {
 
         if(debug_moving) {
@@ -10171,88 +10322,7 @@ function showClickMenuObject(coord) {
     // Object has inventory. If it's ours, let us take it. If it has a price, let us buy it
     if (objects[object_index].has_inventory) {
         //console.log("Object should have inventory");
-
-        let take_string = "<div class='message is-success'>";
-        take_string += "<div class='message-header'>Take/Buy</div>";
-
-
-        // get anything that is in this object, and add in a take option
-        let object_inventory_items = inventory_items.filter(inventory_item => inventory_item.owned_by_object_id === objects[object_index].id);
-
-        object_inventory_items.forEach(function (inventory_item) {
-            //console.log("Has inventory item id: " + inventory_item.id);
-            let inventory_item_object_type_index = object_types.findIndex(function (obj) { return obj && obj.id === inventory_item.object_type_id; });
-            if (inventory_item_object_type_index !== -1) {
-
-                // It's ours - we can take from it
-                if (objects[object_index].player_id === client_player_id || (!inventory_item.player_id && !inventory_item.npc_id && !inventory_item.price)) {
-
-
-                    take_string += "<div style='display:inline-block; position:relative; width:146px; height:74px; " +
-                        " background-image: url(https://space.alphacoders.com/images/" +
-                        urlName(object_types[inventory_item_object_type_index].name) + ".png); background-repeat: no-repeat; " +
-                        " background-position: top; " +
-                        " border: 1px #c8c1c1 solid; border-radius:6px; margin:2px;'>";
-
-
-                    take_string += "<div style='position:absolute; right: 4px; top: 0;'>" + inventory_item.amount + "</div>";
-
-                    take_string += "<div style='position:absolute; right: 4px; bottom: 0;'>";
-
-
-
-                    if (inventory_item.amount === 1) {
-                        take_string += "<button id='take_" + inventory_item.id + "_all' class='button is-default is-small' " +
-                            " storage_object_id='" + objects[object_index].id + "' " +
-                            " inventory_item_id='" + inventory_item.id + "' amount='all'>Take</button>";
-                    } else {
-                        take_string += "Take:";
-
-                        take_string += "<button id='take_" + inventory_item.id + "_all' class='button is-default is-small' " +
-                            " storage_object_id='" + objects[object_index].id + "' " +
-                            " inventory_item_id='" + inventory_item.id + "' amount='all'>All</button>";
-
-
-                        if (inventory_item.amount >= 10) {
-                            take_string += "<button id='take_" + inventory_item.id + "_10' class='button is-default is-small' " +
-                                " storage_object_id='" + objects[object_index].id + "' " +
-                                " inventory_item_id='" + inventory_item.id + "' amount='10'>10</button>";
-
-                        }
-
-                        take_string += "<button id='take_" + inventory_item.id + "_1' class='button is-default is-small' " +
-                            " storage_object_id='" + objects[object_index].id + "' " +
-                            " inventory_item_id='" + inventory_item.id + "' amount='1'>1</button>";
-                    }
-
-
-
-
-
-                    take_string += "</div>";
-
-                    take_string += "</div>";
-
-
-
-                }
-                // It's something that is being sold
-                else if (inventory_item.price) {
-                    take_string += "<img style='width:28px;' src='https://space.alphacoders.com/images/" + urlName(object_types[inventory_item_object_type_index].name) + ".png'>" +
-                        "<button id='buy_" + inventory_item.id + "' storage_object_id='" + objects[object_index].id + "' " +
-                        " inventory_item_id='" + inventory_item.id + "'>Buy $" + inventory_item.price + "</button><br>";
-                } 
-
-
-
-            }
-        });
-
-        take_string += "</div>";
-
-        $('#click_menu').append(take_string);
-
-        $('#click_menu').append("<br>");
+        generateTakeBuyMenu(objects[object_index].id);
     }
 
 
@@ -10311,8 +10381,12 @@ function showClickMenuObject(coord) {
                 $('#click_menu').append("<button id='switchship_" + objects[object_index].id + "' object_id='" + objects[object_index].id +
                 "' class='button is-warning is-small'>Switch To</button>");
 
-                $('#click_menu').append("<button id='dockcommand_" + objects[object_index].id + "' object_id='" + objects[object_index].id +
-                "' class='button is-warning is-small'>Dock At Azure Planet</button><br>");
+                // Only show the Dock At Azure Planet button if the ship is not dockable itself
+                if(!object_types[object_type_index].is_dockable) {
+                    $('#click_menu').append("<button id='dockcommand_" + objects[object_index].id + "' object_id='" + objects[object_index].id +
+                    "' class='button is-warning is-small'>Dock At Azure Planet</button><br>");
+                }
+                
             }
 
             
@@ -11498,12 +11572,6 @@ function showPlayer(showing_player) {
 }
 
  */
-
-function submitPriceUpdate(inventory_item_id) {
-    var new_price = $("#price_" + inventory_item_id).val();
-
-    socket.emit('price_update_data', { 'inventory_item_id': inventory_item_id, 'new_price': new_price });
-}
 
 
 function switchChat(new_chat_tab) {

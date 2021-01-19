@@ -968,6 +968,12 @@ exports.move = move;
 
                             socket.emit('coord_info', { 'coord': dirty.coords[galaxy_coord_index] });
 
+                            if(dirty.coords[galaxy_coord_index].monster_id) {
+                                await monster.sendInfo(socket, "", dirty, { 'monster_id': dirty.coords[galaxy_coord_index].monster_id });
+                                // Not sure we currently have a scenario that would use this
+                                //await world.checkMonsterBattleConditions(dirty, dirty.planet_coords[sending_coord_index].monster_id, 'player', socket.player_id, socket);
+                            }
+
 
                         }
                     }
@@ -1105,6 +1111,7 @@ exports.move = move;
     exports.moveGalaxy = moveGalaxy;
 
 
+    // OLDDDDDDD????????????? I BET WE DON'T USE THIS 1/18/2021
     async function moveGalaxyOld(socket, dirty, coord_index) {
         try {
 
@@ -4463,8 +4470,16 @@ async function payForGalaxyMove(socket, dirty, ship_index) {
                 return false;
             }
 
+            let object_type_index = main.getObjectTypeIndex(dirty.objects[ship_index].object_type_id);
+
+        
             if(dirty.objects[ship_index].object_type_id === 114) {
                 log(chalk.yellow("Cannot warp pods to Azure planet"));
+                return false;
+            }
+
+            if(dirty.object_types[object_type_index].is_dockable) {
+                log(chalk.yellow("Dockable ships cannot dock at the Azure planet"));
                 return false;
             }
 

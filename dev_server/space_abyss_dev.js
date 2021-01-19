@@ -1459,7 +1459,7 @@ io.sockets.on('connection', function (socket) {
             // ATTACKING A PLANET!
             else if(data.planet_id) {
 
-                console.log("Player is attacking a planet");
+                //console.log("Player is attacking a planet");
 
                 data.planet_id = parseInt(data.planet_id);
 
@@ -1569,7 +1569,7 @@ io.sockets.on('connection', function (socket) {
     });
 
     socket.on('disconnect', function() {
-        console.log("Have auto disconnect");
+        //console.log("Have auto disconnect");
         disconnectPlayer(socket);
     });
 
@@ -1676,7 +1676,7 @@ io.sockets.on('connection', function (socket) {
 
     socket.on('price_update_data', function(data) {
         console.log("Got price update data");
-        inventory.priceUpdate(socket, data);
+        inventory.priceUpdate(socket, dirty, parseInt(data.inventory_item_id), parseInt(data.new_price));
     });
 
     socket.on('reent_area_data', function(data) {
@@ -3259,7 +3259,7 @@ async function disconnectPlayer(socket) {
         //console.log("Disconnecting player");
 
         if(!socket.player_id) {
-            console.log("Socket was never associated with a player");
+            //console.log("Socket was never associated with a player");
             return false;
         }
 

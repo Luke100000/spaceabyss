@@ -449,6 +449,7 @@ exports.getSpawnedEventIndex = getSpawnedEventIndex;
  * @param {number=} data.ship_coord_index
  * @param {number=} data.coord_index
  * @param {number=} data.planet_id
+ * @param {number=} data.planet_event_linker_id 
  * @returns {Promise<number>} spawned_event_index
  */
 async function spawn(dirty, event_index, data) {
@@ -502,9 +503,14 @@ async function spawn(dirty, event_index, data) {
             }
 
             // find the planet_event_linker
-            planet_event_linker_index = dirty.planet_event_linkers.findIndex(function(obj) {
-                return obj && obj.event_id === dirty.events[event_index].id &&
-                    obj.planet_type_id === dirty.planets[planet_index].planet_type_id });
+            if(typeof data.planet_event_linker_id !== 'undefined') {
+                planet_event_linker_index = dirty.planet_event_linkers.findIndex(function(obj) { return obj && obj.id === data.planet_event_linker_id; });
+            } else {
+                planet_event_linker_index = dirty.planet_event_linkers.findIndex(function(obj) {
+                    return obj && obj.event_id === dirty.events[event_index].id &&
+                        obj.planet_type_id === dirty.planets[planet_index].planet_type_id });
+            }
+            
 
             if(planet_event_linker_index === -1) {
                 log(chalk.yellow("Could not find planet event linker"));
@@ -1272,46 +1278,50 @@ async function spawnOnPlanet(dirty, i, debug_planet_type_id) {
             planet_event_linker.planet_type_id === dirty.planets[i].planet_type_id && planet_event_linker.rarity <= rarity &&
             planet_event_linker.minimum_planet_hp_percent <= hp_percent && planet_event_linker.maximum_planet_hp_percent >= hp_percent);
 
-        if(planet_event_linkers.length !== 0) {
+        if(planet_event_linkers.length === 0) {
+            return false;
+        }
+
+
+
+        if(dirty.planets[i].planet_type_id === debug_planet_type_id) {
+            console.log("Have " + planet_event_linkers.length + " events for planet type id: " + dirty.planets[i].planet_type_id);
+            //console.log(planet_event_linkers);
+        }
+
+        let random_planet_event_linker = planet_event_linkers[Math.floor(Math.random() * planet_event_linkers.length)];
+
+
+
+        // get the event
+        let event_index = dirty.events.findIndex(function(obj) { return obj && obj.id === random_planet_event_linker.event_id; });
+
+        if(event_index !== -1 && dirty.planets[i].planet_type_id === debug_planet_type_id) {
+            console.log("Randomly chose event id: " + dirty.events[event_index].id + " " + dirty.events[event_index].name);
+        } else if(dirty.planets[i].planet_type_id === debug_planet_type_id) {
+            log(chalk.yellow("Could not find that event. event id: " + random_planet_event_linker.event_id));
+        }
+
+        if(event_index !== -1 && dirty.events[event_index].is_active) {
+            if(dirty.planets[i].planet_type_id === debug_planet_type_id) {
+                console.log("Going to try to spawn event " + dirty.events[event_index].name + " id: " + dirty.events[event_index].id + " on planet id: " + dirty.planets[i].id);
+            }
+            
+            let spawned_event_index = await spawn(dirty, event_index, { 'planet_id': dirty.planets[i].id, 'planet_event_linker_id': random_planet_event_linker.id });
 
             if(dirty.planets[i].planet_type_id === debug_planet_type_id) {
-                console.log("Have " + planet_event_linkers.length + " events for planet type id: " + dirty.planets[i].planet_type_id);
-                //console.log(planet_event_linkers);
+                console.log("spawned_event_index: " + spawned_event_index);
             }
 
-            let random_planet_event_linker = planet_event_linkers[Math.floor(Math.random() * planet_event_linkers.length)];
-
-
-
-            // get the event
-            let event_index = dirty.events.findIndex(function(obj) { return obj && obj.id === random_planet_event_linker.event_id; });
-
-            if(event_index !== -1 && dirty.planets[i].planet_type_id === debug_planet_type_id) {
-                console.log("Randomly chose event id: " + dirty.events[event_index].id + " " + dirty.events[event_index].name);
-            } else if(dirty.planets[i].planet_type_id === debug_planet_type_id) {
-                log(chalk.yellow("Could not find that event. event id: " + random_planet_event_linker.event_id));
+            if(spawned_event_index !== -1 && random_planet_event_linker.is_regular_monster_spawn) {
+                dirty.planets[i].current_regular_monster_count++;
+                //console.log("Increased the regular monster count on planet id: " + dirty.planets[i].id + " to: " + dirty.planets[i].current_regular_monster_count);
+            } else if(random_planet_event_linker.is_regular_monster_spawn) {
+                //log(chalk.yellow("Linker is a regular monster spawn, but we did not increment the current_regular_monster_count. Planet id: " + dirty.planets[i].id + " spawned_event_index: " + spawned_event_index));
             }
-
-            if(event_index !== -1 && dirty.events[event_index].is_active) {
-                if(dirty.planets[i].planet_type_id === debug_planet_type_id) {
-                    console.log("Going to try to spawn event " + dirty.events[event_index].name + " id: " + dirty.events[event_index].id + " on planet id: " + dirty.planets[i].id);
-                }
-                
-                let spawned_event_index = await spawn(dirty, event_index, { 'planet_id': dirty.planets[i].id });
-
-                if(dirty.planets[i].planet_type_id === debug_planet_type_id) {
-                    console.log("spawned_event_index: " + spawned_event_index);
-                }
-
-                if(spawned_event_index !== -1 && random_planet_event_linker.is_regular_monster_spawn) {
-                    dirty.planets[i].current_regular_monster_count++;
-                    //console.log("Increased the regular monster count on planet id: " + dirty.planets[i].id + " to: " + dirty.planets[i].current_regular_monster_count);
-                } else if(random_planet_event_linker.is_regular_monster_spawn) {
-                    //log(chalk.yellow("Linker is a regular monster spawn, but we did not increment the current_regular_monster_count. Planet id: " + dirty.planets[i].id + " spawned_event_index: " + spawned_event_index));
-                }
-            }
-
         }
+
+        
     } catch(error) {
         log(chalk.red("Error in event.spawnOnPlanet: " + error));
         console.error(error);

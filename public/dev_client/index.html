@@ -64,13 +64,13 @@
       
     
 
-    <script src="client_functions_0.2.28.js"></script>
-    <script src="client_network_0.2.28.js"></script>
-    <script src="client_click_0.2.28.js"></script>
-    <script src="effects_0.2.28.js"></script>
-    <script src="monster_0.2.28.js"></script>
-    <script src="planet_0.2.28.js"></script>
-    <script src="player_0.2.28.js"></script>
+    <script src="client_functions_0.2.29.js"></script>
+    <script src="client_network_0.2.29.js"></script>
+    <script src="client_click_0.2.29.js"></script>
+    <script src="effects_0.2.29.js"></script>
+    <script src="monster_0.2.29.js"></script>
+    <script src="planet_0.2.29.js"></script>
+    <script src="player_0.2.29.js"></script>
 
 
     <link href="//space.alphacoders.com/bulma-0.7.2/css/bulma.min.css" rel="stylesheet" media="screen">
@@ -775,6 +775,7 @@
     var player_health_bar;
     var cursors;
     var upKey;
+    var shiftKey;
     var downKey;
     var leftKey;
     var rightKey;
@@ -1190,6 +1191,7 @@
             downKey = this.input.keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.DOWN);
             leftKey = this.input.keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.LEFT);
             rightKey = this.input.keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.RIGHT);
+            shiftKey = this.input.keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.SHIFT);
 
 
             graphics = this.add.graphics( { fillStyle: { color: 0x44fc62 } });

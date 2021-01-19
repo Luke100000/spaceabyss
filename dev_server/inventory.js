@@ -12,8 +12,6 @@ const main = require('./space_abyss' + process.env.FILE_SUFFIX + '.js');
 const npc = require('./npc.js');
 const player = require('./player.js');
 const world = require('./world.js');
-const { assemble } = require('./game.js');
-
 
 /**
  * @param {Object} socket
@@ -519,29 +517,59 @@ async function place(socket, dirty, data) {
 
 exports.place = place;
 
-function priceUpdate(socket, data) {
-    console.log("Player is updating price for " + data.inventory_item_id + " to " + data.new_price);
 
-    var sql = "SELECT inventory_items.id, inventory_items.owned_by_object_id, objects.player_id as owned_by_object_player_id FROM inventory_items LEFT JOIN objects ON objects.id = inventory_items.owned_by_object_id WHERE inventory_items.id = ?";
-    var bindings = [data.inventory_item_id];
-    sql = mysql.format(sql, bindings);
-    pool.query(sql, function(err, rows, fields) {
-        if(err) throw err;
 
-        if(rows[0]) {
-            var inventory_item = rows[0];
+async function priceUpdate(socket, dirty, inventory_item_id, new_price) {
 
-            if(socket.player_id == inventory_item.owned_by_object_player_id) {
-                // update the price
-                sql = "UPDATE inventory_items SET price = ? WHERE id = ?";
-                bindings = [data.new_price, inventory_item.id];
-                sql = mysql.format(sql, bindings);
-                pool.query(sql, function(err, result) {
-                    if(err) throw err;
-                });
+
+    try {
+
+        console.log("Player is updating price for " + inventory_item_id + " to " + new_price);
+
+        if(typeof socket.player_index === 'undefined') {
+            log(chalk.yellow("Socket is not associated with a player"));
+            return false;
+        }
+
+        let inventory_item_index = await main.getInventoryItemIndex(inventory_item_id);
+
+        if(inventory_item_index === -1) {
+            log(chalk.yellow("Could not find that inventory item"));
+            return false;
+        }
+
+        let player_can_edit = false;
+
+
+        // It's an inventory item the player directly owns - not actually sure this will ever trigger
+        if(helper.notFalse(dirty.inventory_items[inventory_item_index].player_id) && dirty.inventory_items[inventory_item_index].player_id === socket.player_id) {
+            player_can_edit = true;
+        }
+        // It's an inventory item in an object our player might own
+        else if(dirty.inventory_items[inventory_item_index].owned_by_object_id) {
+            let owner_object_index = await game_object.getIndex(dirty, dirty.inventory_items[inventory_item_index].owned_by_object_id);
+            if(owner_object_index !== -1 && dirty.objects[owner_object_index].player_id === socket.player_id) {
+                player_can_edit = true;
             }
         }
-    });
+
+
+        if(!player_can_edit) {
+            log(chalk.yellow("Player is trying to edit the price of an inventory item they aren't allowed to"));
+            return false;
+        }
+
+        dirty.inventory_items[inventory_item_index].price = new_price;
+        dirty.inventory_items[inventory_item_index].has_change = true;
+
+        sendInventoryItem(socket, '', dirty, inventory_item_index);
+
+    } catch(error) {
+        log(chalk.red("Error in inventory.priceUpdate: " + error));
+        console.error(error);
+    }
+
+
 }
 
 exports.priceUpdate = priceUpdate;
@@ -765,6 +793,11 @@ exports.sendInventoryItem = sendInventoryItem;
 async function take(socket, dirty, inventory_item_id, amount) {
 
     try {
+
+        if(typeof socket.player_index === 'undefined') {
+            return false;
+        }
+
         inventory_item_id = parseInt(inventory_item_id);
         //console.log("player is taking an inventory item id: " + inventory_item_id);
 
@@ -775,6 +808,15 @@ async function take(socket, dirty, inventory_item_id, amount) {
             return false;
         }
 
+        // Don't let random people take from a vending machine
+        if(dirty.inventory_items[inventory_item_index].owned_by_object_id) {
+            let owner_object_index = await game_object.getIndex(dirty, dirty.inventory_items[inventory_item_index].owned_by_object_id);
+            if(owner_object_index !== -1 && dirty.objects[owner_object_index].object_type_id === 92 && dirty.objects[owner_object_index].player_id !== dirty.players[socket.player_index].id) {
+                console.log("Not allowed to take from a vending machine that isn't theirs");
+                return false;
+            }
+        }
+
         let take_amount = 1;
         if(amount === 'all') {
             take_amount = dirty.inventory_items[inventory_item_index].amount;
@@ -782,6 +824,12 @@ async function take(socket, dirty, inventory_item_id, amount) {
             take_amount = 10;
 
             if(dirty.inventory_items[inventory_item_index].amount < 10) {
+                take_amount = dirty.inventory_items[inventory_item_index].amount;
+            }
+        } else if(parseInt(amount) === 100) {
+            take_amount = 100;
+
+            if(dirty.inventory_items[inventory_item_index].amount < 100) {
                 take_amount = dirty.inventory_items[inventory_item_index].amount;
             }
         }

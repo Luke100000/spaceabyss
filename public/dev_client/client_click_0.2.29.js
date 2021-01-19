@@ -1,3 +1,14 @@
+function createArea() {
+    console.log("In createArea");
+    let new_area_name = $('#create_area_name').val();
+
+    if(new_area_name !== "") {
+        console.log("Trying to create new area with name: " + new_area_name);
+        socket.emit('create_area_data', { 'new_area_name': new_area_name });
+        $('#create_area_name').val("");
+    }
+}
+
 function objectTint(object_id) {
     console.log("In objectTint");
     let new_object_tint = $("#objectcolor_" + object_id).val();
@@ -78,16 +89,14 @@ function submitPlanetName(planet_id) {
     }
 }
 
-function createArea() {
-    console.log("In createArea");
-    let new_area_name = $('#create_area_name').val();
+function submitPriceUpdate(inventory_item_id) {
+    console.log("Player is updating the price of an inventory item");
+    var new_price = $("#price_" + inventory_item_id).val();
 
-    if(new_area_name !== "") {
-        console.log("Trying to create new area with name: " + new_area_name);
-        socket.emit('create_area_data', { 'new_area_name': new_area_name });
-        $('#create_area_name').val("");
-    }
+    socket.emit('price_update_data', { 'inventory_item_id': inventory_item_id, 'new_price': new_price });
 }
+
+
 
 function renameArea(area_id) {
     console.log("In renameArea");
@@ -253,7 +262,6 @@ $(document).on('click', 'button', function () {
         }
 
         if($('#' + clicked_id).attr('planet_id')) {
-            console.log("Player clicked to attack planet id: " + $('#' + clicked_id).attr('planet_id'));
             socket.emit("attack_data", { 'planet_id': $('#' + clicked_id).attr('planet_id') });
         }
 
@@ -1224,7 +1232,7 @@ $(document).on('click', 'button', function () {
     }
 
     if(split_name[0] === 'take') {
-        //console.log("player is taking item from a chest or something!!");
+        console.log("player is taking item from a chest or something!!");
 
         let inventory_item_id = $('#' + clicked_id).attr('inventory_item_id');
 
@@ -1237,8 +1245,27 @@ $(document).on('click', 'button', function () {
 
         //console.log("Sending that player is taking inventory item id: " + inventory_item_id);
 
-        $('#click_menu').empty();
-        $('#click_menu').hide();
+        if(!shiftKey.isDown) {
+            $('#click_menu').empty();
+            $('#click_menu').hide();
+        } else {
+            console.log("Took from something while holding shift. Lets update that display now....");
+            let storage_object_id = $('#' + clicked_id).attr('storage_object_id');
+            console.log("got storage object id: " + storage_object_id);
+            if(storage_object_id) {
+                let storage_object_index = getObjectIndex(storage_object_id);
+                let object_info = getObjectInfo(storage_object_index);
+                if(object_info.coord) {
+                    $('#click_menu').empty();
+                    showClickMenuObject(object_info.coord);
+                }
+                
+                // find a planet or ship coord with this object
+                //generateTakeBuyMenu(storage_object_id);
+            }
+            // Don't have enough info to showClickMenuObject. Need to pass in owner object too I suppose
+        }
+        
     }
 
     // The player wants to dock at The Great Nomad after understanding the risks

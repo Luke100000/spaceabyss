@@ -12,6 +12,7 @@ const helper = require('./helper.js');
 const inventory = require('./inventory.js');
 const main = require('./space_abyss' + process.env.FILE_SUFFIX + '.js');
 const map = require('./map.js');
+const monster = require('./monster.js');
 const movement = require('./movement.js');
 const planet = require('./planet.js');
 const world = require('./world.js');
@@ -1034,7 +1035,7 @@ async function damage(dirty, data) {
             sending_damage_types = [data.damage_effect];
         }
 
-        let player_socket = false;
+        let player_socket = {};
 
         if(data.battle_linker && data.battle_linker.being_attacked_socket_id) {
             player_socket = io.sockets.connected[data.battle_linker.being_attacked_socket_id];
@@ -1044,7 +1045,31 @@ async function damage(dirty, data) {
 
         if(new_player_hp <= 0) {
             console.log("Calling player.kill");
-            kill(dirty, data.player_index);
+
+            let died_message = "";
+            // Lets see if we can't get some decent killed messages here
+            if(typeof data.battle_linker !== "undefined") {
+                if(data.battle_linker.attacking_type === "monster") {
+                    let monster_index = await monster.getIndex(dirty, data.battle_linker.attacking_id);
+                    if(monster_index !== -1) {
+                        let monster_type_index = main.getMonsterTypeIndex(dirty.monsters[monster_index].monster_type_id);
+                        if(monster_type_index !== -1) {
+                            died_message = "You were killed by a " + dirty.monster_types[monster_type_index].name;
+                        }
+                    }
+                } else if(data.battle_linker.attacking_type === "player") {
+                    let killed_by_player_index = await getIndex(dirty, { 'player_id': data.battle_linker.attacking_id });
+                    if(killed_by_player_index !== -1) {
+                        died_message = "You were killed by the player " + dirty.players[killed_by_player_index].name;
+                    }
+                    
+
+                } else if(data.battle_linker.attacking_type === "object") {
+                    died_message = "You were killed by an object";
+                }
+            }
+
+            kill(dirty, data.player_index, died_message);
         } else {
             dirty.players[data.player_index].current_hp = new_player_hp;
             dirty.players[data.player_index].has_change = true;
@@ -1052,7 +1077,7 @@ async function damage(dirty, data) {
             await world.increasePlayerSkill(player_socket, dirty, data.player_index, ['defending']);
 
             if(data.battle_linker) {
-                if(player_socket) {
+                if(helper.notFalse(player_socket)) {
                     io.sockets.connected[data.battle_linker.being_attacked_socket_id].emit('damaged_data', {
                         'player_id': dirty.players[data.player_index].id, 'damage_amount': data.damage_amount, 'was_damaged_type': 'hp',
                         'damage_source_type': data.battle_linker.attacking_type, 'damage_source_id': data.battle_linker.attacking_id,
@@ -1064,7 +1089,7 @@ async function damage(dirty, data) {
             } else {
 
 
-                if(player_socket) {
+                if(helper.notFalse(player_socket)) {
                     player_socket.emit('damaged_data', {
                         'player_id': dirty.players[data.player_index].id, 'damage_amount': data.damage_amount,
                         'damage_types': sending_damage_types, 'was_damaged_type': 'hp',
@@ -1083,7 +1108,7 @@ async function damage(dirty, data) {
             for(let i = 0; i < data.damage_types.length; i++) {
 
                 if(data.damage_types[i] === 'poison') {
-                    console.log("Player was attacked by a poison attack!");
+                    //console.log("Player was attacked by a poison attack!");
                     let player_body_index = await game_object.getIndex(dirty, dirty.players[data.player_index].body_id);
                     let object_type_index = main.getObjectTypeIndex(365);
                     game.addAddictionLinker(dirty, player_socket, object_type_index, { 'player_index': data.player_index, 'player_body_index': player_body_index });
@@ -1761,7 +1786,7 @@ async function getShips(dirty, player_index) {
 exports.getShips = getShips;
 
 
-async function kill(dirty, player_index) {
+async function kill(dirty, player_index, killed_by_text = "") {
 
     try {
 
@@ -1879,8 +1904,9 @@ async function kill(dirty, player_index) {
         }
 
 
+        // Remove inventory items from this body, and put them in the dead body
         for(let i = 0; i < dirty.inventory_items.length; i++) {
-            if(dirty.inventory_items[i] && dirty.inventory_items[i].player_id === dirty.players[player_index].id) {
+            if(dirty.inventory_items[i] && dirty.inventory_items[i].player_id === dirty.players[player_index].id && dirty.inventory_items[i].body_id === dirty.objects[body_index].id) {
 
                 // remove the inventory item
                 let remove_data = { 'inventory_item_id': dirty.inventory_items[i].id, 'amount': dirty.inventory_items[i].amount };
@@ -1930,6 +1956,13 @@ async function kill(dirty, player_index) {
 
         // and clear out the database queue
         delete dirty.database_queue[database_queue_index];
+
+
+        // and lets add in a player log of what killed them
+        if(helper.isFalse(killed_by_text)) {
+            killed_by_text = "You died from an unknown source";
+        }
+        world.addPlayerLog(dirty, player_index, killed_by_text, { 'scope': 'personal' });
 
 
         return true;

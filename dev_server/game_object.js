@@ -671,6 +671,36 @@ async function deleteObject(dirty, data) {
                 }
             }
 
+            // The body belonged to a player, lets let them know that their body died
+            if(dirty.objects[data.object_index].player_id) {
+                let object_player_index = await player.getIndex(dirty, { 'player_id': dirty.objects[data.object_index].player_id });
+                if(object_player_index !== -1) {
+
+                    let body_message = "Your body " + dirty.object_types[object_type_index].name;
+                    if(dirty.objects[data.object_index].name) {
+                        body_message += " (named: " + dirty.objects[data.object_index].name + ")";
+                    }
+
+                    body_message += " died.";
+
+                    if(typeof data.reason !== 'undefined') {
+                        body_message += " reason: " + data.reason;
+                    }
+
+                    if(typeof data.reason_id !== 'undefined') {
+                        body_message += " id: " + data.reason_id;
+                    }
+
+                    if(typeof data.reason_type !== 'undefined') {
+                        body_message += " type: " + data.reason_type;
+                    }
+
+                    world.addPlayerLog(dirty, object_player_index, body_message, { 'scope': 'personal' });
+
+                }
+                
+            }
+
         }
 
         // delete any equipment linkers associated with this object
