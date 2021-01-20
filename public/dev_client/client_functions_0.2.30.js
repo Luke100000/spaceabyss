@@ -5560,7 +5560,7 @@ function generateTakeBuyMenu(object_id) {
                         (objects[object_index].object_type_id === 92 && players[client_player_index].id === objects[object_index].player_id) ) {
 
 
-                            take_string += "<div style='display:inline-block; position:relative; width:172px; height:74px; " +
+                            take_string += "<div style='display:inline-block; position:relative; width:174px; height:74px; " +
                             " background-image: url(https://space.alphacoders.com/images/" +
                             urlName(object_types[inventory_item_object_type_index].name) + ".png); background-repeat: no-repeat; " +
                             " background-position: top; " +

@@ -1675,7 +1675,7 @@ async function getLevel(dirty, data) {
 
       
         if(data.skill_type === 'manufacturing') {
-            console.log("Manufacturing level returned: " + level);
+            //console.log("Manufacturing level returned: " + level);
         }
 
 

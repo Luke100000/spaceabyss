@@ -3,6 +3,7 @@ Admin Commands:
 game.processAdminChatMessage
 /addinventory AMOUNT OBJECT_TYPE_NAME
 /buildstructure STRUCTURE_TYPE_ID PLANET_COORD_ID PLAYER_ID
+/clearcoord COORD_TYPE COORD_ID CLEARING_TYPE (object|player)
 /connectlevel PLANET_ID LEVEL
 /deletenpc npc_id
 /deleteobject object_id
@@ -26,7 +27,7 @@ game.processAdminChatMessage
 /spawnmonster MONSTER_TYPE_NAME
 /spawnnpc NPC_JOB_ID
 /spawnobject AMOUNT OBJECT_TYPE_NAME
-/dickdecay
+/tickdecay
 /tickEvents
 /tickspawners
 /tickthegreatnomad

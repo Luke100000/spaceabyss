@@ -888,19 +888,26 @@ const world = require('./world.js');
             if(dirty.monsters[monster_index].monster_type_id === 33 || dirty.monsters[monster_index].monster_type_id === 57) {
 
                 // If we are an AI Daemon, and the turn count is > 10, we attempt to spawn the next level of AI helper, the AI....
-                if(ai_index !== -1 && dirty.monster_types[monster_type_index].id === 33 && battle_linker.turn_count === 10) {
+                if(dirty.monster_types[monster_type_index].id === 33 && battle_linker.turn_count === 10) {
                     log(chalk.cyan("AI is trying to advance attack/defense to the next level"));
 
-                    let attack_data = {
-                        'ai_id': dirty.objects[ai_index].id,
-                        'attacking_type': battle_linker.being_attacked_type,
-                        'attacking_id': battle_linker.being_attacked_id,
-                        'attack_level': 2
-                    };
+                    // Monsters spawned by AI should have an object_id attached to them
+                    let monster_ai_index = await game_object.getIndex(dirty, dirty.monsters[monster_index].object_id);
 
-                    world.aiAttack(dirty, attack_data);
+                    if(monster_ai_index !== -1) {
+                        let attack_data = {
+                            'ai_id': dirty.objects[monster_ai_index].id,
+                            'attacking_type': battle_linker.being_attacked_type,
+                            'attacking_id': battle_linker.being_attacked_id,
+                            'attack_level': 2
+                        };
+    
+                        world.aiAttack(dirty, attack_data);
+                    }
 
-                }
+
+
+                } 
 
             } else {
                 

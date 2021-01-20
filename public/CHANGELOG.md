@@ -1,3 +1,18 @@
+## [0.2.29] - 2021-01-20
+
+### Added
+- Beginnings of a system for banning users
+- Admin ability to clear a coord of something
+
+### Fixed
+- Destroyers (and other 2x2 tile ships) now have spot where they can undock from the sun (hotfixed in 0.2.28)
+- Take menu in Chrome displaying odd
+- Bug with AI not advancing their defense on planets properly
+
+
+### Changed
+- Login is now asynchronous, and removed a bunch of really bad old code related to logging in.
+
 ## [0.2.28] - 2021-01-19
 
 

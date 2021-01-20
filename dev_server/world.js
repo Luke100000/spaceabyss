@@ -646,8 +646,8 @@ data:   ai_id   |   atacking_type   |   attacking_id
 */
 /**
  *
- * @param dirty
- * @param data
+ * @param {Object} dirty
+ * @param {Object} data
  * @param {number} data.ai_id
  * @param {number} data.attacking_type
  * @param {number} data.attacking_id
@@ -679,7 +679,7 @@ async function aiAttack(dirty, data) {
 
 
         let scope = "";
-        let room = false;
+        let room = "";
         let being_attacked_index = -1;
         let being_attacked_coord_index = -1;
 
@@ -900,6 +900,7 @@ async function aiAttack(dirty, data) {
         }
 
 
+        spawn_monster_data.ai_id = dirty.objects[ai_index].id;
         monster.spawn(dirty, spawn_monster_type_id, spawn_monster_data);
 
 

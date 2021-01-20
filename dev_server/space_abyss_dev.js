@@ -2492,18 +2492,476 @@ async function loginPlayer(socket, dirty, data) {
 
         let user = rows[0];
 
+        if(user.is_banned) {
+            socket.emit('login_data', { 'status': 'Failed. You Are Banned' });
+            return false;
+        }
+
 
         // 1. OLD LOGIN METHOD
-        let modified_trying_password = crypto.createHash('sha256').update(trying_password).digest('base64');
+        //let modified_trying_password = crypto.createHash('sha256').update(trying_password).digest('base64');
 
         // we need to convert the password to the 'node' version.
         let user_pass_php = rows[0].password;
         let user_password_node_version = user_pass_php.replace(/^\$2y(.+)$/i, '$2a$1');
-        //let user_password_node_version =  user_pass_php.substr(0,2) + 'a' + user_pass_php.substr(3);
 
+
+        bcrypt.compare(trying_password, user_password_node_version, async function(err, res) {
+
+            console.log("New login res: " + res);
+
+            if(res === false) {
+
+                socket.emit('login_data', { 'status':'failed' });
+                return false;
+            }
+
+
+            [rows, fields] = await (pool.query("SELECT * FROM players WHERE user_id = ? AND name = ?", [user.id, trying_player_name]));
+
+            if(!rows[0]) {
+                console.log("Unable to find player");
+                socket.emit('login_data', { 'status':'failed' });
+                return false;
+            }
+            
+            let logging_in_player = rows[0];
+            let already_connected = false;
+    
+            // found the player - now make sure they aren't already connected
+            // TODO need to figure out how to for loop this so it's functional
+            /*
+            Object.keys(io.sockets.sockets).forEach(function(id) {
+                //console.log("ID:" + id);
+                other_socket = io.sockets.connected[id];
+    
+                if(other_socket.player_id === player.id) {
+                    already_connected = true;
+                }
+            });
+    
+    
+            if(already_connected === true) {
+                // Don't re-log them in
+                console.log("Player is already connected. Can't login twice");
+                return false;
+            }
+    
+            */
+    
+            let placed_player = false;
+            let starting_view = false;
+    
+            let [result] = await (pool.query("UPDATE players SET socket_id = ? WHERE id = ?", [socket.id, user.id]));
+    
+            socket.player_index = await player.getIndex(dirty, {'player_id':logging_in_player.id, 'source': 'main.loginPlayer' });
+            let player_index = socket.player_index;
+    
+            log(chalk.green("Got socket player index as: " + socket.player_index));
+    
+    
+    
+            socket.logged_in = true;
+            socket.placed_player = false;
+            socket.player_id = logging_in_player.id;
+            socket.player_body_id = logging_in_player.body_id;
+            socket.player_defense = logging_in_player.defense;
+    
+            // Deprecated
+            socket.player_exp = logging_in_player.exp;
+            
+            socket.player_faction_id = logging_in_player.faction_id;
+            socket.player_food_ticks = logging_in_player.food_ticks;
+            socket.player_current_hp = logging_in_player.current_hp;
+            socket.player_level = logging_in_player.level;
+            socket.player_name = logging_in_player.name;
+    
+            socket.player_ship_id = logging_in_player.ship_id;
+    
+    
+            socket.player_range = logging_in_player.attack_range;
+    
+            socket.player_max_hp = logging_in_player.max_hp;
+            socket.player_energy = logging_in_player.energy;
+    
+            // lets try send the display linkers fast! before any map data
+            game.sendObjectTypeEquipmentLinkerData(socket, dirty);
+            game.sendPlanetTypeDisplayLinkerData(socket, dirty);
+    
+            if (dirty.players[socket.player_index].is_admin) {
+                socket.is_admin = true;
+                console.log("Set is_admin TO TRUE");
+    
+                // send admin build buttons
+                socket.emit('admin_data', {
+                    'main_button_wrapper': '<a class="button is-default main-button" onclick="admin_functions.toggleAdminDisplay();"><i class="fad fa-toolbox fa-2x" class="main-icon"></i></a>',
+                    'set_draw_function': 'admin_drawing_floor_type_id = floor_type_id;',
+                    'options_function': 'let html_string = ""; html_string += "<button class=\\"button\\" onclick=\\"admin_functions.setAdminDrawFloorID(false);\\">None</button>"; floor_types.forEach(function(floor_type) { html_string += "<button class=\\"button\\" onclick=\\"admin_functions.setAdminDrawFloorID(" + floor_type.id + ");\\">" + floor_type.name + "</button>"; }); $("#admin_data").append(html_string);',
+                    'toggle_function': 'if($("#admin_data").is(":visible")) { $("#admin_data").hide(); $("#admin_data").empty(); } else { $("#admin_data").show(); admin_functions.showAdminOptions(); }'
+                });
+            } else {
+                socket.is_admin = false;
+                console.log("Set is admin to FALSE");
+            }
+    
+            // Gotta make sure the player HAS A BODY!
+            // lets get the player body
+            let resend_player_info = false;
+    
+            if(!dirty.players[socket.player_index].body_id) {
+                console.log("Player does not have a body. Giving them a new body");
+                await world.setPlayerBody(dirty, player_index);
+                resend_player_info = true;
+            } else {
+                // second way a player might not have a body
+                let body_index = await game_object.getIndex(dirty, dirty.players[socket.player_index].body_id);
+    
+                if(body_index === -1) {
+                    log(chalk.yellow("Player did not have a body when logging in!!"));
+                    await world.setPlayerBody(dirty, player_index);
+                }
+            }
+    
+            
+    
+            // Make sure the player's ship still exists
+            let ship_index = -1;
+            if(dirty.players[player_index].ship_id) {
+                ship_index = await game_object.getIndex(dirty, dirty.players[player_index].ship_id);
+            }
+    
+            if(ship_index === -1) {
+                console.log("Creating a ship for player id: " + dirty.players[player_index].id);
+                let new_ship_id = await world.insertObjectType(false, dirty, { 'object_type_id': 114, 'player_id': dirty.players[player_index].id });
+                let new_ship_index = await game_object.getIndex(dirty, new_ship_id);
+                if(new_ship_index !== -1) {
+                    dirty.players[player_index].ship_id = new_ship_id;
+                    dirty.players[player_index].has_change = true;
+                } else {
+                    log(chalk.red("Error creating a ship for player!"));
+                }
+                
+    
+                // I believe this is being taken care of in world.insertObjectType
+                //await world.generateShip(dirty, new_ship_index);
+                resend_player_info = true;
+            }
+            // And make sure we have the ship coords in memory
+            else {
+                await getShipCoords(ship_index);
+            }
+    
+            dirty.players[player_index].ship_index = ship_index;
+    
+            if(dirty.players[player_index].previous_planet_coord_id) {
+                log(chalk.green("Trying to set player on planet. have previous planet coord id: " + dirty.players[player_index].previous_planet_coord_id));
+    
+                // the player should have a planet coord id - see if we can place them back there. If not - place them in the galaxy close to the planet
+    
+    
+                let planet_coord_index = await getPlanetCoordIndex({'planet_coord_id': dirty.players[player_index].previous_planet_coord_id });
+    
+                if(planet_coord_index !== -1) {
+    
+                    let can_place_result = await player.canPlace(dirty, 'planet', dirty.planet_coords[planet_coord_index], player_index);
+    
+                    if(can_place_result === true) {
+    
+                        starting_view = 'planet';
+                        socket.join("planet_" + dirty.planet_coords[planet_coord_index].planet_id);
+    
+                        // update the planet coord
+                        let planet_coord_data = { 'planet_coord_index': planet_coord_index, 'player_id': socket.player_id };
+                        await updateCoordGeneric(socket, planet_coord_data);
+                        dirty.players[player_index].planet_coord_id = dirty.planet_coords[planet_coord_index].id;
+                        dirty.players[player_index].ship_coord_id = false;
+                        dirty.players[player_index].has_change = true;
+                        await player.sendInfo(socket, "planet_" + dirty.planet_coords[planet_coord_index].planet_id,
+                            dirty, dirty.players[player_index].id);
+                        placed_player = true;
+    
+                        // To dynamically load in just the monsters we initially need, the client is going to need to know
+                        // what planet type we are on
+                        let planet_index = await planet.getIndex(dirty, { 'planet_id': dirty.planet_coords[planet_coord_index].planet_id });
+                        if(planet_index !== -1) {
+                            await planet.sendInfo(socket, false, dirty, { 'planet_index': planet_index });
+                        }
+    
+    
+                        await map.updateMap(socket, dirty);
+    
+                    }
+                } else {
+                    console.log("Could not get index for previous planet coord id: " + dirty.players[player_index].previous_planet_coord_id);
+                    dirty.players[socket.player_index].previous_planet_coord_id = false;
+                    dirty.players[socket.player_index].has_change = true;
+                }
+    
+    
+            }
+    
+            if(dirty.players[player_index].previous_ship_coord_id && !placed_player) {
+                log(chalk.green("Trying to set player on ship. have previous ship coord id: " + dirty.players[player_index].previous_ship_coord_id));
+    
+    
+                // lets get that coord and see if we can place the player there
+                let ship_coord_index = await getShipCoordIndex({ 'ship_coord_id': dirty.players[player_index].previous_ship_coord_id });
+    
+                if(ship_coord_index !== -1) {
+    
+                    // make sure the ship is loaded into memory
+                    let ship_index = await game_object.getIndex(dirty, dirty.ship_coords[ship_coord_index].ship_id);
+    
+    
+                    let can_place_result = await player.canPlace(dirty, 'ship', dirty.ship_coords[ship_coord_index], player_index);
+    
+                    if(can_place_result === true) {
+    
+                        
+    
+                        // Setting the room before we send out all the info
+                        starting_view = 'ship';
+                        socket.join("ship_" + dirty.ship_coords[ship_coord_index].ship_id);
+    
+                        let ship_coord_data = { 'ship_coord_index': ship_coord_index, 'player_id': dirty.players[player_index].id };
+                        await updateCoordGeneric(socket, ship_coord_data);
+                        placed_player = true;
+    
+                        dirty.players[player_index].ship_coord_id = dirty.ship_coords[ship_coord_index].id;
+                        dirty.players[player_index].planet_coord_id = false;
+                        dirty.players[player_index].has_change = true;
+    
+                        await player.sendInfo(socket, "ship_" + dirty.ship_coords[ship_coord_index].ship_id, dirty, dirty.players[player_index].id);
+                        await map.updateMap(socket, dirty);
+                        await player.sendInfo(socket, "ship_" + dirty.ship_coords[ship_coord_index].ship_id, dirty, dirty.players[player_index].id);
+    
+                        console.log("Should have player at ship x,y: " + dirty.ship_coords[ship_coord_index].tile_x + "," +
+                            dirty.ship_coords[ship_coord_index].tile_y);
+    
+    
+                        placed_player = true;
+    
+                        // If we had a previous galaxy coord, we want to try to place the ship there as well
+                        if(dirty.players[player_index].previous_coord_id) {
+                            console.log("Player has a previous galaxy coord as well. Trying to put their ship on it");
+                            let coord_index = await getCoordIndex({'coord_id': dirty.players[player_index].previous_coord_id});
+    
+    
+                            let can_place_result = await player.canPlace(dirty, 'galaxy', dirty.coords[coord_index], player_index);
+                            //let can_place_result = await canPlace('galaxy', dirty.coords[coord_index], 'player', dirty.players[player_index].id);
+                            if(can_place_result) {
+                                let coord_data = { 'coord_index': coord_index, 'player_id': dirty.players[player_index].id,
+                                    'object_id': dirty.players[player_index].ship_id };
+                                await updateCoordGeneric(socket, coord_data);
+                            }
+                        }
+    
+                    } else {
+                        log(chalk.yellow("Cannot place player there. Going to default to galaxy."));
+                        console.log(dirty.ship_coords[ship_coord_index]);
+    
+                        // Since we failed to place the player on the ship, we are gonna end up shunting them back to the galaxy
+                        // We need to clear the ship_coord_id from the player
+                        dirty.players[player_index].previous_ship_coord_id = false;
+                        dirty.players[player_index].has_change = true;
+                    }
+                } else {
+                    console.log("Got -1 index for ship coord id: " + dirty.players[player_index].previous_ship_coord_id);
+                    dirty.players[socket.player_index].ship_coord_id = false;
+                    dirty.players[socket.player_index].has_change = true;
+                }
+    
+    
+            }
+    
+            if(dirty.players[player_index].previous_coord_id && !placed_player) {
+                log(chalk.green("Trying to set player in galaxy"));
+    
+                let coord_index = -1;
+    
+    
+                console.log("Trying to get index for galaxy coord: " + dirty.players[player_index].previous_coord_id);
+                coord_index = await getCoordIndex({ 'coord_id': dirty.players[player_index].previous_coord_id });
+    
+    
+    
+                if(coord_index !== -1) {
+    
+    
+                    let can_place_result = await player.canPlace(dirty, 'galaxy', dirty.coords[coord_index], player_index);
+    
+                    if(can_place_result === true) {
+                        console.log("Coord index: " + coord_index);
+    
+                        let player_ship_index = await game_object.getIndex(dirty, dirty.players[player_index].ship_id);
+    
+                        await updateCoordGeneric(socket, { 'coord_index': coord_index, 'player_id': dirty.players[player_index].id,
+                            'object_id': dirty.players[player_index].ship_id });
+    
+                        placed_player = true;
+                        dirty.players[player_index].coord_id = dirty.coords[coord_index].id;
+                        dirty.players[player_index].planet_coord_id = false;
+                        dirty.players[player_index].ship_coord_id = false;
+                        dirty.players[player_index].has_change = true;
+    
+                        if(player_ship_index !== -1) {
+                            dirty.objects[player_ship_index].coord_id = dirty.coords[coord_index].id;
+                            dirty.objects[player_ship_index].has_change = true;
+                            await game_object.sendInfo(socket, "galaxy", dirty, player_ship_index);
+                        }
+    
+                        await player.sendInfo(socket, "galaxy", dirty, dirty.players[player_index].id);
+    
+                        await map.updateMap(socket, dirty);
+    
+                        starting_view = 'galaxy';
+                        socket.join("galaxy");
+                    } else {
+                        console.log("Found galaxy coord but could not place player there");
+                    }
+                } else {
+                    console.log("Got -1 index for player coord id: " + dirty.players[player_index].coord_id);
+                }
+    
+    
+    
+    
+            }
+    
+            // put the player on a random galaxy coord
+            if(!placed_player) {
+                console.log("Was not able to place player on planet or specific galaxy coord. Getting a random one");
+                // get a random galaxy coord, and try to place the player there
+                let max_tries = 100;
+                let current_tries = 1;
+    
+                while(!placed_player && current_tries < max_tries) {
+                    current_tries++;
+                    let random_x = Math.floor(Math.random() * 20);
+                    let random_y = Math.floor(Math.random() * 20);
+    
+                    let coord_data = { 'tile_x': random_x, 'tile_y': random_y};
+                    let coord_index = await getCoordIndex(coord_data);
+    
+                    let can_place_result = await player.canPlace(dirty, 'galaxy', dirty.coords[coord_index], player_index);
+    
+                    if(can_place_result === true) {
+                        console.log("Found galaxy coord to place player on! (index: " + coord_index + " id: " +
+                            dirty.coords[coord_index].id + " tile_x: " + dirty.coords[coord_index].tile_x +
+                            " tile_y: " + dirty.coords[coord_index].tile_y);
+                        let coord_data = { 'coord_index': coord_index, 'player_id': dirty.players[player_index].id };
+                        await updateCoordGeneric(socket, coord_data);
+                        placed_player = true;
+    
+                        dirty.players[socket.player_index].coord_id = dirty.coords[coord_index].id;
+                        dirty.players[socket.player_index].planet_coord_id = false;
+                        dirty.players[socket.player_index].ship_coord_id = false;
+                        dirty.players[socket.player_index].has_change = true;
+    
+                        await map.updateMap(socket, dirty);
+                        socket.emit('chat', {'message':'Placed on random galaxy coord', 'scope':'system'});
+                        starting_view = 'galaxy';
+                        socket.join("galaxy");
+                        placed_player = true;
+                    }
+                }
+            }
+    
+            console.log("Sending successful login information");
+            socket.emit('login_data',
+                {'status': 'success', 'player_id': socket.player_id,
+                    'player_current_hp': socket.player_current_hp, 'player_max_hp': socket.player_max_hp, 'starting_view': starting_view });
+    
+            await game.sendPlayerStats(socket, dirty);
+            await player.sendInfo(socket, false, dirty, socket.player_id);
+    
+    
+            //populate client inventory data
+    
+            await inventory.sendInventory(socket, false, dirty, 'player', dirty.players[player_index].id);
+    
+            // send the player's research linkers
+            //console.log("Sending research linkers");
+            let player_research_linkers = dirty.player_research_linkers.filter(linker => linker.player_id === dirty.players[player_index].id);
+            for(let i = 0; i < player_research_linkers.length; i++) {
+                socket.emit('player_research_linker_info', { 'player_research_linker': player_research_linkers[i] });
+            }
+    
+            // send the player's relationship linkers
+            //console.log("Sending relationship linkers");
+            let player_relationship_linkers = dirty.player_relationship_linkers.filter(linker => linker.player_id === dirty.players[player_index].id);
+            for(let i = 0; i < player_relationship_linkers.length; i++) {
+                socket.emit('player_relationship_linker_info', { 'player_relationship_linker': player_relationship_linkers[i] });
+            }
+    
+            // send any AIs the player has, and any AI rules attached to them
+            //console.log("Searching for ais for player id: " + dirty.players[player_index].id);
+    
+            await world.sendPlayerAIs(socket, false, dirty, dirty.players[player_index].id);
+    
+    
+    
+            // On login we gave the player a body or a ship - we need to immediately send this new info too!
+            if(resend_player_info) {
+                console.log("Gave player a body or a ship on login. Resending player stats and info");
+                let player_info = await player.getCoordAndRoom(dirty, player_index);
+                await game.sendPlayerStats(socket, dirty);
+                await player.sendInfo(socket, player_info.room, dirty, socket.player_id);
+    
+            }
+    
+            await world.setPlayerMoveDelay(socket, dirty, player_index);
+    
+            //console.log("going to send player's ships");
+            await player.sendShips(socket, dirty, player_index);
+            await world.sendPlayerAreas(socket, dirty, player_index);
+    
+            let faction_linker_index = faction.getLinkerIndex(dirty, dirty.players[player_index].id);
+            // If the player has a faction, we send that faction info
+            if(faction_linker_index !== -1) {
+    
+                socket.emit('faction_linker_info', { 'faction_linker': dirty.faction_linkers[faction_linker_index] });
+                let faction_index = faction.getIndex(dirty, dirty.players[player_index].faction_id);
+    
+                if(faction_index !== -1) {
+                    socket.emit('faction_info', { 'faction': dirty.factions[faction_index] });
+                }
+            }
+    
+    
+            io.emit('chat', { 'scope': 'global',
+                 'message': "The player " + dirty.players[socket.player_index].name + " has entered the galaxy!"});
+    
+    
+            // If the storyteller has a current event, we can send that now
+            for(let i = 0; i < dirty.storytellers.length; i++) {
+                if(dirty.storytellers[i] && dirty.storytellers[i].current_spawned_event_id) {
+                    //console.log("Storyteller has a current_spawned_event_id");
+    
+                    let spawned_event_index = dirty.spawned_events.findIndex(function(obj) { return obj && obj.id === dirty.storytellers[i].current_spawned_event_id; });
+                    if(spawned_event_index !== -1) {
+                        let event_index = event.getIndex(dirty, dirty.spawned_events[spawned_event_index].event_id);
+                        if(event_index !== -1) {
+                            io.emit('spawned_event_info', { 'spawned_event': dirty.spawned_events[spawned_event_index] });
+                            io.emit('event_info', { 'event': dirty.events[event_index] });
+                        }
+                        
+                    }
+    
+                }
+            }
+
+
+        });
+
+
+        //let user_password_node_version =  user_pass_php.substr(0,2) + 'a' + user_pass_php.substr(3);
+        
+
+        /*
         console.log("user_pass_php: " + user_pass_php);
         console.log("user_password_node_version: " + user_password_node_version);
-        console.log("modified_trying_password: " + modified_trying_password);
+        //console.log("modified_trying_password: " + modified_trying_password);
 
 
         let login_success = false;
@@ -2513,15 +2971,17 @@ async function loginPlayer(socket, dirty, data) {
         } else {
             login_success = true;
         }
+        */
 
-
+        /*
         if(!bcrypt.compareSync(modified_trying_password, user_password_node_version)) {
             console.log("Invalid login info - normal");
         } else {
             login_success = true;
         }
+        */
 
-
+        /*
         // 2. Look for a temp password - this is as we transition from PHP to node
         if(user.password_temp && user.password_temp === trying_password) {
 
@@ -2535,8 +2995,10 @@ async function loginPlayer(socket, dirty, data) {
         } else {
             console.log("Invalid login info - password_temp");
         }
+        */
 
         // 3. NODE PASSWORD LOGIN
+        /*
  
         if(user.password_node) {
             console.log("User has node password");
@@ -2557,447 +3019,18 @@ async function loginPlayer(socket, dirty, data) {
             }
         }
 
+        */
 
+        /*
         if(!login_success) {
             socket.emit('login_data', {'status':'failed' });
             return false;
 
         }
-
-
-        [rows, fields] = await (pool.query("SELECT * FROM players WHERE user_id = ? AND name = ?", [user.id, trying_player_name]));
-
-        if(!rows[0]) {
-            console.log("Unable to find player");
-            socket.emit('login_data', { 'status':'failed' });
-            return false;
-        }
-        
-        let logging_in_player = rows[0];
-        let already_connected = false;
-
-        // found the player - now make sure they aren't already connected
-        // TODO need to figure out how to for loop this so it's functional
-        /*
-        Object.keys(io.sockets.sockets).forEach(function(id) {
-            //console.log("ID:" + id);
-            other_socket = io.sockets.connected[id];
-
-            if(other_socket.player_id === player.id) {
-                already_connected = true;
-            }
-        });
-
-
-        if(already_connected === true) {
-            // Don't re-log them in
-            console.log("Player is already connected. Can't login twice");
-            return false;
-        }
-
         */
 
-        let placed_player = false;
-        let starting_view = false;
 
-        let [result] = await (pool.query("UPDATE players SET socket_id = ? WHERE id = ?", [socket.id, user.id]));
 
-        socket.player_index = await player.getIndex(dirty, {'player_id':logging_in_player.id, 'source': 'main.loginPlayer' });
-        let player_index = socket.player_index;
-
-        log(chalk.green("Got socket player index as: " + socket.player_index));
-
-
-
-        socket.logged_in = true;
-        socket.placed_player = false;
-        socket.player_id = logging_in_player.id;
-        socket.player_body_id = logging_in_player.body_id;
-        socket.player_defense = logging_in_player.defense;
-
-        // Deprecated
-        socket.player_exp = logging_in_player.exp;
-        
-        socket.player_faction_id = logging_in_player.faction_id;
-        socket.player_food_ticks = logging_in_player.food_ticks;
-        socket.player_current_hp = logging_in_player.current_hp;
-        socket.player_level = logging_in_player.level;
-        socket.player_name = logging_in_player.name;
-
-        socket.player_ship_id = logging_in_player.ship_id;
-
-
-        socket.player_range = logging_in_player.attack_range;
-
-        socket.player_max_hp = logging_in_player.max_hp;
-        socket.player_energy = logging_in_player.energy;
-
-        // lets try send the display linkers fast! before any map data
-        game.sendObjectTypeEquipmentLinkerData(socket, dirty);
-        game.sendPlanetTypeDisplayLinkerData(socket, dirty);
-
-        if (dirty.players[socket.player_index].is_admin) {
-            socket.is_admin = true;
-            console.log("Set is_admin TO TRUE");
-
-            // send admin build buttons
-            socket.emit('admin_data', {
-                'main_button_wrapper': '<a class="button is-default main-button" onclick="admin_functions.toggleAdminDisplay();"><i class="fad fa-toolbox fa-2x" class="main-icon"></i></a>',
-                'set_draw_function': 'admin_drawing_floor_type_id = floor_type_id;',
-                'options_function': 'let html_string = ""; html_string += "<button class=\\"button\\" onclick=\\"admin_functions.setAdminDrawFloorID(false);\\">None</button>"; floor_types.forEach(function(floor_type) { html_string += "<button class=\\"button\\" onclick=\\"admin_functions.setAdminDrawFloorID(" + floor_type.id + ");\\">" + floor_type.name + "</button>"; }); $("#admin_data").append(html_string);',
-                'toggle_function': 'if($("#admin_data").is(":visible")) { $("#admin_data").hide(); $("#admin_data").empty(); } else { $("#admin_data").show(); admin_functions.showAdminOptions(); }'
-            });
-        } else {
-            socket.is_admin = false;
-            console.log("Set is admin to FALSE");
-        }
-
-        // Gotta make sure the player HAS A BODY!
-        // lets get the player body
-        let resend_player_info = false;
-
-        if(!dirty.players[socket.player_index].body_id) {
-            console.log("Player does not have a body. Giving them a new body");
-            await world.setPlayerBody(dirty, player_index);
-            resend_player_info = true;
-        } else {
-            // second way a player might not have a body
-            let body_index = await game_object.getIndex(dirty, dirty.players[socket.player_index].body_id);
-
-            if(body_index === -1) {
-                log(chalk.yellow("Player did not have a body when logging in!!"));
-                await world.setPlayerBody(dirty, player_index);
-            }
-        }
-
-        
-
-        // Make sure the player's ship still exists
-        let ship_index = -1;
-        if(dirty.players[player_index].ship_id) {
-            ship_index = await game_object.getIndex(dirty, dirty.players[player_index].ship_id);
-        }
-
-        if(ship_index === -1) {
-            console.log("Creating a ship for player id: " + dirty.players[player_index].id);
-            let new_ship_id = await world.insertObjectType(false, dirty, { 'object_type_id': 114, 'player_id': dirty.players[player_index].id });
-            let new_ship_index = await game_object.getIndex(dirty, new_ship_id);
-            if(new_ship_index !== -1) {
-                dirty.players[player_index].ship_id = new_ship_id;
-                dirty.players[player_index].has_change = true;
-            } else {
-                log(chalk.red("Error creating a ship for player!"));
-            }
-            
-
-            // I believe this is being taken care of in world.insertObjectType
-            //await world.generateShip(dirty, new_ship_index);
-            resend_player_info = true;
-        }
-        // And make sure we have the ship coords in memory
-        else {
-            await getShipCoords(ship_index);
-        }
-
-        dirty.players[player_index].ship_index = ship_index;
-
-        if(dirty.players[player_index].previous_planet_coord_id) {
-            log(chalk.green("Trying to set player on planet. have previous planet coord id: " + dirty.players[player_index].previous_planet_coord_id));
-
-            // the player should have a planet coord id - see if we can place them back there. If not - place them in the galaxy close to the planet
-
-
-            let planet_coord_index = await getPlanetCoordIndex({'planet_coord_id': dirty.players[player_index].previous_planet_coord_id });
-
-            if(planet_coord_index !== -1) {
-
-                let can_place_result = await player.canPlace(dirty, 'planet', dirty.planet_coords[planet_coord_index], player_index);
-
-                if(can_place_result === true) {
-
-                    starting_view = 'planet';
-                    socket.join("planet_" + dirty.planet_coords[planet_coord_index].planet_id);
-
-                    // update the planet coord
-                    let planet_coord_data = { 'planet_coord_index': planet_coord_index, 'player_id': socket.player_id };
-                    await updateCoordGeneric(socket, planet_coord_data);
-                    dirty.players[player_index].planet_coord_id = dirty.planet_coords[planet_coord_index].id;
-                    dirty.players[player_index].ship_coord_id = false;
-                    dirty.players[player_index].has_change = true;
-                    await player.sendInfo(socket, "planet_" + dirty.planet_coords[planet_coord_index].planet_id,
-                        dirty, dirty.players[player_index].id);
-                    placed_player = true;
-
-                    // To dynamically load in just the monsters we initially need, the client is going to need to know
-                    // what planet type we are on
-                    let planet_index = await planet.getIndex(dirty, { 'planet_id': dirty.planet_coords[planet_coord_index].planet_id });
-                    if(planet_index !== -1) {
-                        await planet.sendInfo(socket, false, dirty, { 'planet_index': planet_index });
-                    }
-
-
-                    await map.updateMap(socket, dirty);
-
-                }
-            } else {
-                console.log("Could not get index for previous planet coord id: " + dirty.players[player_index].previous_planet_coord_id);
-                dirty.players[socket.player_index].previous_planet_coord_id = false;
-                dirty.players[socket.player_index].has_change = true;
-            }
-
-
-        }
-
-        if(dirty.players[player_index].previous_ship_coord_id && !placed_player) {
-            log(chalk.green("Trying to set player on ship. have previous ship coord id: " + dirty.players[player_index].previous_ship_coord_id));
-
-
-            // lets get that coord and see if we can place the player there
-            let ship_coord_index = await getShipCoordIndex({ 'ship_coord_id': dirty.players[player_index].previous_ship_coord_id });
-
-            if(ship_coord_index !== -1) {
-
-                // make sure the ship is loaded into memory
-                let ship_index = await game_object.getIndex(dirty, dirty.ship_coords[ship_coord_index].ship_id);
-
-
-                let can_place_result = await player.canPlace(dirty, 'ship', dirty.ship_coords[ship_coord_index], player_index);
-
-                if(can_place_result === true) {
-
-                    
-
-                    // Setting the room before we send out all the info
-                    starting_view = 'ship';
-                    socket.join("ship_" + dirty.ship_coords[ship_coord_index].ship_id);
-
-                    let ship_coord_data = { 'ship_coord_index': ship_coord_index, 'player_id': dirty.players[player_index].id };
-                    await updateCoordGeneric(socket, ship_coord_data);
-                    placed_player = true;
-
-                    dirty.players[player_index].ship_coord_id = dirty.ship_coords[ship_coord_index].id;
-                    dirty.players[player_index].planet_coord_id = false;
-                    dirty.players[player_index].has_change = true;
-
-                    await player.sendInfo(socket, "ship_" + dirty.ship_coords[ship_coord_index].ship_id, dirty, dirty.players[player_index].id);
-                    await map.updateMap(socket, dirty);
-                    await player.sendInfo(socket, "ship_" + dirty.ship_coords[ship_coord_index].ship_id, dirty, dirty.players[player_index].id);
-
-                    console.log("Should have player at ship x,y: " + dirty.ship_coords[ship_coord_index].tile_x + "," +
-                        dirty.ship_coords[ship_coord_index].tile_y);
-
-
-                    placed_player = true;
-
-                    // If we had a previous galaxy coord, we want to try to place the ship there as well
-                    if(dirty.players[player_index].previous_coord_id) {
-                        console.log("Player has a previous galaxy coord as well. Trying to put their ship on it");
-                        let coord_index = await getCoordIndex({'coord_id': dirty.players[player_index].previous_coord_id});
-
-
-                        let can_place_result = await player.canPlace(dirty, 'galaxy', dirty.coords[coord_index], player_index);
-                        //let can_place_result = await canPlace('galaxy', dirty.coords[coord_index], 'player', dirty.players[player_index].id);
-                        if(can_place_result) {
-                            let coord_data = { 'coord_index': coord_index, 'player_id': dirty.players[player_index].id,
-                                'object_id': dirty.players[player_index].ship_id };
-                            await updateCoordGeneric(socket, coord_data);
-                        }
-                    }
-
-                } else {
-                    log(chalk.yellow("Cannot place player there. Going to default to galaxy."));
-                    console.log(dirty.ship_coords[ship_coord_index]);
-
-                    // Since we failed to place the player on the ship, we are gonna end up shunting them back to the galaxy
-                    // We need to clear the ship_coord_id from the player
-                    dirty.players[player_index].previous_ship_coord_id = false;
-                    dirty.players[player_index].has_change = true;
-                }
-            } else {
-                console.log("Got -1 index for ship coord id: " + dirty.players[player_index].previous_ship_coord_id);
-                dirty.players[socket.player_index].ship_coord_id = false;
-                dirty.players[socket.player_index].has_change = true;
-            }
-
-
-        }
-
-        if(dirty.players[player_index].previous_coord_id && !placed_player) {
-            log(chalk.green("Trying to set player in galaxy"));
-
-            let coord_index = -1;
-
-
-            console.log("Trying to get index for galaxy coord: " + dirty.players[player_index].previous_coord_id);
-            coord_index = await getCoordIndex({ 'coord_id': dirty.players[player_index].previous_coord_id });
-
-
-
-            if(coord_index !== -1) {
-
-
-                let can_place_result = await player.canPlace(dirty, 'galaxy', dirty.coords[coord_index], player_index);
-
-                if(can_place_result === true) {
-                    console.log("Coord index: " + coord_index);
-
-                    let player_ship_index = await game_object.getIndex(dirty, dirty.players[player_index].ship_id);
-
-                    await updateCoordGeneric(socket, { 'coord_index': coord_index, 'player_id': dirty.players[player_index].id,
-                        'object_id': dirty.players[player_index].ship_id });
-
-                    placed_player = true;
-                    dirty.players[player_index].coord_id = dirty.coords[coord_index].id;
-                    dirty.players[player_index].planet_coord_id = false;
-                    dirty.players[player_index].ship_coord_id = false;
-                    dirty.players[player_index].has_change = true;
-
-                    if(player_ship_index !== -1) {
-                        dirty.objects[player_ship_index].coord_id = dirty.coords[coord_index].id;
-                        dirty.objects[player_ship_index].has_change = true;
-                        await game_object.sendInfo(socket, "galaxy", dirty, player_ship_index);
-                    }
-
-                    await player.sendInfo(socket, "galaxy", dirty, dirty.players[player_index].id);
-
-                    await map.updateMap(socket, dirty);
-
-                    starting_view = 'galaxy';
-                    socket.join("galaxy");
-                } else {
-                    console.log("Found galaxy coord but could not place player there");
-                }
-            } else {
-                console.log("Got -1 index for player coord id: " + dirty.players[player_index].coord_id);
-            }
-
-
-
-
-        }
-
-        // put the player on a random galaxy coord
-        if(!placed_player) {
-            console.log("Was not able to place player on planet or specific galaxy coord. Getting a random one");
-            // get a random galaxy coord, and try to place the player there
-            let max_tries = 100;
-            let current_tries = 1;
-
-            while(!placed_player && current_tries < max_tries) {
-                current_tries++;
-                let random_x = Math.floor(Math.random() * 20);
-                let random_y = Math.floor(Math.random() * 20);
-
-                let coord_data = { 'tile_x': random_x, 'tile_y': random_y};
-                let coord_index = await getCoordIndex(coord_data);
-
-                let can_place_result = await player.canPlace(dirty, 'galaxy', dirty.coords[coord_index], player_index);
-
-                if(can_place_result === true) {
-                    console.log("Found galaxy coord to place player on! (index: " + coord_index + " id: " +
-                        dirty.coords[coord_index].id + " tile_x: " + dirty.coords[coord_index].tile_x +
-                        " tile_y: " + dirty.coords[coord_index].tile_y);
-                    let coord_data = { 'coord_index': coord_index, 'player_id': dirty.players[player_index].id };
-                    await updateCoordGeneric(socket, coord_data);
-                    placed_player = true;
-
-                    dirty.players[socket.player_index].coord_id = dirty.coords[coord_index].id;
-                    dirty.players[socket.player_index].planet_coord_id = false;
-                    dirty.players[socket.player_index].ship_coord_id = false;
-                    dirty.players[socket.player_index].has_change = true;
-
-                    await map.updateMap(socket, dirty);
-                    socket.emit('chat', {'message':'Placed on random galaxy coord', 'scope':'system'});
-                    starting_view = 'galaxy';
-                    socket.join("galaxy");
-                    placed_player = true;
-                }
-            }
-        }
-
-        console.log("Sending successful login information");
-        socket.emit('login_data',
-            {'status': 'success', 'player_id': socket.player_id,
-                'player_current_hp': socket.player_current_hp, 'player_max_hp': socket.player_max_hp, 'starting_view': starting_view });
-
-        await game.sendPlayerStats(socket, dirty);
-        await player.sendInfo(socket, false, dirty, socket.player_id);
-
-
-        //populate client inventory data
-
-        await inventory.sendInventory(socket, false, dirty, 'player', dirty.players[player_index].id);
-
-        // send the player's research linkers
-        //console.log("Sending research linkers");
-        let player_research_linkers = dirty.player_research_linkers.filter(linker => linker.player_id === dirty.players[player_index].id);
-        for(let i = 0; i < player_research_linkers.length; i++) {
-            socket.emit('player_research_linker_info', { 'player_research_linker': player_research_linkers[i] });
-        }
-
-        // send the player's relationship linkers
-        //console.log("Sending relationship linkers");
-        let player_relationship_linkers = dirty.player_relationship_linkers.filter(linker => linker.player_id === dirty.players[player_index].id);
-        for(let i = 0; i < player_relationship_linkers.length; i++) {
-            socket.emit('player_relationship_linker_info', { 'player_relationship_linker': player_relationship_linkers[i] });
-        }
-
-        // send any AIs the player has, and any AI rules attached to them
-        //console.log("Searching for ais for player id: " + dirty.players[player_index].id);
-
-        await world.sendPlayerAIs(socket, false, dirty, dirty.players[player_index].id);
-
-
-
-        // On login we gave the player a body or a ship - we need to immediately send this new info too!
-        if(resend_player_info) {
-            console.log("Gave player a body or a ship on login. Resending player stats and info");
-            let player_info = await player.getCoordAndRoom(dirty, player_index);
-            await game.sendPlayerStats(socket, dirty);
-            await player.sendInfo(socket, player_info.room, dirty, socket.player_id);
-
-        }
-
-        await world.setPlayerMoveDelay(socket, dirty, player_index);
-
-        //console.log("going to send player's ships");
-        await player.sendShips(socket, dirty, player_index);
-        await world.sendPlayerAreas(socket, dirty, player_index);
-
-        let faction_linker_index = faction.getLinkerIndex(dirty, dirty.players[player_index].id);
-        // If the player has a faction, we send that faction info
-        if(faction_linker_index !== -1) {
-
-            socket.emit('faction_linker_info', { 'faction_linker': dirty.faction_linkers[faction_linker_index] });
-            let faction_index = faction.getIndex(dirty, dirty.players[player_index].faction_id);
-
-            if(faction_index !== -1) {
-                socket.emit('faction_info', { 'faction': dirty.factions[faction_index] });
-            }
-        }
-
-
-        io.emit('chat', { 'scope': 'global',
-             'message': "The player " + dirty.players[socket.player_index].name + " has entered the galaxy!"});
-
-
-        // If the storyteller has a current event, we can send that now
-        for(let i = 0; i < dirty.storytellers.length; i++) {
-            if(dirty.storytellers[i] && dirty.storytellers[i].current_spawned_event_id) {
-                //console.log("Storyteller has a current_spawned_event_id");
-
-                let spawned_event_index = dirty.spawned_events.findIndex(function(obj) { return obj && obj.id === dirty.storytellers[i].current_spawned_event_id; });
-                if(spawned_event_index !== -1) {
-                    let event_index = event.getIndex(dirty, dirty.spawned_events[spawned_event_index].event_id);
-                    if(event_index !== -1) {
-                        io.emit('spawned_event_info', { 'spawned_event': dirty.spawned_events[spawned_event_index] });
-                        io.emit('event_info', { 'event': dirty.events[event_index] });
-                    }
-                    
-                }
-
-            }
-        }
 
 
 

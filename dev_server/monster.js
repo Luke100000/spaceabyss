@@ -2353,6 +2353,10 @@ async function spawn(dirty, monster_type_id, data) {
             await main.updateCoordGeneric(false, { 'coord_index': coord_index, 'monster_id': new_monster_id });
         }
 
+        if(typeof data.ai_id !== 'undefined') {
+            dirty.monsters[new_monster_index].object_id = data.ai_id;
+        }
+
         await sendInfo(false, room, dirty, { 'monster_id': new_monster_id });
 
         // and if the monster has a larger width/height, add in the belongs to stuff

@@ -3890,6 +3890,13 @@ async function payForGalaxyMove(socket, dirty, ship_index) {
                 //console.log("Bottom right coord index: " + bottom_right_coord_index);
                 potential_coord_indexes.push(bottom_right_coord_index);
 
+                // top right
+                let top_right_tile_x = dirty.coords[coord_index].tile_x + 4;
+                let top_right_tile_y = dirty.coords[coord_index].tile_y;
+                let top_right_coord_index = await main.getCoordIndex({ 'tile_x': top_right_tile_x, 'tile_y': top_right_tile_y});
+                //console.log("Bottom right coord index: " + bottom_right_coord_index);
+                potential_coord_indexes.push(top_right_coord_index);
+
                 let warp_to_coord_index = -1;
 
                 for(let i = 0; i < potential_coord_indexes.length && warp_to_coord_index === -1; i++) {

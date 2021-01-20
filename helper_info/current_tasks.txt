@@ -4,17 +4,26 @@ CURRENT GAMEPLAY TEST:
 
 DOING NOW:
 
+
+    Still seems like dying from poison doesn't work completely correct. Just watch this
+
     make sure editing factions works
     
-    admin player search. admin player list
+
+    MONSTERS STILL SPAWN TOO SLOW
+        Could prioritize spawning of planet_event_linkers that recently had a spawned_event removed
 
     fighter costs 5 refined territe, but up to 199 refined territe to repair....
         It's fine if it's more expensive... .but not THAT MUCH. Holy poop
+        and add to tutorial
+        repairing is funky if it hits a wall
 
 
     community feature - report - and potentially ban a player ( ban for name, spamming chat, other things I suppose )
 
     Game isn't saying that the machine planet is under attack
+
+    go through out getPlanetCoordIndex calls and see where we can switch things to use the neighbor system
 
     Make it easy for players to exchange ships (buying/selling?)
 

@@ -4889,6 +4889,24 @@ exports.eat = eat;
 
 
 
+            } else if(data.message.includes("/clearcoord ")) {
+                // /clearcoord COORD_TYPE COORD_ID CLEARING_TYPE (object|player)
+                console.log("Admin is clearing a coord of something");
+                let split = data.message.split(" ");
+                let coord_type = split[1];
+                let coord_id = split[2];
+                let clearing_type = split[3];
+
+                if(coord_type === 'galaxy') {
+                    let coord_index = await main.getCoordIndex({ 'coord_id': coord_id });
+                    if(coord_index !== -1) {
+
+                        if(clearing_type === "object") {
+                            main.updateCoordGeneric(socket, { 'coord_index': coord_index, 'object_id': false });
+                        }
+                    }
+                }
+
             } else if(data.message.includes("/connectlevel ")) {
                 console.log("Was connect level message");
                 let split = data.message.split(" ");
@@ -7233,9 +7251,9 @@ exports.eat = eat;
                             let object_data = {'object_type_id': assembly.being_assembled_object_type_id,
                                 'player_id': dirty.objects[assembler_object_index].player_id };
                             new_object_id = await world.insertObjectType(false, dirty, object_data);
-                            console.log("Got new object id: " + new_object_id);
+                            //console.log("Got new object id: " + new_object_id);
                             new_object_index = await game_object.getIndex(dirty, new_object_id);
-                            console.log("Got new_object_index as: " + new_object_index);
+                            //console.log("Got new_object_index as: " + new_object_index);
 
                         }
 
