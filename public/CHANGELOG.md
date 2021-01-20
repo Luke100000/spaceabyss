@@ -1,3 +1,9 @@
+## [0.2.30] - 2021-01-20
+
+### Fixed
+- Bug where an item could be placed in multiple spots at the same time via pick up, and hence the same item could be equipped in multiple slots
+- Issue where typing a faction name was almost impossible due to the box refreshing and erasing your typing
+
 ## [0.2.29] - 2021-01-20
 
 ### Added

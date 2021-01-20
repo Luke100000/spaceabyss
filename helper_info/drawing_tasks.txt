@@ -53,22 +53,6 @@ Current Sprite: None
 Some nebulae for cool backgrounds in space
 
 
-Blossomtis: Design
-Type: Monster
-Frames Needed: 1-2 Designs
-
-Cherree: Design
-Type: Monster
-Frames Needed: 1-2 Designs
-
-Converted Mechanoid: Design
-Type: Monster
-Frames Needed: 1-2 Designs
-
-Forest Prince: Design
-Type: Monster
-Frames Needed: 1-2 Designs
-
 Gaian Plasma Deposit
 Type: Spawner
 Frames Needed: 1 empty frame, one full frame
@@ -82,6 +66,13 @@ Frames Needed: 1 empty frame, 1 full frame
 Notes: Spawns several of the Diamond Batteries that we drew in batch #24 (https://space.alphacoders.com/images/diamond-battery.png) I don't have an image for it,
 but a lower tier spawner ( it spawns normal batteries ) is https://space.alphacoders.com/images/battery-deposit-animated.png for example.
 
+
+
+Asteroid Ship
+Type: Player Ship
+Size: 32x32 max
+Frames Needed: 1-2 Designs
+Current Sprite: https://space.alphacoders.com/images/asteroid-ship.png
 
 Power Cell
 Type: Object

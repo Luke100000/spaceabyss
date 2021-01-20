@@ -8,6 +8,7 @@ DOING NOW:
     Still seems like dying from poison doesn't work completely correct. Just watch this
 
     make sure editing factions works
+        Can't edit faction while in combat? Just with another player? The box keeps resetting
     
 
     MONSTERS STILL SPAWN TOO SLOW

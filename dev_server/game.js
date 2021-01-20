@@ -9309,7 +9309,7 @@ exports.eat = eat;
 
             let debug_object_type_ids = [];
 
-            //log(chalk.green("Got pick up request"));
+            log(chalk.green("Got pick up request. data.object_id: " + data.object_id + " data.planet_coord_id: " + data.planet_coord_id));
 
             if(typeof socket.player_index === "undefined" || socket.player_index === -1) {
                 log(chalk.yellow("Socket doesn't have a player"));
@@ -9397,11 +9397,11 @@ exports.eat = eat;
                 }
             } else {
 
-                if(data.planet_coord_id) {
+                if(typeof data.planet_coord_id !== 'undefined') {
                     scope = 'planet';
                     data.planet_coord_id = parseInt(data.planet_coord_id);
                     picking_up_coord_index = await main.getPlanetCoordIndex({ 'planet_coord_id': data.planet_coord_id });
-                } else if(data.ship_coord_id) {
+                } else if(typeof data.ship_coord_id !== 'undefined') {
                     scope = 'ship';
                     data.ship_coord_id = parseInt(data.ship_coord_id);
                     picking_up_coord_index = await main.getShipCoordIndex({ 'ship_coord_id': data.ship_coord_id });
@@ -9594,15 +9594,20 @@ exports.eat = eat;
 
             if(object_index !== -1 && dirty.object_types[object_type_index].can_pick_up) {
 
-                console.log("PLAYER IS TRYING TO PICK UP ACTUAL OBJECT!!!!!!");
                 let adding_to_data = { 'adding_to_type': 'player', 'adding_to_id': socket.player_id,
                     'object_id': dirty.objects[object_index].id, 'amount': 1 };
                 inventory.addToInventory(socket, dirty, adding_to_data);
 
                 if(player_info.scope === 'planet') {
                     await main.updateCoordGeneric(socket, { 'planet_coord_index': picking_up_coord_index, 'object_id': false });
+
+                    dirty.objects[object_index].planet_coord_id = false;
+                    dirty.objects[object_index].has_change = true;
                 } else if(player_info.scope === 'ship') {
                     await main.updateCoordGeneric(socket, { 'ship_coord_index': picking_up_coord_index, 'object_id': false });
+                    
+                    dirty.objects[object_index].ship_coord_id = false;
+                    dirty.objects[object_index].has_change = true;
                 }
 
 
@@ -9618,9 +9623,12 @@ exports.eat = eat;
 
                 object_type_index = main.getObjectTypeIndex(dirty.planet_coords[picking_up_coord_index].object_type_id);
                 amount = dirty.planet_coords[picking_up_coord_index].object_amount;
+
+                
             } else if(player_info.scope === 'ship') {
                 object_type_index = main.getObjectTypeIndex(dirty.ship_coords[picking_up_coord_index].object_type_id);
                 amount = dirty.ship_coords[picking_up_coord_index].object_amount;
+
             }
 
             if(object_type_index === -1 ){

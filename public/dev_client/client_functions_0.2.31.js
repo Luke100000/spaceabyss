@@ -2000,6 +2000,7 @@ function generateEatingLinkerDisplay() {
 }
 
 function generateFactionDisplay() {
+    console.log("Generating faction display");
 
     if (!$("#faction").is(":visible")) {
         return false;
@@ -11688,7 +11689,7 @@ function updatePlayer(data, player_index) {
                 }
                 // Otherwise, flow them there
                 else if (data.player.planet_coord_id !== players[player_index].planet_coord_id) {
-                    console.log("Other player: " + players[player_index].name + " moved to planet coord id: " + data.player.planet_coord_id);
+                    //console.log("Other player: " + players[player_index].name + " moved to planet coord id: " + data.player.planet_coord_id);
                     players[player_index].planet_coord_id = data.player.planet_coord_id;
                     updated_planet_coord_id = true;
                     initiateMovePlayerFlow(player_index, 'planet', planet_coords[coord_index], 'updatePlayer > planet');

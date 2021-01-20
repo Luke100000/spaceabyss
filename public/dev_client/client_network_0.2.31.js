@@ -930,6 +930,7 @@ socket.on('faction_linker_info', function(data) {
         faction_linkers.push(data.faction_linker);
     }
 
+    console.log("Got faction linker info");
     generateFactionDisplay();
     
 
@@ -2843,7 +2844,9 @@ socket.on('player_info', function(data) {
         players[player_index].exp = data.player.exp;
 
         if(players[player_index].faction_id !== data.player.faction_id) {
+            console.log("A player updated their faction: " + players[player_index].faction_id + " !== " + data.player.faction_id);
             players[player_index].faction_id = data.player.faction_id;
+
             generateFactionDisplay();
         }
 
@@ -2942,7 +2945,9 @@ socket.on('player_info', function(data) {
         if(players[player_index].id === client_player_id) {
             //console.log("Generating Player Details");
             generatePlayerInfoDisplay();
-            generateFactionDisplay(client_player_id);
+
+            // Having this active all the time erases in-progress text
+            //generateFactionDisplay(client_player_id);
 
 
         }
