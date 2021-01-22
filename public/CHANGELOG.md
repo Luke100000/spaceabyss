@@ -1,3 +1,19 @@
+## [0.2.31] - 2021-01-22
+
+
+### Added
+- Admin ability to kick a player off
+- Users can now be banned
+
+### Fixed
+- Algae King's attack now works
+- You can now repair broken ship walls
+- Many bugs with Vending Machines
+
+
+### Changed
+- Repairing ships is now 10x less expensive
+
 ## [0.2.30] - 2021-01-20
 
 ### Fixed

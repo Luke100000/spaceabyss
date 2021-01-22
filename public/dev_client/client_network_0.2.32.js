@@ -1162,7 +1162,11 @@ socket.on('login_data', function(data) {
 
         use_tasks = localStorage.getItem('use_tasks');
 
-    } else {
+    } else if(data.status === 'Failed. You Are Banned') {
+        $('#login_status').append("<span style='color:red;'>Login Failed. Your account is banned. Please email spaceabyss@alphacoders.com for more details.</span>");
+    }
+    
+    else {
         $('#login_status').append("<span style='color:red;'>Login Failed</span>");
         console.log("%c Login failed", log_danger);
     }

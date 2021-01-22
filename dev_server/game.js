@@ -5092,6 +5092,17 @@ exports.eat = eat;
                     { 'adding_to_type': 'player', 'adding_to_id': player_id, 'amount': amount, 'object_type_id': object_type_id });
             }
 
+            else if(data.message.includes("/kickplayer ")) {
+                console.log("Admin is kicking player off");
+
+                let split = data.message.split(" ");
+                let kicking_player_id = split[1];
+
+                let player_index = await player.getIndex(dirty, { 'player_id': kicking_player_id });
+                let kicking_socket = await world.getPlayerSocket(dirty, player_index);
+
+                main.disconnectPlayer(kicking_socket);
+            }
             else if(data.message.includes("/move ")) {
 
                 console.log("Was move message");
@@ -6311,7 +6322,7 @@ exports.eat = eat;
 
             if(inventory_item_index === -1) {
                 console.log("Player has none of that in their inventory");
-                socket.emit('result_info', { 'status': 'failure',
+                io.sockets.connected[dirty.repairing_linkers[i].player_socket_id].emit('result_info', { 'status': 'failure',
                     'text': "No " + dirty.object_types[object_type_used_for_repair_index].name + " in inventory" });
 
                 let message_to_player = "";
@@ -6350,8 +6361,8 @@ exports.eat = eat;
                 //console.log("Repair Failed");
                 dirty.players[dirty.repairing_linkers[i].player_index].repairing_skill_points += complexity + 1;
                 dirty.players[dirty.repairing_linkers[i].player_index].has_change = true;
-                player.sendInfo(socket, false, dirty, dirty.players[dirty.repairing_linkers[i].player_index].id);
-                socket.emit('chat', {'message': 'Repairing Failed'});
+                player.sendInfo(io.sockets.connected[dirty.repairing_linkers[i].player_socket_id], false, dirty, dirty.players[dirty.repairing_linkers[i].player_index].id);
+                io.sockets.connected[dirty.repairing_linkers[i].player_socket_id].emit('chat', {'message': 'Repairing Failed'});
                 return false;
             }
 
@@ -6362,7 +6373,7 @@ exports.eat = eat;
             player.sendInfo(io.sockets.connected[dirty.repairing_linkers[i].player_socket_id], false, dirty,
                 dirty.players[dirty.repairing_linkers[i].player_index].id);
 
-            socket.emit('repair_info', { 'repairing_linker_id': dirty.repairing_linkers[i].id, 'repaired_amount': repair_level });
+            io.sockets.connected[dirty.repairing_linkers[i].player_socket_id].emit('repair_info', { 'repairing_linker_id': dirty.repairing_linkers[i].id, 'repaired_amount': repair_level });
 
 
             let done_with_repair = false;
@@ -6370,6 +6381,7 @@ exports.eat = eat;
                 if(object_index !== -1) {
 
                     dirty.objects[object_index].current_hp += repair_level;
+                    
 
                     if(dirty.objects[object_index].current_hp > dirty.object_types[object_type_index].hp) {
                         dirty.objects[object_index].current_hp = dirty.object_types[object_type_index].hp;
@@ -6392,7 +6404,9 @@ exports.eat = eat;
 
             // Some extra things to do if we are on a ship
             if(ship_index !== -1) {
-                let new_ship_hp = dirty.objects[ship_index].current_hp + repair_level;
+                let new_ship_hp = dirty.objects[ship_index].current_hp + repair_level + 10;
+
+
                 //console.log("Increasing ship hp by: " + repair_level);
                 // Increase the ship HP by the repair level
                 if(new_ship_hp > dirty.object_types[ship_type_index].hp) {
@@ -6401,7 +6415,7 @@ exports.eat = eat;
 
                 dirty.objects[ship_index].current_hp = new_ship_hp;
                 dirty.objects[ship_index].has_change = true;
-                await game_object.sendInfo(socket, "ship_" + dirty.objects[ship_index].id, dirty, ship_index, 'game.processRepairingLinker');
+                await game_object.sendInfo(io.sockets.connected[dirty.repairing_linkers[i].player_socket_id], "ship_" + dirty.objects[ship_index].id, dirty, ship_index, 'game.processRepairingLinker');
                 await game_object.sendInfo(false, "galaxy", dirty, ship_index, 'game.processRepairingLinker');
 
 

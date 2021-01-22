@@ -13,6 +13,7 @@ game.processAdminChatMessage
 /dockcommand OBJECT_ID
 /generateplanet PLANET_ID
 /gift PLAYER_ID AMOUNT OBJECT_TYPE_ID
+/kickplayer PLAYER_ID
 /move (UP|DOWN)
 /moveto TYPE (SHIP) TYPE_ID
 /movenpc NPC_ID planet_coord_id

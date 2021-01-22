@@ -11039,11 +11039,41 @@ function showClickMenuObject(coord) {
 }
 
 function showClickMenuObjectType(coord) {
+    console.log("In showClickMenuObjectType");
     // there's an object type here - but no object id
 
     let object_type_index = object_types.findIndex(function (obj) { return obj && obj.id === coord.object_type_id; });
 
     if (object_type_index !== -1) {
+
+
+        // Repair
+        //console.log("Got floor type index");
+        if (object_types[object_type_index].repaired_object_type_id) {
+
+            //console.log("Floor type has repaired floor type id");
+
+            // see if we are already repairing it
+            let repairing_linker_index = repairing_linkers.findIndex(function (obj) {
+                return obj && obj.player_id === client_player_id &&
+                    obj.ship_coord_id === coord.id;
+            });
+
+
+            if (repairing_linker_index === -1) {
+                $('#click_menu').append("<button id='repair_" + coord.id + "' " +
+                    "coord_id='" + coord.id + "' class='button is-success'>" +
+                    "Repair</button><br>");
+            } else {
+                $('#click_menu').append("<button id='repairstop_" + coord.id + "' " +
+                    "coord_id='" + coord.id + "' class='button is-warning is-small'>" +
+                    "Stop Repairing</button>");
+            }
+
+        } else {
+            console.log("Object type does not have repaired object type id");
+        }
+
 
         // Pick Up
         if (object_types[object_type_index].can_pick_up) {

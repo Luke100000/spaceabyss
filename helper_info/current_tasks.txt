@@ -1,9 +1,16 @@
 CURRENT GAMEPLAY TEST:
-    Phatheon creating an AI on the Desert Planet, and then creating a new character to just attack it until it dies
+    Azure planet 85420
 
 
 DOING NOW:
 
+    add in /kickplayer PLAYER_ID for admin
+    Add in a banned message, and reasoning and such
+
+    Recover lost item interface (masterdj and his fighter)
+        Combine this with a private message system?
+        
+        Maybe separate. I had the idea of a private message tab in chat that would open all of a player's private chats
 
     Still seems like dying from poison doesn't work completely correct. Just watch this
 
@@ -14,10 +21,6 @@ DOING NOW:
     MONSTERS STILL SPAWN TOO SLOW
         Could prioritize spawning of planet_event_linkers that recently had a spawned_event removed
 
-    fighter costs 5 refined territe, but up to 199 refined territe to repair....
-        It's fine if it's more expensive... .but not THAT MUCH. Holy poop
-        and add to tutorial
-        repairing is funky if it hits a wall
 
 
     community feature - report - and potentially ban a player ( ban for name, spamming chat, other things I suppose )
@@ -28,12 +31,18 @@ DOING NOW:
 
     Make it easy for players to exchange ships (buying/selling?)
 
-    explain ai more  each part
+
+    MasterDJ had tons of emergency pods blocking where his next emergency pod would go, and it caused him to lose his fighter (I assume the emergency pod 
+        failed to find a spot, and then it just overwrote his current coord with his new pod)
 
 
     protect faction members
 
     research body not being able to be picked up? Not sure if I meant for that to be intentional or not with bodies
+
+
+    I can warp ships to 
+    I've been thinking of having the spaceport 
 
 
     large > medium > small goop spawning

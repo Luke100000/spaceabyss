@@ -2480,7 +2480,7 @@ async function loginPlayer(socket, dirty, data) {
 
         //console.log("Socket id: " + socket.id + " sent login info: " + trying_player_name + " " + trying_email + "," + trying_password);
 
-        let [rows, fields] = await (pool.query("SELECT id,name,password,password_temp,password_node FROM users WHERE email = ?", [trying_email]));
+        let [rows, fields] = await (pool.query("SELECT id,name,password,password_temp,password_node,is_banned FROM users WHERE email = ?", [trying_email]));
 
         if(!rows[0]) {
             socket.emit('login_data', { 'status': 'failed'});

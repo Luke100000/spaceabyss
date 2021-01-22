@@ -337,77 +337,92 @@ async function buy(socket, dirty, data) {
 
         let inventory_item_price = parseInt(dirty.inventory_items[inventory_item_index].price);
 
-        if(inventory_item_price > 0) {
 
-            let player_inventory_item_index = dirty.inventory_items.findIndex(function(obj) { return obj && obj.player_id === socket.player_id && obj.object_type_id === 74; });
+        // Something is not right here
+        if(inventory_item_price <= 0) {
+            log(chalk.yellow("Player is buying something (inventory_item_id: " + inventory_item_id + " that has a price <= 0. This is odd"));
+            return false;
+        }
 
-            if(player_inventory_item_index !== -1) {
-                if(dirty.inventory_items[player_inventory_item_index].amount >= inventory_item_price) {
-                    console.log("Player can afford this!");
-
-                    if(dirty.inventory_items[inventory_item_index].object_type_id) {
-                        let adding_to_data = { 'adding_to_type':'player', 'adding_to_id':socket.player_id,
-                            'object_type_id': dirty.inventory_items[inventory_item_index].object_type_id, 'amount':1};
-
-                        await addToInventory(socket, dirty, adding_to_data);
-                    } else if(dirty.inventory_items[inventory_item_index].floor_type_id) {
-                        let adding_to_data = { 'adding_to_type':'player', 'adding_to_id':socket.player_id,
-                            'floor_type_id': dirty.inventory_items[inventory_item_index].floor_type_id, 'amount':1};
-
-                        await addToInventory(socket, dirty, adding_to_data);
-                    }
-
-                    // remove the credits from the buying player
-                    let remove_player_inventory_data = { 'inventory_item_id': dirty.inventory_items[player_inventory_item_index].id,
-                        'amount': dirty.inventory_items[inventory_item_index].price };
-                    await removeFromInventory(socket, dirty, remove_player_inventory_data);
-
-                    // add the credits to whoever owned that inventory item
-                    if(dirty.inventory_items[inventory_item_index].player_id) {
-                        let adding_to_data = { 'adding_to_type':'player', 'adding_to_id':socket.player_id,
-                            'object_type_id': 74, 'amount': dirty.inventory_items[inventory_item_index].price };
-
-                        await addToInventory(socket, dirty, adding_to_data);
-                    } else if(dirty.inventory_items[inventory_item_index].npc_id) {
-                        let adding_to_data = { 'adding_to_type':'npc', 'adding_to_id': dirty.inventory_items[inventory_item_index].npc_id,
-                            'object_type_id': 74, 'amount': dirty.inventory_items[inventory_item_index].price };
-
-                        await addToInventory(socket, dirty, adding_to_data);
-                    } else if(dirty.inventory_items[inventory_item_index].owned_by_object_id) {
-
-                        // crap now we need to get the owner of the object. Player or npc
-                        let object_index = await game_object.getIndex(dirty, dirty.inventory_items[inventory_item_index].owned_by_object_id);
-                        if(object_index !== -1) {
-                            if(dirty.objects[object_index].player_id) {
-
-                                let adding_to_data = { 'adding_to_type':'player', 'adding_to_id': dirty.objects[object_index].player_id,
-                                    'object_type_id': 74, 'amount': dirty.inventory_items[inventory_item_index].price };
-
-                                await addToInventory(socket, dirty, adding_to_data);
-
-                            } else if(dirty.objects[object_index].npc_id) {
-                                let adding_to_data = { 'adding_to_type':'npc', 'adding_to_id': dirty.objects[object_index].npc_id,
-                                    'object_type_id': 74, 'amount': dirty.inventory_items[inventory_item_index].price };
-
-                                await addToInventory(socket, dirty, adding_to_data);
-                            }
-                        }
-                    }
-
-                    // remove the item from the old place
-                    let remove_inventory_data = { 'inventory_item_id': dirty.inventory_items[player_inventory_item_index].id, 'amount': 1};
-                    await removeFromInventory(socket, dirty, remove_inventory_data);
+        let player_inventory_item_index = dirty.inventory_items.findIndex(function(obj) { 
+            return obj && obj.player_id === socket.player_id && obj.body_id === dirty.players[socket.player_index].body_id && obj.object_type_id === 74; });
 
 
+        if(player_inventory_item_index === -1) {
+            socket.emit('result_info', { 'status': 'failure', "text": "It looks like you can't afford that" });
+            return false;
+        }
 
-                    log(chalk.cyan("Done with adding inventory"));
-                } else {
-                    socket.emit('chat', {'message': 'You cannot afford that', 'scope': 'system' });
-                }
-            }
+        if(dirty.inventory_items[player_inventory_item_index].amount < inventory_item_price) {
+            socket.emit('result_info', { 'status': 'failure', "text": "It looks like you can't afford that" });
+            return false;
         }
 
 
+        console.log("Player can afford this!");
+
+
+
+        // remove the credits from the buying player
+        let remove_player_inventory_data = { 'inventory_item_id': dirty.inventory_items[player_inventory_item_index].id,
+        'amount': dirty.inventory_items[inventory_item_index].price };
+            await removeFromInventory(socket, dirty, remove_player_inventory_data);
+
+        if(dirty.inventory_items[inventory_item_index].object_type_id) {
+            let adding_to_data = { 'adding_to_type':'player', 'adding_to_id':socket.player_id,
+                'object_type_id': dirty.inventory_items[inventory_item_index].object_type_id, 'amount':1};
+
+            await addToInventory(socket, dirty, adding_to_data);
+        } else if(dirty.inventory_items[inventory_item_index].floor_type_id) {
+            let adding_to_data = { 'adding_to_type':'player', 'adding_to_id':socket.player_id,
+                'floor_type_id': dirty.inventory_items[inventory_item_index].floor_type_id, 'amount':1};
+
+            await addToInventory(socket, dirty, adding_to_data);
+        }
+
+
+        // add the credits to whoever owned that inventory item
+        if(dirty.inventory_items[inventory_item_index].owned_by_object_id) {
+
+            let adding_to_data = { 'adding_to_type':'object', 'adding_to_id': dirty.inventory_items[inventory_item_index].owned_by_object_id,
+            'object_type_id': 74, 'amount': dirty.inventory_items[inventory_item_index].price };
+
+            await addToInventory(socket, dirty, adding_to_data);
+
+            /*
+            // This used to work, but 
+            // crap now we need to get the owner of the object. Player or npc
+            let object_index = await game_object.getIndex(dirty, dirty.inventory_items[inventory_item_index].owned_by_object_id);
+            if(object_index !== -1) {
+                if(dirty.objects[object_index].player_id) {
+
+
+
+                } else if(dirty.objects[object_index].npc_id) {
+                    let adding_to_data = { 'adding_to_type':'npc', 'adding_to_id': dirty.objects[object_index].npc_id,
+                        'object_type_id': 74, 'amount': dirty.inventory_items[inventory_item_index].price };
+
+                    await addToInventory(socket, dirty, adding_to_data);
+                }
+            }
+            */
+        } else if(dirty.inventory_items[inventory_item_index].player_id) {
+            let adding_to_data = { 'adding_to_type':'player', 'adding_to_id':socket.player_id,
+                'object_type_id': 74, 'amount': dirty.inventory_items[inventory_item_index].price };
+
+            await addToInventory(socket, dirty, adding_to_data);
+        } else if(dirty.inventory_items[inventory_item_index].npc_id) {
+            let adding_to_data = { 'adding_to_type':'npc', 'adding_to_id': dirty.inventory_items[inventory_item_index].npc_id,
+                'object_type_id': 74, 'amount': dirty.inventory_items[inventory_item_index].price };
+
+            await addToInventory(socket, dirty, adding_to_data);
+        } 
+
+        // remove the item from the old place
+        let remove_inventory_data = { 'inventory_item_id': dirty.inventory_items[inventory_item_index].id, 'amount': 1};
+        await removeFromInventory(socket, dirty, remove_inventory_data);
+           
+        
     } catch(error) {
         log(chalk.red("Error in inventory.buy : " + error));
     }
