@@ -185,44 +185,7 @@ Territe Armor:
 
 
 
-*****************************************
-******************** CONSUMABLES / STATUS CHANGERS ***************************
-*****************************************
 
-PLACES TO BROWSE WHEN FOOD IDEAS ARE HARD
-    https://starbounder.org/Food
-
-
-Addiction levels: none, slight, moderate, heavy
-
-
-
-
-AIDust:
-    Obtained Via: Growth deposits on desert planets
-    Positive Effects: +4 HP, +2 attack, +2 defense
-    Addiction chance: 25%
-    Negative Effects: -16 HP per addiction level for 2x normal duration
-
-Algae:
-    Obtained Via: Algae Pad
-    Positive Effects: +1 HP
-    Addiction Chance: 0%
-
-
-    Aspic
-
-    Algae puffs
-
-        Green Juice
-
-            some green juice ai dust mix? (Stim shot?)
-
-        Blue Algae
-
-            Blue Juice
-
-                Blue Stim Shot
 
 
 

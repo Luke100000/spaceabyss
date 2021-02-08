@@ -1,0 +1,161 @@
+*****************************************
+******************** CONSUMABLES / STATUS CHANGERS / EAT ***************************
+*****************************************
+
+PLACES TO BROWSE WHEN FOOD IDEAS ARE HARD
+    https://starbounder.org/Food
+
+
+Addiction levels: none, slight, moderate, heavy
+
+Each tier upgrade of an item should lose 10% of total HP
+Each tier has the potential for 2 HP, 1 attack, or 1 defense. every 5% increase in addiction chance gives an additional tier level
+
+Total value is if every point was in HP
+    We can quickly calculate this as TIER * 2 * TICK COUNT 
+NORMAL (no bonuses) RARE (1 tier bonus) EPIC (2 tier bonus) LEGENDARY (3 tier bonus)
+
+
+
+FREE/PASSIVE
+Algae:      HP: 1 TICKS: 20 TOTAL VALUE: 20 (HUMAN)     FOCUS: HP
+Moss:       HP: 1 TICKS: 20 TOTAL VALUE: 20 (SLERM)     FOCUS: ATTACK/DEFENSE/CHEMICAL
+Geno Meat:  HP: 1 TICKS: 20 TOTAL VALUE: 20 (HUMAN)
+Voon Meat:  HP: 1 TICKS: 20 TOTAL VALUE: 20 (HUMAN)
+Mushroom:   HP: 1 TICKS: 20 TOTAL VALUE: 20 (HUMAN)
+Circuit:    HP: 1 TICKS: 20 TOTAL VALUE: 20 (MLM)       FOCUS: DEFENSE
+Battery:    HP: 1 TICKS: 20 TOTAL VALUE: 20 (MLM)       FOCUS: HP
+
+
+
+    TIER 1 - Territe, Batteries, Exoskeleton, Quick Matter (From Territe), AI Dust, Life Water (Complexity Tier: 4), Silk Fragment, Living Wood Fragment
+    Complexity: 1-4
+    Aspic  HP: 2 TICKS: 35 TOTAL VALUE: 70 (HUMAN) (3.5 algae effect, cost 4 algae .875% efficiency)
+    Algae Power Cell HP: 2 TICKS: 35 TOTAL VALUE: 70 (MLM) (3.5 algae effect, cost 4 algae .875% efficiency)
+    
+
+
+        TIER 2 - Refined Territe, Batteries, Exoskeleton, Gold
+        Complexity: 6-9
+
+        Microcontroller: HP 2 Defense: 1 Addiction Chance: 5% TICKS: 40 TOTAL VALUE: 160 (MLM) (8 effect, 10 cost, 0.80% efficiency)
+
+
+
+            TIER 3 - Exodium, Power cells, Living Wood, Silk, Thiol, Glass, Glaze
+            Complexity: 10-14
+            Algae Puffs: HP: 4 Defense: 1 TICKS: 40 TOTAL VALUE: 240 (HUMAN) (12 algae effect, cost 17 algae, .70% efficiency)
+
+            M AT HP: -2 Attack: 10: Defense: -1 Addiction Chance: 20% TICKS: 30 TOTAL VALUE: 180 (HUMAN) (9 effect, 12 cost, 0.75% efficiency)
+            M HP HP: 12 Attack: -4 Addiction Chance: 20% TICKS: 30 TOTAL VALUE: 180 (HUMAN) (9 effect, 12 cost, 0.75% efficiency)
+            M MAN: Manufacturing: 4 Addiction Chance: 5% TICKS: 60 TOTAL VALUE: 360 (HUMAN) (18 effect, 24 cost, 0.75% efficiency)
+
+            AI Dust HP: 4 Attack: 1: Defense: 1 Addiction Chance: 5% TICKS: 20 TOTAL VALUE: 120 (HUMAN|MLM) 
+            Power Cell: HP: 6 Addiction Chance: 0% TICKS: 40 TOTAL VALUE: 240 (MLM)  (12 effect, 16 cost, 0.75 efficiency)
+
+            Mech Take Out
+                        MLM (!SPECIAL! +2 Tier) HP: 4 Attack: 1 Defense: 2 TICKS: 20 TOTAL VALUE: 120 (MLM)
+
+
+                **************************************************
+                TIER 4 - Refined Exodium, Power Cells, AI Fragments (18), AI (22), Inferno Core, Jelly, Corrosive Goo
+                Complexity: 18-22
+                Green Juice: HP: 8 Attack: 1 Defense: 1 Addiction Chance: TICKS: 50 TOTAL VALUE: 400 (HUMAN) (20 algae effect, cost 32 algae, ~.625% efficiency)
+                Blue Algae: !RARE! HP 6 Attack: 1 Defense: 1 TICKS: 40 TOTAL VALUE: 320
+
+                AI Fragment HP: 8 Attack: 5 Defense: 5 Addiction Chance: 50% TICKS: 100 TOTAL VALUE: 800 (HUMAN|MLM)
+
+                Jelly HP: 2 Attack: 1 Defense: 1 Addiction Chance: 0% Tick Count: 60 TOTAL VALUE: 480 (SLERM)
+                Life Water
+                            SPECIAL: 1% Addiction Chance with extra long addiction timer 
+                            HUMAN HP: 2 Attack: 1 Defense: 1 Tick Count: 200 TOTAL VALUE: 1600
+                            SLERM (! SPECIAL +2 TIER !) HP: 4 Attack: 2 Defense: 2 Tick Count: 200 TOTAL VALUE: 1600
+                
+                AI HP: 16 Attack: 8 Defense: 8 Addiction Chance: 100% TICKS: 200 TOTAL VALUE: 1600 (MLM)
+
+                Life Tea ( Life Water + Life Herb )
+                            SPECIAL: 1% Addiction Chance with extra long addiction timer 
+                             HP: 3 Attack: 1 Defense: 1 Tick Count: 200 (HUMAN)
+
+
+                    **************************************************
+                    TIER 5 - Diamond, Plasteel, Stabglass, Portal, Gaian Plasma
+                    Minimum Monster Damage: 40
+                    Complexity: 26-32
+                    Blue Juice: !RARE! HP: 6 Attack: 2 Defense: 2 ADDICTION: 5% TICKS: 90 TOTAL VALUE: 900 (HUMAN) (2.8 effect, cost 3 blue algae, ~.93% efficiency)
+
+                    Gaian Plasma HP: 6 Attack: 1 Defense: 2 ADDICTION: 5% TICKS: 60 TOTAL VALUE: 600 (VUEG|SLERM)
+
+                    Purple Algae !EPIC! (Human)
+
+
+                        **********************************************************
+                        TIER 6 - Spun Diamond, Diamond Battery 
+                        Complexity: 36-40
+
+                        Diamond Battery HP: 10 Attack: 1 Defense: 1 Addiction: 5% TICKS: 60 TOTAL VALUE: 720 (MLM)
+
+                        Purple Juice !EPIC! TICKS 60 (Human) 
+
+                        Gaian Concentrate (Human) - Research Gaian Plasma
+                        
+                        Leafa (Life Water + AI Dust) (HUMAN)
+
+
+
+                            ************************************************************
+                            TIER 7 - Crystal, HyperDiamond, Carrion Glass
+                            Complexity: 44-48
+                            
+                            BioHeart (Life Water + Gaian Plasma) (HUMAN|SLERM)
+
+
+                                ************************************************************
+                                TIER 8 - Jungle Crystal, Neutronium, Gaian Plasma 2 (not sure what it'll be named yet)
+                                Complexity: 52-56
+                                Minimum Monster Damage: 120
+                                Damage: 10, 7
+                                Defense (player armor): 8
+                                Armor Types: Researching: 80/80
+                                
+
+                                    TIER 9 Hypercrystal, Crystal Battery
+                                    Minimum Monster Damage: 140
+                                    Complexity: 60-64
+                                    Damage: 11, 8
+                                    Defense (player armor): 9
+                                    Armor Types: Hypercrystal, Researching: 90/90
+
+                                        TIER 10 - Crystadmantium (Crystonium), Antimatter, Quantum Battery 
+                                        Minimum Monster Damage: 200
+                                        Complexity: 100+
+                                        Damage: 12, 9
+                                        Defense (player armor): 10
+                                        Armor Types: Crystadmantium, Researching: 100/100
+
+
+
+
+
+AIDust:
+    Obtained Via: Growth deposits on desert planets
+    Positive Effects: +4 HP, +2 attack, +2 defense
+    Addiction chance: 25%
+    Negative Effects: -16 HP per addiction level for 2x normal duration
+
+
+
+
+    Aspic
+
+    Algae puffs
+
+        Green Juice
+
+            some green juice ai dust mix? (Stim shot?)
+
+        Blue Algae
+
+            Blue Juice
+
+                Blue Stim Shot

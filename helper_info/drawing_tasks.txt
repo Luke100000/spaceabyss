@@ -43,15 +43,25 @@ Size: Max 30x30
 Frame Count: 1 empty frame, 1 full frame. Same idea as Territe Deposit and Exodium Deposit
 Current Sprite: None
 
+****************************************
+** THINGS I'M SENDING UNFUNERAL'S WAY **
+****************************************
 
+Vueg Player Body
 
-***************************************
-** THINGS I'M SENDING FERNANDO'S WAY **
-***************************************
+Power Cell
+Type: Object
+Size: About same as current sprite
+Frames Needed: 1-2 Designs
 
+Hack Dust
+Type: Player Weapon
+Size: 20x20 max
+Frames Needed: 1-2 Designs
+Flavor Text: A weapon consisting of millions of nanobots that attach themselves to an enemy, release a viral/malware/electric payload, lift off, and then re-attach to a different part of the enemy. It's the machine equivilent of being stung by a neverending swarm of hornets.
+(like a metal ball with little bits off of it)
 
-Some nebulae for cool backgrounds in space
-
+Plasma Cell Deposit
 
 Gaian Plasma Deposit
 Type: Spawner
@@ -66,6 +76,30 @@ Frames Needed: 1 empty frame, 1 full frame
 Notes: Spawns several of the Diamond Batteries that we drew in batch #24 (https://space.alphacoders.com/images/diamond-battery.png) I don't have an image for it,
 but a lower tier spawner ( it spawns normal batteries ) is https://space.alphacoders.com/images/battery-deposit-animated.png for example.
 
+***************************************
+** THINGS I'M SENDING FERNANDO'S WAY **
+***************************************
+
+
+Vueg Player Body
+Type: Player Body
+32x32 max
+Frames Needed: 1-3 Designs
+Reference Images:
+    https://images.gemquery.com/260/content_2607436.jpg
+    https://images.gemquery.com/261/content_2615617.jpg
+    https://images.gemquery.com/261/content_2618563.jpg
+    https://images.gemquery.com/261/content_2618559.jpg
+    https://images.gemquery.com/261/content_2618557.jpg
+    https://images.gemquery.com/261/content_2618550.jpg
+
+
+
+Some nebulae for cool backgrounds in space
+
+
+
+
 
 
 Asteroid Ship
@@ -74,17 +108,7 @@ Size: 32x32 max
 Frames Needed: 1-2 Designs
 Current Sprite: https://space.alphacoders.com/images/asteroid-ship.png
 
-Power Cell
-Type: Object
-Size: About same as current sprite
-Frames Needed: 1-2 Designs
 
-Hack Dust
-Type: Player Weapon
-Size: 20x20 max
-Frames Needed: 1-2 Designs
-Flavor Text: A weapon consisting of millions of nanobots that attach themselves to an enemy, release a viral/malware/electric payload, lift off, and then re-attach to a different part of the enemy. It's the machine equivilent of being stung by a neverending swarm of hornets.
-(like a metal ball with little bits off of it)
 
 
 

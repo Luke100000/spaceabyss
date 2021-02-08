@@ -4888,6 +4888,17 @@ async function tickGrowths(dirty) {
 
 */
 
+async function tickGalaxy(dirty) {
+    try {
+
+        world.tickGalaxy(dirty);
+
+    } catch(error) {
+        log(chalk.red("Error in tickGalaxy: " + error));
+        console.error(error);
+    } 
+}
+
 async function tickGalaxyObjects(dirty) {
     try {
         //let hrstart = new process.hrtime();
@@ -5155,6 +5166,11 @@ setInterval(tickDecay, 7200000, dirty);
 
 // 12 hours
 setInterval(tickNomad, 43200000, dirty);
+
+
+// 24 hours
+// We're basically ticking a month every day - ~1 to 30 ratio of time
+setInterval(tickGalaxy, 86400000, dirty);
 
 
 /*

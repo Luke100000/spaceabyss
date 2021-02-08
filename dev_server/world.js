@@ -3355,6 +3355,7 @@ exports.increasePlayerSkill = increasePlayerSkill;
  * @param {number=} data.player_id
  * @param {number=} data.npc_id
  * @param {number=} data.spawned_event_id
+ * @returns {Promise<number>} - object_id
  */
 async function insertObjectType(socket, dirty, data) {
     try {
@@ -4746,7 +4747,7 @@ exports.skinUse = skinUse;
 /**
  * @param {Object} dirty
  * @param {Object} data
- * @param {('planet'|'ship')} data.scope
+ * @param {('planet'|'ship'|'galaxy')} data.scope
  * @param {number} data.base_coord_index
  * @param {('object'|'monster')} data.spawning_type
  * @param {number} data.spawning_type_id
@@ -4763,6 +4764,8 @@ async function spawnAdjacent(dirty, data) {
             base_coord = dirty.planet_coords[data.base_coord_index];
         } else if (data.scope === 'ship') {
             base_coord = dirty.ship_coords[data.base_coord_index];
+        } else if(data.scope === 'galaxy') {
+            base_coord = dirty.coords[data.base_coord_index];
         }
 
         if(helper.isFalse(base_coord)) {
@@ -4776,15 +4779,22 @@ async function spawnAdjacent(dirty, data) {
         // I don't think there are any instances of us actually spawning an object
         let placing_index = -1;
         let spawning_type_for_get_open_coord_index = data.spawning_type;
+        let being_spawned_object_type_index = -1;
+        
         if(spawning_type_for_get_open_coord_index === 'object') {
-            let object_type_index = main.getObjectTypeIndex(data.spawning_type_id);
+            
+            being_spawned_object_type_index = main.getObjectTypeIndex(data.spawning_type_id);
+            if(dirty.object_types[being_spawned_object_type_index].assembled_as_object) {
+                spawning_type_for_get_open_coord_index = 'object';
 
-            if(dirty.object_types[object_type_index].assembled_as_object) {
-                log(chalk.yellow("We don't support spawning objects adjacent - only object types!"));
-                return false;
+                // and we have to create the object
+                let new_object_id = await insertObjectType({}, dirty, { 'object_type_id': dirty.object_types[being_spawned_object_type_index].id });
+                placing_index = await game_object.getIndex(dirty, new_object_id);
+            } else {
+                spawning_type_for_get_open_coord_index = 'object_type';
+                placing_index = being_spawned_object_type_index;
             }
-            spawning_type_for_get_open_coord_index = 'object_type';
-            placing_index = object_type_index;
+            
         } else if(spawning_type_for_get_open_coord_index === 'monster') {
 
             let monster_type_index = main.getMonsterTypeIndex(data.spawning_type_id);
@@ -4802,6 +4812,10 @@ async function spawnAdjacent(dirty, data) {
 
         let placing_coord = {};
         let placing_coord_index = await getOpenCoordIndex(dirty, data.scope, data.base_coord_index, spawning_type_for_get_open_coord_index, placing_index, 1);
+
+        if(placing_coord_index === -1) {
+            placing_coord_index = await getOpenCoordIndex(dirty, data.scope, data.base_coord_index, spawning_type_for_get_open_coord_index, placing_index, 3);
+        }
 
 
         /** STEP 1: FIND A SPOT WE CAN PLACE ON **/
@@ -4868,28 +4882,24 @@ async function spawnAdjacent(dirty, data) {
             placing_coord = dirty.planet_coords[placing_coord_index];
         } else if(data.scope === 'ship') {
             placing_coord = dirty.ship_coords[placing_coord_index];
+        } else if(data.scope === 'galaxy') {
+            placing_coord = dirty.coords[placing_coord_index];
         }
 
         if (data.spawning_type === 'object') {
 
-            let being_spawned_object_type_index = main.getObjectTypeIndex(data.spawning_type_id);
-
-            if (being_spawned_object_type_index === -1) {
-                return false;
-            }
 
 
             // We need to insert an object, and add it to the coord
             if (dirty.object_types[being_spawned_object_type_index].assembled_as_object) {
-                let insert_object_type_data = { 'object_type_id': dirty.object_types[being_spawned_object_type_index].id, 'source': 'world.spawnAdjacent' };
-                let new_object_id = await insertObjectType(false, dirty, insert_object_type_data);
-                let new_object_index = await game_object.getIndex(dirty, new_object_id);
 
-                let place_object_data = { 'object_index': new_object_index };
+                let place_object_data = { 'object_index': placing_index };
                 if (data.scope === 'planet') {
                     place_object_data.planet_coord_index = placing_coord_index;
                 } else if (data.scope === 'ship') {
                     place_object_data.ship_coord_index = placing_coord_index;
+                } else if(data.scope === 'galaxy') {
+                    place_object_data.coord_index = placing_coord_index;
                 }
 
                 await game_object.place({}, dirty, place_object_data);
@@ -4914,6 +4924,8 @@ async function spawnAdjacent(dirty, data) {
                 } else if (data.scope === "ship") {
                     update_coord_data.ship_coord_index = placing_coord_index;
 
+                } else if(data.scope === 'galaxy') {
+                    update_coord_data.coord_index = placing_coord_index;
                 }
 
                 await main.updateCoordGeneric({}, update_coord_data);
@@ -4928,6 +4940,8 @@ async function spawnAdjacent(dirty, data) {
                 spawn_monster_data.planet_coord_index = placing_coord_index;
             } else if (data.scope === 'ship') {
                 spawn_monster_data.ship_coord_index = placing_coord_index;
+            } else if(data.scope === 'galaxy') {
+                spawn_monster_data.coord_index = placing_coord_index;
             }
 
             await monster.spawn(dirty, data.spawning_type_id, spawn_monster_data);
@@ -5145,6 +5159,33 @@ async function submitBid(socket, dirty, data) {
 }
 
 exports.submitBid = submitBid;
+
+
+async function tickGalaxy(dirty) {
+
+    try {
+        for(let i = 0; i < dirty.galaxies.length; i++) {
+
+
+            if(dirty.galaxies[i]) {
+                dirty.galaxies[i].month++;
+    
+                if(dirty.galaxies[i].month >= 13) {
+                    dirty.galaxies[i].month = 1;
+                    dirty.galaxies[i].year++;
+                }
+            }
+    
+        }
+    } catch(error) {
+        log(chalk.red("Error in world.tickGalaxy: " + error));
+        console.error(error);
+    }
+   
+
+}
+
+exports.tickGalaxy = tickGalaxy;
 
 
 async function tickNomad(dirty, admin_command = false) {

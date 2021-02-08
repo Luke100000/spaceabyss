@@ -1294,7 +1294,8 @@ const world = require('./world.js');
             // Everyone should know the planet has a new name
             io.emit('planet_info', { 'planet': dirty.planets[planet_index] });
 
-            world.addPlayerLog(dirty, socket.player_index, dirty.players[socket.player_index].name + " has renamed planet " + old_name + " to " + new_name);
+            world.addPlayerLog(dirty, socket.player_index, dirty.players[socket.player_index].name + " has renamed planet " + old_name + " to " + new_name,
+                { 'planet_id': dirty.planets[planet_index].id });
 
 
 
@@ -5616,7 +5617,7 @@ exports.eat = eat;
                     return false;
                 }
 
-                let found_coord_index = false;
+                let found_coord_index = -1;
 
                 if(dirty.players[player_index].ship_coord_id) {
 
@@ -5630,7 +5631,7 @@ exports.eat = eat;
                     for(let x = dirty.ship_coords[coord_index].tile_x -1; x <= dirty.ship_coords[coord_index].tile_x + 1; x++) {
                         for(let y = dirty.ship_coords[coord_index].tile_y -1; y <= dirty.ship_coords[coord_index].tile_y + 1; y++) {
 
-                            if(found_coord_index === false) {
+                            if(found_coord_index === -1) {
                                 let checking_coord_index = await main.getShipCoordIndex({
                                     'ship_id': dirty.ship_coords[coord_index].ship_id,
                                     'level': dirty.ship_coords[coord_index].level, 'tile_x': x, 'tile_y': y });
@@ -5660,7 +5661,7 @@ exports.eat = eat;
                     for(let x = dirty.coords[coord_index].tile_x -1; x <= dirty.coords[coord_index].tile_x + 1; x++) {
                         for(let y = dirty.coords[coord_index].tile_y -1; y <= dirty.coords[coord_index].tile_y + 1; y++) {
 
-                            if(found_coord_index === false) {
+                            if(found_coord_index === -1) {
                                 let checking_coord_index = await main.getCoordIndex({ 'tile_x': x, 'tile_y': y });
 
                                 if(checking_coord_index !== -1 && await game_object.canPlace(dirty, 'galaxy', dirty.coords[checking_coord_index],
@@ -5683,7 +5684,7 @@ exports.eat = eat;
                     for(let x = dirty.planet_coords[coord_index].tile_x -1; x <= dirty.planet_coords[coord_index].tile_x + 1; x++) {
                         for(let y = dirty.planet_coords[coord_index].tile_y -1; y <= dirty.planet_coords[coord_index].tile_y + 1; y++) {
 
-                            if(found_coord_index === false) {
+                            if(found_coord_index === -1) {
                                 let checking_coord_index = await main.getPlanetCoordIndex({ 'planet_id': dirty.planet_coords[coord_index].planet_id,
                                     'planet_level': dirty.planet_coords[coord_index].level, 'tile_x': x, 'tile_y': y });
 
@@ -5700,7 +5701,7 @@ exports.eat = eat;
                     }
                 }
 
-                if(found_coord_index === false) {
+                if(found_coord_index === -1) {
                     console.log("Did not find a coord to spawn the object on");
                     return false;
                 }
@@ -5722,7 +5723,8 @@ exports.eat = eat;
                         console.log("Placing object on ship coord");
                         await game_object.place(socket, dirty, { 'object_index': new_object_index, 'ship_coord_index': found_coord_index });
                     } else if(dirty.players[player_index].coord_id) {
-                        console.log("Placing object on galaxy coord");
+                        console.log("Placing object on galaxy coord id: " + dirty.coords[found_coord_index].id +" x/y: " + 
+                        dirty.coords[found_coord_index].tile_x + "/" + dirty.coords[found_coord_index].tile_y);
                         await game_object.place(socket, dirty, { 'object_index': new_object_index, 'coord_index': found_coord_index });
                     } else if(dirty.players[player_index].planet_coord_id) {
                         await game_object.place(socket, dirty, { 'object_index': new_object_index, 'planet_coord_index': found_coord_index });
@@ -9043,8 +9045,8 @@ exports.eat = eat;
 
             let spawning_object_type_ids = [];
             let spawning_monster_type_ids = [];
-            let debug_object_type_id = 0;
-            let debug_monster_type_ids = [86,113];
+            let debug_object_type_id = 430;
+            let debug_monster_type_ids = [];
             let debug_monster_type_id = 0;
 
             for(let i = 0; i < dirty.spawn_linkers.length; i++) {

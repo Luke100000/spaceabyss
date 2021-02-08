@@ -1,3 +1,26 @@
+## [0.2.32] - 2021-02-08
+
+### Added
+- Site Rules
+- Email notifications when an AI is under siege (50% energy or less. More options for players to fine tune this will come in the future)
+- Life Tea
+- Images for Blossomtis, Cherree, Converted Mechanoid, and Forest Prince
+- Derelict Mining Outpost
+- Asteroid City
+
+
+### Fixed
+- Image and being able to pick up Corrupted Battery Packs
+- Renaming a planet galaxy events not having the planet id attached to them
+
+
+### Changed
+- DDrone normal spawn has been replaced with a Mini Walker on machine planets ( the point is to add some variety to the color/look of the creatures on level -3 and -4)
+- Expanded Data Breach
+- LOTS of balancing and additions to consumables. Really did spend a lot of time on this. Previously consumables were added based on feel - now there's a basic system 
+behind them to try to balance most things out. There will still be exceptions for variety/lore/world building purposes.
+- Expanded The Great Nomad
+
 ## [0.2.31] - 2021-01-22
 
 
