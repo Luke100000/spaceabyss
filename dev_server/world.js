@@ -126,12 +126,19 @@ async function addBattleLinker(socket, dirty, data) {
         //  or if they are in space and have a pod
         if (data.attacking_type === 'player') {
 
+
+
             // Spaceport tile check
             if (dirty.players[attacking_index].planet_coord_id) {
                 let attacking_coord_index = await main.getPlanetCoordIndex({ 'planet_coord_id': dirty.players[attacking_index].planet_coord_id });
 
                 if (attacking_coord_index === -1) {
                     return false;
+                }
+
+                if(helper.notFalse(dirty.players[attacking_index].planet_coord_index) && 
+                    dirty.planet_coords[dirty.players[attacking_index].planet_coord_index].id !== dirty.planet_coords[attacking_coord_index].id) {
+                    log(chalk.yellow("Player planet_coord_index is desynced from the player's planet_coord_id!!!"));
                 }
 
                 if (dirty.planet_coords[attacking_coord_index].floor_type_id === 11 || dirty.planet_coords[attacking_coord_index].floor_type_id === 44) {
@@ -1456,8 +1463,9 @@ async function checkMonsterBattleConditions(dirty, monster_id, checking_type, ch
 
 
             if(dirty.monsters[monster_index].planet_coord_id) {
-                let player_coord_index = await main.getPlanetCoordIndex(
-                    { 'planet_coord_id': dirty.players[player_index].planet_coord_id });
+                let player_coord_index = await player.getCoordIndex(dirty, player_index, 'planet');
+                //let player_coord_index = await main.getPlanetCoordIndex(
+                //    { 'planet_coord_id': dirty.players[player_index].planet_coord_id });
 
                 if (player_coord_index !== -1) {
                     if (dirty.planet_coords[player_coord_index].floor_type_id === 11 || dirty.planet_coords[player_coord_index].floor_type_id === 44) {
@@ -1955,8 +1963,7 @@ async function createShipCoord(dirty, ship_index, linker, data = {}) {
                 spawn_object_data.spawned_event_id = data.spawned_event_id;
             }
 
-            let new_object_id = await insertObjectType(false, dirty, spawn_object_data);
-            let new_object_index = await game_object.getIndex(dirty, new_object_id);
+            let new_object_index = await insertObjectType(false, dirty, spawn_object_data);
 
 
             await game_object.place(false, dirty, { 'object_index': new_object_index, 'ship_coord_index': new_ship_coord_index, 'reason': 'generate_ship' });
@@ -3355,7 +3362,7 @@ exports.increasePlayerSkill = increasePlayerSkill;
  * @param {number=} data.player_id
  * @param {number=} data.npc_id
  * @param {number=} data.spawned_event_id
- * @returns {Promise<number>} - object_id
+ * @returns {Promise<number>} - object_index
  */
 async function insertObjectType(socket, dirty, data) {
     try {
@@ -3365,7 +3372,7 @@ async function insertObjectType(socket, dirty, data) {
             if (data.source) {
                 log(chalk.yellow("Source: " + data.source));
             }
-            return false;
+            return -1;
         }
 
         //console.log("in insertObjectType. Going to insert object_type_id: " + data.object_type_id);
@@ -3374,7 +3381,7 @@ async function insertObjectType(socket, dirty, data) {
 
         if (object_type_index === -1) {
             log(chalk.yellow("Could not find object type"));
-            return false;
+            return -1;
         }
 
 
@@ -3417,7 +3424,7 @@ async function insertObjectType(socket, dirty, data) {
 
         if (!result) {
             log(chalk.yellow("Seems like we failed the object insert"));
-            return false;
+            return -1;
         }
 
 
@@ -3473,7 +3480,7 @@ async function insertObjectType(socket, dirty, data) {
 
 
 
-        return object_id;
+        return object_index;
 
 
     } catch (error) {
@@ -3679,7 +3686,7 @@ async function objectFindTarget(dirty, object_index) {
 
         // object could be on a planet coord, or a ship coord
         if (dirty.objects[object_index].planet_coord_id) {
-            coord_index = await main.getPlanetCoordIndex({ 'planet_coord_id': dirty.objects[object_index].planet_coord_id });
+            coord_index = await game_object.getCoordIndex(dirty, object_index, 'planet');
 
             if (coord_index === -1) {
                 return false;
@@ -3689,7 +3696,7 @@ async function objectFindTarget(dirty, object_index) {
             starting_y = dirty.planet_coords[coord_index].tile_y - 3;
 
         } else if (dirty.objects[object_index].ship_coord_id) {
-            coord_index = await main.getShipCoordIndex({ 'ship_coord_id': dirty.objects[object_index].ship_coord_id });
+            coord_index = await game_object.getCoordIndex(dirty, object_index, 'ship');
 
             if (coord_index === -1) {
                 return false;
@@ -4160,7 +4167,7 @@ async function sendMarketData(socket, dirty) {
         let ship_coord_index = -1;
 
         if (dirty.players[socket.player_index].planet_coord_id) {
-            planet_coord_index = await main.getPlanetCoordIndex({ 'planet_coord_id': dirty.players[socket.player_index].planet_coord_id });
+            planet_coord_index = await player.getCoordIndex(dirty, socket.player_index, 'planet');
 
             if (planet_coord_index === -1) {
                 return false;
@@ -4168,7 +4175,7 @@ async function sendMarketData(socket, dirty) {
 
 
         } else if (dirty.players[socket.player_index].ship_coord_id) {
-            ship_coord_index = await main.getShipCoordIndex({ 'ship_coord_id': dirty.players[socket.player_index].ship_coord_id });
+            ship_coord_index = await player.getCoordIndex(dirty, socket.player_index, 'ship');
 
             if (ship_coord_index === -1) {
                 return false;
@@ -4316,7 +4323,9 @@ async function sendPlayerAIs(socket, room, dirty, player_id) {
                 // We also send any areas that the player created on the planet/ship the AI is on
                 if (dirty.objects[a].planet_coord_id) {
 
-                    let planet_coord_index = await main.getPlanetCoordIndex({ 'planet_coord_id': dirty.objects[a].planet_coord_id });
+                    let planet_coord_index = await game_object.getCoordIndex(dirty, a, 'planet');
+
+                   
 
                     if (planet_coord_index !== -1) {
                         await planet.sendInfo(socket, room, dirty, { 'planet_id': dirty.planet_coords[planet_coord_index].planet_id });
@@ -4583,10 +4592,10 @@ async function setPlayerBody(dirty, player_index) {
         console.log("Player doesn't have a body. Inserting one. Default to human body");
         // let get the basic human body type
         let body_object_type_index = main.getObjectTypeIndex(110);
-        let body_object_id = await insertObjectType(socket, dirty,
+        let body_object_index = await insertObjectType({}, dirty,
             { 'object_type_id': dirty.object_types[body_object_type_index].id, 'player_id': dirty.players[player_index].id });
-        if (body_object_id !== false) {
-            dirty.players[player_index].body_id = body_object_id;
+        if (body_object_index !== -1) {
+            dirty.players[player_index].body_id = dirty.objects[body_object_index].id;
             dirty.players[player_index].current_hp = dirty.object_types[body_object_type_index].hp;
             dirty.players[player_index].has_change = true;
         } else {
@@ -4788,8 +4797,8 @@ async function spawnAdjacent(dirty, data) {
                 spawning_type_for_get_open_coord_index = 'object';
 
                 // and we have to create the object
-                let new_object_id = await insertObjectType({}, dirty, { 'object_type_id': dirty.object_types[being_spawned_object_type_index].id });
-                placing_index = await game_object.getIndex(dirty, new_object_id);
+                placing_index = await insertObjectType({}, dirty, { 'object_type_id': dirty.object_types[being_spawned_object_type_index].id });
+
             } else {
                 spawning_type_for_get_open_coord_index = 'object_type';
                 placing_index = being_spawned_object_type_index;
@@ -4816,61 +4825,6 @@ async function spawnAdjacent(dirty, data) {
         if(placing_coord_index === -1) {
             placing_coord_index = await getOpenCoordIndex(dirty, data.scope, data.base_coord_index, spawning_type_for_get_open_coord_index, placing_index, 3);
         }
-
-
-        /** STEP 1: FIND A SPOT WE CAN PLACE ON **/
-        /*
-        for (let x = base_coord.tile_x - 1; x <= base_coord.tile_x + 1 && placing_coord_index === -1; x++) {
-            for (let y = base_coord.tile_y - 1; y <= base_coord.tile_y + 1 && placing_coord_index === -1; y++) {
-
-                let possible_coord_index = -1;
-                let possible_coord = false;
-                if (data.scope === 'planet') {
-                    possible_coord_index = await main.getPlanetCoordIndex({
-                        'planet_id': base_coord.planet_id,
-                        'planet_level': base_coord.level, 'tile_x': x, 'tile_y': y
-                    });
-
-                    if (possible_coord_index !== -1) {
-                        possible_coord = dirty.planet_coords[possible_coord_index];
-                    }
-                } else if (data.scope === 'ship') {
-                    possible_coord_index = await main.getShipCoordIndex({
-                        'ship_id': base_coord.ship_id,
-                        'level': base_coord.level, 'tile_x': x, 'tile_y': y
-                    });
-                    if (possible_coord_index !== -1) {
-                        possible_coord = dirty.ship_coords[possible_coord_index];
-                    }
-                }
-
-                let can_place_result = false;
-                if (data.spawning_type === 'object') {
-                    can_place_result = await game_object.canPlace(dirty, data.scope,
-                        possible_coord,
-                        { 'object_type_id': data.spawning_type_id });
-                } else if (data.spawning_type === 'monster') {
-
-                    can_place_result = await monster.canPlace(dirty, data.scope,
-                        possible_coord, { 'monster_type_id': data.spawning_type_id });
-
-                }
-
-                if (can_place_result === true) {
-                    placing_coord_index = possible_coord_index;
-                    if (data.scope === 'planet') {
-                        placing_coord = dirty.planet_coords[placing_coord_index];
-                    } else if (data.scope === 'ship') {
-                        placing_coord = dirty.ship_coords[placing_coord_index];
-                    }
-
-                }
-
-
-
-            }
-        }
-        */
 
         if (placing_coord_index === -1) {
             log(chalk.yellow("No space around to spawn"));

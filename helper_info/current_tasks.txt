@@ -1,64 +1,17 @@
-OTHER ALPHA CODERS THINGS I NEED TO REMEMBER
-https://pics.alphacoders.com/pictures/edit/413163
-Change some wording on add info page for non-trusted users
-
 CURRENT GAMEPLAY TEST:
-
-
-
-DOING NOW:
-
-
-    change world.insertObjectType to return the object index instead of the ID
-        and all functions that use it to follow this
-
-
-    JUST GOTTA TEST THIS NOW
     Could have a ai_nofitications table that tracks the previous total energy for the AI. Something like every 10 minutes, and if the change is 
         negative, and total energy % is < 50%, send an email
 
-    Really need that in-game message system
-    
-    
-    
-    Maybe in the tutorial explain how we aren't going to have 2x experience events, holiday events, etc.
-        Things like that, imo, break the feel of the universe I'm trying to build. 
-
-    Maybe change the Loading.... thing to not let people enter their information until after it's 
-        gone away, force refresh the page if it's taking a while? HMMMMM.
-
-
-    One of the things that STEIN WORLD and Mystera Legacy do well is a good initial login page.
-        Custom look - a song that loads in.... it's pleasant.
-
-
-
-
-    
-
-    Add in a banned message, and reasoning and such
-
-    Recover lost item interface (masterdj and his fighter)
-        Combine this with a private message system?
-        
-        Maybe separate. I had the idea of a private message tab in chat that would open all of a player's private chats
-
     Still seems like dying from poison doesn't work completely correct. Just watch this
 
-    make sure editing factions works
+DOING NOW:
 
-    
+    Whenever I see a getPlanetCoordIndex, getShipCoordIndex, getCoordIndex, see if it's on a monster,object, or player, and switch it to TYPE.getCoordIndex()
+
 
     MONSTERS STILL SPAWN TOO SLOW
         Could prioritize spawning of planet_event_linkers that recently had a spawned_event removed
 
-
-
-    community feature - report - and potentially ban a player ( ban for name, spamming chat, other things I suppose )
-
-    Game isn't saying that the machine planet is under attack
-
-    go through out getPlanetCoordIndex calls and see where we can switch things to use the neighbor system
 
     Make it easy for players to exchange ships (buying/selling?)
 

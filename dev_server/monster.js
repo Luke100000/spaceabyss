@@ -214,12 +214,13 @@ async function canPlace(dirty, scope, coord, data) {
         }
 
         // Or grab it from an object being passed in
-        if(data.monster_index) {
+        if(typeof data.monster_index !== 'undefined') {
             monster_type_id = dirty.monsters[data.monster_index].monster_type_id;
         }
 
         if(monster_type_id === 0) {
             log(chalk.yellow("Need a monster type!"));
+            console.trace("here");
             return false;
         }
 
@@ -1074,7 +1075,7 @@ exports.getIndex = getIndex;
  * @param {number} i - Monster Index
  * @param {Object} data
  * @param {number=} data.monster_type_index
- * @param {Object} data.battle_linker
+ * @param {Object=} data.battle_linker
  * @param {string=} data.reason
  * @returns {Promise<boolean>}
  */

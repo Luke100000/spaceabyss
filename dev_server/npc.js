@@ -1,3 +1,4 @@
+//@ts-check
 /*
     npcActions is our main function
         It's called from space_abyss.js
@@ -100,8 +101,7 @@ const planet = require('./planet.js');
 
                             let insert_object_type_data = { 'object_type_id': 262,
                                 'npc_id': dirty.npcs[npc_index].id };
-                            let new_object_id = await world.insertObjectType(false, dirty, insert_object_type_data);
-                            let new_object_index = await game_object.getIndex(dirty, new_object_id);
+                            let new_object_index = await world.insertObjectType(false, dirty, insert_object_type_data);
 
                             await game_object.place(false, dirty, { 'object_index': new_object_index,
                                 'planet_coord_index': dirty.planet_coords[npc_coord_index].left_coord_index });
@@ -124,8 +124,8 @@ const planet = require('./planet.js');
     
                                 let insert_object_type_data = { 'object_type_id': 262,
                                     'npc_id': dirty.npcs[npc_index].id };
-                                let new_object_id = await world.insertObjectType(false, dirty, insert_object_type_data);
-                                let new_object_index = await game_object.getIndex(dirty, new_object_id);
+                                let new_object_index = await world.insertObjectType(false, dirty, insert_object_type_data);
+
     
                                 await game_object.place(false, dirty, { 'object_index': new_object_index,
                                     'planet_coord_index': dirty.planet_coords[npc_coord_index].right_coord_index });
@@ -148,8 +148,8 @@ const planet = require('./planet.js');
     
                                 let insert_object_type_data = { 'object_type_id': 262,
                                     'npc_id': dirty.npcs[npc_index].id };
-                                let new_object_id = await world.insertObjectType(false, dirty, insert_object_type_data);
-                                let new_object_index = await game_object.getIndex(dirty, new_object_id);
+                                let new_object_index = await world.insertObjectType(false, dirty, insert_object_type_data);
+
     
                                 await game_object.place(false, dirty, { 'object_index': new_object_index,
                                     'planet_coord_index': dirty.planet_coords[npc_coord_index].up_coord_index });
@@ -171,8 +171,8 @@ const planet = require('./planet.js');
     
                                 let insert_object_type_data = { 'object_type_id': 262,
                                     'npc_id': dirty.npcs[npc_index].id };
-                                let new_object_id = await world.insertObjectType(false, dirty, insert_object_type_data);
-                                let new_object_index = await game_object.getIndex(dirty, new_object_id);
+                                let new_object_index = await world.insertObjectType(false, dirty, insert_object_type_data);
+
     
                                 await game_object.place(false, dirty, { 'object_index': new_object_index,
                                     'planet_coord_index': dirty.planet_coords[npc_coord_index].down_coord_index });
@@ -1655,9 +1655,9 @@ const planet = require('./planet.js');
             if(starter_job.id === 5) {
 
                 console.log("Creating a ship for npc id: " + dirty.npcs[npc_index].id);
-                let new_ship_id = await world.insertObjectType(false, dirty, { 'object_type_id': 260, 'npc_id': dirty.npcs[npc_index].id });
-                let new_ship_index = await game_object.getIndex(dirty, new_ship_id);
-                dirty.npcs[npc_index].ship_id = new_ship_id;
+                let new_ship_index = await world.insertObjectType(false, dirty, { 'object_type_id': 260, 'npc_id': dirty.npcs[npc_index].id });
+
+                dirty.npcs[npc_index].ship_id = dirty.objects[new_ship_index].id;
                 dirty.npcs[npc_index].has_change = true;
 
                 // I believe this is being taken care of in world.insertObjectType
@@ -1719,6 +1719,7 @@ const planet = require('./planet.js');
                     placed_npc = true;
 
                     dirty.npcs[npc_index].coord_id = dirty.coords[coord_index].id;
+                    dirty.npcs[npc_index].coord_index = coord_index;
                     dirty.npcs[npc_index].has_change = true;
 
                     await world.sendNpcInfo(false, "galaxy", dirty, dirty.npcs[npc_index].id);

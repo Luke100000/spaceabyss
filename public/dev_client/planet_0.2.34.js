@@ -36,7 +36,8 @@ function displayClickPlanet(planet_id) {
             let player_index = players.findIndex(function (obj) { return obj && obj.id === planets[planet_index].player_id; });
 
             if (player_index !== -1) {
-                $('#coord_data').append("&nbsp;&nbsp;Owned By Player: " + players[player_index].name + "<br>");
+                console.log("Showing updated player thing");
+                $('#coord_data').append("&nbsp;&nbsp;Owned By Player: <a target='_blank' href='https://space.alphacoders.com/player/view/" + players[player_index].id + "'>" + players[player_index].name + "</a><br>");
             } else {
                 $('#coord_data').append("&nbsp;&nbsp;Owned By Player Id: " + planets[planet_index].player_id + "<br>");
             }

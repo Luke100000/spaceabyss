@@ -445,6 +445,7 @@ async function dockOnShip(socket, dirty, object_id) {
         dirty.players[player_index].coord_id = false;
         dirty.players[player_index].coord_index = -1;
         dirty.players[player_index].ship_coord_id = dirty.ship_coords[ship_coord_index].id;
+        dirty.players[player_index].ship_coord_index = ship_coord_index;
         dirty.players[player_index].has_change = true;
         await player.sendInfo(socket, "ship_" + dirty.ship_coords[ship_coord_index].ship_id, dirty, dirty.players[player_index].id);
         await player.sendInfo(false, "galaxy", dirty, dirty.players[player_index].id);
@@ -464,6 +465,7 @@ async function dockOnShip(socket, dirty, object_id) {
             dirty.objects[ship_index].docked_at_object_id = dirty.ship_coords[ship_coord_index].ship_id;
             
             dirty.objects[ship_index].coord_id = false;
+            dirty.objects[ship_index].coord_index = -1;
             dirty.objects[ship_index].current_coords = [];
             dirty.objects[ship_index].has_change = true;
             await game_object.sendInfo(socket, false, dirty, ship_index, 'movement.dockOnShip');
@@ -719,6 +721,7 @@ exports.move = move;
                 await main.updateCoordGeneric(socket, { 'coord_index': new_coord_index, 'planet_id': dirty.planets[planet_index].id });
 
                 dirty.planets[planet_index].coord_id = dirty.coords[new_coord_index].id;
+                dirty.players[planet_index].coord_index = new_coord_index;
                 dirty.planets[planet_index].has_change = true;
 
                 await planet.sendInfo(socket, "galaxy", dirty, { 'planet_index': planet_index });
@@ -794,6 +797,7 @@ exports.move = move;
 
             // send the updated planet info
             dirty.planets[planet_index].coord_id = dirty.coords[new_coord_index].id;
+            dirty.planets[planet_index].coord_index = new_coord_index;
             dirty.planets[planet_index].has_change = true;
             await planet.sendInfo(socket, "galaxy", dirty, { 'planet_index': planet_index });
 
@@ -996,6 +1000,7 @@ exports.move = move;
                 await player.sendInfo(socket, "galaxy", dirty, dirty.players[socket.player_index].id);
 
                 dirty.objects[ship_index].coord_id = dirty.coords[coord_index].id;
+                dirty.objects[ship_index].coord_index = coord_index;
                 dirty.objects[ship_index].has_change = true;
                 await game_object.sendInfo(socket, "galaxy", dirty, ship_index, 'movement.moveGalaxy');
 
@@ -1077,6 +1082,7 @@ exports.move = move;
             await player.sendInfo(socket, "galaxy", dirty, dirty.players[socket.player_index].id);
 
             dirty.objects[ship_index].coord_id = dirty.coords[coord_index].id;
+            dirty.objects[ship_index].coord_index = coord_index;
             dirty.objects[ship_index].has_change = true;
             await game_object.sendInfo(socket, "galaxy", dirty, ship_index, 'movement.moveGalaxy');
 
@@ -1476,10 +1482,12 @@ exports.move = move;
                     'player_id': dirty.players[socket.player_index].id, 'object_id': dirty.players[socket.player_index].ship_id });
 
                 dirty.players[socket.player_index].coord_id = dirty.coords[coord_index].id;
+                dirty.players[socket.player_index].coord_index = coord_index;
                 dirty.players[socket.player_index].has_change = true;
                 await player.sendInfo(socket, "galaxy", dirty, dirty.players[socket.player_index].id);
 
                 dirty.objects[player_ship_index].coord_id = dirty.coords[coord_index].id;
+                dirty.objects[player_ship_index].coord_index = coord_index;
                 dirty.objects[player_ship_index].has_change = true;
                 await game_object.sendInfo(socket, "galaxy", dirty, player_ship_index, 'movement.moveGalaxy');
 
@@ -1544,11 +1552,13 @@ exports.move = move;
             }
 
             dirty.players[socket.player_index].coord_id = dirty.coords[coord_index].id;
+            dirty.players[socket.player_index].coor_index = coord_index;
             dirty.players[socket.player_index].has_change = true;
 
             await player.sendInfo(socket, "galaxy", dirty, dirty.players[socket.player_index].id);
 
             dirty.objects[player_ship_index].coord_id = dirty.coords[coord_index].id;
+            dirty.objects[player_ship_index].coord_index = coord_index;
             dirty.objects[player_ship_index].has_change = true;
             await game_object.sendInfo(socket, "galaxy", dirty, player_ship_index, 'movement.moveGalaxy');
 
@@ -1616,6 +1626,7 @@ exports.move = move;
 
 
             dirty.objects[object_index].coord_id = dirty.coords[coord_index].id;
+            dirty.objects[object_index].coord_index = coord_index;
             dirty.objects[object_index].has_change = true;
 
             await game_object.sendInfo(false, "galaxy", dirty, object_index);
@@ -1771,6 +1782,7 @@ exports.move = move;
 
 
             dirty.npcs[npc_index].coord_id = dirty.coords[coord_index].id;
+            dirty.npcs[npc_index].coord_index = coord_index;
             dirty.npcs[npc_index].has_change = true;
 
             await world.sendNpcInfo(false, "galaxy", dirty, dirty.npcs[npc_index].id);
@@ -1868,7 +1880,7 @@ exports.move = move;
             // PORTALS!!!!
             if (dirty.planet_coords[planet_coord_index].object_type_id && dirty.object_types[object_type_index].is_portal) {
 
-                console.log("Object type is portal");
+                //console.log("Object type is portal");
 
                 let portal_id = 0;
                 if(dirty.planet_coords[planet_coord_index].object_id) {
@@ -1938,6 +1950,7 @@ exports.move = move;
                         await main.updateCoordGeneric(socket, {'planet_coord_index': moving_to_coord_index, 'player_id': socket.player_id });
 
                         dirty.players[socket.player_index].planet_coord_id = dirty.planet_coords[moving_to_coord_index].id;
+                        dirty.players[socket.player_index].planet_coord_index = moving_to_coord_index;
                         dirty.players[socket.player_index].has_change = true;
                         // send the updated player info
                         await player.sendInfo(socket, "planet_" + dirty.planet_coords[moving_to_coord_index].planet_id, dirty,
@@ -2017,6 +2030,7 @@ exports.move = move;
                         await main.updateCoordGeneric(socket, {'planet_coord_index': moving_to_coord_index, 'player_id': socket.player_id });
 
                         dirty.players[socket.player_index].planet_coord_id = dirty.planet_coords[moving_to_coord_index].id;
+                        dirty.players[socket.player_index].planet_coord_index = moving_to_coord_index;
                         dirty.players[socket.player_index].has_change = true;
                         await player.sendInfo(socket, "planet_" + dirty.planet_coords[moving_to_coord_index].planet_id, dirty, dirty.players[socket.player_index].id);
 
@@ -2109,6 +2123,7 @@ exports.move = move;
 
                 // send the updated player info
                 dirty.players[socket.player_index].planet_coord_id = dirty.planet_coords[planet_coord_index].id;
+                dirty.players[socket.player_index].planet_coord_index = planet_coord_index;
                 dirty.players[socket.player_index].has_change = true;
                 await player.sendInfo(socket, "planet_" + dirty.planet_coords[planet_coord_index].planet_id, dirty, dirty.players[socket.player_index].id);
 
@@ -2299,6 +2314,7 @@ exports.move = move;
                         await main.updateCoordGeneric(socket, {'planet_coord_index': falling_planet_coord_index, 'player_id': socket.player_id });
 
                         dirty.players[data.player_index].planet_coord_id = dirty.planet_coords[falling_planet_coord_index].id;
+                        dirty.players[data.player_index].planet_coord_index = falling_planet_coord_index;
                         dirty.players[data.player_index].has_change = true;
                         // send the updated player info
                         await player.sendInfo(socket, "planet_" + dirty.planet_coords[falling_planet_coord_index].planet_id,
@@ -2344,6 +2360,7 @@ exports.move = move;
                 'npc_id': dirty.npcs[npc_index].id });
 
             dirty.npcs[npc_index].planet_coord_id = dirty.planet_coords[coord_index].id;
+            dirty.npcs[npc_index].planet_coord_index = coord_index;
             dirty.npcs[npc_index].has_change = true;
 
             await world.sendNpcInfo(false, "planet_" + dirty.planet_coords[coord_index].planet_id, dirty, dirty.npcs[npc_index].id);
@@ -2774,6 +2791,7 @@ exports.move = move;
                         await main.updateCoordGeneric(socket, {'ship_coord_index': moving_to_coord_index, 'player_id': socket.player_id });
 
                         dirty.players[socket.player_index].ship_coord_id = dirty.ship_coords[moving_to_coord_index].id;
+                        dirty.lpayers[socket.player_index].ship_coord_index = moving_to_coord_index;
                         dirty.players[socket.player_index].has_change = true;
                         // send the updated player info
                         await player.sendInfo(socket, "ship_" + dirty.ship_coords[moving_to_coord_index].ship_id, dirty,
@@ -2852,6 +2870,7 @@ exports.move = move;
                         await main.updateCoordGeneric(socket, {'ship_coord_index': moving_to_coord_index, 'player_id': socket.player_id });
 
                         dirty.players[socket.player_index].ship_coord_id = dirty.ship_coords[moving_to_coord_index].id;
+                        dirty.players[socket.player_index].ship_coord_index = moving_to_coord_index;
                         dirty.players[socket.player_index].has_change = true;
                         await player.sendInfo(socket, "ship_" + dirty.ship_coords[moving_to_coord_index].ship_id, dirty, dirty.players[socket.player_index].id);
 
@@ -3246,6 +3265,7 @@ exports.move = move;
 
                 // send the updated player info
                 dirty.players[player_index].ship_coord_id = dirty.ship_coords[ship_coord_index].id;
+                dirty.players[player_index].ship_coord_index = ship_coord_index;
                 dirty.players[player_index].has_change = true;
                 await player.sendInfo(socket, "ship_" + dirty.ship_coords[ship_coord_index].ship_id, dirty, dirty.players[player_index].id);
 
@@ -3415,7 +3435,9 @@ exports.move = move;
                 main.updateCoordGeneric(socket, { 'planet_coord_index': moving_to_coord_index, 'player_id': socket.player_id });
 
                 dirty.players[player_index].planet_coord_id = temp_coord.id;
+                dirty.players[player_index].planet_coord_index = moving_to_coord_index;
                 dirty.players[player_index].ship_coord_id = false;
+                dirty.players[player_index].ship_coord_index = -1;
                 dirty.players[player_index].previous_ship_coord_id = false;
                 dirty.players[player_index].coord_index = -1;
                 dirty.players[player_index].has_change = true;
@@ -3433,9 +3455,11 @@ exports.move = move;
                 main.updateCoordGeneric(socket, { 'ship_coord_index': moving_to_coord_index, 'player_id': socket.player_id });
 
                 dirty.players[player_index].ship_coord_id = temp_coord.id;
+                dirty.players[player_index].ship_coord_index = moving_to_coord_index;
                 dirty.players[player_index].coord_id = false;
                 dirty.players[player_index].coord_index = -1;
                 dirty.players[player_index].planet_coord_id = false;
+                dirty.players[player_index].planet_coord_index = -1;
                 dirty.players[player_index].previous_planet_coord_id = false;
                 dirty.players[player_index].has_change = true;
                 await player.sendInfo(socket, "ship_" + dirty.ship_coords[moving_to_coord_index].ship_id, dirty, dirty.players[player_index].id);
@@ -3448,7 +3472,7 @@ exports.move = move;
             await map.updateMap(socket, dirty);
 
 
-            log(chalk.green("Done with portal move"));
+            //log(chalk.green("Done with portal move"));
 
 
 
@@ -3543,6 +3567,7 @@ async function payForGalaxyMove(socket, dirty, ship_index) {
             }
 
             dirty.players[player_index].coord_id = dirty.coords[placing_coord_index].id;
+            dirty.players[player_index].coord_index = placing_coord_index;
             dirty.players[player_index].has_change = true;
 
 
@@ -3572,6 +3597,7 @@ async function payForGalaxyMove(socket, dirty, ship_index) {
             }
 
             dirty.players[player_index].planet_coord_id = dirty.planet_coords[placing_coord_index].id;
+            dirty.players[player_index].planet_coord_index = placing_coord_index;
             dirty.players[player_index].has_change = true;
 
 
@@ -3676,6 +3702,7 @@ async function payForGalaxyMove(socket, dirty, ship_index) {
 
 
                 dirty.objects[ship_index].coord_id = false;
+                dirty.objects[ship_index].coord_index = -1;
                 dirty.objects[ship_index].current_coords = [];
                 dirty.objects[ship_index].has_change = true;
                 dirty.players[player_index].coord_id = false;
@@ -3815,7 +3842,9 @@ async function payForGalaxyMove(socket, dirty, ship_index) {
 
 
             dirty.npcs[npc_index].planet_coord_id = dirty.planet_coords[spaceport_index].id;
+            dirty.npcs[npc_index].planet_coord_index = spaceport_index;
             dirty.npcs[npc_index].coord_id = false;
+            dirty.npcs[npc_index].coord_index = -1;
             //console.log("Setting npc coord id to false");
             dirty.npcs[npc_index].has_change = true;
 
@@ -4072,6 +4101,7 @@ async function payForGalaxyMove(socket, dirty, ship_index) {
                                     " tile_y: " + dirty.coords[coord_index].tile_y);
     
                                 dirty.objects[player_ship_index].coord_id = dirty.coords[coord_index].id;
+                                dirty.objects[player_ship_index].coord_index = coord_index;
                                 dirty.objects[player_ship_index].has_change = true;
                                 let coord_data = { 'coord_index': coord_index, 'object_id': dirty.objects[player_ship_index].id };
                                 await main.updateCoordGeneric(socket, coord_data);
@@ -4144,12 +4174,15 @@ async function payForGalaxyMove(socket, dirty, ship_index) {
                     dirty.players[player_index].on_ship_id = false;
                     dirty.players[player_index].previous_ship_coord_id = false;
                     dirty.players[player_index].ship_coord_id = false;
-                    dirty.players[socket.player_index].coord_id = dirty.coords[placing_galaxy_coord_index].id;
+                    dirty.players[player_index].ship_coord_index = -1;
+                    dirty.players[player_index].coord_id = dirty.coords[placing_galaxy_coord_index].id;
                     dirty.players[player_index].coord_index = placing_galaxy_coord_index;
-                    dirty.players[socket.player_index].planet_coord_id = false;
-                    dirty.players[socket.player_index].has_change = true;
+                    dirty.players[player_index].planet_coord_id = false;
+                    dirty.players[player_index].planet_coord_index = -1;
+                    dirty.players[player_index].has_change = true;
 
                     dirty.objects[player_ship_index].coord_id = dirty.coords[placing_galaxy_coord_index].id;
+                    dirty.objects[player_ship_index].coord_index = placing_galaxy_coord_index;
                     dirty.objects[player_ship_index].docked_at_object_id = false;
                     dirty.objects[player_ship_index].has_change = true;
                     await game_object.sendInfo(socket, "galaxy", dirty, player_ship_index, 'movement.switchToGalaxy');
@@ -4176,9 +4209,11 @@ async function payForGalaxyMove(socket, dirty, ship_index) {
                     dirty.players[player_index].on_ship_id = false;
                     dirty.players[player_index].previous_ship_coord_id = dirty.players[player_index].ship_coord_id;
                     dirty.players[player_index].ship_coord_id = false;
+                    dirty.players[player_index].ship_coord_index = -1;
                     dirty.players[player_index].coord_id = dirty.coords[ship_galaxy_coord_index].id;
                     dirty.players[player_index].coord_index = ship_galaxy_coord_index;
                     dirty.players[player_index].planet_coord_id = false;
+                    dirty.players[player_index].planet_coord_index = -1;
                     dirty.players[player_index].has_change = true;
 
 
@@ -4372,6 +4407,7 @@ async function payForGalaxyMove(socket, dirty, ship_index) {
 
 
                 dirty.players[player_index].ship_coord_id = dirty.ship_coords[ship_coord_index].id;
+                dirty.players[player_index].ship_coord_index = ship_coord_index;
                 dirty.players[player_index].has_change = true;
 
                 socket.join("ship_" + dirty.ship_coords[ship_coord_index].ship_id);
@@ -4505,6 +4541,7 @@ async function payForGalaxyMove(socket, dirty, ship_index) {
 
             dirty.objects[ship_index].docked_at_planet_id = dirty.planets[azure_planet_index].id;
             dirty.objects[ship_index].coord_id = false;
+            dirty.objects[ship_index].coord_index = -1;
             dirty.objects[ship_index].has_change = true;
             game_object.sendInfo(socket, "galaxy", dirty, ship_index);
 

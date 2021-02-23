@@ -162,8 +162,7 @@ const world = require('./world.js');
                                 insert_object_type_data.player_id = dirty.players[data.player_index].id;
                             }
 
-                            let new_object_id = await world.insertObjectType(false, dirty, insert_object_type_data);
-                            let new_object_index = await game_object.getIndex(dirty, new_object_id);
+                            let new_object_index = await world.insertObjectType(false, dirty, insert_object_type_data);
 
                             await game_object.place(false, dirty, { 'object_index': new_object_index,
                                 'planet_coord_index': checking_coord_index });
@@ -683,8 +682,7 @@ const world = require('./world.js');
             }
 
             let insert_object_type_data = { 'object_type_id': 47, 'source': 'game.addPortal' };
-            let new_object_id = await world.insertObjectType(socket, dirty, insert_object_type_data);
-            let new_object_index = await game_object.getIndex(dirty, new_object_id);
+            let new_object_index = await world.insertObjectType(socket, dirty, insert_object_type_data);
             let room = "";
 
             if(data.planet_coord_index) {
@@ -903,12 +901,12 @@ const world = require('./world.js');
                         'object_type_id': dirty.object_types[object_type_index].id, 'amount': 1, 'source': 'game.assemble'
                     };
 
-                    let new_object_id = await world.insertObjectType(socket, dirty, insert_object_data);
-                    console.log("Got new object_id from insertObjectType: " + new_object_id);
+                    let new_object_index = await world.insertObjectType(socket, dirty, insert_object_data);
+
 
 
                     var adding_to_data = { 'adding_to_type':'player', 'adding_to_id':socket.player_id,
-                        'object_id': new_object_id,
+                        'object_id': dirty.objects[new_object_index].id,
                         'object_type_id':dirty.object_types[object_type_index].id, 'amount':1};
 
                     await inventory.addToInventory(socket, dirty, adding_to_data);
@@ -1010,8 +1008,7 @@ const world = require('./world.js');
                 }
 
                 let insert_object_type_data = { 'object_type_id': 114, 'source': 'game.buyObjectType' };
-                let new_object_id = await world.insertObjectType(socket, dirty, insert_object_type_data);
-                let new_object_index = await game_object.getIndex(dirty, new_object_id);
+                let new_object_index = await world.insertObjectType(socket, dirty, insert_object_type_data);
 
                 dirty.objects[new_object_index].player_id = socket.player_id;
                 dirty.objects[new_object_index].docked_at_planet_id = dirty.planet_coords[planet_coord_index].planet_id;
@@ -1027,8 +1024,7 @@ const world = require('./world.js');
                 }
 
                 let insert_object_type_data = { 'object_type_id': 114, 'source': 'game.buyObjectType' };
-                let new_object_id = await world.insertObjectType(socket, dirty, insert_object_type_data);
-                let new_object_index = await game_object.getIndex(dirty, new_object_id);
+                let new_object_index = await world.insertObjectType(socket, dirty, insert_object_type_data);
 
                 dirty.objects[new_object_index].player_id = socket.player_id;
                 dirty.objects[new_object_index].has_change = true;
@@ -1082,7 +1078,7 @@ const world = require('./world.js');
                         game_object.place(socket, dirty, { 'object_index': new_object_index, 'coord_index': placing_galaxy_coord_index });
 
                         // Switch our ship to the new pod and put it in space near our other ship
-                        await player.switchShip(socket, dirty, { 'ship_id': new_object_id });
+                        await player.switchShip(socket, dirty, { 'ship_id': dirty.objects[new_object_index].id });
                         console.log("Switched ship");
                         //await movement.warpTo(socket, dirty, { 'player_index': player_index, 'warping_to': 'galaxy', 'base_coord_index': placing_galaxy_coord_index });
                         //console.log("Warped player to new galaxy coord");
@@ -1091,9 +1087,11 @@ const world = require('./world.js');
                         dirty.players[player_index].on_ship_id = dirty.objects[new_object_index].id;
                         dirty.players[player_index].previous_ship_coord_id = false;
                         dirty.players[player_index].ship_coord_id = false;
+                        dirty.players[player_index].ship_coord_index = -1;
                         dirty.players[socket.player_index].coord_id = dirty.coords[placing_galaxy_coord_index].id;
                         dirty.players[socket.player_index].coord_index = placing_galaxy_coord_index;
                         dirty.players[socket.player_index].planet_coord_id = false;
+                        dirty.players[socket.player_index].planet_coord_index = -1;
                         dirty.players[socket.player_index].has_change = true;
                         player.sendInfo(socket, false, dirty, dirty.players[socket.player_index].id);
 
@@ -1633,8 +1631,7 @@ const world = require('./world.js');
 
 
                 if(dirty.object_types[output_object_type_index].assembled_as_object) {
-                    let new_object_id = await world.insertObjectType(false, dirty, { 'object_type_id': dirty.object_types[output_object_type_index].id });
-                    let new_object_index = await game_object.getIndex(dirty, new_object_id);
+                    let new_object_index = await world.insertObjectType(false, dirty, { 'object_type_id': dirty.object_types[output_object_type_index].id });
 
 
                     adding_to_data.object_id = dirty.objects[new_object_index].id;
@@ -1661,8 +1658,7 @@ const world = require('./world.js');
 
                     if(dirty.object_types[output_object_type_index].assembled_as_object) {
                         let insert_object_type_data = { 'object_type_id': using_conversion_linker.output_object_type_id, 'source': 'game.convert' };
-                        let new_object_id = await world.insertObjectType(false, dirty, insert_object_type_data);
-                        let new_object_index = await game_object.getIndex(dirty, new_object_id);
+                        let new_object_index = await world.insertObjectType(false, dirty, insert_object_type_data);
 
 
                         if(converter_info.scope === "planet") {
@@ -3444,8 +3440,7 @@ exports.eat = eat;
                     let insert_object_type_data = { 'object_type_id': dirty.spawn_linkers[data.spawn_linker_index].spawns_object_type_id,
                         'spawned_event_id': spawned_event_id };
 
-                    let new_object_id = await world.insertObjectType(false, dirty, insert_object_type_data);
-                    let new_object_index = await game_object.getIndex(dirty, new_object_id);
+                    let new_object_index = await world.insertObjectType(false, dirty, insert_object_type_data);
 
                     let place_object_data = { 'object_index': new_object_index };
 
@@ -4667,10 +4662,10 @@ exports.eat = eat;
             // A player could have different ships - so we only want to do this on a match with the player's ship_id
             if(reason !== 'switchship' && dirty.players[player_index].ship_id === ship_id) {
                 // give the player a new ship
-                let new_ship_id = await world.insertObjectType(false, dirty, { 'object_type_id': 114, 'player_id': dirty.players[player_index].id });
-                let new_ship_index = await game_object.getIndex(dirty, new_ship_id);
+                let new_ship_index = await world.insertObjectType(false, dirty, { 'object_type_id': 114, 'player_id': dirty.players[player_index].id });
+
                 if(new_ship_index !== -1) {
-                    dirty.players[player_index].ship_id = new_ship_id;
+                    dirty.players[player_index].ship_id = dirty.objects[new_ship_index].id;
                     dirty.players[player_index].has_change = true;
     
                     // I believe this is being taken care of in world.insertObjectType
@@ -4850,8 +4845,7 @@ exports.eat = eat;
                     for(let x = 1; x <= amount; x++) {
                         let insert_object_type_data = { 'object_type_id': dirty.object_types[object_type_index].id,
                             'source': 'game.processAdminChatMessage - /addinventory' };
-                        let new_object_id = await world.insertObjectType(socket, dirty, insert_object_type_data);
-                        let new_object_index = await game_object.getIndex(dirty, new_object_id);
+                        let new_object_index = await world.insertObjectType(socket, dirty, insert_object_type_data);
 
                         await inventory.addToInventory(socket, dirty, { 'adding_to_type': 'player', 'adding_to_id': socket.player_id,
                             'object_id': dirty.objects[new_object_index].id, 'amount': 1 });
@@ -5159,6 +5153,7 @@ exports.eat = eat;
                 await main.updateCoordGeneric(socket, { 'planet_coord_index': found_coord_index, 'player_id': dirty.players[player_index].id });
 
                 dirty.players[player_index].planet_coord_id = dirty.planet_coords[found_coord_index].id;
+                dirty.players[player_index].planet_coord_index = found_coord_index;
                 dirty.players[player_index].has_change = true;
                 await player.sendInfo(socket, "planet_" + dirty.planet_coords[found_coord_index].planet_id, dirty, dirty.players[player_index].id);
 
@@ -5271,7 +5266,9 @@ exports.eat = eat;
 
                     dirty.players[socket.player_index].previous_coord_id = false;
                     dirty.players[socket.player_index].coord_id = false;
+                    dirty.players[socket.player_index].coord_index = -1;
                     dirty.players[socket.player_index].ship_coord_id = dirty.ship_coords[ship_coord_index].id;
+                    dirty.players[socket.player_index].ship_coord_index = -1;
                     dirty.players[socket.player_index].has_change = true;
                     socket.map_needs_cleared = true;
                     await player.sendInfo(socket, "ship_" + dirty.ship_coords[ship_coord_index].ship_id, dirty, dirty.players[socket.player_index].id);
@@ -5710,8 +5707,7 @@ exports.eat = eat;
                 // Create and place the object
                 let new_object_index = -1;
                 if(dirty.object_types[object_type_index].assembled_as_object) {
-                    let new_object_id = await world.insertObjectType(socket, dirty, { 'object_type_id': dirty.object_types[object_type_index].id });
-                    new_object_index = await game_object.getIndex(dirty, new_object_id);
+                    new_object_index = await world.insertObjectType(socket, dirty, { 'object_type_id': dirty.object_types[object_type_index].id });
 
                     if(dirty.object_types[object_type_index].spawns_object_type_on_create) {
                         console.log("object type spawns something when created!");
@@ -6661,8 +6657,7 @@ exports.eat = eat;
 
                                     let insert_object_type_data = { 'object_type_id': dirty.object_types[salvaged_object_type_index].id,
                                     'source': 'game.salvage' };
-                                    let new_object_id = await world.insertObjectType(socket, dirty, insert_object_type_data);
-                                    let new_object_index = await game_object.getIndex(dirty, new_object_id);
+                                    let new_object_index = await world.insertObjectType(socket, dirty, insert_object_type_data);
 
                                     await inventory.addToInventory(socket, dirty, { 'adding_to_type': 'player', 'adding_to_id': socket.player_id,
                                         'object_id': dirty.objects[new_object_index].id, 'amount': 1 });        
@@ -7255,7 +7250,6 @@ exports.eat = eat;
                     if(success) {
 
                         let new_object_index = -1;
-                        let new_object_id = false;
 
                         // we just have to do an object_type_id insert into the assembler's inventory
                         if(!dirty.object_types[assembled_object_type_index].assembled_as_object) {
@@ -7266,9 +7260,8 @@ exports.eat = eat;
                         } else {
                             let object_data = {'object_type_id': assembly.being_assembled_object_type_id,
                                 'player_id': dirty.objects[assembler_object_index].player_id };
-                            new_object_id = await world.insertObjectType(false, dirty, object_data);
+                            new_object_index = await world.insertObjectType(false, dirty, object_data);
                             //console.log("Got new object id: " + new_object_id);
-                            new_object_index = await game_object.getIndex(dirty, new_object_id);
                             //console.log("Got new_object_index as: " + new_object_index);
 
                         }
@@ -7441,7 +7434,7 @@ exports.eat = eat;
                         if(helper.notFalse(player_socket)) {
 
 
-                            // Send a system message that the research has failed
+                            // Send a system message that the assembly has failed
                             player_socket.emit('chat', { 'message': dirty.object_types[assembled_object_type_index].name +
                                     " Assembly Failed. The complexity eluded you this time", 'scope': 'system'});
 
@@ -7449,7 +7442,7 @@ exports.eat = eat;
                                 'text': "Assembling " + dirty.object_types[assembled_object_type_index].name + " Failed",
                                 'object_id': dirty.objects[assembler_object_index].id });
                         } else {
-                            console.log("This socket is not connected");
+                            //console.log("This socket is not connected - for assembly fail");
                         }
 
 
@@ -8541,8 +8534,7 @@ exports.eat = eat;
                                 if(structure_linker.object_type_id && structure_linker.object_type_id !== false) {
                                     let insert_object_type_data = { 'object_type_id': structure_linker.object_type_id,
                                         'npc_id': dirty.npcs[npc_index].id };
-                                    let new_object_id = await world.insertObjectType(false, dirty, insert_object_type_data);
-                                    let new_object_index = await game_object.getIndex(dirty, new_object_id);
+                                    let new_object_index = await world.insertObjectType(false, dirty, insert_object_type_data);
 
                                     await game_object.place(false, dirty, { 'object_index': new_object_index,
                                         'planet_coord_index': checking_coord_index });
@@ -8891,7 +8883,7 @@ exports.eat = eat;
                                     'text': "Researching " + dirty.object_types[object_type_index].name + " Succeeded!",
                                     'object_id': dirty.objects[researcher_object_index].id });
                             } else {
-                                console.log("This socket is not connected");
+                                //console.log("This socket is not connected - for research success");
                             }
 
                             // remove the researches stuff
@@ -8925,7 +8917,7 @@ exports.eat = eat;
                                     'text': "Researching " + dirty.object_types[object_type_index].name + " Failed",
                                     'object_id': dirty.objects[researcher_object_index].id });
                             } else {
-                                console.log("This socket is not connected");
+                                //console.log("This socket is not connected - for research failure");
                             }
 
                             // remove the researches stuff
@@ -9325,7 +9317,7 @@ exports.eat = eat;
 
             let debug_object_type_ids = [];
 
-            log(chalk.green("Got pick up request. data.object_id: " + data.object_id + " data.planet_coord_id: " + data.planet_coord_id));
+            //log(chalk.green("Got pick up request. data.object_id: " + data.object_id + " data.planet_coord_id: " + data.planet_coord_id));
 
             if(typeof socket.player_index === "undefined" || socket.player_index === -1) {
                 log(chalk.yellow("Socket doesn't have a player"));
@@ -9618,11 +9610,13 @@ exports.eat = eat;
                     await main.updateCoordGeneric(socket, { 'planet_coord_index': picking_up_coord_index, 'object_id': false });
 
                     dirty.objects[object_index].planet_coord_id = false;
+                    dirty.objects[object_index].planet_coord_index = -1;
                     dirty.objects[object_index].has_change = true;
                 } else if(player_info.scope === 'ship') {
                     await main.updateCoordGeneric(socket, { 'ship_coord_index': picking_up_coord_index, 'object_id': false });
                     
                     dirty.objects[object_index].ship_coord_id = false;
+                    dirty.objects[object_index].ship_coord_index = -1;
                     dirty.objects[object_index].has_change = true;
                 }
 
@@ -9761,8 +9755,8 @@ exports.eat = eat;
             let inserting_object_type_data = {
                 'object_type_id': dirty.object_types[object_type_index].planted_object_type_id };
 
-            let new_object_id = await world.insertObjectType(socket, dirty, inserting_object_type_data);
-            let new_object_index = await game_object.getIndex(dirty, new_object_id);
+            let new_object_index = await world.insertObjectType(socket, dirty, inserting_object_type_data);
+
 
             if(planting_scope === 'planet') {
                 await game_object.place(false, dirty, { 'object_index': new_object_index,
@@ -10741,7 +10735,7 @@ exports.eat = eat;
 
             // Move the player to the new body
             dirty.players[player_index].body_id = dirty.objects[object_index].id;
-            console.log("Updated player body id to: " + dirty.players[player_index].body_id);
+            //console.log("Updated player body id to: " + dirty.players[player_index].body_id);
 
             if(dirty.objects[object_index].player_id !== dirty.players[player_index].id) {
                 console.log("This body used to belong to a different player. Updating body's player_id");
@@ -10764,6 +10758,7 @@ exports.eat = eat;
                 //console.log("Updating player and coords");
 
                 dirty.players[player_index].planet_coord_id = dirty.planet_coords[new_body_coord_index].id;
+                dirty.players[player_index].planet_coord_index = new_body_coord_index;
                 dirty.players[player_index].has_change = true;
 
                 // update the old planet coord
@@ -10778,11 +10773,13 @@ exports.eat = eat;
 
                 // Make sure the old body knows where it is
                 dirty.objects[old_body_index].planet_coord_id = dirty.planet_coords[old_player_coord_index].id;
+                dirty.objects[old_body_index].planet_coord_index = old_player_coord_index;
                 dirty.objects[old_body_index].has_change = true;
                 await game_object.sendInfo(socket, "planet_" + dirty.planet_coords[new_body_coord_index].planet_id, dirty, old_body_index);
 
 
                 dirty.objects[object_index].planet_coord_id = false;
+                dirty.objects[object_index].planet_coord_index = -1;
                 dirty.objects[object_index].has_change = true;
                 await game_object.sendInfo(socket, "planet_" + dirty.planet_coords[new_body_coord_index].planet_id, dirty, object_index);
 
@@ -10795,6 +10792,7 @@ exports.eat = eat;
                 //console.log("Old player ship coord id: " + dirty.players[player_index].ship_coord_id);
 
                 dirty.players[player_index].ship_coord_id = dirty.ship_coords[new_body_coord_index].id;
+                dirty.players[player_index].ship_coord_index = -1;
                 dirty.players[player_index].has_change = true;
                 main.clearPlayerExtraCoords(player_index);
                 //console.log("Updated player id: " + dirty.players[player_index].id + " to ship coord id: " + dirty.players[player_index].ship_coord_id);
@@ -10811,10 +10809,12 @@ exports.eat = eat;
 
 
                 dirty.objects[old_body_index].ship_coord_id = dirty.ship_coords[old_player_coord_index].id;
+                dirty.objects[old_body_index].ship_coord_index = old_player_coord_index;
                 dirty.objects[old_body_index].has_change = true;
                 await game_object.sendInfo(socket, "ship_" + dirty.ship_coords[new_body_coord_index].ship_id, dirty, old_body_index);
 
                 dirty.objects[object_index].ship_coord_id = false;
+                dirty.objects[object_index].ship_coord_index = -1;
                 dirty.objects[object_index].has_change = true;
                 await game_object.sendInfo(socket, "ship_" + dirty.ship_coords[new_body_coord_index].ship_id, dirty, object_index);
 
@@ -11019,6 +11019,7 @@ exports.eat = eat;
                     await main.updateCoordGeneric(socket, { 'planet_coord_index': found_coord_index, 'player_id': dirty.players[socket.player_index].id });
 
                     dirty.players[socket.player_index].planet_coord_id = dirty.planet_coords[found_coord_index].id;
+                    dirty.players[socket.player_index].planet_coord_index = found_coord_index;
                     dirty.players[socket.player_index].has_change = true;
                     await player.sendInfo(socket, "planet_" + dirty.planet_coords[found_coord_index].planet_id, dirty, dirty.players[socket.player_index].id);
 
@@ -11030,6 +11031,7 @@ exports.eat = eat;
                     await main.updateCoordGeneric(socket, { 'ship_coord_index': found_coord_index, 'player_id': dirty.players[socket.player_index].id });
 
                     dirty.players[socket.player_index].ship_coord_id = dirty.ship_coords[found_coord_index].id;
+                    dirty.players[socket.player_index].ship_coord_index = -1;
                     dirty.players[socket.player_index].has_change = true;
                     await player.sendInfo(socket, "ship_" + dirty.ship_coords[found_coord_index].ship_id, dirty, dirty.players[socket.player_index].id);
 

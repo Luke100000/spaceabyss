@@ -1697,7 +1697,9 @@ socket.on('news', function (data) {
     $('#status').text(data.status);
     socket.emit('my other event', { my: 'data' });
     console.log("Connected");
-    $("#status_container").hide();
+    $("#status_container").empty();
+    $("#status_container").append("<div class='notification is-success'><i class='fas fa-check'></i> Connected And Loaded!</div>");
+    //$("#status_container").fadeOut(1600);
     $("#chat_global").hide();
     $("#chat_faction").hide();
     $("#chat_system").hide();

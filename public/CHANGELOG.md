@@ -1,3 +1,22 @@
+## [0.2.33] - 2021-02-23
+
+### Added
+- The start of a messaging system. Player name locations in several areas of the client are now clickable, and lead to the profile page of the player. 
+You can then send them a message if you want to
+- Descriptions for players
+- A player's faction is linked to on their player page now
+
+### Fixed
+- Now preventing logging into the same character from multiple places at the same time
+- Some storyteller text
+
+### Changed
+- Performance Improvements on the server for inserting objects
+- The way we protect against xss and other attacks in things like desriptions. 
+- Updated game login page to look a bit more custom
+- Tested database backups
+- I have the backbone for a very significant server performance update in place. I'll be watching the logs to see if things are good to push in the next version.
+
 ## [0.2.32] - 2021-02-08
 
 ### Added

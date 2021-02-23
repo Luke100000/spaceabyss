@@ -1051,15 +1051,14 @@ async function spawn(dirty, event_index, data) {
 
                 if(event_linker.object_type_id) {
                     let insert_object_type_data = { 'object_type_id': event_linker.object_type_id, 'spawned_event_id': spawned_event_id };
-                    let new_object_id = await world.insertObjectType(false, dirty, insert_object_type_data);
-
-                    if(new_object_id === false) {
+                    let new_object_index = await world.insertObjectType(false, dirty, insert_object_type_data);
+                    
+                    if(new_object_index === -1) {
                         log(chalk.yellow("Failed to insert object type in event.spawn"));
                         return false;
                     }
 
-                    let new_object_index = await game_object.getIndex(dirty, new_object_id);
-
+                    let new_object_id = dirty.objects[new_object_index].id;
                     
 
                     if(new_object_index === -1) {

@@ -1412,7 +1412,8 @@ function displayClickObject(object_id) {
     if (objects[object_index].player_id) {
         let player_index = players.findIndex(function (obj) { return obj && obj.id === objects[object_index].player_id; });
         if (player_index !== -1) {
-            $('#coord_data').append("&nbsp;&nbsp;Owned By Player " + players[player_index].name + "<br>");
+            $('#coord_data').append("&nbsp;&nbsp;Owned By Player <a target='_blank' href='https://space.alphacoders.com/player/view/" + 
+                players[player_index].id + "'>" + players[player_index].name + "</a><br>");
 
         } else {
             socket.emit('request_player_info', { 'player_id': objects[object_index].player_id });
@@ -9851,6 +9852,8 @@ function showClickMenu(pointer) {
                 $('#click_menu').append("<button id='attack_player_" + coord.player_id + "' " +
                     "player_id='" + coord.player_id + "' class='button is-warning is-small' source='player-generic'>Attack Player</button>");
             }
+
+            $('#click_menu').append("<br><a target='_blank' href='https://space.alphacoders.com/player/view/" + players[other_player_index].id + "'>View Profile</a>");
         }
 
 

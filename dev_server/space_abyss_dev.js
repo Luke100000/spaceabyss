@@ -2527,27 +2527,18 @@ async function loginPlayer(socket, dirty, data) {
             
             let logging_in_player = rows[0];
             let already_connected = false;
+
+
     
-            // found the player - now make sure they aren't already connected
-            // TODO need to figure out how to for loop this so it's functional
-            /*
-            Object.keys(io.sockets.sockets).forEach(function(id) {
-                //console.log("ID:" + id);
-                other_socket = io.sockets.connected[id];
-    
-                if(other_socket.player_id === player.id) {
-                    already_connected = true;
+            // Prevent players from accidently logging in multiple times
+            for(var socket_id in io.sockets.sockets) {
+                //console.log("Checking socket " + socket_id);
+                if(io.sockets.sockets[socket_id].player_id === logging_in_player.id) {
+                    socket.emit('login_data', { 'status':'failed' });
+                    return false;
                 }
-            });
-    
-    
-            if(already_connected === true) {
-                // Don't re-log them in
-                console.log("Player is already connected. Can't login twice");
-                return false;
             }
-    
-            */
+
     
             let placed_player = false;
             let starting_view = false;
@@ -2632,10 +2623,10 @@ async function loginPlayer(socket, dirty, data) {
     
             if(ship_index === -1) {
                 console.log("Creating a ship for player id: " + dirty.players[player_index].id);
-                let new_ship_id = await world.insertObjectType(false, dirty, { 'object_type_id': 114, 'player_id': dirty.players[player_index].id });
-                let new_ship_index = await game_object.getIndex(dirty, new_ship_id);
+                let new_ship_index = await world.insertObjectType(false, dirty, { 'object_type_id': 114, 'player_id': dirty.players[player_index].id });
+
                 if(new_ship_index !== -1) {
-                    dirty.players[player_index].ship_id = new_ship_id;
+                    dirty.players[player_index].ship_id = dirty.objects[new_ship_index].id;
                     dirty.players[player_index].has_change = true;
                 } else {
                     log(chalk.red("Error creating a ship for player!"));
@@ -2674,7 +2665,9 @@ async function loginPlayer(socket, dirty, data) {
                         let planet_coord_data = { 'planet_coord_index': planet_coord_index, 'player_id': socket.player_id };
                         await updateCoordGeneric(socket, planet_coord_data);
                         dirty.players[player_index].planet_coord_id = dirty.planet_coords[planet_coord_index].id;
+                        dirty.players[player_index].planet_coord_index = planet_coord_index;
                         dirty.players[player_index].ship_coord_id = false;
+                        dirty.players[player_index].ship_coord_index = -1;
                         dirty.players[player_index].has_change = true;
                         await player.sendInfo(socket, "planet_" + dirty.planet_coords[planet_coord_index].planet_id,
                             dirty, dirty.players[player_index].id);
@@ -2728,7 +2721,9 @@ async function loginPlayer(socket, dirty, data) {
                         placed_player = true;
     
                         dirty.players[player_index].ship_coord_id = dirty.ship_coords[ship_coord_index].id;
+                        dirty.players[player_index].ship_coord_index = ship_coord_index;
                         dirty.players[player_index].planet_coord_id = false;
+                        dirty.players[player_index].planet_coord_index = -1;
                         dirty.players[player_index].has_change = true;
     
                         await player.sendInfo(socket, "ship_" + dirty.ship_coords[ship_coord_index].ship_id, dirty, dirty.players[player_index].id);
@@ -2768,6 +2763,7 @@ async function loginPlayer(socket, dirty, data) {
                 } else {
                     console.log("Got -1 index for ship coord id: " + dirty.players[player_index].previous_ship_coord_id);
                     dirty.players[socket.player_index].ship_coord_id = false;
+                    dirty.players[socket.player_index].ship_coord_index = -1;
                     dirty.players[socket.player_index].has_change = true;
                 }
     
@@ -2800,12 +2796,16 @@ async function loginPlayer(socket, dirty, data) {
     
                         placed_player = true;
                         dirty.players[player_index].coord_id = dirty.coords[coord_index].id;
+                        dirty.players[player_index].coord_index = coord_index;
                         dirty.players[player_index].planet_coord_id = false;
+                        dirty.players[player_index].planet_coord_index = -1;
                         dirty.players[player_index].ship_coord_id = false;
+                        dirty.players[player_index].ship_coord_index = -1;
                         dirty.players[player_index].has_change = true;
     
                         if(player_ship_index !== -1) {
                             dirty.objects[player_ship_index].coord_id = dirty.coords[coord_index].id;
+                            dirty.objects[player_ship_index].coord_index = coord_index;
                             dirty.objects[player_ship_index].has_change = true;
                             await game_object.sendInfo(socket, "galaxy", dirty, player_ship_index);
                         }
@@ -2854,8 +2854,11 @@ async function loginPlayer(socket, dirty, data) {
                         placed_player = true;
     
                         dirty.players[socket.player_index].coord_id = dirty.coords[coord_index].id;
+                        dirty.players[socket.player_index].coord_index = coord_index;
                         dirty.players[socket.player_index].planet_coord_id = false;
+                        dirty.players[socket.player_index].planet_coord_index = -1;
                         dirty.players[socket.player_index].ship_coord_id = false;
+                        dirty.plyaers[socket.player_index].ship_coord_index = -1;
                         dirty.players[socket.player_index].has_change = true;
     
                         await map.updateMap(socket, dirty);
@@ -2953,86 +2956,6 @@ async function loginPlayer(socket, dirty, data) {
 
 
         });
-
-
-        //let user_password_node_version =  user_pass_php.substr(0,2) + 'a' + user_pass_php.substr(3);
-        
-
-        /*
-        console.log("user_pass_php: " + user_pass_php);
-        console.log("user_password_node_version: " + user_password_node_version);
-        //console.log("modified_trying_password: " + modified_trying_password);
-
-
-        let login_success = false;
-
-        if(!bcrypt.compareSync(trying_password, user_password_node_version)) {
-            console.log("Invalid login info - new");
-        } else {
-            login_success = true;
-        }
-        */
-
-        /*
-        if(!bcrypt.compareSync(modified_trying_password, user_password_node_version)) {
-            console.log("Invalid login info - normal");
-        } else {
-            login_success = true;
-        }
-        */
-
-        /*
-        // 2. Look for a temp password - this is as we transition from PHP to node
-        if(user.password_temp && user.password_temp === trying_password) {
-
-            log(chalk.green("password_temp succeeded!"));
-            login_success = true;
-            if(!user.password_node) {
-                let password_node = bcrypt.hashSync(user.password_temp);
-                let [result] = await (pool.query("UPDATE users SET password_node = ? WHERE id = ?", [password_node, user.id]));
-            }
-            
-        } else {
-            console.log("Invalid login info - password_temp");
-        }
-        */
-
-        // 3. NODE PASSWORD LOGIN
-        /*
- 
-        if(user.password_node) {
-            console.log("User has node password");
-
-            if(bcrypt.compareSync(trying_password, user.password_node)) {
-                log(chalk.green("Node password successfull"));
-                // remove the temp password
-                login_success = true;
-
-                if(user.password_temp) {
-                    // We successfully logged in with a node password - remove the password_temp
-                    let [result] = await (pool.query("UPDATE users SET password_temp = ? WHERE id = ?", ['', user.id]));
-                }
-                
-            } else {
-                log(chalk.red("Node password failed"));
-
-            }
-        }
-
-        */
-
-        /*
-        if(!login_success) {
-            socket.emit('login_data', {'status':'failed' });
-            return false;
-
-        }
-        */
-
-
-
-
-
 
 
     } catch(error) {
@@ -3325,6 +3248,7 @@ async function disconnectPlayer(socket) {
 
             dirty.players[player_index].previous_planet_coord_id = dirty.players[player_index].planet_coord_id;
             dirty.players[player_index].planet_coord_id = false;
+            dirty.players[player_index].planet_coord_index = -1;
             dirty.players[player_index].previous_ship_coord_id = false;
             dirty.players[player_index].previous_coord_id = false;
             dirty.players[player_index].has_change = true;
@@ -3355,6 +3279,7 @@ async function disconnectPlayer(socket) {
             dirty.players[player_index].previous_ship_coord_id = dirty.players[player_index].ship_coord_id;
             dirty.players[player_index].previous_planet_coord_id = false;
             dirty.players[player_index].ship_coord_id = false;
+            dirty.players[player_index].ship_coord_index = -1;
             dirty.players[player_index].has_change = true;
 
 
@@ -3587,7 +3512,7 @@ async function getPlanetCoordIndex(data) {
         } else if(data.planet_id) {
 
             if(data.tile_x < 0 || data.tile_y < 0) {
-                console.log("Returning -1 on getPlanetCoordIndex. No coords < 0");
+                //console.log("Returning -1 on getPlanetCoordIndex. No coords < 0");
                 return -1;
             }
 
@@ -4219,12 +4144,31 @@ async function updateCoordGeneric(socket, data) {
 
                     if(coord_type === "coord") {
                         dirty.objects[object_index].coord_id = coord.id;
+                        if(typeof data.coord_index === 'undefined') {
+                            log(chalk.yellow("In updateCoordGeneric. Should really pass a coord_index in here!"));
+                            console.trace("here");
+                        } else {
+                            dirty.objects[object_index].coord_index = data.coord_index;
+                        }
                         dirty.objects[object_index].has_change = true;
                     } else if(coord_type === "planet_coord") {
                         dirty.objects[object_index].planet_coord_id = coord.id;
+                        if(typeof data.planet_coord_index === 'undefined') {
+                            log(chalk.yellow("In updateCoordGeneric. Should really pass a planet_coord_index in here!"));
+                            console.trace("here");
+                        } else {
+                            dirty.objects[object_index].planet_coord_index = data.planet_coord_index;
+                        }
+                        
                         dirty.objects[object_index].has_change = true;
                     } else if(coord_type === "ship_coord") {
                         dirty.objects[object_index].ship_coord_id = coord.id;
+                        if(typeof data.ship_coord_index === 'undefined') {
+                            log(chalk.yellow("In updateCoordGeneric. Should really pass a ship_coord_index in here!"));
+                            console.trace("here");
+                        } else {
+                            dirty.objects[object_index].ship_coord_index = data.ship_coord_index;
+                        }
                         dirty.objects[object_index].has_change = true;
                     }
 
