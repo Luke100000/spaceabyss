@@ -64,13 +64,13 @@
       
     
 
-    <script src="client_functions_0.2.34.js"></script>
-    <script src="client_network_0.2.34.js"></script>
-    <script src="client_click_0.2.34.js"></script>
-    <script src="effects_0.2.34.js"></script>
-    <script src="monster_0.2.34.js"></script>
-    <script src="planet_0.2.34.js"></script>
-    <script src="player_0.2.34.js"></script>
+    <script src="client_functions_0.2.35.js"></script>
+    <script src="client_network_0.2.35.js"></script>
+    <script src="client_click_0.2.35.js"></script>
+    <script src="effects_0.2.35.js"></script>
+    <script src="monster_0.2.35.js"></script>
+    <script src="planet_0.2.35.js"></script>
+    <script src="player_0.2.35.js"></script>
 
 
     <link href="//space.alphacoders.com/bulma-0.7.2/css/bulma.min.css" rel="stylesheet" media="screen">
@@ -3153,15 +3153,47 @@
 
                                 // move to the next frame, or reset
                                 let next_frame = animations[i].current_frame + 1;
+
                                 if(next_frame > object_types[object_type_index].is_active_frame_count) {
                                     next_frame = 1;
                                 }
 
-                                animations[i].current_frame = next_frame;
-
-
+                                
                                 let game_file_index = object_types[object_type_index].game_file_index + (next_frame - 1);
-                                map.putTileAt(game_file_index, tile_x, tile_y, false, 'layer_object');
+                                
+
+                                // alright, we are animating this floor! See if it's via display linkers, or just the game file index
+                                let display_linkers = object_type_display_linkers.filter(linker => linker.object_type_id === object_types[object_type_index].id);
+
+                                if(display_linkers.length > 0) {
+
+                                    let object_width = 1;
+                                    for(linker of display_linkers) {
+                                        if(linker.position_x >= object_width - 1) {
+                                            object_width = linker.position_x + 1;
+                                        }
+                                    }
+
+                                    
+                                    console.log("Object width: " + object_width);
+                                    //console.log("Floor frame: " + next_frame);
+
+                                    for(linker of display_linkers) {
+
+                                        let linker_tile_x = tile_x + linker.position_x;
+                                        let linker_tile_y = tile_y + linker.position_y;
+
+                                        map.putTileAt(linker.game_file_index + (animations[i].current_frame * object_width - object_width), linker_tile_x,
+                                            linker_tile_y, false, linker.layer);
+                                    }
+
+
+                                } else {
+
+                                    map.putTileAt(game_file_index, tile_x, tile_y, false, 'layer_object');
+                                }
+
+                                animations[i].current_frame = next_frame;
 
                             } else {
                                 console.log("Couldn't find object for animation. Deleting it.");
@@ -3201,7 +3233,6 @@
                                             map.putTileAt(linker.game_file_index + (next_frame - 1), linker_tile_x,
                                                 linker_tile_y, false, linker.layer);
                                         }
-                                        animations[i].current_frame = next_frame;
 
 
                                     } else {

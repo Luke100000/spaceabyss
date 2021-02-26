@@ -2329,7 +2329,7 @@ async function switchShip(socket, dirty, data) {
             dirty.players[player_index].coord_id = dirty.coords[new_ship_coord_index].id;
             dirty.players[player_index].coord_index = new_ship_coord_index;
             dirty.players[player_index].ship_coord_id = false;
-            dirty.plyaers[player_index].ship_coord_index = -1;
+            dirty.players[player_index].ship_coord_index = -1;
             dirty.players[player_index].previous_ship_coord_id = false;
             dirty.players[player_index].has_change = true;
             await sendInfo(socket, "galaxy", dirty, dirty.players[player_index].id);

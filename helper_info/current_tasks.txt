@@ -8,6 +8,7 @@ DOING NOW:
 
     Whenever I see a getPlanetCoordIndex, getShipCoordIndex, getCoordIndex, see if it's on a monster,object, or player, and switch it to TYPE.getCoordIndex()
 
+    large shipyard
 
     MONSTERS STILL SPAWN TOO SLOW
         Could prioritize spawning of planet_event_linkers that recently had a spawned_event removed
@@ -61,10 +62,7 @@ DOING NOW:
     Sounds for the different damage types
     Background music for the different planets/galaxy
 
-    no large ice comets!
-        They were instantly turning into 100 ice
-        Re-check on this around mid January
-    
+
 
     I really like the idea of a fast/slow growth mode for algae vats... so they make a bunch while you are sleeping
         ALTERNATIVELY, could have them keep producing up to a max storage level

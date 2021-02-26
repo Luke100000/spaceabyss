@@ -64,6 +64,9 @@ Frames Needed: 1 empty frame, 1 full frame
 Notes: Spawns several of the Diamond Batteries that we drew in batch #24 (https://space.alphacoders.com/images/diamond-battery.png) I don't have an image for it,
 but a lower tier spawner ( it spawns normal batteries ) is https://space.alphacoders.com/images/battery-deposit-animated.png for example.
 
+
+Some nebulae for cool backgrounds in space
+
 ***************************************
 ** THINGS I'M SENDING FERNANDO'S WAY **
 ***************************************
@@ -73,7 +76,7 @@ but a lower tier spawner ( it spawns normal batteries ) is https://space.alphaco
 
 
 
-Some nebulae for cool backgrounds in space
+
 
 
 
@@ -107,37 +110,11 @@ player body that eats trash (mass of moving maggots)
 
 Trees
 
-Cherry Blossom Floor Tileset
-Frames Needed:
-    3+ Tiles that tile well
-Size: 32x32 exactly
-Notes: These appear on a level on the Biogrove planet. 
-
-
-
-    Monster: Orchid Mantis. 
-    Monster: Cherry blossom tree.
-    Monster: Flowering Spider https://images.gemquery.com/256/content_2564492.jpg
-    Object: Silk
-
-    Ship: Silk Ship (like an egg sack in space https://www.ridmycritters.com/wp-content/uploads/how-to-get-rid-of-spider-eggs.jpg )
-
-
-
-Frost Spider ( https://images.gemquery.com/256/content_2564483.jpg )
-    Drops Glaze
-
-Icer Pistol
-    Glaze and Power Cells
 
 inferno core
 
 plasma torch
 
-heat lance
-
-
-diamond batteries -6 and lower on machine planets
 
 
 player body that is resistant to acid
@@ -147,7 +124,6 @@ energy blade
 
 
 
-draw temp frost spider, glaze, and icer pistol
 
 
     Some slerm. Baby slerm, generic slerm
@@ -157,11 +133,7 @@ draw temp frost spider, glaze, and icer pistol
 
 
 
-moss
 
-moss garden
-
-moss deposit
 
 Asteroid Ship
 

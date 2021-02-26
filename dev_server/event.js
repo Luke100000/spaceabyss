@@ -278,6 +278,8 @@ async function deleteSpawnedEvent(dirty, spawned_event_index, data = {}) {
             if(dirty.storytellers[i].current_spawned_event_id === dirty.spawned_events[spawned_event_index].id) {
 
                 console.log("The spawned event we are deleting is part of a storyteller!");
+                console.log("the data that was passed in:");
+                console.log(data);
                 let player_log_data = { 'event_id': dirty.spawned_events[spawned_event_index].event_id};
 
                 // If this event had a difficulty associated with it, we add a 'hero' player log
@@ -333,6 +335,7 @@ async function deleteSpawnedEvent(dirty, spawned_event_index, data = {}) {
 
                     world.addPlayerLog(dirty, -1, message, player_log_data);
                     log(chalk.yellow("NO PLAYER FOR STORYTELLER EVENT ENDING????"));
+                    console.log("Event difficulty:" + dirty.events[event_index].difficulty);
                 }
 
                 dirty.storytellers[i].current_spawned_event_id = 0;

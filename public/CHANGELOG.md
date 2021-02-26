@@ -1,3 +1,20 @@
+## [0.2.34] - 2021-02-25
+
+### Added
+- Large Shipyard. Previously there could be issues if someone was building a multi tile ship in a single tile shipyard
+- Heat Lance
+- A couple of nebulae to add to the galaxy environment. Visual only, but they give it some spice! (I'll have to fly around space and add them)
+
+
+### Fixed
+- A bug with switching ships introduced in the last version (typo!)
+
+
+### Changed
+- Multi tile ships can no longer be built in a normal shipyard
+- Updated Sprite for Hack Dust
+- Updated Sprite for Power Cell
+
 ## [0.2.33] - 2021-02-23
 
 ### Added

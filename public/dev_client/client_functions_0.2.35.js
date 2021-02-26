@@ -3687,7 +3687,8 @@ function printAssemblyList(assembling_object = false, coord = false) {
 
 
 
-        if(assembling_object.player_id !== client_player_id && assembling_object.object_type_id === 116) {
+        if(assembling_object.player_id !== client_player_id && 
+            (assembling_object.object_type_id === 116 || assembling_object.object_type_id === 435 || assembling_object.object_type_id === 436) ) {
 
             html_string += "<div class='message is-danger'><div class='message-body'>This is not your shipyard. If you build a ship in it, it will belong to the player that owns the shipyard</div></div>";
         }
@@ -4172,7 +4173,7 @@ function generateAssemblyListItem(object_type, object_assembly_linkers, assembli
 
         html_string += "<div class='center'>Assemble: ";
 
-        if (assembling_object === false || assembling_object.object_type_id !== 116) {
+        if (assembling_object === false || ( assembling_object.object_type_id !== 116 && assembling_object.object_type_id !== 435 && assembling_object.object_type_id !== 436 )) {
             html_string += " <button id='assemble_" + object_type.id + "_all' class='button is-default is-small' ";
             html_string += " object_type_id='" + object_type.id + "' ";
             if(assembling_object !== false) {
@@ -6014,6 +6015,8 @@ function mapAddFloor(floor_type_id, tile_x, tile_y, coord) {
             // Draw it if it's not there, or we don't have an animator controlling it
             if (!current_tile || (current_tile.index !== linker.game_file_index && !floor_types[floor_type_index].is_animated)) {
                 map.putTileAt(linker.game_file_index, linker_tile_x, linker_tile_y, false, linker.layer);
+            } else {
+                //console.log("Not drawing linker floor");
             }
 
             //console.log("Putting game file index " + linker.game_file_index + " at " + linker_tile_x + "," + linker_tile_y + " on layer " + linker.layer);
@@ -10686,7 +10689,7 @@ function showClickMenuObject(coord) {
 
 
 
-    if (objects[object_index].object_type_id === 116) { // SHIPYARD
+    if (objects[object_index].object_type_id === 116 || objects[object_index].object_type_id === 435 || objects[object_index].object_type_id === 436) { // SHIPYARDS
         printAssemblyList(objects[object_index], coord);
     }
 
@@ -11440,173 +11443,6 @@ function showInventoryOptions(inventory_item_id) {
     adding_string += "<br><button id='trash_" + inventory_items[inventory_item_index].id + "' class='button is-danger is-small is-pulled-right'><span class='glyphicon glyphicon-trash'></span> Trash</button>";
     $('#click_menu').append(adding_string);
 }
-
-/*
-function showMonster(showing_monster) {
-
-    if(!player_id) { return false; }
-
-    let monster_index = monsters.findIndex(function(obj) { return obj && obj.id === showing_monster.id; });
-
-    if(monster_index === -1) {
-        socket.emit('request_monster_info', { 'monster_id': showing_monster.id });
-        return false;
-    }
-
-    let monster_info = getMonsterInfo(monster_index);
-
-    let player_index = players.findIndex(function(obj) { return obj && obj.id === player_id; });
-    let player_info = getPlayerInfo(player_index);
-    if(!shouldDraw(player_info.coord, monster_info.coord, 'showMonster')) {
-        return false;
-    }
-
-    let animation_index = animations.findIndex(function(obj) { return obj && obj.monster_id === showing_monster.id; });
-
-    if(animation_index === -1) {
-        //console.log("Pushed animation for player id: " + showing_player.id);
-        animation_index = animations.push({ 'monster_id': showing_monster.id, 'current_frame': 1}) - 1;
-    }
-
-    let showing_monster_info = getMonsterInfo(monster_index);
-
-
-    if(!showing_monster_info.coord) {
-        console.log("Could not find coord for monster");
-        return false;
-    }
-
-    let monster_type_index = monster_types.findIndex(function(obj) { return obj && obj.id === monsters[monster_index].monster_type_id; });
-
-    if(monster_type_index === -1) {
-        return false;
-    }
-
-    let next_frame = animations[animation_index].current_frame + 1;
-    if(next_frame > monster_types[monster_type_index].frame_count) {
-        next_frame = 1;
-    }
-
-    animations[animation_index].current_frame = next_frame;
-    let drawing_game_index = monster_types[monster_type_index].game_file_index + (next_frame - 1);
-
-
-    if(monster_types[monster_type_index].game_file_index) {
-        map.putTileAt(drawing_game_index, showing_monster_info.coord.tile_x, showing_monster_info.coord.tile_y, false, 'layer_being');
-    } else {
-        if(debug_mode) {
-            map.putTileAt(34, showing_monster_info.coord.tile_x, showing_monster_info.coord.tile_y, false, 'layer_being');
-        } else {
-            map.putTileAt(9, showing_monster_info.coord.tile_x, showing_monster_info.coord.tile_y, false, 'layer_being');
-        }
-
-    }
-
-
-}
-*/
-
-
-// All players actually in our room
-/*
-function showPlayer(showing_player) {
-
-    if(players.length === 0) {
-        return false;
-    }
-    // get our current room
-    let player_index = players.findIndex(function(obj) { return obj && obj.id === player_id; });
-    if(player_index === -1) {
-        socket.emit('request_player_info', { 'player_id': player_id });
-        return false;
-    }
-
-    let showing_player_index = players.findIndex(function(obj) { return obj && obj.id === showing_player.id; });
-
-    let show_player = false;
-
-    // It's us - show us!
-    if(showing_player.id === players[player_index].id) {
-        show_player = true;
-    }
-
-    if(showing_player.planet_coord_id && current_view === 'planet') {
-        // make sure the level is the same
-        let showing_player_coord_index = planet_coords.findIndex(function(obj) { return obj && obj.id === showing_player.planet_coord_id; });
-        let player_coord_index = planet_coords.findIndex(function(obj) { return obj && obj.id === players[player_index].planet_coord_id; });
-        if(showing_player_coord_index !== -1 && planet_coords[showing_player_coord_index].level === planet_coords[player_coord_index].level) {
-            show_player = true;
-        }
-
-    }
-
-    if(showing_player.coord_id && current_view === 'galaxy') {
-        show_player = true;
-    }
-
-    if(showing_player.ship_coord_id && current_view === 'ship') {
-        show_player = true;
-    }
-
-
-    if(!show_player) {
-        return false;
-    }
-    
-    //console.log("Showing and Animating player id: " + showing_player.id);
-
-    let animation_index = animations.findIndex(function(obj) { return obj && obj.player_id === showing_player.id; });
-
-    if(animation_index === -1) {
-        //console.log("Pushed animation for player id: " + showing_player.id);
-        animation_index = animations.push({ 'player_id': showing_player.id, 'current_frame': 1}) - 1;
-    }
-
-    let showing_player_info = getPlayerInfo(showing_player_index);
-
-    if(!showing_player_info.coord) {
-        if(showing_player.id === player_id) {
-            console.log("%c Didn't find a type of coord for our player!", log_warning);
-            console.log(showing_player.coord_id + " " + showing_player.planet_coord_id + " " + showing_player.ship_coord_id + " requesting our info");
-            socket.emit('request_player_info', { 'player_id': player_id });
-            return false;
-        }
-    }
-
-
-    //console.log("Showing player id: " + showing_player.id + " at tile x/y: " + showing_player_info.coord.tile_x + "/" + showing_player_info.coord.tile_y);
-
-
-    // Get the object type that we are using for this player (body/ship)
-    let player_object_type_index = getPlayerObjectTypeIndex(showing_player);
-
-    if(player_object_type_index === -1) {
-        return false;
-    }
-
-
-    let next_frame = animations[animation_index].current_frame + 1;
-    if(next_frame > object_types[player_object_type_index].frame_count) {
-        next_frame = 1;
-    }
-
-    animations[animation_index].current_frame = next_frame;
-    let drawing_game_index = object_types[player_object_type_index].game_file_index + (next_frame - 1);
-
-    if(showing_player.id === player_id) {
-        //console.log("function animatePlayer centering camera at tile_x,tile_y: " + showing_player_info.coord.tile_x + "," + showing_player_info.coord.tile_y);
-        camera.centerOn(tileToPixel(showing_player_info.coord.tile_x), tileToPixel(showing_player_info.coord.tile_y));
-    }
-
-    //console.log("Drawing game index: " + drawing_game_index);
-    //console.log("Drawing player at " + tile_x + "," + tile_y + " in animatePlayer");
-    map.putTileAt(drawing_game_index, showing_player_info.coord.tile_x, showing_player_info.coord.tile_y, false, 'layer_being');
-
-
-    return;
-}
-
- */
 
 
 function switchChat(new_chat_tab) {
