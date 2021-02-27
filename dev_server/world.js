@@ -268,7 +268,7 @@ async function addBattleLinker(socket, dirty, data) {
 
             if (previous_battle_linker_index !== -1) {
 
-                console.log("Player had a previous battle linker. Lets remove it");
+                //console.log("Player had a previous battle linker. Lets remove it");
 
                 if (dirty.battle_linkers[previous_battle_linker_index].socket_id) {
                     io.to(dirty.battle_linkers[previous_battle_linker_index].socket_id).emit('battle_linker_info',
@@ -4790,19 +4790,15 @@ async function spawnAdjacent(dirty, data) {
         let spawning_type_for_get_open_coord_index = data.spawning_type;
         let being_spawned_object_type_index = -1;
         
+        // Keep this as an object type until we confirm an open coord so we aren't spawning 
+        // objects we can't place anywhere
         if(spawning_type_for_get_open_coord_index === 'object') {
             
             being_spawned_object_type_index = main.getObjectTypeIndex(data.spawning_type_id);
-            if(dirty.object_types[being_spawned_object_type_index].assembled_as_object) {
-                spawning_type_for_get_open_coord_index = 'object';
-
-                // and we have to create the object
-                placing_index = await insertObjectType({}, dirty, { 'object_type_id': dirty.object_types[being_spawned_object_type_index].id });
-
-            } else {
-                spawning_type_for_get_open_coord_index = 'object_type';
-                placing_index = being_spawned_object_type_index;
-            }
+             
+            spawning_type_for_get_open_coord_index = 'object_type';
+            placing_index = being_spawned_object_type_index;
+        
             
         } else if(spawning_type_for_get_open_coord_index === 'monster') {
 
@@ -4830,6 +4826,18 @@ async function spawnAdjacent(dirty, data) {
             log(chalk.yellow("No space around to spawn"));
             return false;
         }
+
+        if(dirty.object_types[being_spawned_object_type_index].assembled_as_object) {
+            console.log("Now lets create it!");
+            spawning_type_for_get_open_coord_index = 'object';
+
+            // and we have to create the object
+            placing_index = await insertObjectType({}, dirty, { 'object_type_id': dirty.object_types[being_spawned_object_type_index].id });
+
+        }
+
+        // If it was an object type, and that object type is assembled as an object, we can now create it
+
 
         if(data.scope === 'planet') {
 

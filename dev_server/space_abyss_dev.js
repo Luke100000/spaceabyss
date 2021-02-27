@@ -129,7 +129,7 @@ var pool = database.pool;
 global.difficult_level_modifier = 0.20;
 global.level_modifier = 0.10;
 global.move_delay = 500;
-global.max_asteroid_count = 20;
+global.max_asteroid_count = 50;
 global.max_npc_count = 1;
 global.player_inventory_limit = 10;
 
@@ -1851,7 +1851,6 @@ io.sockets.on('connection', function (socket) {
         return false;
     });
 
-
     socket.on("request_planet_info", async function(data) {
 
         //console.log("Client is requesting planet info for planet id: " + data.planet_id);
@@ -1867,6 +1866,10 @@ io.sockets.on('connection', function (socket) {
 
     socket.on('request_rule_data', function(data) {
         game.sendRuleData(socket, dirty);
+    });
+
+    socket.on('request_unread_message_count', async function(data) {
+        await game.sendUnreadMessageCount(socket, dirty);
     });
 
     socket.on('research_data', function(data) {

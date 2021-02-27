@@ -21,6 +21,7 @@ game.processAdminChatMessage
 /moveplanet PLANET_ID coord_id
 /reloadevent EVENT_ID
 /regenerateplanetlevelfloor PLANET_ID FLOOR_LEVEL
+/removefromcoord SEE /clearcoord!!!!!
 /replacefloor COORD_TYPE(planet|ship|galaxy) COORD_ID NEW_FLOOR_TYPE_ID
 /sendmessage MESSAGE
 /setplanettype PLANET_ID PLANET_TYPE_ID

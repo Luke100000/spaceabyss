@@ -530,6 +530,13 @@ $(document).on('click', 'button', function () {
 
 
         $('#click_menu').append("<a target='_blank' class='button is-success is-small' href='https://space.alphacoders.com/site/tutorial'>View Our Tutorial!</a><br>");
+        if(client_player_index !== -1 && players[client_player_index]) {
+            console.log("showing report");
+            $('#click_menu').append("<a target='_blank' class='button is-info is-small' href='https://space.alphacoders.com/player/view/" + players[client_player_index].id + "'>Report A Problem</a><br>");
+        } else {
+            console.log("not showing report");
+        }
+        
 
         // Go through recent failure messages
         for(let i = recent_failure_messages.length - 1; i > recent_failure_messages.length - 10; i--) {
@@ -716,6 +723,14 @@ $(document).on('click', 'button', function () {
 
 
 
+    }
+
+    if(split_name[0] === 'messages') {
+        console.log("Player is trying to open their messages");
+        if(client_player_index !== -1 && players[client_player_index]) {
+            window.open("https://space.alphacoders.com/user/messages/" + players[client_player_index].user_id);
+        }
+        
     }
 
     if(split_name[0] === 'mine') {

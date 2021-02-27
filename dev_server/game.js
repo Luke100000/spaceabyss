@@ -4721,7 +4721,7 @@ exports.eat = eat;
             // The object needs a planet coord id, ship coord id, or a coord_id
             if(helper.isFalse(dirty.objects[object_index].planet_coord_id) && helper.isFalse(dirty.objects[object_index].ship_coord_id) && 
             helper.isFalse(dirty.objects[object_index].coord_id)) {
-                log(chalk.yellow("Spawning object isn't on a coord. Maybe in inventory?"));
+                log(chalk.yellow("Spawning object isn't on a coord. Maybe in inventory? Object id: " + dirty.objects[object_index].id));
                 return false;
             }
 
@@ -4897,7 +4897,7 @@ exports.eat = eat;
                     if(coord_index !== -1) {
 
                         if(clearing_type === "object") {
-                            main.updateCoordGeneric(socket, { 'coord_index': coord_index, 'object_id': false });
+                            main.updateCoordGeneric(socket, { 'coord_index': coord_index, 'object_id': false, 'belongs_to_object_id': false });
                         }
                     }
                 }
@@ -10640,6 +10640,34 @@ exports.eat = eat;
     }
 
     exports.sendRuleData = sendRuleData;
+
+    async function sendUnreadMessageCount(socket, dirty) {
+
+        try {
+
+            console.log("Sending unread message count");
+
+            if(typeof socket.player_index === 'undefined') {
+                socket.emit('unread_message_info', { 'unread_message_count': 0 });
+                return;
+            }
+
+            let [rows, fields] = await (pool.query("SELECT unread_message_count FROM users WHERE id = ?", [dirty.players[socket.player_index].user_id]));
+            if (rows[0]) {
+
+                socket.emit('unread_message_info', { 'unread_message_count': rows[0].unread_message_count });
+                return true;
+            }
+
+        } catch(error) {
+            log(chalk.red("Error in game.sendUnreadMessageCount: " + error));
+            console.error(error);
+        }
+
+
+    }
+
+    exports.sendUnreadMessageCount = sendUnreadMessageCount;
 
 
     // Will move the player from the current body to the other one. Old body will stay where it was as an object on the tile

@@ -64,13 +64,13 @@
       
     
 
-    <script src="client_functions_0.2.35.js"></script>
-    <script src="client_network_0.2.35.js"></script>
-    <script src="client_click_0.2.35.js"></script>
-    <script src="effects_0.2.35.js"></script>
-    <script src="monster_0.2.35.js"></script>
-    <script src="planet_0.2.35.js"></script>
-    <script src="player_0.2.35.js"></script>
+    <script src="client_functions_0.2.36.js"></script>
+    <script src="client_network_0.2.36.js"></script>
+    <script src="client_click_0.2.36.js"></script>
+    <script src="effects_0.2.36.js"></script>
+    <script src="monster_0.2.36.js"></script>
+    <script src="planet_0.2.36.js"></script>
+    <script src="player_0.2.36.js"></script>
 
 
     <link href="//space.alphacoders.com/bulma-0.7.2/css/bulma.min.css" rel="stylesheet" media="screen">
@@ -295,6 +295,7 @@
                 <button id="chatswitch_faction" class="button is-default">Faction</button>
                 <button id="chatswitch_system" class="button is-default">System</button>
                 <button id="help" class="button is-success">Help</button>
+                <button id="messages" class="button is-default"><i class="fas fa-envelope"></i></button>
                 </ul>
             </div>
             <div class="chat" id="chat_local">
@@ -822,6 +823,7 @@
     var pointer_up_time = 10000;
     var moving_direction = false;
     var sent_loney_player_message = false;
+    var unread_message_count = 0;
 
 
     // SOUNDS!!!
@@ -3367,6 +3369,18 @@
 
     }, 60000);
 
+
+    // Do something every 2.5 minutes
+    setInterval(function() {
+        
+        
+        if(logged_in) {
+            console.log("requesting unread message count");
+            socket.emit('request_unread_message_count');
+        }
+
+
+    }, 150000);
   
 </script>
 

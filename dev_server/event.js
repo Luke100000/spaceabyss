@@ -46,7 +46,7 @@ async function checkSpawnedEvent(dirty, spawned_event_id, data = {}) {
         let event_index = getIndex(dirty, dirty.spawned_events[spawned_event_index].event_id);
 
 
-        console.log("Event despawn condition: " + dirty.events[event_index].despawn_condition);
+        //console.log("Event despawn condition: " + dirty.events[event_index].despawn_condition);
 
 
         // See if there are any objects or monsters left with this spawned event id
@@ -79,7 +79,7 @@ async function checkSpawnedEvent(dirty, spawned_event_id, data = {}) {
         // Not sure why we were putting this here
         //let spawned_event_index = dirty.spawned_events.findIndex(function(obj) { return obj && obj.id === spawned_event_id; });
 
-        console.log("Deleting");
+        //console.log("Deleting");
 
         let delete_spawned_event_data = {};
         if(typeof data.reason_type !== 'undefined') {
@@ -90,8 +90,8 @@ async function checkSpawnedEvent(dirty, spawned_event_id, data = {}) {
             delete_spawned_event_data.reason_id = data.reason_id;
         }
 
-        console.log("delete_spawned_event_data:");
-        console.log(delete_spawned_event_data);
+        //console.log("delete_spawned_event_data:");
+        //console.log(delete_spawned_event_data);
 
         await deleteSpawnedEvent(dirty, spawned_event_index, delete_spawned_event_data);
 

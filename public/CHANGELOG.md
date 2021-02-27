@@ -1,3 +1,21 @@
+## [0.2.35] - 2021-02-27
+
+### Added
+- Ability to more directly report an issue with a ship, body, or item through the website (previously the only way this could be done was via Discord)
+- A loose mesage integration into the client of Space Abyss
+- BlueArray, BlueWare, AlphaBlue monsters. 
+
+
+### Fixed
+- Fire floor walk speed
+- Blossomtis sprite disappearing for a bit every animation loop
+- Heat Lance not doing any damage
+- Asteroid cities, and potentially others objects, were spawning things that couldn't be placed
+
+
+### Changed
+- Updated Cherroy Blossom Floor sprites
+
 ## [0.2.34] - 2021-02-25
 
 ### Added

@@ -1162,6 +1162,8 @@ socket.on('login_data', function(data) {
 
         use_tasks = localStorage.getItem('use_tasks');
 
+
+
     } else if(data.status === 'Failed. You Are Banned') {
         $('#login_status').append("<span style='color:red;'>Login Failed. Your account is banned. Please email spaceabyss@alphacoders.com for more details.</span>");
     }
@@ -2486,7 +2488,7 @@ socket.on('planet_coord_info', function (data) {
             client_player_info = getPlayerInfo(client_player_index);
             
             if(client_player_info_coord_is_false) {
-                console.log("Redrawing map, since we previously did not have a coord for the player");
+                //console.log("Redrawing map, since we previously did not have a coord for the player");
                 redrawMap();
             }
 
@@ -3581,6 +3583,16 @@ socket.on('spawned_event_info', function(data) {
     if(spawned_event_index === -1) {
         spawned_events.push(data.spawned_event);
     }
+});
+
+socket.on('unread_message_info', function(data) {
+    unread_message_count = data.unread_message_count;
+
+    if(client_player_index !== -1 && players[client_player_index]) {
+        $('#messages').empty();
+        $('#messages').append("<i class='fas fa-envelope'></i> " + unread_message_count);
+    }
+    
 });
 
 

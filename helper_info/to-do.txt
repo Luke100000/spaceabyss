@@ -1,7 +1,7 @@
 ********************* TODO LATER ********************
 
 
-To upgrade to phaser 3.24.1:
+To upgrade to phaser 3.24.1 (at this point I think I would just do 3.50):
     Have to extrude floor tiles ( at the very least )
     Figure out new input
 
@@ -17,3 +17,23 @@ for our lasers and beams, should I be using a tilesprite?
         if displayWidth > 200% texture width, we just use a longer one
 
     There is also a plugin for stuff like this: https://github.com/nkholski/phaser-animated-tiles
+
+
+
+
+MONSTERS STILL SPAWN TOO SLOW
+    Could prioritize spawning of planet_event_linkers that recently had a spawned_event removed
+
+
+Make it easy for players to exchange ships (buying/selling?)
+
+
+MasterDJ had tons of emergency pods blocking where his next emergency pod would go, and it caused him to lose his fighter (I assume the emergency pod 
+    failed to find a spot, and then it just overwrote his current coord with his new pod)
+
+
+
+possibly a more pronouced new message mode on chat. blinking <p>?
+
+
+Notify me when a player logs in?

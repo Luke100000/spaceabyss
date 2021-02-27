@@ -834,7 +834,7 @@ const world = require('./world.js');
             }
 
             if(monster_info.room !== player_info.room) {
-                log(chalk.yellow("Monster and player don't share the same room"));
+                //log(chalk.yellow("Monster and player don't share the same room"));
                 world.removeBattleLinkers(dirty, { 'battle_linker_id': battle_linker.id });
                 return false;
             }
@@ -1877,7 +1877,7 @@ const world = require('./world.js');
             }
 
             if(player_info.room !== monster_info.room) {
-                log(chalk.yellow("Player and monster don't share the same room"));
+                //log(chalk.yellow("Player and monster don't share the same room"));
                 world.removeBattleLinkers(dirty, { 'battle_linker_id': battle_linker.id });
                 return false;
             }

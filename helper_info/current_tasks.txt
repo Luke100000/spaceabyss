@@ -4,42 +4,24 @@ CURRENT GAMEPLAY TEST:
 
     Still seems like dying from poison doesn't work completely correct. Just watch this
 
+     
+
 DOING NOW:
 
     Whenever I see a getPlanetCoordIndex, getShipCoordIndex, getCoordIndex, see if it's on a monster,object, or player, and switch it to TYPE.getCoordIndex()
 
-    large shipyard
+    So the asteroid city is spawning too much junk.
 
-    MONSTERS STILL SPAWN TOO SLOW
-        Could prioritize spawning of planet_event_linkers that recently had a spawned_event removed
+    I need to either
+        not spawn asteroids if there are already tons
+        have the asteroid spawning re-use asteroids that don't have any coord id
 
+        do asteroids with no coord id get loaded into memory if the server restarts?
 
-    Make it easy for players to exchange ships (buying/selling?)
-
-
-    MasterDJ had tons of emergency pods blocking where his next emergency pod would go, and it caused him to lose his fighter (I assume the emergency pod 
-        failed to find a spot, and then it just overwrote his current coord with his new pod)
-
+    Gotta to something with all the extra asteroids that aren't anywhere
 
     protect faction members
 
-    research body not being able to be picked up? Not sure if I meant for that to be intentional or not with bodies
-
-
-    I can warp ships to 
-    I've been thinking of having the spaceport 
-
-
-    large > medium > small goop spawning
-        mix of greyframe + creeper world
-
-        Have them mostly coded - mostly just need the images.
-
-
-    possibly a more pronouced new message mode on chat. blinking <p>?
-
-
-    Notify me when a player logs in?
 
     I want a snow effect on the frozen planet!!!!!
         (it's for phaser 2, but I'm sure I can figure out how to do it with phaser 3 https://phaser.io/examples/v2/particles/rain , https://phaser.io/examples/v2/particles/snow )
@@ -49,14 +31,7 @@ DOING NOW:
     Have the diamond batteries spawn on machine planets once we have the Primewall/Glitched God drawn (or find another MLM)
 
 
-
-
     Test that the basics of factions works
-        Maybe a faction display on the site and all that
-        have the players attacking Phatheon's stuff be in a faction together
-        Cytheus and.... Neurotox
-            their faction...
-            ChaosArray
 
 
     Sounds for the different damage types
