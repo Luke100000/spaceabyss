@@ -1,3 +1,17 @@
+## [0.2.36] - 2021-03-02
+
+### Fixed
+- Deleted the ~1000 asteroids created and not put anywhere by the asteroid cities
+
+
+### Changed
+- Almost more like a fix, but the coords that are checked when a player is trying to launch from a planet are much more exhaustive. Players and ships should 
+get stuck less often/virtually never
+- Made the same change above for launching from another ship as well
+- Image for Shipyard and Large Shipyard have been updated
+
+
+
 ## [0.2.35] - 2021-02-27
 
 ### Added

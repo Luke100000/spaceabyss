@@ -43,7 +43,7 @@ Slave (human)
                                     Reality Engine
                                         Godmind
 
-***************** NULLROM ************************
+***************** NULROM ************************
                 Burster
 
 
@@ -65,11 +65,19 @@ Slave (human)
 
 
 ***************** SOKOLH ************************
-
+        Discarded Lancer
+            Servant
                 Infantry
+                    Purifier
+                        Essence
+                            Titan
+                                Royal Guard
+                                    White Queen
+                                        Absolution
 
 
-***************** TRAE ************************
+
+***************** VUEG ************************
 
 
 

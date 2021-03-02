@@ -3900,7 +3900,28 @@ async function payForGalaxyMove(socket, dirty, ship_index) {
                     }
                 }
 
+                let warp_to_coord_index = -1;
+                let planet_galaxy_coord_index = await main.getCoordIndex({ 'coord_id': dirty.planets[planet_index].coord_id });
 
+                console.time("getOpenCoordIndex");
+                let placing_coord_index = await world.getOpenCoordIndex(dirty, 'galaxy', planet_galaxy_coord_index, 'player', player_index, 2);
+                console.timeEnd("getOpenCoordIndex");
+
+                if(placing_coord_index !== -1) {
+                    warp_to_coord_index = await warpTo(socket, dirty, { 'player_index': player_index, 'warping_to': 'galaxy', 'base_coord_index': placing_coord_index });
+                } else {
+                    console.time("getOpenCoordIndexLonger");
+                    placing_coord_index = await world.getOpenCoordIndex(dirty, 'galaxy', planet_galaxy_coord_index, 'player', player_index, 4);
+                    console.timeEnd("getOpenCoordIndexLonger");
+
+                    if(placing_coord_index !== -1) {
+                        warp_to_coord_index = await warpTo(socket, dirty, { 'player_index': player_index, 'warping_to': 'galaxy', 'base_coord_index': placing_coord_index });
+                    }
+                }
+
+
+                /* Keeping for a tiny bit (0.2.26) just incase the new way above has some weird bug I'm not expecting
+                console.time("oldWay");
                 // TODO right now we are just choosing two coords. We really need to try all the coords around the actual planet!
                 // So for larger ships - and really ships in general - if we can't spawn around the
                 // top left, we need to try other coordinates around the ship
@@ -3937,6 +3958,9 @@ async function payForGalaxyMove(socket, dirty, ship_index) {
                     }
 
                 }
+
+                console.timeEnd("oldWay");
+                */
 
 
                 if(warp_to_coord_index === -1) {
@@ -4127,6 +4151,26 @@ async function payForGalaxyMove(socket, dirty, ship_index) {
                 if(dirty.objects[player_ship_index].docked_at_object_id) {
                     //console.log("Launching FROM docked ship. Docked ship is on galaxy coord id: " + dirty.coords[ship_galaxy_coord_index].id);
 
+                    let found_galaxy_coord = false;
+
+                    console.time("getOpenCoordIndex");
+                    let placing_galaxy_coord_index = await world.getOpenCoordIndex(dirty, 'galaxy', ship_galaxy_coord_index, 'player', player_index, 2);
+                    console.timeEnd("getOpenCoordIndex");
+    
+                    if(placing_galaxy_coord_index !== -1) {
+                        found_galaxy_coord = true;
+                    } else {
+                        console.time("getOpenCoordIndexLonger");
+                        placing_galaxy_coord_index = await world.getOpenCoordIndex(dirty, 'galaxy', ship_galaxy_coord_index, 'player', player_index, 4);
+                        console.timeEnd("getOpenCoordIndexLonger");
+    
+                        if(placing_galaxy_coord_index !== -1) {
+                            found_galaxy_coord = true;
+                        }
+                    }
+    
+
+                    /* Keeping for a tiny bit (0.2.36) just incase there's some weird bug with the new way above
                     let tile_x_start = dirty.coords[ship_galaxy_coord_index].tile_x - 2;
                     let tile_y_start = dirty.coords[ship_galaxy_coord_index].tile_y - 2;
                     let tile_x_end = tile_x_start + 3;
@@ -4135,7 +4179,7 @@ async function payForGalaxyMove(socket, dirty, ship_index) {
                     //console.log("Checking coords: " + tile_x_start + "," + tile_y_start + " to " + tile_x_end + "," + tile_y_end);
 
                     let placing_galaxy_coord_index = -1;
-                    let found_galaxy_coord = false;
+                    
                     for(let i = tile_x_start; i < tile_x_end; i++) {
                         for(let j = tile_y_start; j < tile_y_end; j++) {
                             if(!found_galaxy_coord) {
@@ -4158,6 +4202,7 @@ async function payForGalaxyMove(socket, dirty, ship_index) {
                             }
                         }
                     }
+                    */
 
                     if(!found_galaxy_coord) {
                         socket.emit('chat', { 'scope': 'system', 'message': 'The space around the ship you are docked at is currently full' });

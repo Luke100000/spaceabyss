@@ -10,15 +10,13 @@ DOING NOW:
 
     Whenever I see a getPlanetCoordIndex, getShipCoordIndex, getCoordIndex, see if it's on a monster,object, or player, and switch it to TYPE.getCoordIndex()
 
-    So the asteroid city is spawning too much junk.
-
-    I need to either
-        not spawn asteroids if there are already tons
-        have the asteroid spawning re-use asteroids that don't have any coord id
-
-        do asteroids with no coord id get loaded into memory if the server restarts?
+    
+    Get some Sokolh for the Asteroid City
 
     Gotta to something with all the extra asteroids that aren't anywhere
+        select COUNT(*) FROM objects WHERE object_type_id = 138 and coord_id is null;
+        DELETE FROM objects WHERE object_type_id = 138 and coord_id is null;
+
 
     protect faction members
 

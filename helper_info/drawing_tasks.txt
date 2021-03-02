@@ -71,9 +71,24 @@ Some nebulae for cool backgrounds in space
 ** THINGS I'M SENDING FERNANDO'S WAY **
 ***************************************
 
+SOKOLH!!
 
 
+Rain Floor
+Type: Animated Floor/Weather Effect
+Frames Needed:
+    32x32 base floor tile - animated (4-6 frames)
+    32x64 (see notes) rain + cloud that shows above players - animated (4-6 frames - needs to match frame count of base floor tile)
 
+Notes: The goal is for it to look good as a single tile and when it's in a grid. The 32x32 base floor tile needs to be exact, but the 32x64 rain + cloud can 
+be taller/wider if it can help the look. It just shouldn't look like it's raining on adjacent tiles. 
+I've attached an example of what it currently looks like in testing
+
+
+Snowstorm Floor
+
+
+Lava Flow Floor
 
 
 
