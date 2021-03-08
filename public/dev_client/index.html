@@ -64,13 +64,13 @@
       
     
 
-    <script src="client_functions_0.2.37.js"></script>
-    <script src="client_network_0.2.37.js"></script>
-    <script src="client_click_0.2.37.js"></script>
-    <script src="effects_0.2.37.js"></script>
-    <script src="monster_0.2.37.js"></script>
-    <script src="planet_0.2.37.js"></script>
-    <script src="player_0.2.37.js"></script>
+    <script src="client_functions_0.2.38.js"></script>
+    <script src="client_network_0.2.38.js"></script>
+    <script src="client_click_0.2.38.js"></script>
+    <script src="effects_0.2.38.js"></script>
+    <script src="monster_0.2.38.js"></script>
+    <script src="planet_0.2.38.js"></script>
+    <script src="player_0.2.38.js"></script>
 
 
     <link href="//space.alphacoders.com/bulma-0.7.2/css/bulma.min.css" rel="stylesheet" media="screen">
@@ -932,6 +932,9 @@
             this.load.spritesheet('player-pod', 'https://space.alphacoders.com/images/player-pod-animated.png',
                 { frameWidth: 64, frameHeight: 64, endFrame: 2 });
 
+            this.load.spritesheet('player-luxury-pod', 'https://space.alphacoders.com/images/luxury-pod-animated.png',
+                { frameWidth: 64, frameHeight: 64, endFrame: 17 });
+
             this.load.spritesheet('player-cutter', 'https://space.alphacoders.com/images/cutter-animated.png',
                 { frameWidth: 64, frameHeight: 64, endFrame: 12 });
 
@@ -1751,6 +1754,15 @@
                 repeat: -1
             };
             this.anims.create(player_pod_config);
+
+            let player_luxury_pod_config = {
+                key: 'player-luxury-pod-animation',
+                frames: this.anims.generateFrameNumbers('player-luxury-pod', { start: 0, end: 16, first: 16 }),
+                frameRate: 4,
+                repeat: -1
+            };
+            this.anims.create(player_luxury_pod_config);
+
 
 
 
@@ -3375,7 +3387,7 @@
         
         
         if(logged_in) {
-            console.log("requesting unread message count");
+            //console.log("requesting unread message count");
             socket.emit('request_unread_message_count');
         }
 

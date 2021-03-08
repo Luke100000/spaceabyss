@@ -43,6 +43,19 @@ Size: Max 30x30
 Frame Count: 1 empty frame, 1 full frame. Same idea as Territe Deposit and Exodium Deposit
 Current Sprite: None
 
+
+
+*************************************
+** NOT SURE WHO I'M SENDING TO YET **
+*************************************
+
+Living Tree in Space ( I kind of like the idea of a cherry blossom one )
+
+Corrupted Tree in Space (nulroms got it)
+
+
+
+
 ****************************************
 ** THINGS I'M SENDING UNFUNERAL'S WAY **
 ****************************************
@@ -71,8 +84,41 @@ Some nebulae for cool backgrounds in space
 ** THINGS I'M SENDING FERNANDO'S WAY **
 ***************************************
 
-SOKOLH!!
+Notes on 1-3: These are all part of the same race. Sokolh. I want to focus on white/clean designs. 
+These are lower tier monsters, so they can be a little dirtier than some of the high level ones. You can see all my 
+stored references for Sokolh at https://gemquery.com/favorite/by-tag/97648 
 
+Not all reference images are exact, but the focus is on WHITE. Purity. The Sokolh think they are better than everyone. Purer. Smarter. Gold accents tend to highlight this.
+
+1. Discarded Lancer
+Type: Monster
+Frames Neede: 1-2 Designs
+Size: 32x32 max
+Attacks: Lance Stab
+Description: A Sokolh marred with imperfections. They battle in hopes that cleaning the world of others could one day cleanse them.
+Reference Image: https://images.gemquery.com/259/content_2594269.jpg
+
+
+2. Servant
+Type: Monster
+Size: 32x42 max
+Frames Needed: 1-2 Designs
+Attacks: Defensive Matrix (hacking damage, ranged attack)
+Description: Serves higher level Sokolh with absolute perfection
+Reference Image: https://images.gemquery.com/260/content_2607437.jpg
+
+
+3. Infantry
+Type: Monster
+Frames Needed: 1-2 Designs
+Size: 32x46 max
+Attacks: Piercing. I'd like to focus on the pointy arm. I envision it mimetic - being able to change shapes (grow longer to stab)
+Description: Lower tier, but still respected, in Sokolh society. Their basic infantry are always training to advance to something more.
+Reference Image: https://images.gemquery.com/259/content_2599155.jpg
+Notes: The reference image has WAS too much gold on it. I want the focus to be the white.
+
+
+4. Beetle Knight
 
 Rain Floor
 Type: Animated Floor/Weather Effect
@@ -90,6 +136,22 @@ Snowstorm Floor
 
 Lava Flow Floor
 
+
+
+***************************************
+** THINGS I'M SENDING DIOPHAMTO'S WAY **
+***************************************
+
+1. Crystal
+Size: 20x20 max
+Frames Needed: 1-2 designs, 1 frame each
+
+
+2. Crystal Shard
+
+3. Crystal Deposit
+
+(then I can have the Crystal Golem drop Crystal Shards)
 
 
 

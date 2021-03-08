@@ -934,8 +934,9 @@ async function getCoordAndRoom(dirty, monster_index) {
         }
 
         if(dirty.monsters[monster_index].planet_coord_id) {
-            coord_index = await main.getPlanetCoordIndex(
-                { 'planet_coord_id': dirty.monsters[monster_index].planet_coord_id });
+
+            coord_index = await getCoordIndex(dirty, monster_index, 'planet');
+
             if(coord_index !== -1) {
                 room = "planet_" + dirty.planet_coords[coord_index].planet_id;
                 scope = "planet";
@@ -943,12 +944,24 @@ async function getCoordAndRoom(dirty, monster_index) {
             }
 
         } else if(dirty.monsters[monster_index].ship_coord_id) {
-            coord_index = await main.getShipCoordIndex({ 'ship_coord_id': dirty.monsters[monster_index].ship_coord_id });
+
+            coord_index = await getCoordIndex(dirty, monster_index, 'ship');
+
             if(coord_index !== -1) {
                 room = "ship_" + dirty.ship_coords[coord_index].ship_id;
                 scope = "ship";
                 coord = dirty.ship_coords[coord_index];
             }
+        } else if(dirty.monsters[monster_index].coord_id) {
+
+            coord_index = await getCoordIndex(dirty, monster_index, 'galaxy');
+
+            if(coord_index !== -1) {
+                room = "galaxy";
+                scope = "galaxy";
+                coord = dirty.coords[coord_index];
+            }
+            
         }
 
         // Monsters should all have a room attribute
@@ -965,6 +978,112 @@ async function getCoordAndRoom(dirty, monster_index) {
 }
 
 exports.getCoordAndRoom = getCoordAndRoom;
+
+// The point of this function is to transition to using a planet_coord_index|ship_coord_index|coord_index on the game monster
+// Most of the code in here is basically error checking while we transition. We can't trust the indexes yet, so issue warnings
+// when they would have been wrong, or something wasn't updated
+// scope is basically for the same thing. We shouldn't technically need it if we're updating the monsters properly
+async function getCoordIndex(dirty, monster_index, scope) {
+    try {
+
+        if(scope === 'planet') {
+
+            if(typeof dirty.monsters[monster_index].coord_index !== 'undefined' && dirty.monsters[monster_index].coord_index !== -1) {
+                log(chalk.yellow("Getting planet coord index for monster, but it looks like it has a coord_index too!"));
+            }
+
+            if(typeof dirty.monsters[monster_index].ship_coord_index !== 'undefined' && dirty.monsters[monster_index].ship_coord_index !== -1) {
+                log(chalk.yellow("Getting planet coord index for monster, but it looks like it has a ship_coord_index too!"));
+            }
+
+            if(typeof dirty.monsters[monster_index].planet_coord_index === 'undefined') {
+                log(chalk.yellow("in game_monster.getCoordIndex. planet_coord_index was undefined still"));
+                return await main.getPlanetCoordIndex({ 'planet_coord_id': dirty.monsters[monster_index].planet_coord_id });
+            
+            }
+            return dirty.monsters[monster_index].planet_coord_index;
+
+            let planet_coord_index = await main.getPlanetCoordIndex({ 'planet_coord_id': dirty.monsters[monster_index].planet_coord_id });
+
+            if(typeof dirty.monsters[monster_index].planet_coord_index !== 'undefined' && dirty.monsters[monster_index].planet_coord_index !== -1) {
+                if(dirty.planet_coords[dirty.monsters[monster_index].planet_coord_index].id !== dirty.planet_coords[planet_coord_index].id) {
+                    log(chalk.yellow("monster had a planet coord index, but it was out of date"));
+                }
+
+            }
+
+            return planet_coord_index;
+
+
+        } else if(scope === 'ship') {
+            
+            if(typeof dirty.monsters[monster_index].coord_index !== 'undefined' && dirty.monsters[monster_index].coord_index !== -1) {
+                log(chalk.yellow("Getting planet coord index for monster, but it looks like it has a coord_index too!"));
+            }
+
+            if(typeof dirty.monsters[monster_index].planet_coord_index !== 'undefined' && dirty.monsters[monster_index].planet_coord_index !== -1) {
+                log(chalk.yellow("Getting ship coord index for monster, but it looks like it has a planet_coord_index too!"));
+            }
+
+            if(typeof dirty.monsters[monster_index].ship_coord_index === 'undefined') {
+                log(chalk.yellow("in game_monster.getCoordIndex. ship_coord_index was undefined still"));
+                return await main.getShipCoordIndex({ 'ship_coord_id': dirty.monsters[monster_index].ship_coord_id });
+            
+            }
+            
+            return dirty.monsters[monster_index].ship_coord_index;
+
+            let ship_coord_index = await main.getShipCoordIndex({ 'ship_coord_id': dirty.monsters[monster_index].ship_coord_id });
+
+            if(typeof dirty.monsters[monster_index].ship_coord_index !== 'undefined' && dirty.monsters[monster_index].ship_coord_index !== -1) {
+                if(dirty.ship_coords[dirty.monsters[monster_index].ship_coord_index].id !== dirty.ship_coords[ship_coord_index].id) {
+                    log(chalk.yellow("monster had a planet coord index, but it was out of date"));
+                }
+
+            }
+
+            return ship_coord_index;
+
+
+        } else if(scope === 'galaxy') {
+            if(typeof dirty.monsters[monster_index].ship_coord_index !== 'undefined' && dirty.monsters[monster_index].ship_coord_index !== -1) {
+                log(chalk.yellow("Getting coord index (galaxy) for monster, but it looks like it has a ship_coord_index too!"));
+            }
+
+            if(typeof dirty.monsters[monster_index].planet_coord_index !== 'undefined' && dirty.monsters[monster_index].planet_coord_index !== -1) {
+                log(chalk.yellow("Getting coord index (galaxy) for monster, but it looks like it has a planet_coord_index too!"));
+            }
+
+            if(typeof dirty.monsters[monster_index].coord_index === 'undefined') {
+                log(chalk.yellow("in game_monster.getCoordIndex. coord_index was undefined still"));
+                return await main.getCoordIndex({ 'coord_id': dirty.monsters[monster_index].coord_id });
+            
+            }
+            
+            return dirty.monsters[monster_index].coord_index;
+
+
+            let coord_index = await main.getCoordIndex({ 'coord_id': dirty.monsters[monster_index].coord_id });
+
+            if(typeof dirty.monsters[monster_index].coord_index !== 'undefined' && dirty.monsters[monster_index].coord_index !== -1) {
+                if(dirty.coords[dirty.monsters[monster_index].coord_index].id !== dirty.coords[coord_index].id) {
+                    log(chalk.yellow("monster had a coord index (galaxy), but it was out of date"));
+                }
+
+            }
+
+            return coord_index;
+        }
+
+        
+
+    } catch(error) {
+        log(chalk.red("Error in game_monster.getCoordIndex: " + error));
+        console.error(error);
+    }
+}
+
+exports.getCoordIndex = getCoordIndex;
 
 
 async function getIndex(dirty, monster_id) {

@@ -1,3 +1,26 @@
+## [0.2.37] - 2021-03-08
+
+
+### Added
+- The game now stores when you login. I'm thinking about using this to potentially greet new players when they first login.
+- Premium skin for the player pod. Currently it will only show for you - I just have to think properly about how to expand the skin system so it will 
+show for others too, and possibly allow more flexibility.
+
+### Fixed
+- Had another typo causing moving on stairs in ships to error (hotfixed in 0.2.36)
+- Error with market timestamps
+- Bug with receiving damage without a damage type
+
+### Changed
+- Data Guards are now weak to hacking and drop power cells and ai fragments
+- First set of server performance improvements using indexes instead of coord lookups on players, objects, and monsters
+- Small update to Data Breach
+- Small update to Zuran Cruiser Wreck
+- Crystal Spiders no longer drop Crystals. Replaced with Silk.
+- Crystal Guard drops Diamonds instead of Crystal
+- Cherree's now drop Life Water
+- Blossomtis now drop Life Water
+
 ## [0.2.36] - 2021-03-02
 
 ### Fixed

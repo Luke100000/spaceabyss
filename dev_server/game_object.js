@@ -1,3 +1,4 @@
+//@ts-check
 var io_handler = require('./io.js');
 var io = io_handler.io;
 var database = require('./database.js');
@@ -865,13 +866,31 @@ async function getCoordIndex(dirty, object_index, scope) {
 
             if(typeof dirty.objects[object_index].coord_index !== 'undefined' && dirty.objects[object_index].coord_index !== -1) {
                 log(chalk.yellow("Getting planet coord index for object, but it looks like it has a coord_index too!"));
+                console.log("Object id: " + dirty.objects[object_index].id);
+                console.trace("here");
             }
 
             if(typeof dirty.objects[object_index].ship_coord_index !== 'undefined' && dirty.objects[object_index].ship_coord_index !== -1) {
                 log(chalk.yellow("Getting planet coord index for object, but it looks like it has a ship_coord_index too!"));
+                console.log("Object id: " + dirty.objects[object_index].id);
+                console.trace("here");
             }
 
-            // In the future, HERE is where we just flat return the object's planet_coord_index
+            if(typeof dirty.objects[object_index].planet_coord_index === 'undefined') {
+
+                if(dirty.objects[object_index].planet_coord_id) {
+                    let planet_coord_index = await main.getPlanetCoordIndex({ 'planet_coord_id': dirty.objects[object_index].planet_coord_id });
+                    dirty.objects[object_index].planet_coord_index = planet_coord_index;
+                    return planet_coord_index;
+                } else {
+                    log(chalk.yellow("Requested planet coord index, but object has no planet coord id"));
+                    dirty.objects[object_index].planet_coord_index = -1;
+                    return -1;
+                }
+                
+            
+            }
+            return dirty.objects[object_index].planet_coord_index;
 
             let planet_coord_index = await main.getPlanetCoordIndex({ 'planet_coord_id': dirty.objects[object_index].planet_coord_id });
 
@@ -895,7 +914,23 @@ async function getCoordIndex(dirty, object_index, scope) {
                 log(chalk.yellow("Getting ship coord index for object, but it looks like it has a planet_coord_index too!"));
             }
 
-            // In the future, HERE is where we just flat return the object's planet_coord_index
+            if(typeof dirty.objects[object_index].ship_coord_index === 'undefined') {
+
+
+                if(dirty.objects[object_index].ship_coord_id) {
+                    let ship_coord_index = await main.getShipCoordIndex({ 'ship_coord_id': dirty.objects[object_index].ship_coord_id });
+                    dirty.objects[object_index].ship_coord_index = ship_coord_index;
+                    return ship_coord_index;
+                } else {
+                    log(chalk.yellow("Requested ship coord index, but object has no ship coord id"));
+                    dirty.objects[object_index].ship_coord_index = -1;
+                    return -1;
+                }
+               
+            
+            }
+            
+            return dirty.objects[object_index].ship_coord_index;
 
             let ship_coord_index = await main.getShipCoordIndex({ 'ship_coord_id': dirty.objects[object_index].ship_coord_id });
 
@@ -912,13 +947,31 @@ async function getCoordIndex(dirty, object_index, scope) {
         } else if(scope === 'galaxy') {
             if(typeof dirty.objects[object_index].ship_coord_index !== 'undefined' && dirty.objects[object_index].ship_coord_index !== -1) {
                 log(chalk.yellow("Getting coord index (galaxy) for object, but it looks like it has a ship_coord_index too!"));
+                console.log("Object id: " + dirty.objects[object_index].id);
+                console.trace("here");
             }
 
             if(typeof dirty.objects[object_index].planet_coord_index !== 'undefined' && dirty.objects[object_index].planet_coord_index !== -1) {
                 log(chalk.yellow("Getting coord index (galaxy) for object, but it looks like it has a planet_coord_index too!"));
             }
 
-            // In the future, HERE is where we just flat return the object's planet_coord_index
+            if(typeof dirty.objects[object_index].coord_index === 'undefined') {
+
+                if(dirty.objects[object_index].coord_id) {
+                    let coord_index = await main.getCoordIndex({ 'coord_id': dirty.objects[object_index].coord_id });
+                    dirty.objects[object_index].coord_index = coord_index;
+                    return coord_index;
+                } else {
+                    log(chalk.yellow("Requested coord index, but object has no coord id"));
+                    dirty.objects[object_index].coord_index = -1;
+                    return -1;
+                }
+             
+            
+            }
+            
+            return dirty.objects[object_index].coord_index;
+
 
             let coord_index = await main.getCoordIndex({ 'coord_id': dirty.objects[object_index].coord_id });
 
@@ -1015,6 +1068,34 @@ async function getIndex(dirty, object_id) {
                     }
                 }
 
+
+                // and associate the game object with a room and coord index
+                if(dirty.objects[object_index].planet_coord_id) {
+                    let planet_coord_index = await main.getPlanetCoordIndex({ 'planet_coord_id': dirty.objects[object_index].planet_coord_id });
+                    if(planet_coord_index !== -1) {
+                        dirty.objects[object_index].planet_coord_index = planet_coord_index;
+                        //dirty.objects[object_index].room = "planet_" + dirty.planet_coords[planet_coord_index].planet_id;
+                    } else {
+
+                        // The object's planet coord LITERALLY does not exist
+                        //log(chalk.yellow("Deleting object id: " + dirty.objects[object_index].id));
+                        //await deleteobject(dirty, object_index);
+
+                    }
+                } else if(dirty.objects[object_index].ship_coord_id) {
+                    let ship_coord_index = await main.getShipCoordIndex({ 'ship_coord_id': dirty.objects[object_index].ship_coord_id });
+                    if(ship_coord_index !== -1) {
+                        dirty.objects[object_index].ship_coord_index = ship_coord_index;
+                        //dirty.objects[object_index].room = "ship_" + dirty.ship_coords[ship_coord_index].ship_id;
+                    }
+                } else if(dirty.objects[object_index].coord_id) {
+                    let coord_index = await main.getCoordIndex({ 'coord_id': dirty.objects[object_index].coord_id });
+                    if(coord_index !== -1) {
+                        dirty.objects[object_index].coord_index = coord_index;
+                        //dirty.objects[object_index].room = "galaxy";
+                    }
+                }
+
             } else {
                 log(chalk.yellow("Did not find object with id: " + object_id + " in the database"));
                 //console.trace("Traced");
@@ -1095,13 +1176,14 @@ async function getCoordAndRoom(dirty, object_index) {
         let coord = false;
 
         if (!dirty.objects[object_index]) {
-            log(chalk.yellow("Could not find the object we are deleting. Object index: " + object_index));
+            log(chalk.yellow("Could not find the object. Object index: " + object_index));
             return {'room': room, 'coord_index': coord_index, 'coord': coord, 'scope': scope};
         }
 
         if (dirty.objects[object_index].coord_id) {
-            coord_index = await main.getCoordIndex(
-                {'coord_id': dirty.objects[object_index].coord_id});
+
+            coord_index = await getCoordIndex(dirty, object_index, 'galaxy');
+
             if (coord_index !== -1) {
                 room = "galaxy";
                 scope = "galaxy";
@@ -1110,8 +1192,9 @@ async function getCoordAndRoom(dirty, object_index) {
         }
 
         if (dirty.objects[object_index].planet_coord_id) {
-            coord_index = await main.getPlanetCoordIndex(
-                {'planet_coord_id': dirty.objects[object_index].planet_coord_id});
+
+            coord_index = await getCoordIndex(dirty, object_index, 'planet');
+            
             if (coord_index !== -1) {
                 room = "planet_" + dirty.planet_coords[coord_index].planet_id;
                 scope = "planet";
@@ -1119,7 +1202,9 @@ async function getCoordAndRoom(dirty, object_index) {
             }
 
         } else if (dirty.objects[object_index].ship_coord_id) {
-            coord_index = await main.getShipCoordIndex({'ship_coord_id': dirty.objects[object_index].ship_coord_id});
+
+            coord_index = await getCoordIndex(dirty, object_index, 'ship');
+
             if (coord_index !== -1) {
                 room = "ship_" + dirty.ship_coords[coord_index].ship_id;
                 scope = "ship";

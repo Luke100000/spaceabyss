@@ -1104,7 +1104,7 @@ async function damage(dirty, data) {
 
         }
 
-        if(data.damage_types.length !== 0) {
+        if(typeof data.damage_types !== 'undefined' && data.damage_types.length !== 0) {
             for(let i = 0; i < data.damage_types.length; i++) {
 
                 if(data.damage_types[i] === 'poison') {
@@ -1134,8 +1134,9 @@ async function getCoordAndRoom(dirty, player_index) {
         let coord = {};
 
         if (dirty.players[player_index].coord_id) {
-            coord_index = await main.getCoordIndex(
-                { 'coord_id': dirty.players[player_index].coord_id });
+
+            coord_index = await getCoordIndex(dirty, player_index, 'galaxy');
+
             if (coord_index !== -1) {
                 room = "galaxy";
                 scope = "galaxy";
@@ -1144,8 +1145,9 @@ async function getCoordAndRoom(dirty, player_index) {
         }
 
         if (dirty.players[player_index].planet_coord_id) {
-            coord_index = await main.getPlanetCoordIndex(
-                { 'planet_coord_id': dirty.players[player_index].planet_coord_id });
+
+            coord_index = await getCoordIndex(dirty, player_index, 'planet');            
+
             if (coord_index !== -1) {
                 room = "planet_" + dirty.planet_coords[coord_index].planet_id;
                 scope = "planet";
@@ -1153,7 +1155,10 @@ async function getCoordAndRoom(dirty, player_index) {
             }
 
         } else if (dirty.players[player_index].ship_coord_id) {
-            coord_index = await main.getShipCoordIndex({ 'ship_coord_id': dirty.players[player_index].ship_coord_id });
+
+            coord_index = await getCoordIndex(dirty, player_index, 'ship');
+
+
             if (coord_index !== -1) {
                 room = "ship_" + dirty.ship_coords[coord_index].ship_id;
                 scope = "ship";
@@ -1171,7 +1176,7 @@ async function getCoordAndRoom(dirty, player_index) {
 exports.getCoordAndRoom = getCoordAndRoom;
 
 
-// The point of this function is to transition to using a planet_coord_index|ship_coord_index|coord_index on the game object
+// The point of this function is to transition to using a planet_coord_index|ship_coord_index|coord_index on the player
 // Most of the code in here is basically error checking while we transition. We can't trust the indexes yet, so issue warnings
 // when they would have been wrong, or something wasn't updated
 // scope is basically for the same thing. We shouldn't technically need it if we're updating the objects properly
@@ -1180,73 +1185,33 @@ async function getCoordIndex(dirty, player_index, scope) {
 
         if(scope === 'planet') {
 
-            if(typeof dirty.players[player_index].coord_index !== 'undefined' && dirty.players[player_index].coord_index !== -1) {
-                log(chalk.yellow("Getting planet coord index for object, but it looks like it has a coord_index too!"));
+            if(typeof dirty.players[player_index].planet_coord_index === 'undefined') {
+                log(chalk.yellow("in player.getCoordIndex. planet_coord_index was undefined still"));
+                return await main.getPlanetCoordIndex({ 'planet_coord_id': dirty.players[player_index].planet_coord_id });
+            
             }
-
-            if(typeof dirty.players[player_index].ship_coord_index !== 'undefined' && dirty.players[player_index].ship_coord_index !== -1) {
-                log(chalk.yellow("Getting planet coord index for object, but it looks like it has a ship_coord_index too!"));
-            }
-
-            // In the future, HERE is where we just flat return the object's planet_coord_index
-
-            let planet_coord_index = await main.getPlanetCoordIndex({ 'planet_coord_id': dirty.players[player_index].planet_coord_id });
-
-            if(typeof dirty.players[player_index].planet_coord_index !== 'undefined' && dirty.players[player_index].planet_coord_index !== -1) {
-                if(dirty.planet_coords[dirty.players[player_index].planet_coord_index].id !== dirty.planet_coords[planet_coord_index].id) {
-                    log(chalk.yellow("Player had a planet coord index, but it was out of date"));
-                }
-
-            }
-
-            return planet_coord_index;
-
+            return dirty.players[player_index].planet_coord_index;
 
         } else if(scope === 'ship') {
             
-            if(typeof dirty.players[player_index].coord_index !== 'undefined' && dirty.players[player_index].coord_index !== -1) {
-                log(chalk.yellow("Getting planet coord index for object, but it looks like it has a coord_index too!"));
+            if(typeof dirty.players[player_index].ship_coord_index === 'undefined') {
+                log(chalk.yellow("in player.getCoordIndex. ship_coord_index was undefined still"));
+                return await main.getShipCoordIndex({ 'ship_coord_id': dirty.players[player_index].ship_coord_id });
+            
             }
-
-            if(typeof dirty.players[player_index].planet_coord_index !== 'undefined' && dirty.players[player_index].planet_coord_index !== -1) {
-                log(chalk.yellow("Getting ship coord index for object, but it looks like it has a planet_coord_index too!"));
-            }
-
-            // In the future, HERE is where we just flat return the object's planet_coord_index
-
-            let ship_coord_index = await main.getShipCoordIndex({ 'ship_coord_id': dirty.players[player_index].ship_coord_id });
-
-            if(typeof dirty.players[player_index].ship_coord_index !== 'undefined' && dirty.players[player_index].ship_coord_index !== -1) {
-                if(dirty.ship_coords[dirty.players[player_index].ship_coord_index].id !== dirty.ship_coords[ship_coord_index].id) {
-                    log(chalk.yellow("Object had a planet coord index, but it was out of date"));
-                }
-
-            }
-
-            return ship_coord_index;
-
+            
+            return dirty.players[player_index].ship_coord_index;
 
         } else if(scope === 'galaxy') {
-            if(typeof dirty.players[player_index].ship_coord_index !== 'undefined' && dirty.players[player_index].ship_coord_index !== -1) {
-                log(chalk.yellow("Getting coord index (galaxy) for object, but it looks like it has a ship_coord_index too!"));
+
+            if(typeof dirty.players[player_index].coord_index === 'undefined') {
+                log(chalk.yellow("in player.getCoordIndex. coord_index was undefined still"));
+                return await main.getCoordIndex({ 'coord_id': dirty.players[player_index].coord_id });
+            
             }
+            
+            return dirty.players[player_index].coord_index;
 
-            if(typeof dirty.players[player_index].planet_coord_index !== 'undefined' && dirty.players[player_index].planet_coord_index !== -1) {
-                log(chalk.yellow("Getting coord index (galaxy) for object, but it looks like it has a planet_coord_index too!"));
-            }
-
-            // In the future, HERE is where we just flat return the object's planet_coord_index
-
-            let coord_index = await main.getCoordIndex({ 'coord_id': dirty.players[player_index].coord_id });
-
-            if(typeof dirty.players[player_index].coord_index !== 'undefined' && dirty.players[player_index].coord_index !== -1) {
-                if(dirty.coords[dirty.players[player_index].coord_index].id !== dirty.coords[coord_index].id) {
-                    log(chalk.yellow("Object had a coord index (galaxy), but it was out of date"));
-                }
-
-            }
-
-            return coord_index;
         }
 
         

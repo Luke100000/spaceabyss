@@ -1,3 +1,4 @@
+//@ts-check
 /*
 NODEJS VERSION 12.31.1
 SOCKET.IO VERSION socket.io@2.something
@@ -2861,7 +2862,7 @@ async function loginPlayer(socket, dirty, data) {
                         dirty.players[socket.player_index].planet_coord_id = false;
                         dirty.players[socket.player_index].planet_coord_index = -1;
                         dirty.players[socket.player_index].ship_coord_id = false;
-                        dirty.plyaers[socket.player_index].ship_coord_index = -1;
+                        dirty.players[socket.player_index].ship_coord_index = -1;
                         dirty.players[socket.player_index].has_change = true;
     
                         await map.updateMap(socket, dirty);
@@ -2956,6 +2957,10 @@ async function loginPlayer(socket, dirty, data) {
     
                 }
             }
+
+            dirty.players[socket.player_index].last_login = helper.getTimestampInSeconds();
+
+            dirty.players[socket.player_index].has_change = true;
 
 
         });
@@ -4575,7 +4580,7 @@ async function writePlayerDirty(writing_player, i, show_output = false) {
         let sql = "UPDATE players SET body_id = ?, coord_id = ?, control_skill_points = ?, cooking_skill_points = ?, " +
             "corrosive_skill_points = ?, current_hp = ?, defense = ?, defending_skill_points = ?, electric_skill_points = ?, energy = ?, exp = ?, " +
             "explosion_skill_points = ?, faction_id = ?, farming_skill_points = ?,  freeze_skill_points = ?, hacking_skill_points = ?, " +
-            "heat_skill_points = ?, gravity_skill_points = ?, laser_skill_points = ?, level = ?, max_hp = ?, " +
+            "heat_skill_points = ?, gravity_skill_points = ?, laser_skill_points = ?, last_login = ?, level = ?, max_hp = ?, " +
             "manufacturing_skill_points = ?, melee_skill_points = ?, mining_skill_points = ?, " +
             "piercing_skill_points = ?, planet_coord_id = ?, planet_id = ?, " +
             "planet_level = ?, plasma_skill_points = ?, poison_skill_points = ?, previous_coord_id = ?, previous_planet_coord_id = ?, " +
@@ -4585,7 +4590,7 @@ async function writePlayerDirty(writing_player, i, show_output = false) {
         let inserts = [writing_player.body_id, writing_player.coord_id, writing_player.control_skill_points, writing_player.cooking_skill_points,
             writing_player.corrosive_skill_points, writing_player.current_hp, writing_player.defense, writing_player.defending_skill_points, writing_player.electric_skill_points, writing_player.energy, writing_player.exp,
             writing_player.explosion_skill_points, writing_player.faction_id, writing_player.farming_skill_points, writing_player.freeze_skill_points, writing_player.hacking_skill_points,
-            writing_player.heat_skill_points, writing_player.gravity_skill_points, writing_player.laser_skill_points, writing_player.level, writing_player.max_hp,
+            writing_player.heat_skill_points, writing_player.gravity_skill_points, writing_player.laser_skill_points, writing_player.last_login, writing_player.level, writing_player.max_hp,
             writing_player.manufacturing_skill_points, writing_player.melee_skill_points, writing_player.mining_skill_points,
             writing_player.piercing_skill_points, writing_player.planet_coord_id, writing_player.planet_id,
             writing_player.planet_level, writing_player.plasma_skill_points, writing_player.poison_skill_points, writing_player.previous_coord_id, writing_player.previous_planet_coord_id,

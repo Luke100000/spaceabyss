@@ -1,3 +1,4 @@
+//@ts-check
 var io_handler = require('./io.js');
 var io = io_handler.io;
 var database = require('./database.js');

@@ -10,93 +10,38 @@ DOING NOW:
 
     Whenever I see a getPlanetCoordIndex, getShipCoordIndex, getCoordIndex, see if it's on a monster,object, or player, and switch it to TYPE.getCoordIndex()
 
+
+
+    and work on all this next stuff
+
+    Prison Ship
+    1. Find ship image (done)
+    2. Some monsters/creatures to put on it
+        Warden ( https://images.gemquery.com/262/content_2629483.jpg )
+        Guard ( https://images.gemquery.com/257/content_2579086.jpg )
+    3. Need a cell door sprite
+
+    Living Rock (find a different name for it?)
+        On that topic, lets get some next level bodies
+        Human,Mlm, the first ruel one, the acid one
+
+
+
+    Trae are still dropping living wood on decay
+        Get it to where they drop fragments on decay, living wood on battle
+
+    Crystal is tier 7, but Crystal Spider drops it
+        Switch Crystal Spider to dropping 
+
+
+    
     
     Get some Sokolh for the Asteroid City
 
-    Gotta to something with all the extra asteroids that aren't anywhere
-        select COUNT(*) FROM objects WHERE object_type_id = 138 and coord_id is null;
-        DELETE FROM objects WHERE object_type_id = 138 and coord_id is null;
 
-
-    protect faction members
-
-
-    I want a snow effect on the frozen planet!!!!!
-        (it's for phaser 2, but I'm sure I can figure out how to do it with phaser 3 https://phaser.io/examples/v2/particles/rain , https://phaser.io/examples/v2/particles/snow )
-
-
-
-    Have the diamond batteries spawn on machine planets once we have the Primewall/Glitched God drawn (or find another MLM)
-
-
-    Test that the basics of factions works
-
-
-    Sounds for the different damage types
-    Background music for the different planets/galaxy
-
-
-
-    I really like the idea of a fast/slow growth mode for algae vats... so they make a bunch while you are sleeping
-        ALTERNATIVELY, could have them keep producing up to a max storage level
-
-    select objects.id as object_id, objects.player_id, objects.coord_id, coords.object_id, coords.player_id, coords.npc_id,coords.planet_id,coords.belongs_to_planet_id FROM objects LEFT JOIN coords ON coords.id = objects.coord_id WHERE objects.coord_id != false AND objects.object_type_id IN(114,233,298,238,239,339,212,335,369,296,313,381,387) AND objects.player_id != false;
-
-
-
-    Research outpost
-        Could have an even better benefit than the science vessel. Something that spawns in space. But there's only a couple, and they can be pretty easily 
-            salvaged away if not defended
-        Research Outpost Content
-            Lets start by spawning it with bursters
-
-    data breach content
-        data guide/protector https://www.artstation.com/artwork/bav9Do
-        observer drone https://images.gemquery.com/259/content_2591696.jpg
-    computational heatsink content
-        https://images.gemquery.com/253/content_2539676.jpg
-        observer drone https://images.gemquery.com/259/content_2591696.jpg
+    Notify me when a player logs in?
 
     
-    Researching augment
-
-
-    Addicted to M Man Tick 15/60
-        Not sure it's doing much of anything
-
-    maps not updating on autopilot
-
-    acid walls
-
-    Some admin way to view lost things(starting with bodies)
-
-
-
-    Test Slerm Armor on Inferno Planet!
-
-
-    Hacking view
-    First thing is a virtual terminal to step into
-        Once a player steps into it, 'enter hacking view button' or something
-        Continue iterating on this. First step is switching into the view, and back out of the view
-            Next is movement
-
-    Doesn't look like the water walls are being damaged on the water ship
-
-
-
-    see if I can get someone to make a trailer on fivr
-
-
-    Explore more indie mmos, and marketing paths
-
-    Make those merchant spots do stuff!
-        When spaceporst are built, automatically create two merchant areas and assign them to Cadian
-            Same idea with the apartment structure - auto assign areas
-
-            When a market linker ends, if the area has auto_market , just extend it again instead of deleting it.
-
-    laser sound is a pew, laser sprite is a beam
 
 
 

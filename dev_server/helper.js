@@ -219,6 +219,12 @@ function getRandomIntInclusive(min, max) {
     return Math.floor(Math.random() * (max - min + 1)) + min; //The maximum is inclusive and the minimum is inclusive
 }
 
+
+// Getting in seconds instead of milliseconds matches mysql's default unix timestamp behavior.
+function getTimestampInSeconds() {
+    return Date.now() / 1000;
+}
+
 function isFalse(the_value) {
 
     if(typeof the_value === "undefined" || the_value === 0 || the_value === "0" ||
@@ -266,6 +272,7 @@ module.exports = {
     cleanStringInput,
     getDestinationCoordIndex,
     getRandomIntInclusive,
+    getTimestampInSeconds,
     isFalse,
     notFalse,
     rarityRoll

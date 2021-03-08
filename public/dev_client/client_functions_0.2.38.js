@@ -992,8 +992,24 @@ function createPlayerSprite(player_index) {
             new_sprite_x_offset = 32;
             new_sprite_y_offset = 32;
         } else if (objects[ship_index].object_type_id === 114) {                    // POD
-            new_texture_key = 'player-pod';
-            new_texture_animation_key = 'player-pod-animation';
+
+            let use_luxury_pod = false;
+            if(skin_purchase_linkers.length > 0) {
+                for(let sk = 0; sk < skin_purchase_linkers.length; sk++) {
+                    if(skin_purchase_linkers[sk].object_type_id === 437) {
+                        use_luxury_pod = true;
+                    }
+                }
+            }
+
+            if(use_luxury_pod) {
+                new_texture_key = 'player-luxury-pod';
+                new_texture_animation_key = 'player-luxury-pod-animation';
+            } else {
+                new_texture_key = 'player-pod';
+                new_texture_animation_key = 'player-pod-animation';
+            }
+            
 
         } else if (objects[ship_index].object_type_id === 212) {
             new_texture_key = 'player-cutter';
@@ -1043,8 +1059,24 @@ function createPlayerSprite(player_index) {
         else {
             // DEFAULT!!!!!!!
             console.log("%c Using Default Ship Display", log_warning);
-            new_texture_key = 'player-pod';
-            new_texture_animation_key = 'player-pod-animation';
+
+
+            let use_luxury_pod = false;
+            if(skin_purchase_linkers.length > 0) {
+                for(let sk = 0; sk < skin_purchase_linkers.length; sk++) {
+                    if(skin_purchase_linkers[sk].object_type_id === 437) {
+                        use_luxury_pod = true;
+                    }
+                }
+            }
+
+            if(use_luxury_pod) {
+                new_texture_key = 'player-luxury-pod';
+                new_texture_animation_key = 'player-luxury-pod-animation';
+            } else {
+                new_texture_key = 'player-pod';
+                new_texture_animation_key = 'player-pod-animation';
+            }
         }
 
 
@@ -1228,9 +1260,9 @@ function createPlayerSprite(player_index) {
  
             
         } else {
-            console.log("%c No idea where to put player sprite for player id: " + players[player_index].id + "!", log_warning);
-            console.log("Player id: " + players[player_index].id + " coord_id: " + players[player_index].coord_id + 
-            " ship_coord_id: " + players[player_index].ship_coord_id + " planet_coord_id: " + players[player_index].planet_coord_id);
+            //console.log("%c No idea where to put player sprite for player id: " + players[player_index].id + "!", log_warning);
+            //console.log("Player id: " + players[player_index].id + " coord_id: " + players[player_index].coord_id + 
+            //" ship_coord_id: " + players[player_index].ship_coord_id + " planet_coord_id: " + players[player_index].planet_coord_id);
         
         }
 
@@ -4581,10 +4613,17 @@ function generateEquipmentDisplay() {
 
         for (let i = 0; i < skin_purchase_linkers.length; i++) {
 
-            let skin_object_type_index = getObjectTypeIndex(skin_purchase_linkers[i].object_type_id);
-            skin_string += object_types[skin_object_type_index].name;
-            skin_string += " <button class='button is-success is-small' skin_object_type_id='" + skin_purchase_linkers[i].object_type_id + "' id='skin_use_" + skin_purchase_linkers[i].object_type_id + "'>Use</button>";
-            skin_string += " <button class='button is-warning is-small' skin_object_type_id='" + skin_purchase_linkers[i].object_type_id + "' id='skin_remove_" + skin_purchase_linkers[i].object_type_id + "'>Remove</button>";
+            // For now, lets just not show the pod, and have the new pod always be the one that shows for the player
+            if(skin_purchase_linkers[i].object_type_id === 437) {
+
+            } else {
+                let skin_object_type_index = getObjectTypeIndex(skin_purchase_linkers[i].object_type_id);
+                skin_string += object_types[skin_object_type_index].name;
+                skin_string += " <button class='button is-success is-small' skin_object_type_id='" + skin_purchase_linkers[i].object_type_id + "' id='skin_use_" + skin_purchase_linkers[i].object_type_id + "'>Use</button>";
+                skin_string += " <button class='button is-warning is-small' skin_object_type_id='" + skin_purchase_linkers[i].object_type_id + "' id='skin_remove_" + skin_purchase_linkers[i].object_type_id + "'>Remove</button>";
+            }
+
+            
         }
 
 
@@ -8566,7 +8605,7 @@ function redrawBars(source = '') {
             assembled_in_linker_index = assembled_in_linkers.findIndex(function(obj) { return obj && obj.object_type_id === active_assembly.being_assembled_object_type_id && 
                 obj.assembled_in_object_type_id === objects[assembler_object_index].object_type_id; });
         } else {
-            console.log("Could not find assembler object. id: " + active_assembly.assember_objet_id);
+            //console.log("Could not find assembler object. id: " + active_assembly.assember_objet_id);
         }
 
 
@@ -8576,7 +8615,7 @@ function redrawBars(source = '') {
         if (active_assembly.current_tick_count >= 1 && assembled_in_linker_index !== -1) {
             percent_complete = active_assembly.current_tick_count / assembled_in_linkers[assembled_in_linker_index].tick_count * 100;
         } else if(assembled_in_linker_index === -1) {
-            console.log("Could not find assembled_in_linker, percent is remaining at 1");
+            //console.log("Could not find assembled_in_linker, percent is remaining at 1");
         }
 
         graphics.fillStyle(0x4286f4);
@@ -8640,7 +8679,7 @@ function redrawBars(source = '') {
                 graphics.lineStyle(1, 0xffff00, 1);
                 graphics.strokeRect(tileToPixel(client_player_info.coord.tile_x), tileToPixel(client_player_info.coord.tile_y), 64, 64);
             } else {
-                console.log("Don't have player's coord yet");
+                //console.log("Don't have player's coord yet");
             }
             
 
@@ -8655,7 +8694,8 @@ function redrawBars(source = '') {
                     console.log("Don't have monster's coord yet");
                 }
             } else {
-                console.log("Don't have monster yet");
+                //console.log("Don't have monster yet");
+                socket.emit('request_monster_info', { 'monster_id': battle_linker.attacking_id });
             }
         }
 
@@ -9389,7 +9429,7 @@ function redrawMap() {
             let monster_info = getMonsterInfo(i);
 
             if (shouldDraw(client_player_info.coord, monster_info.coord, "monster_info")) {
-                console.log("%c Drawing monster from redrawMap", log_success);
+                //console.log("%c Drawing monster from redrawMap", log_success);
                 createMonsterSprite(i);
             }
         }
@@ -9575,7 +9615,7 @@ function setPlayerMoveDelay(player_index) {
         let ship_index = objects.findIndex(function (obj) { return obj && obj.id === players[player_index].ship_id });
 
         if (ship_index === -1) {
-            console.log("Don't have our ship object. Requesting it");
+            //console.log("Don't have our ship object. Requesting it");
             socket.emit('request_object_info', { 'object_id': players[player_index].ship_id, 'reason': 'Need player ship' });
             return false;
         }
@@ -10706,7 +10746,7 @@ function showClickMenuObject(coord) {
     }
 
     if (objects[object_index].object_type_id === 127) {  // RESEARCHER
-        console.log("Research station options");
+        //console.log("Research station options");
 
         // Show a research menu
         shown_options = true;
@@ -11049,7 +11089,7 @@ function showClickMenuObject(coord) {
 }
 
 function showClickMenuObjectType(coord) {
-    console.log("In showClickMenuObjectType");
+    //console.log("In showClickMenuObjectType");
     // there's an object type here - but no object id
 
     let object_type_index = object_types.findIndex(function (obj) { return obj && obj.id === coord.object_type_id; });
@@ -11081,7 +11121,7 @@ function showClickMenuObjectType(coord) {
             }
 
         } else {
-            console.log("Object type does not have repaired object type id");
+            //console.log("Object type does not have repaired object type id");
         }
 
 
@@ -11689,7 +11729,7 @@ function updatePlayer(data, player_index) {
         // Not sure if this will work as intended
         if(isFalse(data.player.coord_id)) {
 
-            console.log("Calling destroyPlayerSprite from updatePlayer");
+            //console.log("Calling destroyPlayerSprite from updatePlayer");
 
             destroyPlayerSprite(players[player_index]);
 

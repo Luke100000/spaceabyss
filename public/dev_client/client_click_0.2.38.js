@@ -944,7 +944,7 @@ $(document).on('click', 'button', function () {
         let clicked_object_id = $('#' + clicked_id).attr('object_id');
 
 
-        console.log("Sending research data. inventory_id: " + split_name[1] + " in object id: " + clicked_object_id);
+        //console.log("Sending research data. inventory_id: " + split_name[1] + " in object id: " + clicked_object_id);
         socket.emit("research_data", {inventory_item_id: split_name[1], 'researching_object_id': clicked_object_id });
 
         $('#click_menu').empty();

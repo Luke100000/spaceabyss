@@ -110,7 +110,7 @@ socket.on('assembly_info', function(data) {
     }
 
     if(data.finished) {
-        console.log("Got finished assembly info! Deleting it");
+        //console.log("Got finished assembly info! Deleting it");
         delete active_assemblies[active_assembly_index];
     } else {
         // update the active assembly
@@ -1094,7 +1094,7 @@ socket.on('login_data', function(data) {
 
 
             if(!players[client_player_index].sprite) {
-                console.log("Creating our sprite");
+                //console.log("Creating our sprite");
                 createPlayerSprite(client_player_index);
 
 
@@ -1128,15 +1128,15 @@ socket.on('login_data', function(data) {
         } else if(current_view === 'planet') {
             //$('#launch').empty();
             //$('#launch').append('<button class="btn btn-block btn-success" id="viewchange" newview="galaxy">Launch From Planet</button>');
-            console.log("In starting view on planet");
+            //console.log("In starting view on planet");
             if(typeof client_player_info.coord === "undefined" || !client_player_info.coord) {
-                console.log("Don't have the coord for the player yet");
-                console.log(client_player_info);
+                //console.log("Don't have the coord for the player yet");
+                //console.log(client_player_info);
             } else {
-                console.log(client_player_info);
+                //console.log(client_player_info);
                 let planet_index = getPlanetIndex({ 'planet_id': client_player_info.coord.planet_id });
                 if(planet_index !== -1) {
-                    console.log("Going to call loadMonsterSprites for planet type id: " + planets[planet_index].planet_type_id);
+                    //console.log("Going to call loadMonsterSprites for planet type id: " + planets[planet_index].planet_type_id);
                     loadMonsterSprites('planet', planets[planet_index].planet_type_id);
                     playBackgroundMusic('planet_type', planets[planet_index].planet_type_id);
                 } else {
@@ -3644,7 +3644,7 @@ socket.on('view_change_data', function(data) {
 
     if(data.view === 'galaxy') {
 
-        console.log("Got view change data - galaxy");
+        //console.log("Got view change data - galaxy");
 
         on_planet = false;
 

@@ -635,7 +635,7 @@ const world = require('./world.js');
 
             if(result) {
                 let new_id = result.insertId;
-                console.log("Got new assembly id: " + new_id);
+                //console.log("Got new assembly id: " + new_id);
                 let [rows, fields] = await (pool.query("SELECT * FROM assemblies WHERE id = ?", [new_id]));
                 if(rows[0]) {
                     let adding_assembly = rows[0];
@@ -8259,7 +8259,8 @@ exports.eat = eat;
         try {
 
 
-            let current_time = Date.now();
+            // convert to seconds
+            let current_time = helper.getTimestampInSeconds();
 
             for(let i = 0; i < dirty.market_linkers.length; i++) {
                 if(dirty.market_linkers[i]) {
@@ -10645,7 +10646,7 @@ exports.eat = eat;
 
         try {
 
-            console.log("Sending unread message count");
+            //console.log("Sending unread message count");
 
             if(typeof socket.player_index === 'undefined') {
                 socket.emit('unread_message_info', { 'unread_message_count': 0 });
