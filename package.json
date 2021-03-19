@@ -1,0 +1,33 @@
+{
+  "private": true,
+  "scripts": {
+      "dev": "npm run development",
+      "development": "cross-env NODE_ENV=development node_modules/webpack/bin/webpack.js --progress --hid>
+      "watch": "cross-env NODE_ENV=development node_modules/webpack/bin/webpack.js --watch --progress --h>
+      "watch-poll": "npm run watch -- --watch-poll",
+      "hot": "cross-env NODE_ENV=development node_modules/webpack-dev-server/bin/webpack-dev-server.js -->
+      "prod": "npm run production",
+      "production": "cross-env NODE_ENV=production node_modules/webpack/bin/webpack.js --progress --hide->
+  },
+  "devDependencies": {
+      "axios": "^0.16.2",
+      "bootstrap-sass": "^3.3.7",
+      "cross-env": "^5.0.1",
+      "jquery": "^3.1.1",
+      "laravel-mix": "^1.0",
+      "lodash": "^4.17.4",
+      "vue": "^2.1.10"
+  },
+  "dependencies": {
+      "bcrypt-nodejs": "0.0.3",
+      "chalk": "^4.1.0",
+      "crypto": "^1.0.1",
+      "dotenv": "^8.2.0",
+      "inits": "^1.6.2",
+      "mysql": "^2.18.1",
+      "mysql2": "^1.7.0",
+      "pathfinding": "^0.4.18",
+      "socket.io": "^2.3.0",
+      "uuid": "^8.3.1"
+  }
+}
