@@ -839,27 +839,36 @@ socket.on('coord_info', function (data) {
 
 
         }
-    } else {
+    }
+    // We already have the coord
+    else {
 
 
         if(client_player_index === -1 || shouldDraw(client_player_info.coord, coords[coord_index], "coord_info - update")) {
+
+
+            let coord_needs_update = false;
+
             if(coords[coord_index].object_id !== data.coord.object_id || coords[coord_index].belongs_to_object_id !== data.coord.belongs_to_object_id) {
-
+                coord_needs_update = true;
 
                 drawCoord('galaxy', data.coord);
             }
-
-            /*
-            else if(coords[coord_index].player_id !== data.coord.player_id) {
-                //console.log(coords[coord_index].player_id + " doesn't match " + data.coord.player_id + " redrawing coord");
-                drawCoord('galaxy', data.coord);
-            }
-            */
 
 
 
             if(coords[coord_index].floor_type_id !== data.coord.floor_type_id) {
+                coord_needs_update = true;
                 //console.log(coords[coord_index].floor_type_id + " doesn't match " + data.coord.floor_type_id + " redrawing coord");
+            }
+
+            if(coords[coord_index].object_type_id !== data.coord.object_type_id) {
+                coord_needs_update = true;
+                //console.log("Object type id update for coord id: " + data.coord.id + " " + coords[coord_index].object_type_id + " doesn't match " + data.coord.object_type_id + " redrawing coord");
+            }
+
+
+            if(coord_needs_update) {
                 drawCoord('galaxy', data.coord);
             }
         }
@@ -2514,7 +2523,9 @@ socket.on('planet_coord_info', function (data) {
         }
 
 
-    } else {
+    }
+    // We already have this coord
+    else {
 
         if(debug_planet_coord_ids.indexOf(data.planet_coord.id) !== -1) {
             console.log("Already have planet coord");
@@ -2535,6 +2546,8 @@ socket.on('planet_coord_info', function (data) {
             }
         }
 
+        // Resetting the up and down coord index if the server is sending us that info (it's invalid on the client)
+        // TODO why not left/right as well?
         let up_index = -2;
         let down_index = -2;
         if(typeof planet_coords[coord_index].up_coord_index !== 'undefined') {
@@ -3381,48 +3394,166 @@ socket.on('salvaging_linker_info', function(data) {
     let index = salvaging_linkers.findIndex(function(obj) {
         return obj && obj.id === data.salvaging_linker.id; });
 
-    if(data.remove && index !== -1) {
+    if(data.remove) {
+        //console.log("Server is telling us to remove a salvaging linker");
+        
 
-        removeEffects('object', salvaging_linkers[index].object_id);
+        if(index !== -1) {
+            if(typeof salvaging_linkers[index].object_id !== 'undefined') {
+                removeEffects('object', salvaging_linkers[index].object_id);
+            } else {
+                //console.log("Removing coord salvaging effect");
+                removeEffects('coord', salvaging_linkers[index].coord_id);
+            }
+            
+    
+            delete salvaging_linkers[index];
+            //console.log("Removed salvaging linker");
+    
+            redrawBars();
+        }
 
-        delete salvaging_linkers[index];
-        console.log("Removed salvaging linker");
-
-        redrawBars();
+      
 
         return;
     } else if(index === -1) {
         index = salvaging_linkers.push(data.salvaging_linker) - 1;
 
-        console.log("Pushed salvaging linker with id: " + salvaging_linkers[index].id);
+        //console.log("Pushed salvaging linker with id: " + salvaging_linkers[index].id);
 
+
+        if(typeof salvaging_linkers[index].object_id !== 'undefined') {
+            let object_index = objects.findIndex(function(obj) { return obj && obj.id === salvaging_linkers[index].object_id; });
+            let object_info = getObjectInfo(object_index);
+    
+            // It's possible our ship is salvaging something and we are walking around in our ship
+            if(object_info.coord !== false) {
+                let drawing_x = tileToPixel(object_info.coord.tile_x);
+                let drawing_y = tileToPixel(object_info.coord.tile_y);
+        
+                //let info_number_data = { 'x': tileToPixel(object_info.coord.tile_x), 'y': tileToPixel(object_info.coord.tile_y),
+                //    'damage_amount': hp_change, 'damage_type': 'salvaging',
+                //    'defender_type': 'object', 'defender_id': salvaging_linkers[index].object_id, 'attacker_type': 'player',
+                //    'attacker_id': salvaging_linkers[index].player_id };
+        
+                addEffect({ 'x': drawing_x, 'y': drawing_y, 'damage_types': ['salvaging'], 
+                    'damage_source_type': 'player', 'damage_source_id': salvaging_linkers[index].player_id, 'object_id': salvaging_linkers[index].object_id });
+                
+                redrawBars();
+            }
+        } else {
+
+            //console.log("salvaging object type/coord");
+            //console.log(salvaging_linkers[index]);
+
+            let drawing_x = -1000;
+            let drawing_y = -1000;
+            let salvaging_coord = {};
+
+            if(salvaging_linkers[index].coord_type === 'galaxy') {
+                let salvaging_coord_index = getCoordIndex({ 'coord_id': salvaging_linkers[index].coord_id });
+                if(salvaging_coord_index !== -1) {
+                    salvaging_coord = coords[salvaging_coord_index];
+                }
+            } else if(salvaging_linkers[index].coord_type === 'planet') {
+                let salvaging_coord_index = getPlanetCoordIndex({ 'planet_coord_id': salvaging_linkers[index].coord_id });
+                if(salvaging_coord_index !== -1) {
+                    salvaging_coord = planet_coords[salvaging_coord_index];
+                }
+            } else if(salvaging_linkers[index].coord_type === 'ship') {
+                console.log("ship coord id: " + salvaging_linkers[index].coord_id);
+                let salvaging_coord_index = getShipCoordIndex({ 'ship_coord_id': salvaging_linkers[index].coord_id });
+                if(salvaging_coord_index !== -1) {
+                    salvaging_coord = ship_coords[salvaging_coord_index];
+                }
+            }
+
+            if(!isFalse(salvaging_coord)) {
+                //console.log(salvaging_coord);
+                drawing_x = tileToPixel(salvaging_coord.tile_x);
+                drawing_y = tileToPixel(salvaging_coord.tile_y);
+                //console.log("Sending drawing_x, drawing_y: " + drawing_x + "," + drawing_y);
+
+                addEffect({ 'x': drawing_x, 'y': drawing_y, 'damage_types': ['salvaging'], 
+                'damage_source_type': 'player', 'damage_source_id': salvaging_linkers[index].player_id, 'coord_id': salvaging_linkers[index].coord_id,
+                    'coord_type': salvaging_linkers[index].coord_type });
+    
+                redrawBars();
+            } else {
+                console.log("Looks like we couldn't get the salvaging coord");
+            }
+        }
     } else {
+
+        //console.log("Got salvaging linker info for existing salvaging linker");
 
 
         // The only new value we need to save for an updated linker is the total_salvaged
         let total_salvaged_change = data.salvaging_linker.total_salvaged - salvaging_linkers[index].total_salvaged;
         salvaging_linkers[index].total_salvaged = parseInt(data.salvaging_linker.total_salvaged);
 
-        let object_index = objects.findIndex(function(obj) { return obj && obj.id === salvaging_linkers[index].object_id; });
-        let object_info = getObjectInfo(object_index);
+        if(typeof salvaging_linkers[index].object_id !== 'undefined') {
+            let object_index = objects.findIndex(function(obj) { return obj && obj.id === salvaging_linkers[index].object_id; });
+            let object_info = getObjectInfo(object_index);
+    
+            // It's possible our ship is salvaging something and we are walking around in our ship
+            if(object_info.coord !== false) {
+                let drawing_x = tileToPixel(object_info.coord.tile_x);
+                let drawing_y = tileToPixel(object_info.coord.tile_y);
+        
+                //let info_number_data = { 'x': tileToPixel(object_info.coord.tile_x), 'y': tileToPixel(object_info.coord.tile_y),
+                //    'damage_amount': hp_change, 'damage_type': 'salvaging',
+                //    'defender_type': 'object', 'defender_id': salvaging_linkers[index].object_id, 'attacker_type': 'player',
+                //    'attacker_id': salvaging_linkers[index].player_id };
+        
+                addEffect({ 'x': drawing_x, 'y': drawing_y, 'damage_types': ['salvaging'], 
+                    'damage_source_type': 'player', 'damage_source_id': salvaging_linkers[index].player_id, 'object_id': salvaging_linkers[index].object_id });
+                addInfoNumber(drawing_x, drawing_y, {'damage_amount': total_salvaged_change, 'damage_types': ['salvaging']});
+        
+                //addInfoNumber(info_number_data);
+                redrawBars();
+            }
+        } else {
 
-        // It's possible our ship is salvaging something and we are walking around in our ship
-        if(object_info.coord !== false) {
-            let drawing_x = tileToPixel(object_info.coord.tile_x);
-            let drawing_y = tileToPixel(object_info.coord.tile_y);
-    
-            //let info_number_data = { 'x': tileToPixel(object_info.coord.tile_x), 'y': tileToPixel(object_info.coord.tile_y),
-            //    'damage_amount': hp_change, 'damage_type': 'salvaging',
-            //    'defender_type': 'object', 'defender_id': salvaging_linkers[index].object_id, 'attacker_type': 'player',
-            //    'attacker_id': salvaging_linkers[index].player_id };
-    
-            addEffect({ 'x': drawing_x, 'y': drawing_y, 'damage_types': ['salvaging'], 
-                'damage_source_type': 'player', 'damage_source_id': salvaging_linkers[index].player_id, 'object_id': salvaging_linkers[index].object_id });
-            addInfoNumber(drawing_x, drawing_y, {'damage_amount': total_salvaged_change, 'damage_types': ['salvaging']});
-    
-            //addInfoNumber(info_number_data);
-            redrawBars();
+            let drawing_x = -1000;
+            let drawing_y = -1000;
+            let salvaging_coord = {};
+
+            if(salvaging_linkers[index].coord_type === 'galaxy') {
+                let salvaging_coord_index = getCoordIndex({ 'coord_id': salvaging_linkers[index].coord_id });
+                if(salvaging_coord_index !== -1) {
+                    salvaging_coord = coords[salvaging_coord_index];
+                }
+            } else if(salvaging_linkers[index].coord_type === 'planet') {
+                let salvaging_coord_index = getPlanetCoordIndex({ 'planet_coord_id': salvaging_linkers[index].coord_id });
+                if(salvaging_coord_index !== -1) {
+                    salvaging_coord = planet_coords[salvaging_coord_index];
+                }
+            } else if(salvaging_linkers[index].coord_type === 'ship') {
+                console.log("ship coord id: " + salvaging_linkers[index].coord_id);
+                let salvaging_coord_index = getShipCoordIndex({ 'ship_coord_id': salvaging_linkers[index].coord_id });
+                if(salvaging_coord_index !== -1) {
+                    salvaging_coord = ship_coords[salvaging_coord_index];
+                }
+            }
+
+            if(!isFalse(salvaging_coord)) {
+                //console.log(salvaging_coord);
+                drawing_x = tileToPixel(salvaging_coord.tile_x);
+                drawing_y = tileToPixel(salvaging_coord.tile_y);
+                //console.log("Sending drawing_x, drawing_y: " + drawing_x + "," + drawing_y);
+
+                addEffect({ 'x': drawing_x, 'y': drawing_y, 'damage_types': ['salvaging'], 
+                'damage_source_type': 'player', 'damage_source_id': salvaging_linkers[index].player_id, 'coord_id': salvaging_linkers[index].coord_id,
+                    'coord_type': salvaging_linkers[index].coord_type });
+                addInfoNumber(drawing_x, drawing_y, {'damage_amount': total_salvaged_change, 'damage_types': ['salvaging']});
+                redrawBars();
+            } else {
+                console.log("Looks like we couldn't get the salvaging coord");
+            }
         }
+
+      
 
 
     }
@@ -3466,7 +3597,9 @@ socket.on('ship_coord_info', function(data) {
 
             }
         }
-    } else {
+    } 
+    // We already have this coord
+    else {
 
 
         let coord_needs_update = false;

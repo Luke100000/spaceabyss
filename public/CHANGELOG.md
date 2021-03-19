@@ -1,3 +1,21 @@
+## [0.2.38] - 2021-03-18
+
+### Added
+- Vueg player body
+- Space Debris (Food, Power, and Tech versions)
+- Ability to pick up things in space
+- Ability to salvage object types
+
+### Fixed
+- Bug where the display on a galaxy coord wouldn't update when the object type on the coord changed.
+- Bug with objects spawning monsters
+- Did a pretty good bugpass on the game_object file. Lots of misc small fixes.
+- Dying from poison while logged off. There is still the potential to for this to impact an old body if it was 'gifted' to you after you died. 
+It's fixed for all new bodies.
+
+### Changed
+- Cleaned up usages of game_object.getCoordAndRoom
+
 ## [0.2.37] - 2021-03-08
 
 

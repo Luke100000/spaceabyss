@@ -646,7 +646,7 @@ const world = require('./world.js');
     async function monsterAttackObject(dirty, battle_linker) {
 
         try {
-            log(chalk.green("Monster " + battle_linker.attacking_id + " is attacking object " + battle_linker.being_attacked_id));
+            //log(chalk.green("Monster " + battle_linker.attacking_id + " is attacking object " + battle_linker.being_attacked_id));
 
             battle_linker.turn_count += 1;
 
@@ -671,13 +671,13 @@ const world = require('./world.js');
             let monster_info = await monster.getCoordAndRoom(dirty, monster_index);
             let object_info = await game_object.getCoordAndRoom(dirty, object_index);
 
-            if(monster_info.coord === false) {
+            if(helper.isFalse(monster_info.coord)) {
                 log(chalk.yellow("Could not get the attacking monster coord"));
                 world.removeBattleLinkers(dirty, { 'battle_linker_id': battle_linker.id });
                 return false;
             }
 
-            if(object_info.coord === false) {
+            if(helper.isFalse(object_info.coord)) {
                 log(chalk.yellow("Could not get the object coord"));
                 world.removeBattleLinkers(dirty, { 'battle_linker_id': battle_linker.id });
                 return false;
@@ -1344,7 +1344,7 @@ const world = require('./world.js');
             let attacking_object_info = await game_object.getCoordAndRoom(dirty, attacking_object_index);
             let defending_object_info = await game_object.getCoordAndRoom(dirty, defending_object_index);
 
-            if(attacking_object_info.coord === false) {
+            if(helper.isFalse(attacking_object_info.coord)) {
                 log(chalk.yellow("Could not get the attacking object coord"));
                 if(battle_linker) {
                     world.removeBattleLinkers(dirty, { 'battle_linker_id': battle_linker.id });
@@ -1353,7 +1353,7 @@ const world = require('./world.js');
                 return false;
             }
 
-            if(defending_object_info.coord === false) {
+            if(helper.isFalse(defending_object_info.coord)) {
                 log(chalk.yellow("Could not get the defending object coord"));
                 if(battle_linker) {
                     world.removeBattleLinkers(dirty, { 'battle_linker_id': battle_linker.id });
@@ -1528,7 +1528,7 @@ const world = require('./world.js');
             let attacking_object_info = await game_object.getCoordAndRoom(dirty, attacking_object_index);
             let defending_planet_info = await planet.getCoordAndRoom(dirty, defending_planet_index);
 
-            if(attacking_object_info.coord === false) {
+            if(helper.isFalse(attacking_object_info.coord)) {
                 log(chalk.yellow("Could not get the attacking object coord"));
                 if(battle_linker) {
                     world.removeBattleLinkers(dirty, { 'battle_linker_id': battle_linker.id });
@@ -1537,7 +1537,7 @@ const world = require('./world.js');
                 return false;
             }
 
-            if(defending_planet_info.coord === false) {
+            if(helper.isFalse(defending_planet_info.coord)) {
                 log(chalk.yellow("Could not get the defending planet coord"));
                 if(battle_linker) {
                     world.removeBattleLinkers(dirty, { 'battle_linker_id': battle_linker.id });
@@ -1747,13 +1747,13 @@ const world = require('./world.js');
             let object_info = await game_object.getCoordAndRoom(dirty, object_index);
             let player_info = await player.getCoordAndRoom(dirty, player_index);
 
-            if(object_info.coord === false) {
+            if(helper.isFalse(object_info.coord)) {
                 log(chalk.yellow("Could not get the attacking object coord"));
                 world.removeBattleLinkers(dirty, { 'battle_linker_id': battle_linker.id });
                 return false;
             }
 
-            if(player_info.coord === false) {
+            if(helper.isFalse(player_info.coord)) {
                 log(chalk.yellow("Could not get the defending player coord"));
                 world.removeBattleLinkers(dirty, { 'battle_linker_id': battle_linker.id });
                 return false;
@@ -2191,7 +2191,7 @@ const world = require('./world.js');
             let player_info = await player.getCoordAndRoom(dirty, player_index);
             let object_info = await game_object.getCoordAndRoom(dirty, object_index);
 
-            if(player_info.coord === false) {
+            if(helper.isFalse(player_info.coord)) {
                 log(chalk.yellow("Could not get the player coord"));
                 world.removeBattleLinkers(dirty, { 'battle_linker_id': battle_linker.id });
                 return false;
@@ -2206,7 +2206,7 @@ const world = require('./world.js');
                 return false;
             }
 
-            if(object_info.coord === false) {
+            if(helper.isFalse(object_info.coord)) {
                 log(chalk.yellow("Could not get the object coord"));
                 world.removeBattleLinkers(dirty, { 'battle_linker_id': battle_linker.id });
                 return false;

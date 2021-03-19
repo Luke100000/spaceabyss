@@ -12,6 +12,7 @@ const game = require('./game.js');
 const helper = require('./helper.js');
 const inventory = require('./inventory.js');
 const main = require('./space_abyss' + process.env.FILE_SUFFIX + '.js');
+const monster = require('./monster.js');
 const map = require('./map.js');
 const planet = require('./planet.js');
 const player = require('./player.js');
@@ -91,6 +92,9 @@ async function calculateDefense(dirty, object_index, damage_types = []) {
 
 
 }
+
+
+exports.calculateDefense = calculateDefense;
 
 
 /**
@@ -396,8 +400,6 @@ async function canPlaceAround(dirty, tiles_around, data) {
 exports.canPlaceAround = canPlaceAround;
 
 
-//      object_index   |   damage_amount   |   battle_linker (OPTIONAL)   |   object_info   |   calculating_range (OPTIONAL)
-//      reason   |   damage_types   |   damage_source_type   |   damage_source_id
 /**
  * @param {Object} dirty
  * @param {number} object_index
@@ -405,6 +407,8 @@ exports.canPlaceAround = canPlaceAround;
  * @param {Object} data
  * @param {Object} data.object_info
  * @param {Array=} data.damage_types
+ * @param {String=} data.damage_source_type
+ * @param {number=} data.damage_source_id
  * @param {Object=} data.battle_linker
  * @param {number=} data.calculating_range
  * @param {String=} data.damage_effect - This is a value that a monster can potentially set to change the effect type sent to the client for visual purposes
@@ -515,7 +519,7 @@ async function deleteObject(dirty, data) {
         }
 
         if(!data.reason) {
-            data.reason = false;
+            data.reason = "";
         }
 
         //console.log("In game_object.deleteObject for object id: " + dirty.objects[data.object_index].id);
@@ -530,7 +534,7 @@ async function deleteObject(dirty, data) {
 
         let object_info = await getCoordAndRoom(dirty, data.object_index);
 
-        if(object_info === false || !object_info.coord) {
+        if(helper.isFalse(object_info.coord)) {
             log(chalk.yellow("Could not get the coord the object is on. object_type_id: " +
                 dirty.object_types[object_type_index].id + " planet_coord_id: " + dirty.objects[data.object_index].planet_coord_id));
         }
@@ -539,7 +543,7 @@ async function deleteObject(dirty, data) {
         // Not sure if I could just filter planet/galaxy/etc coords by belongs_to_object_id. Might not have all of them
         // in memory???
         // We can only do this if object_info returned a coordinate
-        if(object_info !== false) {
+        if(helper.notFalse(object_info.coord)) {
             if(object_type_display_linkers.length > 0) {
                 object_type_display_linkers.forEach(await async function(linker) {
 
@@ -644,7 +648,7 @@ async function deleteObject(dirty, data) {
         // Spaceship
         if(dirty.object_types[object_type_index].is_ship) {
             console.log("Object is a ship");
-            await game.deleteShip(socket, dirty, dirty.objects[data.object_index].id, data.reason);
+            await game.deleteShip({}, dirty, dirty.objects[data.object_index].id, data.reason);
         }
 
 
@@ -739,7 +743,7 @@ async function deleteObject(dirty, data) {
                 let ship_index = await getIndex(dirty, dirty.ship_coords[ship_coord_index].ship_id);
                 if(ship_index !== -1) {
                     await world.attachShipEngines(dirty, ship_index);
-                    await sendInfo(socket, false, dirty, ship_index);
+                    await sendInfo({}, "", dirty, ship_index);
                 }
             }
         }
@@ -747,7 +751,7 @@ async function deleteObject(dirty, data) {
 
 
         //console.log("Sending object info with remove from game_object.deleteObject");
-        if(object_info !== false) {
+        if(helper.notFalse(object_info.room)) {
             io.to(object_info.room).emit('object_info', { 'remove': true, 'object': dirty.objects[data.object_index] });
         }
 
@@ -756,7 +760,7 @@ async function deleteObject(dirty, data) {
         // Rarity roll
 
         // We can only do the drop linkers if object_info didn't return false ( error out )
-        if(object_info !== false) {
+        if(helper.notFalse(object_info.coord_index)) {
             let rarity_roll = helper.rarityRoll();
 
             //console.log("Getting all drop linkers for object type id: " + dirty.object_types[object_type_index].id);
@@ -1105,18 +1109,18 @@ async function getIndex(dirty, object_id) {
                 let planet_coord_index = dirty.planet_coords.findIndex(function (obj) { return obj && obj.object_id === object_id; });
                 if(planet_coord_index !== -1) {
                     console.log("removing from planet coord that still has it");
-                    await main.updateCoordGeneric(socket, { 'planet_coord_index': planet_coord_index, 'object_id': false });
+                    await main.updateCoordGeneric({}, { 'planet_coord_index': planet_coord_index, 'object_id': false });
                 }
 
                 // if a ship coord still has this object id, lets remove that as well
                 let ship_coord_index = dirty.ship_coords.findIndex(function(obj) { return obj && obj.object_id === object_id; });
                 if(ship_coord_index !== -1) {
-                    await main.updateCoordGeneric(socket, { 'ship_coord_index': ship_coord_index, 'object_id': false });
+                    await main.updateCoordGeneric({}, { 'ship_coord_index': ship_coord_index, 'object_id': false });
                 }
 
                 let coord_index = dirty.coords.findIndex(function(obj) { return obj && obj.object_id === object_id; });
                 if(coord_index !== -1) {
-                    await main.updateCoordGeneric(socket, { 'coord_index': coord_index, 'object_id': false });
+                    await main.updateCoordGeneric({}, { 'coord_index': coord_index, 'object_id': false });
                 }
 
                 // If there's an equipment linker with this object, we remove it
@@ -1170,10 +1174,10 @@ async function getCoordAndRoom(dirty, object_index) {
 
     try {
 
-        let room = false;
+        let room = "";
         let coord_index = -1;
-        let scope = false;
-        let coord = false;
+        let scope = "";
+        let coord = {};
 
         if (!dirty.objects[object_index]) {
             log(chalk.yellow("Could not find the object. Object index: " + object_index));
@@ -1807,7 +1811,14 @@ async function removeFromCoord(dirty, object_index) {
 
 exports.removeFromCoord = removeFromCoord;
 
-async function sendInfo(socket, room, dirty, object_index, source = '') {
+/**
+ * @param {Object} socket
+ * @param {String} room
+ * @param {Object} dirty
+ * @param {number} object_index
+ * @param {String=} source
+ */
+async function sendInfo(socket, room, dirty, object_index, source = "") {
 
     try {
 
@@ -1832,7 +1843,7 @@ async function sendInfo(socket, room, dirty, object_index, source = '') {
             socket.emit('object_info', { 'object': dirty.objects[object_index] });
         }
 
-        if(room !== false) {
+        if(helper.notFalse(room)) {
             io.to(room).emit('object_info', { 'object': dirty.objects[object_index] });
         }
 
@@ -1849,7 +1860,7 @@ async function sendInfo(socket, room, dirty, object_index, source = '') {
                     if(helper.notFalse(socket)) {
                         //log(chalk.cyan("Sending inventory item id: " + dirty.inventory_items[i].id + " to socket"));
                         socket.emit('inventory_item_info', { 'inventory_item': dirty.inventory_items[i] });
-                    } else if(room !== false) {
+                    } else if(helper.notFalse(room)) {
                         //log(chalk.cyan("Sending inventory item id: " + dirty.inventory_items[i].id + " to room"));
                         io.to(room).emit('inventory_item_info', { 'inventory_item': dirty.inventory_items[i] });
                     }
@@ -1868,7 +1879,7 @@ async function sendInfo(socket, room, dirty, object_index, source = '') {
                         socket.emit('rule_info', { 'rule': dirty.rules[i] });
                     }
 
-                    if(room !== false) {
+                    if(helper.notFalse(room)) {
                         io.to(room).emit('rule_info', { 'rule': dirty.rules[i] });
                     }
                 }
@@ -1882,7 +1893,7 @@ async function sendInfo(socket, room, dirty, object_index, source = '') {
 
                 await planet.sendInfo(socket, false, dirty, { 'planet_id': dirty.objects[object_index].planet_id });
             } else if(dirty.objects[object_index].ship_coord_id) {
-                await sendInfo(socket, false, dirty, { 'object_id': dirty.objects[object_index].ship_coord_id });
+                await sendInfo(socket, "", dirty, object_index );
             }
         }
 
@@ -1937,8 +1948,8 @@ async function spawn(dirty, object_index, debug_object_type_id = 0) {
             // If the chosen linker requires a floor type, do that check now
             if(chosen_linker.requires_floor_type_class && chosen_linker.requires_floor_type_class !== 0) {
                 met_requirements = false;
-                let object_info = await getCoordAndRoom(dirty, i);
-                if(object_info.coord) {
+                let object_info = await getCoordAndRoom(dirty, object_index);
+                if(helper.notFalse(object_info.coord)) {
                     let coord_floor_type_index = main.getFloorTypeIndex(object_info.coord.floor_type_id);
 
                     if(coord_floor_type_index !== -1 && dirty.floor_types[coord_floor_type_index].class === chosen_linker.requires_floor_type_class) {
@@ -2093,19 +2104,3 @@ async function updateType(dirty, object_type_id) {
 }
 
 exports.updateType = updateType;
-
-
-module.exports = {
-    calculateDefense,
-    canPlace,
-    damage,
-    deleteObject,
-    getCoordAndRoom,
-    getIndex,
-    place,
-    removeFromCoord,
-    sendInfo,
-    spawn,
-    updateType
-}
-

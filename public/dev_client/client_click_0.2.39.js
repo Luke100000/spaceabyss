@@ -834,6 +834,8 @@ $(document).on('click', 'button', function () {
 
     if(split_name[0] === "pickup") {
 
+        console.log("Got pickup click");
+
 
         if($('#' + clicked_id).attr('object_id')) {
             socket.emit("pick_up_data", { 'object_id': $('#' + clicked_id).attr('object_id') });
@@ -843,6 +845,9 @@ $(document).on('click', 'button', function () {
             socket.emit("pick_up_data", { 'planet_coord_id': $('#' + clicked_id).attr('planet_coord_id') });
         } else if($('#' + clicked_id).attr('ship_coord_id')) {
             socket.emit("pick_up_data", { 'ship_coord_id': $('#' + clicked_id).attr('ship_coord_id') });
+        } else if($('#' + clicked_id).attr('coord_id')) {
+            console.log("Sending pick up data with coord_id");
+            socket.emit("pick_up_data", { 'coord_id': $('#' + clicked_id).attr('coord_id') });
         }
 
 
@@ -953,7 +958,24 @@ $(document).on('click', 'button', function () {
 
     if(split_name[0] === 'salvage') {
 
-        socket.emit('salvage_data', { 'object_id': $('#' + clicked_id).attr('object_id')});
+        // Salvaging an object
+        if($('#' + clicked_id).attr('object_id')) {
+            let sending_object_id = $('#' + clicked_id).attr('object_id');
+            //console.log("Sending salvage request with object id: " + sending_object_id);
+            
+            socket.emit('salvage_data', { 'object_id': sending_object_id });
+        }
+        // Salvaging an object type from a coord
+        else if($('#' + clicked_id).attr('coord_id')) {
+
+            let sending_coord_id = $('#' + clicked_id).attr('coord_id');
+            let sending_coord_type = $('#' + clicked_id).attr('coord_type');
+            //console.log("Sending salvage request with coord id: " + sending_coord_id + ", coord_type: " + sending_coord_type);
+            socket.emit('salvage_data', { 'coord_id': sending_coord_id, 'coord_type': sending_coord_type });
+        }
+        
+
+        
 
         $('#click_menu').empty();
         $('#click_menu').hide();
@@ -963,7 +985,7 @@ $(document).on('click', 'button', function () {
     if(split_name[0] === 'salvagestop') {
         console.log("player clicked to stop salvaging something");
 
-        socket.emit('salvage_stop_data', { 'object_id': $('#' + clicked_id).attr('object_id')});
+        socket.emit('salvage_stop_data', { 'salvaging_linker_id': $('#' + clicked_id).attr('salvaging_linker_id')});
 
 
         $('#click_menu').empty();

@@ -178,6 +178,7 @@ async function calculateDefense(dirty, monster_index, damage_types = [], attack_
 
 }
 
+exports.calculcateDefense = calculateDefense;
 
 
 /**
@@ -912,9 +913,9 @@ async function getCoordAndRoom(dirty, monster_index) {
 
     try {
 
-        let room = '';
+        let room = "";
         let coord_index = -1;
-        let scope = '';
+        let scope = "";
         let coord = {};
 
         // Monster isn't here
@@ -2262,6 +2263,8 @@ async function placeDrop(dirty, scope, drop_linker, coord_index) {
 
 }
 
+exports.placeDrop = placeDrop;
+
 /**
  * @param {Object} socket
  * @param {String} room
@@ -2525,17 +2528,3 @@ async function spawn(dirty, monster_type_id, data) {
 }
 
 exports.spawn = spawn;
-
-
-module.exports = {
-    calculateDefense,
-    canPlace,
-    damage,
-    deleteMonster,
-    fix,
-    getCoordAndRoom,
-    getIndex,
-    move,
-    sendInfo,
-    spawn
-}

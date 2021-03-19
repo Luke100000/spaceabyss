@@ -1141,6 +1141,11 @@ function createPlayerSprite(player_index) {
                 new_texture_key = 'player-ruel';
                 new_texture_animation_key = 'player-ruel-idle-animation';
             }
+            // VUEG
+            else if(objects[body_index].object_type_id === 439) {
+                new_texture_key = 'player-vueg';
+                new_texture_animation_key = 'player-vueg-idle-animation';
+            }
             // DEFAULT!
             else {
                 console.log("%c Using Default Body Display to draw player " + players[player_index].id, log_warning);
@@ -1810,31 +1815,57 @@ function drawSalvageBar(salvaging_linker_index) {
 
     //console.log("Have salvaging linker in redrawBars");
     // get the object
-    let object_index = objects.findIndex(function (obj) { return obj && obj.id === salvaging_linkers[salvaging_linker_index].object_id; });
+    let drawing_x = -1000;
+    let drawing_y = -1000;
 
-    if (object_index === -1) {
-        return false;
+    if(typeof salvaging_linkers[salvaging_linker_index].object_id !== 'undefined') {
+        let object_index = objects.findIndex(function (obj) { return obj && obj.id === salvaging_linkers[salvaging_linker_index].object_id; });
+
+        if (object_index === -1) {
+            return false;
+        }
+    
+        // objects currently only have hp . So we have to compare the object hp with the object type hp
+        let object_type_index = object_types.findIndex(function (obj) { return obj && obj.id === objects[object_index].object_type_id; });
+    
+        if (object_type_index === -1) {
+            console.log("Could not get object type");
+            return false;
+        }
+    
+        let object_info = getObjectInfo(object_index);
+    
+        if (object_info.coord === false) {
+            //console.log("Could not find coord for object");
+            return false;
+        }
+    
+    
+    
+        drawing_x = object_info.coord.tile_x * tile_size;
+        drawing_y = (object_info.coord.tile_y * tile_size) + tile_size - 16;
+    } else {
+        if(salvaging_linkers[salvaging_linker_index].coord_type === 'galaxy') {
+            let salvaging_coord_index = getCoordIndex({ 'coord_id': salvaging_linkers[salvaging_linker_index].coord_id });
+            if(salvaging_coord_index !== -1) {
+                drawing_x = coords[salvaging_coord_index].tile_x * tile_size;
+                drawing_y = (coords[salvaging_coord_index].tile_y * tile_size) + tile_size - 16;
+            }
+        } else if(salvaging_linkers[salvaging_linker_index].coord_type === 'ship') {
+            let salvaging_coord_index = getShipCoordIndex({ 'ship_coord_id': salvaging_linkers[salvaging_linker_index].coord_id });
+            if(salvaging_coord_index !== -1) {
+                drawing_x = ship_coords[salvaging_coord_index].tile_x * tile_size;
+                drawing_y = (ship_coords[salvaging_coord_index].tile_y * tile_size) + tile_size - 16;
+            }
+        } else if(salvaging_linkers[salvaging_linker_index].coord_type === 'planet') {
+            let salvaging_coord_index = getPlanetCoordIndex({ 'planet_coord_id': salvaging_linkers[salvaging_linker_index].coord_id });
+            if(salvaging_coord_index !== -1) {
+                drawing_x = planet_coords[salvaging_coord_index].tile_x * tile_size;
+                drawing_y = (planet_coords[salvaging_coord_index].tile_y * tile_size) + tile_size - 16;
+            }
+        }
     }
 
-    // objects currently only have hp . So we have to compare the object hp with the object type hp
-    let object_type_index = object_types.findIndex(function (obj) { return obj && obj.id === objects[object_index].object_type_id; });
-
-    if (object_type_index === -1) {
-        console.log("Could not get object type");
-        return false;
-    }
-
-    let object_info = getObjectInfo(object_index);
-
-    if (object_info.coord === false) {
-        //console.log("Could not find coord for object");
-        return false;
-    }
-
-
-
-    let drawing_x = object_info.coord.tile_x * tile_size;
-    let drawing_y = (object_info.coord.tile_y * tile_size) + tile_size - 16;
 
 
     // Completely arbitrary
@@ -3114,12 +3145,14 @@ function getRandomIntInclusive(min, max) {
 function isFalse(the_value) {
 
     if(typeof the_value === "undefined" || the_value === 0 || the_value === "0" ||
-        the_value === false || the_value === null || the_value === "null") {
+        the_value === false || the_value === null || the_value === "null" || 
+        (the_value.constructor === Object && Object.keys(the_value).length === 0) ) {
         return true;
     }
 
     return false;
 }
+
 
 function notFalse(the_value) {
 
@@ -5770,7 +5803,12 @@ function generateTaskDisplay() {
 
 }
 
-//  data:   coord_id   OR   (   tile_x   |   tile_y   )
+/**
+ * @param {Object} data
+ * @param {number=} data.coord_id
+ * @param {number=} data.tile_x
+ * @param {number=} data.tile_y
+ */
 function getCoordIndex(data) {
     if (data.coord_id) {
         return coords.findIndex(function (obj) { return obj && obj.id === parseInt(data.coord_id); });
@@ -5995,13 +6033,27 @@ function getPlanetIndex(data) {
     return planets.findIndex(function (obj) { return obj && obj.id === parseInt(data.planet_id); });
 }
 
-//  data:   planet_id   |   planet_level   |   tile_x   |   tile_Y
+/**
+ * @param {Object} data
+ * @param {number=} data.planet_coord_id
+ * @param {number=} data.planet_id
+ * @param {number=} data.planet_level
+ * @param {number=} data.tile_x
+ * @param {number=} data.tile_y
+ */
 function getPlanetCoordIndex(data) {
-    return planet_coords.findIndex(function (obj) {
-        return obj.planet_id === parseInt(data.planet_id) &&
-            obj.level === parseInt(data.planet_level) && obj.tile_x === parseInt(data.tile_x) &&
-            obj.tile_y === parseInt(data.tile_y);
-    });
+
+    if(typeof data.planet_coord_id !== 'undefined') {
+
+        return planet_coords.findIndex(function(obj) { return obj && obj.id === parseInt(data.planet_coord_id); });
+    } else {
+        return planet_coords.findIndex(function (obj) {
+            return obj && obj.planet_id === parseInt(data.planet_id) &&
+                obj.level === parseInt(data.planet_level) && obj.tile_x === parseInt(data.tile_x) &&
+                obj.tile_y === parseInt(data.tile_y);
+        });
+    }
+    
 }
 
 function getPlayerIndex(player_id) {
@@ -6018,12 +6070,27 @@ function getPlayerIndex(player_id) {
 }
 
 //  data:   ship_id   |   level   |    tile_x   |   tile_y
+/**
+ * @param {number=} ship_coord_id
+ * @param {number=} ship_id
+ * @param {number=} level
+ * @param {number=} tile_x
+ * @param {number=} tile_y
+ */
 function getShipCoordIndex(data) {
-    return ship_coords.findIndex(function (obj) {
-        return obj && obj.ship_id === parseInt(data.ship_id) &&
-            obj.level === parseInt(data.level) &&
-            obj.tile_x === parseInt(data.tile_x) && obj.tile_y === parseInt(data.tile_y);
-    });
+
+
+    if(typeof data.ship_coord_id !== 'undefined') {
+        return ship_coords.findIndex(function(obj) { return obj && obj.id === parseInt(data.ship_coord_id); });
+    } else {
+        return ship_coords.findIndex(function (obj) {
+            return obj && obj.ship_id === parseInt(data.ship_id) &&
+                obj.level === parseInt(data.level) &&
+                obj.tile_x === parseInt(data.tile_x) && obj.tile_y === parseInt(data.tile_y);
+        });
+    }
+
+
 }
 
 function halfTile() {
@@ -7460,6 +7527,18 @@ function loadPlayerSprites(object_type_id) {
             scene_game.load.start();
         }
     }
+    // VUEG BODY
+    else if(object_type_id === 439) {
+
+        let scene_game = game.scene.getScene('sceneGame');
+
+        if(!scene_game.textures.exists('player-vueg')) {
+            scene_game.load.on('filecomplete', processPlayerFile, this);
+            scene_game.load.spritesheet('player-vueg', "https://space.alphacoders.com/images/vueg-body-animated.png",
+                { frameWidth: 64, frame_height: 64, endFrame: 31 });
+            scene_game.load.start();
+        }
+    } 
 }
 
 
@@ -7665,7 +7744,64 @@ function processPlayerFile(key, type, texture) {
         };
         this.anims.create(player_silk_ship_config);
                     
-    }
+    } 
+    // VUEG
+    else if(key === 'player-vueg') {
+
+        console.log("Processing vueg body");
+        loaded_object_type_id = 439;
+        loaded_type = "body";
+
+
+        let player_vueg_idle_config = {
+            key: 'player-vueg-idle-animation',
+            frames: scene_game.anims.generateFrameNumbers('player-vueg', { start: 0, end: 6, first: 6 }),
+            frameRate: 4,
+            repeat: -1
+        };
+        scene_game.anims.create(player_vueg_idle_config);
+
+
+        let player_vueg_left_config = {
+            key: 'player-vueg-left-animation',
+            frames: scene_game.anims.generateFrameNumbers('player-vueg', { start: 7, end: 12, first: 12 }),
+            frameRate: 4,
+            repeat: -1
+        };
+
+        scene_game.anims.create(player_vueg_left_config);
+
+        let player_vueg_right_config = {
+            key: 'player-vueg-right-animation',
+            frames: scene_game.anims.generateFrameNumbers('player-vueg', { start: 13, end: 18, first: 18 }),
+            frameRate: 4,
+            repeat: -1
+        };
+        scene_game.anims.create(player_vueg_right_config);
+
+        let player_vueg_up_config = {
+            key: 'player-vueg-up-animation',
+            frames: scene_game.anims.generateFrameNumbers('player-vueg', { start: 19, end: 24, first: 24 }),
+            frameRate: 4,
+            repeat: -1
+        };
+
+        scene_game.anims.create(player_vueg_up_config);
+
+        let player_vueg_down_config = {
+            key: 'player-vueg-down-animation',
+            frames: scene_game.anims.generateFrameNumbers('player-vueg', { start: 25, end: 30, first: 30 }),
+            frameRate: 4,
+            repeat: -1
+        };
+        scene_game.anims.create(player_vueg_down_config);
+
+        
+
+
+    } 
+
+
 
 
     // Now lets create a player sprite for any players that are using this
@@ -8418,6 +8554,40 @@ function initiateMovePlayerFlow(player_index, destination_coord_type, destinatio
             }
 
         }
+
+        /********** VUEG *************/
+        else if (players[player_index].sprite.texture.key === 'player-vueg') {
+
+            // LEFT !
+            if (players[player_index].destination_x < players[player_index].sprite.x) {
+
+                if (players[player_index].sprite.anims.getCurrentKey() !== 'player-vueg-left-animation') {
+                    players[player_index].sprite.anims.play('player-vueg-left-animation');
+                }
+
+            }
+            // RIGHT!
+            else if (players[player_index].destination_x > players[player_index].sprite.x) {
+                if (players[player_index].sprite.anims.getCurrentKey() !== 'player-vueg-right-animation') {
+                    players[player_index].sprite.anims.play('player-vueg-right-animation');
+                }
+
+            }
+            // UP!
+            else if (players[player_index].destination_y < players[player_index].sprite.y) {
+                if (players[player_index].sprite.anims.getCurrentKey() !== 'player-vueg-up-animation') {
+                    players[player_index].sprite.anims.play('player-vueg-up-animation');
+                }
+            }
+            // DOWN!
+            else if (players[player_index].destination_y > players[player_index].sprite.y) {
+                if (players[player_index].sprite.anims.getCurrentKey() !== 'player-vueg-down-animation') {
+                    players[player_index].sprite.anims.play('player-vueg-down-animation');
+                }
+            }
+        }
+
+
         else {
             // by default we flip sprites, unless the player has a movement_display set
             if (players[player_index].movement_display && players[player_index].movement_display === 'rotate') {
@@ -10962,41 +11132,7 @@ function showClickMenuObject(coord) {
     // Salvaging
     if (object_types[object_type_index].can_be_salvaged) {
 
-        // If we are already salvaging it, give us the option to stop
-        let is_being_salvaged = false;
-        for (let s = 0; s < salvaging_linkers.length; s++) {
-            if (salvaging_linkers[s]) {
-                if (salvaging_linkers[s].object_id === objects[object_index].id && salvaging_linkers[s].player_id === client_player_id) {
-                    is_being_salvaged = true;
-                    console.log("This object is being salvaged");
-                }
-            }
-
-        }
-
-        if (is_being_salvaged) {
-            $('#click_menu').append("<button id='salvagestop_object_" + coord.object_id + "' object_id='" + coord.object_id +
-                "' class='button is-warning is-small'>Stop Salvaging</button><br>");
-        } else {
-
-            // if it's in the galaxy, we can't salvage if our ship is a pod
-            let player_can_salvage = true;
-            if (objects[object_index].coord_id) {
-                let player_ship_index = objects.findIndex(function (obj) { return obj && obj.id === players[client_player_index].ship_id; });
-                if (player_ship_index !== -1 && objects[player_ship_index].object_type_id === 114) {
-                    player_can_salvage = false;
-                    $('#click_menu').append("<a target='_blank' href='https://space.alphacoders.com/site/tutorial/ship-building'>Build A Better Ship To Salvage</a>");
-                }
-            }
-
-            if (player_can_salvage) {
-                $('#click_menu').append("<button id='salvage_object_" + coord.object_id + "' object_id='" + coord.object_id +
-                    "' class='button is-default is-small is-info'>Salvage</button><br>");
-            }
-
-        }
-
-
+        showSalvageOption(object_index, object_type_index);
     }
 
 
@@ -11134,6 +11270,8 @@ function showClickMenuObjectType(coord) {
                 html_string += " planet_coord_id='" + coord.id + "' ";
             } else if (coord.ship_id) {
                 html_string += " ship_coord_id='" + coord.id + "' ";
+            } else { 
+                html_string += " coord_id='" + coord.id + "' ";
             }
 
             html_string += ">Pick Up</button>";
@@ -11141,21 +11279,15 @@ function showClickMenuObjectType(coord) {
             $('#click_menu').append(html_string);
         }
 
-        // If it's just an object type and it can be attacked - it's just insta-destroyed
-        // There is no object to keep track of a current HP for
-        if (object_types[object_type_index].can_be_attacked) {
-            if (current_view === 'planet') {
-                $('#click_menu').append("<button id='destroy_" + coord.id + "' planet_coord_id='" +
-                    coord.id + "' class='button is-danger is-small'>Destroy " + object_types[object_type_index].name + "</button>");
-            } else if (current_view === 'ship') {
-                $('#click_menu').append("<button id='destroy_" + coord.id + "' ship_coord_id='"
-                    + coord.id + "' class='button is-danger is-small'>Destroy " + object_types[object_type_index].name + "</button>");
-            } else if (current_view === 'galaxy') {
-                $('#click_menu').append("<button id='destroy_" + coord.id + "' coord_id='" +
-                    coord.id + "' class='button is-danger is-small'>Destroy " + object_types[object_type_index].name + "</button>");
-            }
+        // Salvaging
+        if (object_types[object_type_index].can_be_salvaged) {
+            //console.log("Can be salvaged");
 
+            showSalvageOption(-1, object_type_index, coord);
+        } else {
+            console.log("Can't be salvaged");
         }
+
 
         // If the object type is a stairs, and the player is standing on the coord, let them move onto it to move up
         if(object_types[object_type_index].is_stairs && coord.id === client_player_info.coord.id) {
@@ -11169,6 +11301,22 @@ function showClickMenuObjectType(coord) {
             console.log("Player right clicked on hole that they are on");
             $('#click_menu').append("<button id='moveupstairs' class='button is-default'>Move Down Hole</button>");
             
+        }
+
+        // If it's just an object type and it can be attacked - it's just insta-destroyed
+        // There is no object to keep track of a current HP for
+        if (object_types[object_type_index].can_be_attacked) {
+            if (current_view === 'planet') {
+                $('#click_menu').append("<br><br><button id='destroy_" + coord.id + "' planet_coord_id='" +
+                    coord.id + "' class='button is-danger is-small'>Destroy " + object_types[object_type_index].name + "</button>");
+            } else if (current_view === 'ship') {
+                $('#click_menu').append("<br><br><button id='destroy_" + coord.id + "' ship_coord_id='"
+                    + coord.id + "' class='button is-danger is-small'>Destroy " + object_types[object_type_index].name + "</button>");
+            } else if (current_view === 'galaxy') {
+                $('#click_menu').append("<br><br><button id='destroy_" + coord.id + "' coord_id='" +
+                    coord.id + "' class='button is-danger is-small'>Destroy " + object_types[object_type_index].name + "</button>");
+            }
+
         }
 
     }
@@ -11485,6 +11633,87 @@ function showInventoryOptions(inventory_item_id) {
 
     adding_string += "<br><button id='trash_" + inventory_items[inventory_item_index].id + "' class='button is-danger is-small is-pulled-right'><span class='glyphicon glyphicon-trash'></span> Trash</button>";
     $('#click_menu').append(adding_string);
+}
+
+
+// We can show a salvage option for both objects and object types
+// In the case of an object type, the object_index will be -1
+
+function showSalvageOption(object_index, object_type_index, coord = {}) {
+    //console.log("In showSalvageOption");
+    // If we are already salvaging it, give us the option to stop
+    let is_being_salvaged = false;
+    let coord_type = "";
+    let salvaging_linker_index = -1;
+
+    if(coord.planet_id) {
+        coord_type = "planet";
+    } else if(coord.ship_id) {
+        coord_type = "ship";
+    } else {
+        coord_type = "galaxy";
+    }
+
+    // Salvage is on an object
+    if(object_index !== -1) {
+        for (let s = 0; s < salvaging_linkers.length; s++) {
+            if (salvaging_linkers[s]) {
+                if (salvaging_linkers[s].object_id === objects[object_index].id && salvaging_linkers[s].player_id === client_player_id) {
+                    is_being_salvaged = true;
+                    salvaging_linker_index = s;
+                    console.log("This object is being salvaged");
+                }
+            }
+
+        }
+    }
+    // Salvage is happening on a coord
+    else if(notFalse(coord)) {
+        for (let s = 0; s < salvaging_linkers.length; s++) {
+            if (salvaging_linkers[s]) {
+                if (salvaging_linkers[s].coord_id === coord.id && salvaging_linkers[s].player_id === client_player_id) {
+                    is_being_salvaged = true;
+                    salvaging_linker_index = s;
+                    console.log("This coord is being salvaged by the player");
+                }
+            }
+
+        }
+    }
+
+
+
+    if (is_being_salvaged) {
+
+        $('#click_menu').append("<button id='salvagestop_" + salvaging_linkers[salvaging_linker_index].id + 
+        "' salvaging_linker_id='" + salvaging_linkers[salvaging_linker_index].id +
+        "' class='button is-warning is-small'>Stop Salvaging</button><br>");
+        
+    
+    } else {
+
+        // if it's in the galaxy, we can't salvage if our ship is a pod
+        let player_can_salvage = true;
+        if ( (object_index !== -1 && objects[object_index].coord_id) || (notFalse(coord) && !coord.planet_id && !coord.ship_id) ) {
+            let player_ship_index = objects.findIndex(function (obj) { return obj && obj.id === players[client_player_index].ship_id; });
+            if (player_ship_index !== -1 && objects[player_ship_index].object_type_id === 114) {
+                player_can_salvage = false;
+                $('#click_menu').append("<a target='_blank' href='https://space.alphacoders.com/site/tutorial/ship-building'>Build A Better Ship To Salvage</a>");
+            }
+        }
+
+        if (player_can_salvage) {
+            if(object_index !== -1) {
+                $('#click_menu').append("<button id='salvage_object_" + objects[object_index].id + "' object_id='" + objects[object_index].id +
+                "' class='button is-default is-small is-info'>Salvage</button><br>");
+            } else {
+                $('#click_menu').append("<button id='salvage_coord_" + coord.id + "' coord_id='" + coord.id + "' coord_type='" + coord_type +
+                "' class='button is-default is-small is-info'>Salvage</button><br>");
+            }
+            
+        }
+
+    }
 }
 
 

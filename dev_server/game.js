@@ -1541,7 +1541,7 @@ const world = require('./world.js');
 
                             let i = 0;
                             input_paid = true;
-                            console.log("Starting energy is: " + dirty.objects[converter_object_index].energy);
+                            //console.log("Starting energy is: " + dirty.objects[converter_object_index].energy);
                             let starting_storage_amount = dirty.objects[converter_object_index].energy;
                             new_storage_amount = dirty.objects[converter_object_index].energy;
                             while(i < dirty.inventory_items[inventory_item_index].amount && 
@@ -1553,7 +1553,7 @@ const world = require('./world.js');
                                     new_storage_amount = dirty.object_types[converter_object_type_index].max_energy_storage;
                                 }
 
-                                console.log("New storage amount is: " + new_storage_amount);
+                                //console.log("New storage amount is: " + new_storage_amount);
 
                                 // and remove
                                 await inventory.removeFromInventory(socket, dirty, { 'inventory_item_id': dirty.inventory_items[inventory_item_index].id, 'amount': 1 });
@@ -2669,7 +2669,7 @@ exports.eat = eat;
 
 
 
-            console.log("Got inventory_item_index");
+            //console.log("Got inventory_item_index");
 
             let temp_coord = false;
             let coord_index = false;
@@ -2677,7 +2677,7 @@ exports.eat = eat;
             let update_data = {};
 
             if(dirty.players[player_index].planet_coord_id) {
-                console.log("player has planet coord id");
+                //console.log("player has planet coord id");
 
                 // Can't place shipyards on planets
                 if(dirty.inventory_items[inventory_item_index].object_id && dirty.objects[object_index].object_type_id === 116) {
@@ -2777,8 +2777,8 @@ exports.eat = eat;
                 pre_verified_can_place = true;
             }
             else {
-                console.log("Did not pre-verify. Scope: " + scope + " is_ship_weapon: " +
-                    dirty.object_types[object_type_index].is_ship_weapon + " is_weapon_hardpoint: " + temp_coord.is_weapon_hardpoint);
+                //console.log("Did not pre-verify. Scope: " + scope + " is_ship_weapon: " +
+                //    dirty.object_types[object_type_index].is_ship_weapon + " is_weapon_hardpoint: " + temp_coord.is_weapon_hardpoint);
             }
 
             if(scope === 'ship' && dirty.object_types[object_type_index].is_ship_engine && temp_coord.is_engine_hardpoint) {
@@ -2816,7 +2816,7 @@ exports.eat = eat;
             } else if(pre_verified_can_place || await game_object.canPlace(dirty, scope, temp_coord, { 'object_type_id': dirty.object_types[object_type_index].id })) {
 
 
-                console.log("Can place there! object_id: " + dirty.inventory_items[inventory_item_index].object_id);
+                //console.log("Can place there! object_id: " + dirty.inventory_items[inventory_item_index].object_id);
 
                 // we can only put one there
                 if(dirty.inventory_items[inventory_item_index].object_id) {
@@ -2923,7 +2923,7 @@ exports.eat = eat;
 
 
                 } else {
-                    console.log("No object id - just update object type id");
+                    //console.log("No object id - just update object type id");
 
                     let type_update_data = update_data;
                     type_update_data.object_type_id = dirty.inventory_items[inventory_item_index].object_type_id;
@@ -3295,7 +3295,7 @@ exports.eat = eat;
             }
 
 
-            let spawner_info = false;
+            let spawner_info = {};
 
             if(data.object_index) {
                 spawner_info = await game_object.getCoordAndRoom(dirty, data.object_index);
@@ -4168,7 +4168,7 @@ exports.eat = eat;
 
 
 
-    // Right now this is coded just for a player for now. Need to add in monsters and objects
+    // TODO Right now this is coded just for a player for now. Need to add in monsters and objects
     //      COORD_TYPE CAN BE: ..... it's not even used
     async function canInteract(socket, dirty, coord_type, the_coord) {
 
@@ -4182,8 +4182,8 @@ exports.eat = eat;
 
             if(dirty.players[socket.player_index].planet_coord_id) {
 
-                let player_planet_coord_index = await main.getPlanetCoordIndex(
-                    { 'planet_coord_id': dirty.players[socket.player_index].planet_coord_id });
+                let player_planet_coord_index = await player.getCoordIndex(dirty, socket.player_index, 'planet');
+
 
                 // The planet id, and planet level must match
                 if(dirty.planet_coords[player_planet_coord_index].planet_id !== the_coord.planet_id ||
@@ -4214,7 +4214,9 @@ exports.eat = eat;
 
 
             } else if(dirty.players[socket.player_index].ship_coord_id) {
-                let player_ship_coord_index = await main.getShipCoordIndex({ 'ship_coord_id': dirty.players[socket.player_index].ship_coord_id});
+
+                let player_ship_coord_index = await player.getCoordIndex(dirty, socket.player_index, 'ship');
+            
 
                 if(dirty.ship_coords[player_ship_coord_index].ship_id !== the_coord.ship_id) {
                     return false;
@@ -4234,9 +4236,19 @@ exports.eat = eat;
                     return false;
                 }
 
+            } else if(dirty.players[socket.player_index].coord_id) {
 
-            
+                let player_coord_index = await player.getCoordIndex(dirty, socket.player_index, 'galaxy');
 
+                let distance_x = Math.abs(dirty.coords[player_coord_index].tile_x - the_coord.tile_x);
+                let distance_y = Math.abs(dirty.coords[player_coord_index].tile_y - the_coord.tile_y);
+
+                if(distance_x <= 2 && distance_y <= 2) {
+                    return true;
+                } else {
+                    //console.log("Too far away");
+                    return false;
+                }
 
             }
 
@@ -4803,6 +4815,155 @@ exports.eat = eat;
     }
 
     exports.objectSpawn = objectSpawn;
+
+    async function processAddictionLinker(dirty, i) {
+        try {
+
+            let addicted_object_type_index = main.getObjectTypeIndex(dirty.addiction_linkers[i].addicted_to_object_type_id);
+            let body_index = await game_object.getIndex(dirty, dirty.addiction_linkers[i].addicted_body_id);
+
+            
+
+
+            // There's a possibility that the body doesn't exist anymore - that it was killed or something
+            if(body_index === -1) {
+                log(chalk.yellow("Doesn't look like that body exists anymore - removing the linker"));
+
+                await (pool.query("DELETE FROM addiction_linkers WHERE id = ?", [dirty.addiction_linkers[i].id] ));
+                delete dirty.addiction_linkers[i];
+                return false;
+            }
+
+            console.log("Addicted body id: " + dirty.objects[body_index].id + " player id: " + dirty.objects[body_index].player_id);
+
+            let body_type_index = main.getObjectTypeIndex(dirty.objects[body_index].object_type_id);
+            let player_index = await player.getIndex(dirty, { 'player_id': dirty.objects[body_index].player_id });
+
+            if(player_index === -1) {
+                log(chalk.yellow("Can't find the player this body is supposed to be associated with. body's player id: " + dirty.objects[body_index].player_id));
+                console.log("Removing addiction linker");
+
+
+                await (pool.query("DELETE FROM addiction_linkers WHERE id = ?", [dirty.addiction_linkers[i].id] ));
+                delete dirty.addiction_linkers[i];
+                return false;
+            }
+
+
+            // If it's the player's body, lets only tick it while they are logged in
+            if(dirty.objects[body_index].id === dirty.players[player_index].body_id) {
+                let player_socket = world.getPlayerSocket(dirty, player_index);
+                if(helper.isFalse(player_socket)) {
+                    console.log("This is the player's active body, but they aren't connected. Holding off");
+                    return false;
+                }
+            }
+
+            let race_eating_index = dirty.race_eating_linkers.findIndex(function(obj) { return obj &&
+                obj.race_id === dirty.object_types[body_type_index].race_id && obj.object_type_id === dirty.object_types[addicted_object_type_index].id; });
+            let player_socket = await world.getPlayerSocket(dirty, player_index);
+
+            if(race_eating_index === -1) {
+                log(chalk.yellow("That body cannot eat that!"));
+                if(helper.notFalse(player_socket)) {
+                    player_socket.emit('addiction_linker_info', { 'remove': true, 'addiction_linker': dirty.addiction_linkers[i] });
+                }
+                await (pool.query("DELETE FROM addiction_linkers WHERE id = ?", [dirty.addiction_linkers[i].id] ));
+                delete dirty.addiction_linkers[i];
+                return;
+            }
+
+            // increment the tick count
+            if(dirty.addiction_linkers[i].tick_count < dirty.race_eating_linkers[race_eating_index].addiction_tick_count) {
+
+
+                // Gotta check and see if there's a -hp effect to apply
+                let body_eating_linkers = dirty.eating_linkers.filter(linker => linker.body_id === dirty.players[player_index].body_id);
+
+                let still_eating = false;
+                for(let eating_linker of body_eating_linkers) {
+                    if(eating_linker.eating_object_type_id === dirty.addiction_linkers[i].addicted_to_object_type_id) {
+                        still_eating = true;
+                    }
+                }
+
+                // apply any negative HP effect to the player and increase the tick count
+                if(!still_eating) {
+
+                    dirty.addiction_linkers[i].tick_count++;
+
+                    if(helper.notFalse(player_socket)) {
+                        player_socket.emit('addiction_linker_info', { 'addiction_linker': dirty.addiction_linkers[i] });
+                    }
+
+
+
+                    if(dirty.race_eating_linkers[race_eating_index].hp) {
+
+
+                        let addiction_damage_amount = dirty.addiction_linkers[i].addiction_level * Math.abs(dirty.race_eating_linkers[race_eating_index].hp);
+
+                        // Player has this body equippped
+                        if(dirty.players[player_index].body_id === dirty.addiction_linkers[i].addicted_body_id) {
+                            //console.log("Reduced player hp due to addiction linker");
+
+                            // Something like poison will have -HP - we don't want poison to heal in this case.
+                            
+
+                            let new_player_hp = dirty.players[player_index].current_hp - addiction_damage_amount;
+
+                            if(new_player_hp <= 0) {
+
+                                console.log("Calling player.kill from tickAddictions");
+                                let player_kill_result = await player.kill(dirty, player_index);
+
+                                console.log("player kill result: " + player_kill_result);
+
+
+                            } else {
+                                // update the current hp for the player and the player's socket
+                                dirty.players[player_index].current_hp = new_player_hp;
+                                dirty.players[player_index].has_change = true;
+
+                                if(helper.notFalse(player_socket)) {
+                                    player_socket.emit('damaged_data', {
+                                        'player_id': dirty.players[player_index].id, 'damage_amount': addiction_damage_amount, 'was_damaged_type': 'hp',
+                                        'damage_types': ['addiction']
+                                    });
+                                }
+                            }
+                        } else {
+                            console.log("Damaging body that player does not have equipped. Addition body id: " + dirty.addiction_linkers[i].addicted_body_id + 
+                            "player_id: " + dirty.players[player_index].id + " player body_id: " + dirty.players[player_index].body_id);
+
+                            let body_info = await game_object.getCoordAndRoom(dirty, body_index);
+                            game_object.damage(dirty, body_index, addiction_damage_amount, { 'object_info': body_info });
+
+                        }
+                        
+                    }
+
+                } else {
+                    // This addiction linker is on pause for now
+                }
+
+            }
+            // We can remove the addiction linker
+            else {
+
+                if(helper.notFalse(player_socket)) {
+                    player_socket.emit('addiction_linker_info', { 'remove': true, 'addiction_linker': dirty.addiction_linkers[i] });
+                }
+                await (pool.query("DELETE FROM addiction_linkers WHERE id = ?", [dirty.addiction_linkers[i].id] ));
+                delete dirty.addiction_linkers[i];
+
+            }
+
+        } catch(error) {
+            log(chalk.red("Error in game.processAddictionLinker: " + error));
+            console.error(error);
+        }
+    }
 
 
     /*
@@ -5923,7 +6084,7 @@ exports.eat = eat;
             let player_info = await player.getCoordAndRoom(dirty, player_index);
             let object_info = await game_object.getCoordAndRoom(dirty, object_index);
 
-            if(!player_info.coord || !object_info.coord) {
+            if(helper.isFalse(player_info.coord) || helper.isFalse(object_info.coord) ) {
                 log(chalk.yellow("Could not get coord for player or object in processMiningLinker"));
                 io.to(dirty.mining_linkers[i].player_socket_id).emit('mining_linker_info', {
                     'remove': true, 'mining_linker': dirty.mining_linkers[i]
@@ -5940,7 +6101,7 @@ exports.eat = eat;
                 if(object_info.room === 'galaxy' && player_info.room.includes("ship_")) {
                     // TODO check on the ship moving away?
                 } else {
-                    log(chalk.yellow("Player and object are not in the same room"));
+                    log(chalk.yellow("Player and object are not in the same room - mining"));
                     io.to(dirty.mining_linkers[i].player_socket_id).emit('mining_linker_info', {
                         'remove': true, 'mining_linker': dirty.mining_linkers[i]
                     });
@@ -5953,9 +6114,9 @@ exports.eat = eat;
             }
 
             if(player_info.coord.planet_id && player_info.coord.level !== object_info.coord.level) {
-                log(chalk.yellow("Player and object aren't on the same level"));
+                log(chalk.yellow("Player and object aren't on the same level - mining"));
 
-                log(chalk.yellow("Player and object are not in the same room"));
+                log(chalk.yellow("Player and object are not in the same room - mining"));
                 io.to(dirty.mining_linkers[i].player_socket_id).emit('mining_linker_info', {
                     'remove': true, 'mining_linker': dirty.mining_linkers[i]
                 });
@@ -6446,6 +6607,10 @@ exports.eat = eat;
 
     }
 
+    /**
+     * @param {Object} dirty
+     * @param {number} i - salvaging linker index
+     */
     async function processSalvaging(dirty, i) {
         try {
 
@@ -6456,15 +6621,14 @@ exports.eat = eat;
             //console.log("Processing salvaging");
 
             // Later we will possibly be deleting all active salvagings with the indexes, so we need them separated
-            let object_index = dirty.active_salvagings[i].object_index;
-            let player_index = dirty.active_salvagings[i].player_index;
+            let object_index = -1;
+            let object_type_index = -1;
+            let salvaging_coord = {};
+            let salvaging_room = "";
+            let object_info = {};
 
-            // Make sure the object still exists
-            if(!dirty.objects[object_index]) {
-                log(chalk.yellow("Object no longer exists. Removing active salvaging. object_index was: " + object_index));
-                delete dirty.active_salvagings[i];
-                return false;
-            }
+
+            let player_index = dirty.active_salvagings[i].player_index;
 
             // get the player's socket
             let socket = await world.getPlayerSocket(dirty, player_index);
@@ -6479,10 +6643,55 @@ exports.eat = eat;
             // Make sure the player and the object are still close enough
 
             let player_info = await player.getCoordAndRoom(dirty, dirty.active_salvagings[i].player_index);
-            let object_info = await game_object.getCoordAndRoom(dirty, dirty.active_salvagings[i].object_index);
 
-            if(!player_info.coord || !object_info.coord) {
-                log(chalk.yellow("Could not get coord for player or object in processSalvaging"));
+
+
+            if(typeof dirty.active_salvagings[i].object_index !== 'undefined') {
+                
+                object_index = dirty.active_salvagings[i].object_index;
+
+                // Make sure the object still exists
+                if(!dirty.objects[object_index]) {
+                    world.sendActiveSalvaging(socket, false, dirty, i, true);
+                    //log(chalk.yellow("Object no longer exists. Removing active salvaging. object_index was: " + object_index));
+                    delete dirty.active_salvagings[i];
+                    return false;
+                }
+
+                object_info = await game_object.getCoordAndRoom(dirty, dirty.active_salvagings[i].object_index);
+                // The object type of the thing being salvaged - not the results
+                object_type_index = main.getObjectTypeIndex(dirty.objects[object_index].object_type_id);
+                salvaging_coord = object_info.coord;
+                salvaging_room = object_info.room;
+            }
+            // We need to get the coord we are salvaging from
+            else {
+                if(dirty.active_salvagings[i].coord_type === 'planet') {
+
+                    salvaging_coord = dirty.planet_coords[dirty.active_salvagings[i].coord_index];
+                    salvaging_room = "planet_" + salvaging_coord.planet_id;
+                } else if(dirty.active_salvagings[i].coord_type === 'ship') {
+                    salvaging_coord = dirty.ship_coords[dirty.active_salvagings[i].coord_index];
+                    salvaging_room = "ship_" + salvaging_coord.ship_id;
+                } else if(dirty.active_salvagings[i].coord_type === 'galaxy') {
+                    salvaging_coord = dirty.coords[dirty.active_salvagings[i].coord_index];
+                    salvaging_room = "galaxy";
+                }
+
+                if(helper.isFalse(salvaging_coord.object_type_id)) {
+                    world.sendActiveSalvaging(socket, false, dirty, i, true);
+                    //log(chalk.yellow("object type at coord no longer exists. Removing active salvaging."));
+                    delete dirty.active_salvagings[i];
+                    return false;
+                }
+
+                object_type_index = main.getObjectTypeIndex(salvaging_coord.object_type_id);
+            }
+            
+
+
+            if(helper.isFalse(player_info.coord) || helper.isFalse(salvaging_coord)) {
+                log(chalk.yellow("Could not get coord for player or salvaging location in processSalvaging"));
                 io.to(dirty.active_salvagings[i].player_socket_id).emit('salvaging_linker_info', {
                     'remove': true, 'salvaging_linker': dirty.active_salvagings[i]
                 });
@@ -6491,13 +6700,15 @@ exports.eat = eat;
                 return false;
             }
 
-            if(player_info.room !== object_info.room) {
+            if(player_info.room !== salvaging_room) {
+                
 
                 // Normally being not in the same room would auto mean we remove it. BUT, if the player is in a ship
                 // Room, the mining linker is still valid if the ship they are on is close enough
-                if(object_info.room === 'galaxy' && player_info.room.includes("ship_")) {
+                if(salvaging_room === 'galaxy' && player_info.room.includes("ship_")) {
                     // TODO check on the ship moving away?
                 } else {
+                    console.log("Salvaging room mismatch. Player: " + player_info.room + " salvaging room: " + salvaging_room);
                     log(chalk.yellow("Player and object are not in the same room"));
                     io.to(dirty.active_salvagings[i].player_socket_id).emit('salvaging_linker_info', {
                         'remove': true, 'salvaging_linker': dirty.active_salvagings[i]
@@ -6509,7 +6720,7 @@ exports.eat = eat;
 
             }
 
-            if(player_info.coord.planet_id && player_info.coord.level !== object_info.coord.level) {
+            if(player_info.coord.planet_id && player_info.coord.level !== salvaging_coord.level) {
                 log(chalk.yellow("Player and object aren't on the same level"));
 
                 io.to(dirty.active_salvagings[i].player_socket_id).emit('salvaging_linker_info', {
@@ -6522,9 +6733,9 @@ exports.eat = eat;
 
             // see if the x and y are close enough
             // Only check the distance if we are in the same room
-            if(player_info.room === object_info.room) {
-                let x_difference = Math.abs(player_info.coord.tile_x - object_info.coord.tile_x);
-                let y_difference = Math.abs(player_info.coord.tile_y - object_info.coord.tile_y);
+            if(player_info.room === salvaging_room) {
+                let x_difference = Math.abs(player_info.coord.tile_x - salvaging_coord.tile_x);
+                let y_difference = Math.abs(player_info.coord.tile_y - salvaging_coord.tile_y);
 
                 if(x_difference > 2 || y_difference > 2) {
                     // we are out of range
@@ -6562,10 +6773,6 @@ exports.eat = eat;
             }
             */
 
-            // The object type of the thing being salvaged - not the results
-            let object_type_index = main.getObjectTypeIndex(dirty.objects[object_index].object_type_id);
-
-
             
             // We are salvaging stuff in chunks of 10 salvaging
             let previous_salvaging_chunk = 0;
@@ -6600,13 +6807,24 @@ exports.eat = eat;
                 // Pull the possible salvagings
                 let rarity_roll = helper.rarityRoll();
                 let possible_salvage_linkers = dirty.salvage_linkers.filter(linker_filter => 
-                    linker_filter.object_type_id === dirty.objects[object_index].object_type_id && linker_filter.rarity <= rarity_roll);
+                    linker_filter.object_type_id === dirty.object_types[object_type_index].id && linker_filter.rarity <= rarity_roll);
 
                 if(possible_salvage_linkers.length === 0) {
-                    socket.emit('result_info', { 'status': 'failure',
-                    'text': "No finds this round",
-                    'object_id': dirty.objects[object_index].id });
-                } else {
+
+                    if(object_index !== -1) {
+                        socket.emit('result_info', { 'status': 'failure',
+                        'text': "No finds this round",
+                        'object_id': dirty.objects[object_index].id });
+                    } else {
+                        socket.emit('result_info', { 'status': 'failure',
+                        'text': "No finds this round",
+                        'coord_id': dirty.active_salvagings[i].coord_id,
+                        'coord_type': dirty.active_salvagings[i].coord_type });
+                    }
+                    
+                } 
+                // 
+                else {
                     let chosen_salvage_linker = possible_salvage_linkers[Math.floor(Math.random()*possible_salvage_linkers.length)];
                     
 
@@ -6615,13 +6833,24 @@ exports.eat = eat;
 
 
                     if(!complexity_success) {
-                        log(chalk.yellow("Salvaging failed"));
-                        socket.emit('result_info', { 'status': 'failure',
+                        //log(chalk.yellow("Salvaging failed"));
+
+                        if(object_index !== -1) {
+                            socket.emit('result_info', { 'status': 'failure',
                             'text': "Your beam mangled up something advanced",
                             'object_id': dirty.objects[object_index].id });
+                        } else {
+                            socket.emit('result_info', { 'status': 'failure',
+                            'text': "Your beam mangled up something advanced",
+                            'coord_id': dirty.active_salvagings[i].coord_id,
+                            'coord_type': dirty.active_salvagings[i].coord_type });
+                        }
+                        
 
 
-                    } else {
+                    } 
+                    // SUCCESS!!
+                    else {
 
                         let salvaged_object_type_index = main.getObjectTypeIndex(chosen_salvage_linker.salvaged_object_type_id);
 
@@ -6634,7 +6863,7 @@ exports.eat = eat;
                             for(let x = 1; x <= chosen_salvage_linker.amount; x++) {
 
 
-                                if(object_info.room === 'galaxy') {
+                                if(salvaging_room === 'galaxy') {
                                     let place_on_ship_result = await placeOnShip(socket, dirty, dirty.object_types[salvaged_object_type_index].id, 1);
                         
                                     if(place_on_ship_result === false) {
@@ -6669,7 +6898,7 @@ exports.eat = eat;
 
                         } else {
 
-                            if(object_info.room === 'galaxy') {
+                            if(salvaging_room === 'galaxy') {
                                 let placed_on_ship_result = await placeOnShip(socket, dirty, dirty.object_types[salvaged_object_type_index].id, chosen_salvage_linker.amount);
                                 console.log("placed_on_ship_result: " + placed_on_ship_result);
                                 if(placed_on_ship_result === false) {
@@ -6694,9 +6923,16 @@ exports.eat = eat;
                             
                         }
 
-                        socket.emit('result_info', { 'status': 'success',
-                            'text': "+" + chosen_salvage_linker.amount + " " + dirty.object_types[salvaged_object_type_index].name,
-                            'object_id': dirty.objects[object_index].id });
+
+                        let result_info_data = { 'status': 'success', 'text': "+" + chosen_salvage_linker.amount + " " + dirty.object_types[salvaged_object_type_index].name};
+                        if(typeof dirty.active_salvagings[i].object_index !== 'undefined') {
+
+                            result_info_data.object_id = dirty.objects[object_index].id;
+                        } else {
+                            result_info_data.coord_id = salvaging_coord.id;
+                            result_info_data.coord_type = dirty.active_salvagings[i].coord_type;
+                        }
+                        socket.emit('result_info', result_info_data );
 
                     }
 
@@ -6708,132 +6944,64 @@ exports.eat = eat;
                 }
 
                 // Reduce the object's hp by ten
-                dirty.objects[object_index].current_hp -= 10;
-                dirty.objects[object_index].has_change = true;
 
-                
+                if(object_index !== -1) {
+                    dirty.objects[object_index].current_hp -= 10;
+                    dirty.objects[object_index].has_change = true;
 
-                // If the object's new hp <= 0, remove it
-                if(dirty.objects[object_index].current_hp <= 0) {
-                    await game_object.deleteObject(dirty, {'object_index': object_index });
+                      // If the object's new hp <= 0, remove it
+                    if(dirty.objects[object_index].current_hp <= 0) {
+                        await game_object.deleteObject(dirty, {'object_index': object_index });
 
-                    console.log("Deleted object");
+                        console.log("Deleted object");
 
-                    
-                    if(object_info.scope === 'galaxy') {
-                        await world.sendCoordInfo(false, "galaxy", dirty, { 'coord_index': object_info.coord_index });
-                    } else if(object_info.scope === 'planet') {
-                        await world.sendCoordInfo(false, "planet" + object_info.coord.planet_id, dirty, { 'planet_coord_index': object_info.coord_index });
+                        
+                        if(object_info.scope === 'galaxy') {
+                            await world.sendCoordInfo(false, "galaxy", dirty, { 'coord_index': object_info.coord_index });
+                        } else if(object_info.scope === 'planet') {
+                            await world.sendCoordInfo(false, "planet" + object_info.coord.planet_id, dirty, { 'planet_coord_index': object_info.coord_index });
 
-                    } else if(object_info.scope === 'ship') {
-                        await world.sendCoordInfo(false, "ship_" + object_info.coord.ship_id, dirty, { 'ship_coord_index': object_info.coord_index });
+                        } else if(object_info.scope === 'ship') {
+                            await world.sendCoordInfo(false, "ship_" + object_info.coord.ship_id, dirty, { 'ship_coord_index': object_info.coord_index });
+                        }
+                    } else {
+                        await game_object.sendInfo(false, object_info.room, dirty, object_index);
+
                     }
                 } else {
-                    await game_object.sendInfo(false, object_info.room, dirty, object_index);
 
+
+                    let coord_update_data = {};
+                    if(dirty.active_salvagings[i].coord_type === 'galaxy') {
+                       coord_update_data.coord_index = dirty.active_salvagings[i].coord_index;
+                    } else if(dirty.active_salvagings[i].coord_type === 'planet') {
+                        coord_update_data.planet_coord_index = dirty.active_salvagings[i].coord_index;
+                    } else if(dirty.active_salvagings[i].coord_type === 'ship') {
+                        coord_update_data.ship_coord_index = dirty.active_salvagings[i].coord_index;
+                    }
+
+                    let new_object_type_amount = salvaging_coord.object_amount - 1;
+                    if(new_object_type_amount <= 0) {
+                        coord_update_data.object_type_id = false;
+                    } else {
+                        coord_update_data.object_type_id = salvaging_coord.object_type_id;
+                        coord_update_data.amount = new_object_type_amount;
+                    }
+
+                    main.updateCoordGeneric(socket, coord_update_data);
+
+                    if(new_object_type_amount <= 0) {
+                        world.sendActiveSalvaging(socket, false, dirty, i, true);
+                    }
+
+                    
                 }
+
+            
+    
 
             }
             
-
-            /*
-            let new_hp = dirty.active_salvagings[i].hp_left - salvaging_level;
-
-            // Object is not deconstructed yet
-            if(new_hp > 0) {
-                dirty.active_salvagings[i].hp_left = new_hp;
-
-                
-
-                //console.log("Reduced active_salvaging hp_left to: " + new_hp);
-
-            }
-
-            // Lets FINISH THIS!
-
-            log(chalk.green("Object is now salvaged!"));
-
-            let object_type_index = main.getObjectTypeIndex(dirty.objects[object_index].object_type_id);
-
-
-            // TODO really note sure why I am going through all the salvaging linkers here like this. Did I have
-            // plans to divy up salvaging efforts?
-            for(let j = 0; j < dirty.salvage_linkers.length; j++) {
-                if(dirty.salvage_linkers[j].object_id === dirty.objects[object_index].id) {
-
-                    let rarity_roll = helper.rarityRoll();
-                    let complexity_success = world.complexityCheck(salvaging_level, dirty.salvage_linkers[j].complexity);
-
-                    if(complexity_success && dirty.salvage_linkers[j].rarity <= rarity_roll) {
-
-                        // we add the stuff to the player's inventory
-                        let salvaged_object_type_index = main.getObjectTypeIndex(dirty.salvage_linkers[j].salvaged_object_type_id);
-
-                        // If it's assembled as an object, we need to create an object for each one
-                        if(dirty.object_types[salvaged_object_type_index].assembled_as_object) {
-
-
-                            for(let x = 1; x <= dirty.salvage_linkers[j].amount; x++) {
-                                let insert_object_type_data = { 'object_type_id': dirty.object_types[salvaged_object_type_index].id,
-                                    'source': 'game.salvage' };
-                                let new_object_id = await world.insertObjectType(socket, dirty, insert_object_type_data);
-                                let new_object_index = await game_object.getIndex(dirty, new_object_id);
-
-                                await inventory.addToInventory(socket, dirty, { 'adding_to_type': 'player', 'adding_to_id': socket.player_id,
-                                    'object_id': dirty.objects[new_object_index].id, 'amount': 1 });
-                            }
-
-
-                        } else {
-                            await inventory.addToInventory(socket, dirty, { 'adding_to_type': 'player', 'adding_to_id': socket.player_id,
-                                'object_type_id': dirty.object_types[salvaged_object_type_index].id, 'amount': dirty.salvage_linkers[j].amount });
-                        }
-
-                        socket.emit('result_info', { 'status': 'success',
-                            'text': "Salvaging " + dirty.object_types[object_type_index].name + " Succeeded",
-                            'object_id': dirty.objects[object_index].id });
-
-
-                    } else {
-                        log(chalk.yellow("Salvaging failed"));
-                        socket.emit('result_info', { 'status': 'failure',
-                            'text': "Salvaging " + dirty.object_types[object_type_index].name + " Failed",
-                            'object_id': dirty.objects[object_index].id });
-
-                    }
-
-                    world.sendActiveSalvaging(socket, false, dirty, j, true);
-
-                    delete dirty.active_salvagings[j];
-
-
-                }
-            }
-
-
-            // And delete the salvaged object
-            await game_object.deleteObject(dirty, {'object_index': object_index });
-
-            console.log("Deleted object");
-
-            if(object_info.scope === 'galaxy') {
-                await world.sendCoordInfo(false, "galaxy", dirty, { 'coord_index': object_info.coord_index });
-            } else if(object_info.scope === 'planet') {
-                await world.sendCoordInfo(false, "planet" + object_info.coord.planet_id, dirty, { 'planet_coord_index': object_info.coord_index });
-
-            } else if(object_info.scope === 'ship') {
-                await world.sendCoordInfo(false, "ship_" + object_info.coord.ship_id, dirty, { 'ship_coord_index': object_info.coord_index });
-            }
-
-
-            dirty.players[player_index].salvaging_skill_points += 1;
-            dirty.players[player_index].has_change = true;
-            player.sendInfo(socket, false, dirty, dirty.players[player_index].id);
-
-
-            console.log("Done salvaging");
-
-            */
 
         } catch(error) {
             log(chalk.red("Error in game.processSalvaging: " + error));
@@ -6842,78 +7010,193 @@ exports.eat = eat;
     }
 
 
+    /**
+     * @param {Object} socket
+     * @param {Object} dirty
+     * @param {Object} data
+     * @param {number=} data.object_id
+     * @param {number=} data.coord_id
+     * @param {String=} data.coord_type
+     */
     async function salvage(socket, dirty, data) {
         try {
 
-            log(chalk.green("Got salvage request"));
+            //log(chalk.green("Got salvage request"));
 
-            let object_index = await game_object.getIndex(dirty, parseInt(data.object_id));
 
-            if(object_index === -1) {
-                console.log("Could not find object");
+            if(typeof socket.player_index === 'undefined') {
+                log(chalk.yellow("Socket doesn't have a player index"));
                 return false;
             }
 
 
-            let object_type_index = dirty.object_types.findIndex(function(obj) { return obj &&
-                obj.id === dirty.objects[object_index].object_type_id; });
+            if(typeof data.object_id !== 'undefined') {
+                console.log("Was sent in object id: " + data.object_id);
+                let object_index = await game_object.getIndex(dirty, parseInt(data.object_id));
 
-            if(object_type_index === -1) {
-                return false;
-            }
+                if(object_index === -1) {
+                    console.log("Could not find object");
+                    return false;
+                }
+    
+    
+                let object_type_index = dirty.object_types.findIndex(function(obj) { return obj &&
+                    obj.id === dirty.objects[object_index].object_type_id; });
+    
+                if(object_type_index === -1) {
+                    return false;
+                }
+    
+                if(!dirty.object_types[object_type_index].can_be_salvaged) {
+                    log(chalk.yellow("Player is trying to salvage something that is not salvagable"));
+                    socket.emit('chat', { 'message': "That cannot be salvaged", 'scope': 'system' });
+                    return false;
+                }
+    
+                let salvaging_index = dirty.active_salvagings.findIndex(function(obj) { return obj &&
+                    obj.player_id === socket.player_id && obj.object_id === dirty.objects[object_index].id; });
+    
+                if(salvaging_index !== -1) {
+                    return false;
+                }
+    
 
-            if(!dirty.object_types[object_type_index].can_be_salvaged) {
-                log(chalk.yellow("Player is trying to salvage something that is not salvagable"));
-                socket.emit('chat', { 'message': "That cannot be salvaged", 'scope': 'system' });
-                return false;
-            }
+    
+                // If we are in the galaxy, we need to make sure the player isn't in a pod
+                if(dirty.objects[object_index].coord_id) {
+                    
+                    let player_ship_index = await game_object.getIndex(dirty, dirty.players[socket.player_index].ship_id);
+                    if(player_ship_index === -1) {
+                        log(chalk.yellow("Could not find ship for player"));
+                        return false;
+                    }
+    
+                    // Can't salvage with a pod
+                    if(dirty.objects[player_ship_index].object_type_id === 114) {
+                        socket.emit('chat', { 'message': "You cannot salvage with a pod", 'scope': 'system' });
+                        return false;
+                    }
+                }
+    
+    
+                let active_salvaging_linker = {
+                    'id': uuidv1(),
+                    'player_id': socket.player_id, 'object_id': dirty.objects[object_index].id,
+                    'player_index': socket.player_index, 'object_index': object_index,
+                    'total_salvaged': 0,
+                    'player_socket_id': socket.id
+                };
+    
+                salvaging_index = dirty.active_salvagings.push(active_salvaging_linker) - 1;
+    
+    
+                world.sendActiveSalvaging(socket, false, dirty, salvaging_index);
+            } 
+            // Salvaging based on a coord
+            else if(typeof data.coord_id !== 'undefined') {
+                let salvaging_coord_index = -1;
+                let salvaging_coord = {};
 
-            let salvaging_index = dirty.active_salvagings.findIndex(function(obj) { return obj &&
-                obj.player_id === socket.player_id && obj.object_id === dirty.objects[object_index].id; });
+                if(data.coord_type === 'galaxy') {
+                    salvaging_coord_index = await main.getCoordIndex( {'coord_id': data.coord_id} );
 
-            if(salvaging_index !== -1) {
-                return false;
-            }
+                    if(salvaging_coord_index === -1) {
+                        return false;
+                    }
 
+                    salvaging_coord = dirty.coords[salvaging_coord_index];
+                } else if(data.coord_type === 'ship') {
+                    salvaging_coord_index = await main.getShipCoordIndex( {'ship_coord_id': data.coord_id} );
 
-            let player_index = await player.getIndex(dirty, {'player_id':socket.player_id});
+                    if(salvaging_coord_index === -1) {
+                        return false;
+                    }
 
-            if(player_index === -1) {
-                log(chalk.yellow("Couldn't find player"));
-                return false;
-            }
+                    salvaging_coord = dirty.ship_coords[salvaging_coord_index];
+                } else if(data.coord_type === 'planet') {
+                    salvaging_coord_index = await main.getPlanetCoordIndex( {'planet_coord_id': data.coord_id} );
 
-            // If we are in the galaxy, we need to make sure the player isn't in a pod
-            if(dirty.objects[object_index].coord_id) {
-                let player_ship_index = await game_object.getIndex(dirty, dirty.players[player_index].ship_id);
-                if(player_ship_index === -1) {
-                    log(chalk.yellow("Could not find ship for player"));
+                    if(salvaging_coord_index === -1) {
+                        return false;
+                    }
+
+                    salvaging_coord = dirty.planet_coords[salvaging_coord_index];
+                }
+                
+                if(salvaging_coord_index === -1) {
+                    console.log("Could not find object");
                     return false;
                 }
 
-                // Can't salvage with a pod
-                if(dirty.objects[player_ship_index].object_type_id === 114) {
-                    socket.emit('chat', { 'message': "You cannot salvage with a pod", 'scope': 'system' });
+                // The salvaging cood should have an object type, not an object
+                if(salvaging_coord.object_id) {
+                    log(chalk.yellow("Should be trying to salvage this a different way (via the object)"));
                     return false;
                 }
+
+    
+    
+                let object_type_index = dirty.object_types.findIndex(function(obj) { return obj &&
+                    obj.id === salvaging_coord.object_type_id; });
+    
+                if(object_type_index === -1) {
+                    return false;
+                }
+    
+                if(!dirty.object_types[object_type_index].can_be_salvaged) {
+                    log(chalk.yellow("Player is trying to salvage something that is not salvagable"));
+                    socket.emit('chat', { 'message': "That cannot be salvaged", 'scope': 'system' });
+                    return false;
+                }
+    
+                let salvaging_index = dirty.active_salvagings.findIndex(function(obj) { return obj &&
+                    obj.player_id === socket.player_id && obj.coord_id === salvaging_coord.id && obj.coord_type === data.coord_type; });
+    
+                if(salvaging_index !== -1) {
+                    return false;
+                }
+    
+
+    
+                // If we are in the galaxy, we need to make sure the player isn't in a pod
+                if(data.coord_type === 'galaxy') {
+                    
+                    let player_ship_index = await game_object.getIndex(dirty, dirty.players[socket.player_index].ship_id);
+                    if(player_ship_index === -1) {
+                        log(chalk.yellow("Could not find ship for player"));
+                        return false;
+                    }
+    
+                    // Can't salvage with a pod
+                    if(dirty.objects[player_ship_index].object_type_id === 114) {
+                        socket.emit('chat', { 'message': "You cannot salvage with a pod", 'scope': 'system' });
+                        return false;
+                    }
+                }
+    
+    
+                let active_salvaging_linker = {
+                    'id': uuidv1(),
+                    'player_id': socket.player_id, 
+                    'player_index': socket.player_index,
+                    'coord_index': salvaging_coord_index,
+                    'coord_id': salvaging_coord.id, // We need the coord id so we can send that to the client - coord_index isn't going to do much for it.
+                    'coord_type': data.coord_type,
+                    'total_salvaged': 0,
+                    'player_socket_id': socket.id
+                };
+    
+                salvaging_index = dirty.active_salvagings.push(active_salvaging_linker) - 1;
+    
+    
+                world.sendActiveSalvaging(socket, false, dirty, salvaging_index);
             }
 
 
-            let active_salvaging_linker = {
-                'id': uuidv1(),
-                'player_id': socket.player_id, 'object_id': dirty.objects[object_index].id,
-                'player_index': player_index, 'object_index': object_index,
-                'total_salvaged': 0,
-                'player_socket_id': socket.id
-            };
-
-            salvaging_index = dirty.active_salvagings.push(active_salvaging_linker) - 1;
-
-
-            world.sendActiveSalvaging(socket, false, dirty, salvaging_index);
 
         } catch(error) {
             log(chalk.red("Error in game.salvage: " + error));
+            console.error(error);
         }
     }
 
@@ -6922,30 +7205,23 @@ exports.eat = eat;
     async function salvageStop(socket, dirty, data) {
         try {
 
-            log(chalk.green("Got salvage stop request"));
-            data.object_id = parseInt(data.object_id);
+            //log(chalk.green("Got salvage stop request for id: " + data.salvaging_linker_id));
 
+            let active_salvaging_index = dirty.active_salvagings.findIndex(function(obj) { return obj && obj.id === data.salvaging_linker_id; });
 
-            let linker_index = dirty.active_salvagings.findIndex(function(obj) {
-                return obj && obj.player_id === socket.player_id && obj.object_id === data.object_id; });
+            if(active_salvaging_index !== -1) {
+                //console.log("Stopping the salvaging");
 
-            if(linker_index !== -1) {
-
-                let object_index = await game_object.getIndex(dirty, data.object_id);
-
-                if(object_index !== -1) {
-                    let object_info = await game_object.getCoordAndRoom(dirty, object_index);
-                    world.sendActiveSalvaging(socket, false, dirty, linker_index, true);
-
-                }
-
-
-                delete dirty.active_salvagings[linker_index];
+                world.sendActiveSalvaging(socket, false, dirty, active_salvaging_index, true);
+                delete dirty.active_salvagings[active_salvaging_index];
+            } else {
+                log(chalk.yellow("Looks like an invalid salvage stop request"));
+                console.log(data);
             }
-
 
         } catch(error) {
             log(chalk.red("Error in game.salvageStop: " + error));
+            console.error(error);
         }
     }
 
@@ -6977,130 +7253,9 @@ exports.eat = eat;
             for(let i = 0; i < dirty.addiction_linkers.length; i++) {
 
                 if(dirty.addiction_linkers[i]) {
-                    let addicted_object_type_index = main.getObjectTypeIndex(dirty.addiction_linkers[i].addicted_to_object_type_id);
-                    let body_index = await game_object.getIndex(dirty, dirty.addiction_linkers[i].addicted_body_id);
-    
-    
-                    // There's a possibility that the body doesn't exist anymore - that it was killed or something
-                    if(body_index === -1) {
-                        log(chalk.yellow("Doesn't look like that body exists anymore - removing the linker"));
-    
-                        await (pool.query("DELETE FROM addiction_linkers WHERE id = ?", [dirty.addiction_linkers[i].id] ));
-                        delete dirty.addiction_linkers[i];
-                        return false;
-                    }
-    
-                    let body_type_index = main.getObjectTypeIndex(dirty.objects[body_index].object_type_id);
-                    let player_index = await player.getIndex(dirty, { 'player_id': dirty.objects[body_index].player_id });
-    
-                    if(player_index === -1) {
-                        log(chalk.yellow("Can't find the player this body is supposed to be associated with. body's player id: " + dirty.objects[body_index].player_id));
-                        console.log("Removing addiction linker");
-    
-    
-                        await (pool.query("DELETE FROM addiction_linkers WHERE id = ?", [dirty.addiction_linkers[i].id] ));
-                        delete dirty.addiction_linkers[i];
-                        return false;
-                    }
-                    let race_eating_index = dirty.race_eating_linkers.findIndex(function(obj) { return obj &&
-                        obj.race_id === dirty.object_types[body_type_index].race_id && obj.object_type_id === dirty.object_types[addicted_object_type_index].id; });
-                    let player_socket = await world.getPlayerSocket(dirty, player_index);
-    
-                    if(race_eating_index === -1) {
-                        log(chalk.yellow("That body cannot eat that!"));
-                        if(helper.notFalse(player_socket)) {
-                            player_socket.emit('addiction_linker_info', { 'remove': true, 'addiction_linker': dirty.addiction_linkers[i] });
-                        }
-                        await (pool.query("DELETE FROM addiction_linkers WHERE id = ?", [dirty.addiction_linkers[i].id] ));
-                        delete dirty.addiction_linkers[i];
-                        return;
-                    }
-    
-                    // increment the tick count
-                    if(dirty.addiction_linkers[i].tick_count < dirty.race_eating_linkers[race_eating_index].addiction_tick_count) {
-    
-    
-                        // Gotta check and see if there's a -hp effect to apply
-                        let body_eating_linkers = dirty.eating_linkers.filter(linker => linker.body_id === dirty.players[player_index].body_id);
-    
-                        let still_eating = false;
-                        for(let eating_linker of body_eating_linkers) {
-                            if(eating_linker.eating_object_type_id === dirty.addiction_linkers[i].addicted_to_object_type_id) {
-                                still_eating = true;
-                            }
-                        }
-    
-                        // apply any negative HP effect to the player and increase the tick count
-                        if(!still_eating) {
-    
-                            dirty.addiction_linkers[i].tick_count++;
-    
-                            if(helper.notFalse(player_socket)) {
-                                player_socket.emit('addiction_linker_info', { 'addiction_linker': dirty.addiction_linkers[i] });
-                            }
-    
-    
-    
-                            if(dirty.race_eating_linkers[race_eating_index].hp) {
-    
-    
-                                let addiction_damage_amount = dirty.addiction_linkers[i].addiction_level * Math.abs(dirty.race_eating_linkers[race_eating_index].hp);
-    
-                                // Player has this body equippped
-                                if(dirty.players[player_index].body_id === dirty.addiction_linkers[i].addicted_body_id) {
-                                    //console.log("Reduced player hp due to addiction linker");
-    
-                                    // Something like poison will have -HP - we don't want poison to heal in this case.
-                                    
-    
-                                    let new_player_hp = dirty.players[player_index].current_hp - addiction_damage_amount;
-    
-                                    if(new_player_hp <= 0) {
-    
-                                        console.log("Calling player.kill from tickAddictions");
-                                        let player_kill_result = await player.kill(dirty, player_index);
-    
-                                        console.log("player kill result: " + player_kill_result);
-    
-    
-                                    } else {
-                                        // update the current hp for the player and the player's socket
-                                        dirty.players[player_index].current_hp = new_player_hp;
-                                        dirty.players[player_index].has_change = true;
-    
-                                        if(helper.notFalse(player_socket)) {
-                                            player_socket.emit('damaged_data', {
-                                                'player_id': dirty.players[player_index].id, 'damage_amount': addiction_damage_amount, 'was_damaged_type': 'hp',
-                                                'damage_types': ['addiction']
-                                            });
-                                        }
-                                    }
-                                } else {
-                                    console.log("Damaging body that player does not have equipped. Addition body id: " + dirty.addiction_linkers[i].addicted_body_id + 
-                                    "player_id: " + dirty.players[player_index].id + " player body_id: " + dirty.players[player_index].body_id);
-    
-                                    let body_info = await game_object.getCoordAndRoom(dirty, body_index);
-                                    game_object.damage(dirty, body_index, addiction_damage_amount, { 'object_info': body_info });
-    
-                                }
-                                
-                            }
-    
-                        } else {
-                            // This addiction linker is on pause for now
-                        }
-    
-                    }
-                    // We can remove the addiction linker
-                    else {
-    
-                        if(helper.notFalse(player_socket)) {
-                            player_socket.emit('addiction_linker_info', { 'remove': true, 'addiction_linker': dirty.addiction_linkers[i] });
-                        }
-                        await (pool.query("DELETE FROM addiction_linkers WHERE id = ?", [dirty.addiction_linkers[i].id] ));
-                        delete dirty.addiction_linkers[i];
-    
-                    }
+
+                    processAddictionLinker(dirty, i);
+
                 }
 
                 
@@ -9038,7 +9193,7 @@ exports.eat = eat;
 
             let spawning_object_type_ids = [];
             let spawning_monster_type_ids = [];
-            let debug_object_type_id = 430;
+            let debug_object_type_id = 0;
             let debug_monster_type_ids = [];
             let debug_monster_type_id = 0;
 
@@ -9312,13 +9467,25 @@ exports.eat = eat;
 
 
     // data:    object_id   |   monster_id   |   planet_coord_id   |   ship_coord_id
+    /**
+     * @param {Object} socket
+     * @param {Object} dirty
+     * @param {Object} data
+     * @param {number=} data.object_id
+     * @param {number=} data.monster_id
+     * @param {number=} data.planet_coord_id
+     * @param {number=} data.ship_coord_id
+     * @param {number=} data.coord_id
+     */
     async function pickUp(socket, dirty, data) {
 
         try {
 
             let debug_object_type_ids = [];
 
-            //log(chalk.green("Got pick up request. data.object_id: " + data.object_id + " data.planet_coord_id: " + data.planet_coord_id));
+            //log(chalk.green("Got pick up request"));
+            //console.log(data);
+
 
             if(typeof socket.player_index === "undefined" || socket.player_index === -1) {
                 log(chalk.yellow("Socket doesn't have a player"));
@@ -9389,22 +9556,28 @@ exports.eat = eat;
 
                 if(dirty.objects[object_index].planet_coord_id) {
                     scope = 'planet';
-                    picking_up_coord_index =  await main.getPlanetCoordIndex({ 'planet_coord_id': dirty.objects[object_index].planet_coord_id });
                 } else if(dirty.objects[object_index].ship_coord_id) {
                     scope = 'ship';
-                    picking_up_coord_index =  await main.getShipCoordIndex({ 'ship_coord_id': dirty.objects[object_index].ship_coord_id });
+                } else if(dirty.objects[object_index].coord_id) {
+                    scope = 'galaxy';
                 }
+
+                picking_up_coord_index = await game_object.getCoordIndex(dirty, object_index, scope);
 
 
             } else if(monster_index !== -1) {
                 if(dirty.monsters[monster_index].planet_coord_id) {
                     scope = 'planet';
-                    picking_up_coord_index =  await main.getPlanetCoordIndex({ 'planet_coord_id': dirty.monsters[monster_index].planet_coord_id });
                 } else if(dirty.monsters[monster_index].ship_coord_id) {
                     scope = 'ship';
-                    picking_up_coord_index =  await main.getShipCoordIndex({ 'ship_coord_id': dirty.monsters[monster_index].ship_coord_id });
+                } else if(dirty.monsters[monster_index].coord_id) {
+                    scope = 'galaxy';
                 }
-            } else {
+
+                picking_up_coord_index = await monster.getCoordIndex(dirty, monster_index, scope);
+            } 
+            // We were sent in just the coord. So we are probably trying to pickup an object
+            else {
 
                 if(typeof data.planet_coord_id !== 'undefined') {
                     scope = 'planet';
@@ -9414,6 +9587,10 @@ exports.eat = eat;
                     scope = 'ship';
                     data.ship_coord_id = parseInt(data.ship_coord_id);
                     picking_up_coord_index = await main.getShipCoordIndex({ 'ship_coord_id': data.ship_coord_id });
+                } else if(typeof data.coord_id !== 'undefined') {
+                    scope = 'ship';
+                    data.coord_id = parseInt(data.coord_id);
+                    picking_up_coord_index = await main.getCoordIndex({ 'coord_id': data.coord_id });
                 }
 
             }
@@ -9430,6 +9607,8 @@ exports.eat = eat;
                 can_interact = await canInteract(socket, dirty, player_info.scope, dirty.planet_coords[picking_up_coord_index]);
             } else if(scope === "ship") {
                 can_interact = await canInteract(socket, dirty, player_info.scope, dirty.ship_coords[picking_up_coord_index]);
+            } else if(scope === "galaxy") {
+                can_interact = await canInteract(socket, dirty, player_info.scope, dirty.coords[picking_up_coord_index]);
             }
 
 
@@ -10038,7 +10217,7 @@ exports.eat = eat;
                 return false;
             }
 
-            console.log("Got inventory_item_index");
+            //console.log("Got inventory_item_index");
 
             let temp_coord = false;
             let coord_index = false;
@@ -10247,7 +10426,7 @@ exports.eat = eat;
                 return false;
             }
 
-            console.log("Got inventory_item_index");
+            //console.log("Got inventory_item_index");
 
 
             let ship_coord_index = await main.getShipCoordIndex({ 'ship_coord_id': data.ship_coord_id });
@@ -10963,7 +11142,7 @@ exports.eat = eat;
             let elevator_info = await game_object.getCoordAndRoom(dirty, elevator_index);
             let player_info = await player.getCoordAndRoom(dirty, socket.player_index);
 
-            if(!elevator_info.coord || !player_info.coord) {
+            if(helper.isFalse(elevator_info.coord) || helper.isFalse(player_info.coord) ) {
                 log(chalk.yellow("Either the elevator or the player didn't return a valid coord"));
                 return false;
             }

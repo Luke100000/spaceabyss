@@ -1888,7 +1888,7 @@ io.sockets.on('connection', function (socket) {
 
 
     socket.on('salvage_stop_data', async function(data) {
-        console.log("Got salvage_stop_data");
+        //console.log("Got salvage_stop_data");
         await game.salvageStop(socket, dirty, data);
     });
 

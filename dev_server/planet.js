@@ -17,10 +17,10 @@ async function getCoordAndRoom(dirty, planet_index) {
 
     try {
 
-        let room = false;
+        let room = "";
         let coord_index = -1;
-        let scope = false;
-        let coord = false;
+        let scope = "";
+        let coord = {};
 
         if (!dirty.planets[planet_index]) {
             log(chalk.yellow("Could not find the planet. Planet index: " + planet_index));
@@ -40,7 +40,6 @@ async function getCoordAndRoom(dirty, planet_index) {
     } catch (error) {
         log(chalk.red("Error in planet.getCoordAndRoom: " + error));
         console.error(error);
-        return false;
     }
 
 }
@@ -86,7 +85,7 @@ async function getIndex(dirty, data) {
     } catch(error) {
 
         if(!data.source) {
-            data.source = false;
+            data.source = "";
         }
         log(chalk.red("Error in planet.getIndex: " + error + " source: " + data.source));
         console.error(error);
@@ -267,13 +266,3 @@ async function sendInfo(socket, room, dirty, data) {
 }
 
 exports.sendInfo = sendInfo;
-
-
-
-module.exports = {
-    getCoordAndRoom,
-    getIndex,
-    regenerateFloor,
-    sendCoordInfo,
-    sendInfo
-}

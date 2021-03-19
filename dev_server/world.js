@@ -409,7 +409,7 @@ exports.addObjectToShipCoord = addObjectToShipCoord;
 async function addPlayerLog(dirty, player_index, message, data = {}) {
 
     try {
-        console.log("In world.addPlayerLog");
+        //console.log("In world.addPlayerLog");
 
 
         let player_id = 0;
@@ -4082,9 +4082,15 @@ function sendActiveSalvaging(socket, room, dirty, active_salvaging_index, remove
         let temp_salvaging = {
             'id': dirty.active_salvagings[active_salvaging_index].id,
             'player_id': dirty.active_salvagings[active_salvaging_index].player_id,
-            'object_id': dirty.active_salvagings[active_salvaging_index].object_id,
             'total_salvaged': dirty.active_salvagings[active_salvaging_index].total_salvaged
         };
+
+        if(typeof dirty.active_salvagings[active_salvaging_index].object_id !== 'undefined') {
+            temp_salvaging.object_id = dirty.active_salvagings[active_salvaging_index].object_id;
+        } else {
+            temp_salvaging.coord_id = dirty.active_salvagings[active_salvaging_index].coord_id;
+            temp_salvaging.coord_type = dirty.active_salvagings[active_salvaging_index].coord_type;
+        }
 
 
 
@@ -4598,6 +4604,9 @@ async function setPlayerBody(dirty, player_index) {
             dirty.players[player_index].body_id = dirty.objects[body_object_index].id;
             dirty.players[player_index].current_hp = dirty.object_types[body_object_type_index].hp;
             dirty.players[player_index].has_change = true;
+
+            dirty.objects[body_object_index].player_id = dirty.players[player_index].id;
+            dirty.objects[body_object_index].has_change = true;
         } else {
             log(chalk.red("Unable to give player a body"));
         }

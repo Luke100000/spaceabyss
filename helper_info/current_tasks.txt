@@ -11,8 +11,31 @@ DOING NOW:
     Whenever I see a getPlanetCoordIndex, getShipCoordIndex, getCoordIndex, see if it's on a monster,object, or player, and switch it to TYPE.getCoordIndex()
 
 
+    
 
-    and work on all this next stuff
+    the Broken Giant can only be salvaged at the left bottom tile, despite all of them allowing you to press salvage
+    once salvaged, the upper two tiles dont get refreshed
+
+    Poison seems to not update at all, neither damaging you nor disappearing
+    The shift key (I wish for a permanent keep-open button) does not keep the windows open when putting an item into the container, it also lags one action behind.
+    I like the game, despite having some rough edges! Keep up the great work
+
+    My internet provider turned off the connection, which caused this. I wasn't able to cause this issue myself, even with changing IP midgame. In my lost inventory I had full territe equipment, the first time a lot of food from the desert, in case it helps
+
+    I wouldn't hate players being able to drive through and explode salvagable stuff
+
+    It's possible there's a bug with the poison, or being disconnected
+
+    Poison not going away
+
+    Not sure gifting from admin is working
+
+    Could let players know when their AI kills someone
+
+    "https://space.alphacoders.com/images/plasma-torch.png" has been requested but does not exist (classic 404)
+same with "https://space.alphacoders.com/melee.mp3"
+
+    ability to drop onto a stack
 
     Prison Ship
     1. Find ship image (done)
@@ -20,6 +43,9 @@ DOING NOW:
         Warden ( https://images.gemquery.com/262/content_2629483.jpg )
         Guard ( https://images.gemquery.com/257/content_2579086.jpg )
     3. Need a cell door sprite
+
+
+        Idea for prison ship or something else like it... having monsters spawn trying to take it back
 
     Living Rock (find a different name for it?)
         On that topic, lets get some next level bodies

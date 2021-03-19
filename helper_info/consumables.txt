@@ -54,7 +54,10 @@ Battery:    HP: 1 TICKS: 20 TOTAL VALUE: 20 (MLM)       FOCUS: HP
             Power Cell: HP: 6 Addiction Chance: 0% TICKS: 40 TOTAL VALUE: 240 (MLM)  (12 effect, 16 cost, 0.75 efficiency)
 
             Mech Take Out
-                        MLM (!SPECIAL! +2 Tier) HP: 4 Attack: 1 Defense: 2 TICKS: 20 TOTAL VALUE: 120 (MLM)
+                        MLM (!SPECIAL! +2 Tier) HP: 4 Attack: 1 Defense: 2 TICKS: 40 TOTAL VALUE: 240 (MLM)
+
+            Living Wood
+                        VUEG (!SPECIAL! +2 Tier) HP: 4 Attack: 1 Defense: 2 TICKS: 40 TOTAL VALUE: 240 (VEUG)
 
 
                 **************************************************
@@ -70,6 +73,7 @@ Battery:    HP: 1 TICKS: 20 TOTAL VALUE: 20 (MLM)       FOCUS: HP
                             SPECIAL: 1% Addiction Chance with extra long addiction timer 
                             HUMAN HP: 2 Attack: 1 Defense: 1 Tick Count: 200 TOTAL VALUE: 1600
                             SLERM (! SPECIAL +2 TIER !) HP: 4 Attack: 2 Defense: 2 Tick Count: 200 TOTAL VALUE: 1600
+                            VUEG HP: 2 Attack: 1 Defense: 1 Tick Count: 200 TOTAL VALUE: 1600
                 
                 AI HP: 16 Attack: 8 Defense: 8 Addiction Chance: 100% TICKS: 200 TOTAL VALUE: 1600 (MLM)
 

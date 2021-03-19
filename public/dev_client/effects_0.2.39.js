@@ -11,6 +11,8 @@
  * @param {int=} data.object_id
  * @param {int=} data.planet_id
  * @param {int=} data.player_id
+ * @param {int=} data.coord_id
+ * @param {String=} data.coord_type
  */
 function addEffect(data) {
 
@@ -71,6 +73,8 @@ function addEffect(data) {
                 effect_sprites[e].npc_id = false;
                 effect_sprites[e].rotation = 0;
                 effect_sprites[e].effect_type = false;
+                effect_sprites[e].coord_id = false;
+                effect_sprites[e].coord_type = "";
                 if(effect_sprites[e].body) {
                     if(debug_effects) {
                         console.log("Effect sprite had physics on it! Removing ( I think)");
@@ -129,6 +133,11 @@ function addEffect(data) {
         if(data.player_id) {
             //console.log("Giving effect sprite player_id");
             effect_sprites[effect_sprite_index].player_id = data.player_id;
+        }
+
+        if(typeof data.coord_id !== 'undefined') {
+            effect_sprites[effect_sprite_index].coord_id = data.coord_id;
+            effect_sprites[effect_sprite_index].coord_type = data.coord_type;
         }
 
         let new_texture_key = false;
@@ -449,6 +458,10 @@ function removeEffects(removing_type, removing_id) {
 
                 //console.log("Found effect on object. No longer visible!");
                 effect_sprites[i].object_id = false;
+                effect_sprites[i].setVisible(false);
+            } else if(removing_type === 'coord' && effect_sprites[i].coord_id && effect_sprites[i].coord_id === removing_id) {
+                effect_sprites[i].coord_id = false;
+                effect_sprites[i].coord_type = "";
                 effect_sprites[i].setVisible(false);
             }
         }

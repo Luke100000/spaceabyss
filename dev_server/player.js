@@ -1128,9 +1128,9 @@ async function getCoordAndRoom(dirty, player_index) {
 
     try {
 
-        let room = '';
+        let room = "";
         let coord_index = -1;
-        let scope = '';
+        let scope = "";
         let coord = {};
 
         if (dirty.players[player_index].coord_id) {
@@ -2401,6 +2401,7 @@ module.exports = {
     claimShip,
     damage,
     getCoordAndRoom,
+    getCoordIndex,
     getEquipment,
     getIndex,
     getInventory,

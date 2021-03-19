@@ -444,8 +444,8 @@ async function place(socket, dirty, data) {
 
         let inventory_item_index = -1;
         if(data.inventory_item_id) {
-            log(chalk.green("Got place data. inventory_item_id: " + data.inventory_item_id + " storage_object_id: " +
-                storage_object_id + " amount: " + data.amount));
+            //log(chalk.green("Got place data. inventory_item_id: " + data.inventory_item_id + " storage_object_id: " +
+            //    storage_object_id + " amount: " + data.amount));
             inventory_item_index = await main.getInventoryItemIndex(parseInt(data.inventory_item_id));
         }
 
