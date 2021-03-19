@@ -12,11 +12,15 @@ you are in line with all of their licenses as well.
 
 
 # Technology Used
-Client - HTML5 via Phaser 3 ( https://phaser.io )
+Client - HTML5 via Phaser 3 (3.15.1) ( https://phaser.io ) 
 
-Server - Nodejs
+Server - Nodejs Version 12.18.0
 
 I'm using Socket.io ( https://socket.io ) to communicate between the two.
+
+Currently I have Space Abyss running on Ubuntu 20.04
+
+You can find a database schema dump as well as the package.json at the root level of this repo.
 
 # Work In Progress
 Space Abyss is in active, early development. For the time being, there isn't going to be an easy 
