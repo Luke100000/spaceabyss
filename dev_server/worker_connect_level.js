@@ -1,6 +1,6 @@
-const { Worker, isMainThread, parentPort } = require('worker_threads');
+const {Worker, isMainThread, parentPort} = require('worker_threads');
 
-if(isMainThread) {
+if (isMainThread) {
     console.log("Worker shouldn't be in main thread");
     return false;
 }
