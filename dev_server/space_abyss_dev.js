@@ -2488,7 +2488,6 @@ module.exports.grabPlanetCoords = grabPlanetCoords;
 async function loginPlayer(socket, dirty, data) {
 
     try {
-
         let trying_player_name = data.player_name;
         let trying_email = data.email;
         let trying_password = data.password;

@@ -30,11 +30,13 @@
         play_sounds = true;
     }
 
+    var debug_username = urlParams.get('username')
+    var debug_email = urlParams.get('email')
+    var debug_password = urlParams.get('password')
+
 </script>
 
-<! --
-<script src="https://space.alphacoders.com:8010/socket.io/socket.io.js"></script>
--->
+<!-- <script src="https://space.alphacoders.com:8010/socket.io/socket.io.js"></script>-->
 <script src="http://localhost:8010/socket.io/socket.io.js"></script>
 
 <script type="text/javascript">
@@ -45,7 +47,14 @@
 
         socket.on('connect', () => {
             socket.emit('ready');
-        });
+			
+            //debug
+			if (debug_username) {
+				console.log("hey")
+				socket.emit('login_data', {player_name: debug_username, email: debug_email, password: debug_password });
+				event.preventDefault();
+			}
+		});
 
     } else {
         console.log("%c Could not find io", log_danger);
