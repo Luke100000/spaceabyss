@@ -4655,13 +4655,6 @@ async function switchToShip(socket, dirty) {
         }
 
         if (ship_coord_index !== -1) {
-
-            if (dirty.ship_coords[ship_coord_index].ship_id === 2) {
-                log(chalk.error("DON'T DO THIS!!!! NOT SHIP 2222!!!"));
-                console.trace("trace");
-                return false;
-            }
-
             // get the galaxy coord that the player was on
             let coord_index = dirty.coords.findIndex(function (obj) {
                 return obj && obj.player_id === dirty.players[player_index].coord_id;

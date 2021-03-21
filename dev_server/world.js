@@ -2445,7 +2445,6 @@ async function generatePlanet(socket, dirty, planet_index, planet_type_index) {
                     }
 
                     // Lets clear the tiles of walls around the hole if we can or its needed
-
                     for (let x = starting_tile_x; x <= starting_tile_x + 2; x++) {
                         for (let y = starting_tile_y; y <= starting_tile_y + 2; y++) {
 
@@ -2518,8 +2517,6 @@ exports.generatePlanet = generatePlanet;
 //  data:   planet_index   |   generating_level
 async function generatePlanetLevel(socket, dirty, data) {
     try {
-
-
         if (!socket.is_admin) {
             log(chalk.red("We think a socket with player id: " + socket.player_id + " is trying to be mr hacker man"));
             return false;

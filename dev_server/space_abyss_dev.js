@@ -2588,7 +2588,6 @@ async function loginPlayer(socket, dirty, data) {
 
             socket.player_ship_id = logging_in_player.ship_id;
 
-
             socket.player_range = logging_in_player.attack_range;
 
             socket.player_max_hp = logging_in_player.max_hp;
@@ -2597,7 +2596,7 @@ async function loginPlayer(socket, dirty, data) {
             // lets try send the display linkers fast! before any map data
             game.sendObjectTypeEquipmentLinkerData(socket, dirty);
             game.sendPlanetTypeDisplayLinkerData(socket, dirty);
-
+            
             if (dirty.players[socket.player_index].is_admin) {
                 socket.is_admin = true;
                 console.log("Set is_admin TO TRUE");
