@@ -4378,7 +4378,7 @@ function generateEquipmentDisplay() {
 
     let break_ = "<div style='flex-basis: 100%;'></div>";
     let equipment_layout_string = ""
-    equipment_layout_string += "<div style='width=450px;'>";
+    equipment_layout_string += "<div style='max-width:450px;'>";
     equipment_layout_string += "<div style='display:inline-flex;justify-content:center;flex-flow:wrap;'>";
     equipment_layout_string += "<div id='equipment_augment' class='player_equipment'><span class='has-text-centered' style='margin: auto;'><strong>Augments</strong></span><br></div>";
     equipment_layout_string += "<div id='equipment_head' class='player_equipment'><strong>Head</strong></div>";
@@ -10006,8 +10006,10 @@ function showClickMenu(pointer) {
                                     inventory_options_string += "<button id='drop_" + inventory_item.id + "_all' x='" + tile_x +
                                         "' y='" + tile_y + "' amount='all' class='button is-default is-small'>All</button>";
 
-                                    inventory_options_string += "<button id='drop_" + inventory_item.id + "_10' x='" + tile_x +
-                                        "' y='" + tile_y + "' amount='10' class='button is-default is-small'>10</button>";
+                                    if (inventory_item.amount >= 10) {
+                                        inventory_options_string += "<button id='drop_" + inventory_item.id + "_10' x='" + tile_x +
+                                            "' y='" + tile_y + "' amount='10' class='button is-default is-small'>10</button>";
+                                    }
 
                                     inventory_options_string += "<button id='drop_" + inventory_item.id + "_1' x='" + tile_x +
                                         "' y='" + tile_y + "' amount='1' class='button is-default is-small'>1</button>";
@@ -10561,19 +10563,23 @@ function showClickMenuObject(coord) {
                     put_in_string += "<div style='position:absolute; bottom: 0; text-align:center; width:100%;'>";
 
                     //all
-                    put_in_string += "<button  id='place_" +
-                        inventory_item.id + "_all' class='button is-default is-small' storage_object_id='" + objects[object_index].id + "' " +
-                        " inventory_item_id='" + inventory_item.id + "' amount='all'>All</button>";
+                    if (inventory_item.amount > 1) {
+                        put_in_string += "<button  id='place_" +
+                            inventory_item.id + "_all' class='button is-default is-small' storage_object_id='" + objects[object_index].id + "' " +
+                            " inventory_item_id='" + inventory_item.id + "' amount='all'>All</button>";
+                    }
 
                     //10
-                    put_in_string += "<button  id='place_" +
-                        inventory_item.id + "_10' class='button is-default is-small' storage_object_id='" + objects[object_index].id + "' " +
-                        " inventory_item_id='" + inventory_item.id + "' amount='10'>10</button>";
+                    if (inventory_item.amount >= 10) {
+                        put_in_string += "<button  id='place_" +
+                            inventory_item.id + "_10' class='button is-default is-small' storage_object_id='" + objects[object_index].id + "' " +
+                            " inventory_item_id='" + inventory_item.id + "' amount='10'>10</button>";
+                    }
 
                     //1
                     put_in_string += "<button  id='place_" +
                         inventory_item.id + "_1' class='button is-default is-small' storage_object_id='" + objects[object_index].id + "' " +
-                        " inventory_item_id='" + inventory_item.id + "' amount='1'>1</button>";
+                        " inventory_item_id='" + inventory_item.id + "' amount='1'>" + (inventory_item.amount == 1 ? "Put in" : 1) + "</button>";
 
                     put_in_string += "</div>";
                     put_in_string += "</div>";
