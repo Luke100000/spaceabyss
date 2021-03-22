@@ -3725,7 +3725,6 @@ socket.on('unread_message_info', function(data) {
         $('#messages').empty();
         $('#messages').append("<i class='fas fa-envelope'></i> " + unread_message_count);
     }
-    
 });
 
 

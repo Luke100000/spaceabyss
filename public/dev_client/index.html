@@ -1,9 +1,10 @@
+<!--suppress JSUnresolvedFunction -->
 <script type="text/javascript">
     // Get settings from cookies on the client
-    var debug_mode = false;
-    var mobile_mode = false;
-    var notify_on_new_player = false;
-    var play_sounds = false;
+    let debug_mode = false;
+    let mobile_mode = false;
+    let notify_on_new_player = false;
+    let play_sounds = false;
 
     if (localStorage.getItem("debug") === "true") {
         debug_mode = true;
@@ -30,9 +31,9 @@
         play_sounds = true;
     }
 
-    var debug_username = urlParams.get('username')
-    var debug_email = urlParams.get('email')
-    var debug_password = urlParams.get('password')
+    let debug_username = urlParams.get('username')
+    let debug_email = urlParams.get('email')
+    let debug_password = urlParams.get('password')
 
 </script>
 
@@ -40,26 +41,24 @@
 <script src="http://localhost:8010/socket.io/socket.io.js"></script>
 
 <script type="text/javascript">
-    var socket = false;
+    let socket = false;
     if (io) {
         //socket = io.connect('space.alphacoders.com:8010', { secure: true });
         socket = io.connect('localhost:8010', {secure: true});
 
         socket.on('connect', () => {
             socket.emit('ready');
-			
+
             //debug
-			if (debug_username) {
-				console.log("hey")
-				socket.emit('login_data', {player_name: debug_username, email: debug_email, password: debug_password });
-				event.preventDefault();
-			}
-		});
+            if (debug_username) {
+                socket.emit('login_data', {player_name: debug_username, email: debug_email, password: debug_password});
+                event.preventDefault();
+            }
+        });
 
     } else {
         console.log("%c Could not find io", log_danger);
     }
-
 </script>
 
 <!doctype html>
@@ -136,7 +135,6 @@
         }
 
         div.chat-container {
-            display: block;
             order: 3;
             display: none;
         }
@@ -194,23 +192,19 @@
         }
     </style>
 </head>
+
+
 <body style="background-image: url('/images/void.png'); background-repeat: repeat;">
 
-
 <div id="login_container">
-
     <div class="columns">
-
-
         <div class="column is-half is-offset-one-quarter">
-
-            <img src="/images/space-abyss-logo-black.png">
+            <img src="/images/space-abyss-logo-black.png" alt="space abyss logo">
             <div class="clipped-box-left clipped-box-left-green white-text" style="margin-top: -60px;">
 
                 <div class="columns" style="height: 120px;">
 
                     <div class="column is-half">
-
                         <h3 class="is-size-3">Game Login</h3>
                         <a class="button is-info" href="/user/register">Register An Account</a>
                         <a class="button is-info" href="/player/create">Create A Player</a>
@@ -224,11 +218,10 @@
                                 <div class="message-body">
                                     <h4 class="is-siz-4"><i class="fas fa-spinner"></i> Loading and Connecting </h4>
 
-                                    <a class="button is-warning" href="https:/client/">Reload</a> if this doesn't
+                                    <a class="button is-warning" href="/client/">Reload</a> if this doesn't
                                     disappear after 20 seconds<br>
                                 </div>
                             </div>
-
 
                         </div>
                     </div>
@@ -236,7 +229,6 @@
 
 
                 <form class="form-control" id="login">
-
                     <div id="login_status">
 
                     </div>
@@ -258,7 +250,6 @@
                     </div>
 
                     <button class="button is-info" type="submit">Login And Play!</button>
-
                 </form>
 
 
@@ -267,7 +258,6 @@
                 Art By <a href="/artist" target="_blank">pixelTheWise and others</a>, Music By <a href="/artist"
                                                                                                   target="_blank">Eric
                 Matya and others</a>
-
             </div>
         </div>
     </div>
@@ -284,7 +274,7 @@
                 <div class="message-body">
                     <h1 class="is-size-1">Disconnected</h1>
                     You have lost your connection to Space Abyss
-                    <a class="button is-warning" href="https:/client/">Reload the page and Relogin</a><br><br>
+                    <a class="button is-warning" href="/client/">Reload the page and Relogin</a><br><br>
 
                     <a class="button is-default" href="https://space.alphacoders.com">Back Home</a>
                 </div>
@@ -311,7 +301,6 @@
                 <button class="button is-default" id="chatswitch_system">System</button>
                 <button class="button is-success" id="help">Help</button>
                 <button class="button is-default" id="messages"><i class="fas fa-envelope"></i></button>
-                </ul>
             </div>
             <div class="chat" id="chat_local">
                 <p>This is local chat - your current planet, or the galaxy</p>
@@ -332,85 +321,64 @@
                 <button onclick="submitChatMessage(); return false;" type="submit">Send</button>
             </form>
         </div>
-
-
     </div>
+
     <div style="flex: 1; order: 2; margin-left:10px; margin-top:10px; height: 100vh; overflow-y: scroll;">
 
         <!-- Our line of buttons! -->
         <script type="text/javascript">
-
             function toggleAssembleDisplay() {
-
-
-                if ($("#can_assemble_list").is(":visible")) {
-                    $("#can_assemble_list").hide();
-                    $("#can_assemble_list").empty();
-
+                if (sel_can_assemble_list.is(":visible")) {
+                    sel_can_assemble_list.hide().empty();
                 } else {
-                    $('#can_assemble_list').show();
+                    sel_can_assemble_list.show();
                     printAssemblyList();
                 }
-
             }
 
             function toggleFactionDisplay() {
-
-
-                if ($("#faction").is(":visible")) {
-                    $("#faction").hide();
-                    $("#faction").empty();
-
+                if (sel_faction.is(":visible")) {
+                    sel_faction.hide();
+                    sel_faction.empty();
                 } else {
-                    $('#faction').show();
+                    sel_faction.show();
                     generateFactionDisplay();
                 }
-
             }
 
             function toggleInventoryDisplay() {
-
-
-                if ($("#inventory").is(":visible")) {
-                    $("#inventory").hide();
-                    $("#inventory").empty();
-
+                if (sel_inventory.is(":visible")) {
+                    sel_inventory.hide();
+                    sel_inventory.empty();
                 } else {
-                    $('#inventory').show();
+                    sel_inventory.show();
                     generateInventoryDisplay();
                 }
-
             }
 
             function toggleManagementOptionsDisplay() {
-                if ($("#management_options").is(":visible")) {
-                    $("#management_options").hide();
-                    $("#management_options").empty();
-
-
+                if (sel_management_options.is(":visible")) {
+                    sel_management_options.hide();
+                    sel_management_options.empty();
                 } else {
-                    $('#management_options').show();
-
+                    sel_management_options.show();
                     generateManagementOptionsDisplay();
-
                 }
             }
 
             function toggleManagementDisplay(object_index = -1) {
+                if (sel_management.is(":visible")) {
+                    sel_management.hide();
+                    sel_management.empty();
 
-
-                if ($("#management").is(":visible")) {
-                    $("#management").hide();
-                    $("#management").empty();
-
-                    //$('#area_management').hide();
-                    //$('#area_management').empty();
+                    //sel.area_management.hide();
+                    //self.area_management.empty();
 
                     //$('#ship_management').hide();
                     //$('#ship_management').empty();
 
                 } else {
-                    $('#management').show();
+                    sel_management.show();
                     //$('#area_management').show();
                     //$('#ship_management').show();
 
@@ -422,141 +390,114 @@
             }
 
             function toggleAiManagementDisplay(object_index = -1) {
-                if ($("#ai_management").is(":visible")) {
-                    $("#ai_management").hide();
-                    $("#ai_management").empty();
-
-
+                if (sel_ai_management.is(":visible")) {
+                    sel_ai_management.hide();
+                    sel_ai_management.empty();
                 } else {
-                    $('#ai_management').show();
-
+                    sel_ai_management.show();
                     generateAiManagementDisplay(object_index);
-
                 }
             }
 
             function toggleAreaManagementDisplay() {
-                if ($("#area_management").is(":visible")) {
-                    $("#area_management").hide();
-                    $("#area_management").empty();
-
-
+                if (sel_area_management.is(":visible")) {
+                    sel_area_management.hide();
+                    sel_area_management.empty();
                 } else {
-                    $('#area_management').show();
-
+                    sel_area_management.show();
                     generateAreaManagementDisplay();
-
                 }
             }
 
             function togglePlayerEquipmentDisplay() {
-
-                if ($("#player_equipment").is(":visible")) {
-                    $("#player_equipment").hide();
-                    $("#player_equipment").empty();
-
+                if (sel_player_equipment.is(":visible")) {
+                    sel_player_equipment.hide();
+                    sel_player_equipment.empty();
                 } else {
-                    $('#player_equipment').show();
+                    sel_player_equipment.show();
                     generateEquipmentDisplay();
                 }
-
             }
 
             function togglePlayerInfoDisplay() {
-
-                console.log("in togglePlayerInfoDisplay");
-
-                if ($("#player_stats").is(":visible")) {
-                    $("#player_stats").hide();
-                    $("#player_stats").empty();
-
+                if (sel_player_stats.is(":visible")) {
+                    sel_player_stats.hide();
+                    sel_player_stats.empty();
                 } else {
                     $('#player_stats').show();
                     generatePlayerInfoDisplay();
                 }
-
             }
 
             function toggleRelationshipDisplay() {
-
-
-                if ($("#relationships").is(":visible")) {
-                    $("#relationships").hide();
-                    $("#relationships").empty();
-
+                if (sel_relationships.is(":visible")) {
+                    sel_relationships.hide();
+                    sel_relationships.empty();
                 } else {
-                    $('#relationships').show();
+                    sel_relationships.show();
                     generateRelationshipDisplay();
                 }
-
             }
 
             function toggleResearchDisplay() {
-
-
-                if ($("#research").is(":visible")) {
-                    $("#research").hide();
-                    $("#research").empty();
-                    $('#discoveries').empty();
-
+                if (sel_research.is(":visible")) {
+                    sel_research.hide();
+                    sel_research.empty();
+                    sel_discoveries.empty();
                 } else {
-                    $('#research').show();
+                    sel_research.show();
                     generateResearchDisplay();
                 }
-
             }
 
             function toggleSettingsDisplay() {
-                if ($("#settings").is(":visible")) {
-                    $("#settings").hide();
+                if (sel_settings.is(":visible")) {
+                    sel_settings.hide();
                 } else {
-                    $('#settings').show();
+                    sel_settings.show();
                 }
             }
-
         </script>
 
 
         <div class="main-button-wrapper" style="margin-bottom:10px;">
             <a class="button is-default main-button" onclick="toggleInventoryDisplay();">
-                <i class="fal fa-backpack fa-2x" class="main-icon"></i>
+                <i class="fal fa-backpack fa-2x" title="Inventory"></i>
             </a>
 
             <a class="button is-default main-button" onclick="togglePlayerEquipmentDisplay();">
-                <i class="fas fa-helmet-battle fa-2x" class="main-icon"></i>
+                <i class="fas fa-helmet-battle fa-2x" title="Equipment"></i>
             </a>
 
             <a class="button is-default main-button" onclick="togglePlayerInfoDisplay();">
-                <i class="fas fa-book fa-2x" class="main-icon"></i>
+                <i class="fas fa-book fa-2x" title="Player"></i>
             </a>
 
             <a class="button is-default main-button" onclick="toggleAssembleDisplay();">
-                <i class="fas fa-industry-alt fa-2x" class="main-icon"></i>
+                <i class="fas fa-industry-alt fa-2x" title="Assemble"></i>
             </a>
 
             <a class="button is-default main-button" onclick="toggleResearchDisplay();">
-                <i class="fad fa-vials fa-2x" class="main-icon"></i>
+                <i class="fad fa-vials fa-2x" title="Research"></i>
             </a>
 
             <!--
             <a class="button is-default main-button" onclick="toggleRelationshipDisplay();">
-                <i class="fas fa-heartbeat fa-2x" class="main-icon"></i>
+                <i class="fas fa-heartbeat fa-2x" title="Relationships"></i>
             </a>
             -->
 
             <a class="button is-default main-button" onclick="toggleManagementOptionsDisplay();">
-                <i class="fas fa-tasks fa-2x" class="main-icon"></i>
+                <i class="fas fa-tasks fa-2x" title="Management"></i>
             </a>
 
             <a class="button is-default main-button" onclick="toggleFactionDisplay();">
-                <i class="fad fa-users-crown fa-2x" class="main-icon"></i>
+                <i class="fad fa-users-crown fa-2x" title="Factions"></i>
             </a>
 
             <a class="button is-default main-button" onclick="toggleSettingsDisplay();">
-                <i class="fad fad fa-cogs fa-2x" class="main-icon"></i>
+                <i class="fad fad fa-cogs fa-2x" title="Settings"></i>
             </a>
-
-
         </div>
 
 
@@ -567,13 +508,9 @@
 
             <div id="inventory" style="margin-bottom:10px;"></div>
 
-            <div class="white-text" id="addiction">
+            <div class="white-text" id="addiction"></div>
 
-            </div>
-
-            <div class="white-text" id="eating_data">
-
-            </div>
+            <div class="white-text" id="eating_data"></div>
 
             <!-- starts out invisible -->
             <div id="player_equipment" style="display:none;"></div>
@@ -590,12 +527,8 @@
             <div class="white-text" id="management_options" style="display:none;"></div>
 
             <div id="object_management" style="display:none; margin-top:10px; margin-left:10px;"></div>
-
-
             <div id="ai_management" style="display:none; margin-top:10px; margin-left:10px;"></div>
-
             <div id="ship_management" style="display:none; margin-top:10px; margin-left:10px;"></div>
-
             <div id="area_management" style="display:none; margin-top:10px; margin-left:10px;"></div>
 
             <div id="market" style="display:none;"></div>
@@ -604,33 +537,19 @@
 
             <div id="task_management" style="display:none; margin-top:10px; margin-left:10px;"></div>
 
-            <div id="other_player_data">
+            <div id="other_player_data"></div>
 
-            </div>
-            <div id="attack_box">
+            <div id="attack_box"></div>
 
-            </div>
+            <div id="trade"></div>
 
+            <div id="planet_data"></div>
 
-            <div id="trade">
+            <div class="white-text" id="coord_data"></div>
 
-            </div>
+            <div id="object_inventory"></div>
 
-
-            <div id="planet_data">
-
-            </div>
-
-            <div class="white-text" id="coord_data">
-
-            </div>
-            <div id="object_inventory">
-            </div>
-
-            <div id="admin_data">
-
-            </div>
-
+            <div id="admin_data"></div>
 
             <div class="white-text" id="settings" style="display:none">
                 <div id="players_connected">Grabbing # Of Players Connected</div>
@@ -642,24 +561,13 @@
                 <button id="clear_tiles">Clear Tiles</button>
 
 
-                <div id="debug_mode">
-
-                </div>
-
-                <div id="sound">
-
-                </div>
-                <div id="notify_on_new_player">
-
-                </div>
+                <div id="debug_mode"></div>
+                <div id="sound"></div>
+                <div id="notify_on_new_player"></div>
             </div>
-
         </div>
 
-
     </div>
-
-
 </div>
 
 <script type="text/javascript">
@@ -676,215 +584,225 @@
     }
 
     if (play_sounds) {
-        $('#sound').append("Sound ON");
-        $('#sound').append("<button id=\"sound\">Toggle Sound</button>");
+        $('#sound').append("Sound ON").append("<button id=\"sound\">Toggle Sound</button>");
     } else {
-        $('#sound').append("Sound OFF");
-        $('#sound').append("<button id=\"sound\">Toggle Sound</button>");
+        $('#sound').append("Sound OFF").append("<button id=\"sound\">Toggle Sound</button>");
     }
-
 </script>
 
 
-<div id="click_menu" style="background-color:white; border-radius:5px; padding:3px; display:none;">
+<div id="click_menu" style="background-color:white; border-radius:5px; padding:3px; display:none;"></div>
 
-</div>
+
+<script>
+    const sel_can_assemble_list  = $("#can_assemble_list ")
+    const sel_faction = $("#faction")
+    const sel_inventory = $("#inventory")
+    const sel_management_options = $("#management_options")
+    const sel_management = $("#management")
+    const sel_area_management = $("#area_management")
+    const sel_ship_management = $("#ship_management")
+    const sel_ai_management = $("#ai_management")
+    const sel_player_equipment = $("#player_equipment")
+    const sel_player_stats = $("#player_stats")
+    const sel_research = $("#research")
+    const sel_settings = $("#settings")
+    const sel_discoveries = $("#discoveries")
+    const sel_relationships = $("#relationships")
+
+    const sel_click_menu = $("#click_menu")
+    const sel_chat_new = $('#chat_new')
+</script>
 
 
 </body>
 </html>
-
-
 <script>
+    let camera;
+    let logged_in = false;
+    let connected = false;
 
-    var camera;
-    var logged_in = false;
-    var connected = false;
+    let mouse_x;
+    let mouse_y;
+    let move_delay = 500;
+    //let show_rows = 7;
+    //let show_cols = 9;
+    let show_rows = 9;
+    let show_cols = 11;
+    let tile_size = 64;
 
-    var mouse_x;
-    var mouse_y;
-    var move_delay = 500;
-    //var show_rows = 7;
-    //var show_cols = 9;
-    var show_rows = 9;
-    var show_cols = 11;
-    var tile_size = 64;
+    let active_assemblies = [];
+    let addiction_linkers = [];
+    let animations = [];
+    let bid_linkers = [];
+    let areas = [];
+    let assembled_in_linkers = [];
+    let attack_boxes = [];
+    let battle_linkers = [];
+    let can_assemble_list = [];
+    let chat_local = [];
+    let chat_faction = [];
+    let chat_global = [];
+    let chat_system = [];
 
-    var active_assemblies = [];
-    var addiction_linkers = [];
-    var animations = [];
-    var bid_linkers = [];
-    var areas = [];
-    var assembled_in_linkers = [];
-    var attack_boxes = [];
-    var battle_linkers = [];
-    var can_assemble_list = [];
-    var chat_local = [];
-    var chat_faction = [];
-    var chat_global = [];
-    var chat_system = [];
+    let coords = [];
+    let eating_linkers = [];
+    let elevator_linkers = [];
+    let equipment_linkers = [];
+    let corporations = [];
+    let events = [];
+    let factions = [];
+    let faction_linkers = [];
+    let floor_types = [];
+    let floor_type_assembly_linkers = [];
+    let floor_type_display_linkers = [];
+    let graphics;
+    let info_numbers = [];
+    let inventory_items = [];
+    let objects = [];
+    let market_linkers = [];
+    let mining_linkers = [];
+    let monsters = [];
+    let monster_types = [];
+    let next_moves = [];
+    let npcs = [];
+    let object_types = [];
+    let object_type_assembly_linkers = [];
+    let object_type_conversion_linkers = [];
+    let object_type_display_linkers = [];
+    let object_type_equipment_linkers = [];
+    let planets = [];
+    let planet_coords = [];
+    let planet_types = [];
+    let planet_type_display_linkers = [];
+    let players = [];
+    let player_relationship_linkers = [];
+    let player_research_linkers = [];
+    let races = [];
+    let race_eating_linkers = [];
+    let recent_failure_messages = [];
+    let repairing_linkers = [];
+    let researches = [];
+    let rules = [];
+    let salvaging_linkers = [];
+    let ship_coords = [];
+    let skin_purchase_linkers = [];
+    let spawned_events = [];
+    let user_player_attacking = [];
 
-    var coords = [];
-    var eating_linkers = [];
-    var elevator_linkers = [];
-    var equipment_linkers = [];
-    var corporations = [];
-    var eating_linkers = [];
-    var events = [];
-    var factions = [];
-    var faction_linkers = [];
-    var floor_types = [];
-    var floor_type_assembly_linkers = [];
-    var floor_type_display_linkers = [];
-    var graphics;
-    var info_numbers = [];
-    var inventory_items = [];
-    var objects = [];
-    var market_linkers = [];
-    var mining_linkers = [];
-    var monsters = [];
-    var monster_types = [];
-    var next_moves = [];
-    var npcs = [];
-    var object_types = [];
-    var object_type_assembly_linkers = [];
-    var object_type_conversion_linkers = [];
-    var object_type_display_linkers = [];
-    var object_type_equipment_linkers = [];
-    var planets = [];
-    var planet_coords = [];
-    var planet_types = [];
-    var planet_type_display_linkers = [];
-    var players = [];
-    var player_relationship_linkers = [];
-    var player_research_linkers = [];
-    var races = [];
-    var race_eating_linkers = [];
-    var recent_failure_messages = [];
-    var repairing_linkers = [];
-    var researches = [];
-    var rules = [];
-    var salvaging_linkers = [];
-    var ship_coords = [];
-    var skin_purchase_linkers = [];
-    var spawned_events = [];
-    var user_player_attacking = [];
+    let attack_rectangle;
+    let current_player_image = false;
+    let current_chat = 'local';
+    let current_view = 'unknown';
+    let level_modifier = 0.10;
+    let difficult_level_modifier = 0.20;
 
-    var animations;
-    var attack_rectangle;
-    var current_player_image = false;
-    var current_chat = 'local';
-    var current_view = 'unknown';
-    var level_modifier = 0.10;
-    var difficult_level_modifier = 0.20;
-
-    var effect_sprites = [];
+    let effect_sprites = [];
 
 
-    var active_projectile_count = 0;
-    var airlock_display_needs_regeneration = false;
-    var audio_loaded = false;
-    var client_move_coord_id;
-    var client_move_planet_coord_id;
-    var client_move_ship_coord_id;
-    var client_move_start_time;
-    var client_move_pixel_amount = 0;
-    var client_player_id;
-    var client_player_index = -1;
-    var client_player_info;
-    var frame_delay = 300;
-    var frames_to_idle = 0;
-    var on_chest = false;
-    var player_image = "Player";
-    var pixels_moved = 0;
-    var last_failed_move_coord_id = 0;
-    var last_frame_update = 0;          // Used for animation our tilemap stuff
-    var last_move;
-    var last_click_div_move = 0;
-    var last_pointer_up = false;
-    var page_start_time = Date.now();
-    var on_planet = false;
-    var max_hp = 100;
-    var current_hp = 100;
-    var our_time;
-    var map_needs_redraw = false;
-    var need_to_place_player = true;
-    var new_player_joined = false;
-    var player_id;
-    var player;
-    var player_health_bar;
-    var cursors;
-    var upKey;
-    var shiftKey;
-    var downKey;
-    var leftKey;
-    var rightKey;
-    var enemy;
-    var player_is_moving = false;
-    var pointer_down_time = 0;
-    var pointer_up_time = 10000;
-    var moving_direction = false;
-    var sent_loney_player_message = false;
-    var unread_message_count = 0;
+    let active_projectile_count = 0;
+    let airlock_display_needs_regeneration = false;
+    let audio_loaded = false;
+    let client_move_coord_id;
+    let client_move_planet_coord_id;
+    let client_move_ship_coord_id;
+    let client_move_start_time;
+    let client_move_pixel_amount = 0;
+    let client_player_id;
+    let client_player_index = -1;
+    let client_player_info;
+    let frame_delay = 300;
+    let frames_to_idle = 0;
+    let on_chest = false;
+    let player_image = "Player";
+    let pixels_moved = 0;
+    let last_failed_move_coord_id = 0;
+    let last_frame_update = 0;          // Used for animation our tilemap stuff
+    let last_move;
+    let last_click_div_move = 0;
+    let last_pointer_up = false;
+    let page_start_time = Date.now();
+    let on_planet = false;
+    let max_hp = 100;
+    let current_hp = 100;
+    let our_time;
+    let map_needs_redraw = false;
+    let need_to_place_player = true;
+    let new_player_joined = false;
+    let player_id;
+    let player;
+    let player_health_bar;
+    let cursors;
+    let upKey;
+    let shiftKey;
+    let downKey;
+    let leftKey;
+    let rightKey;
+    let enemy;
+    let player_is_moving = false;
+    let pointer_down_time = 0;
+    let pointer_up_time = 10000;
+    let moving_direction = false;
+    let sent_loney_player_message = false;
+    let unread_message_count = 0;
 
 
     // SOUNDS!!!
-    var sound_corporation_1;
-    var sound_corporation_2;
-    var sound_control;
-    var sound_corrosive;
-    var sound_electric;
-    var sound_engine;
-    var sound_explosion;
-    var sound_freezing;
-    var sound_hacking;
-    var sound_healing;
-    var sound_laser;
-    var sound_piercing;
-    var sound_melee;
+    let sound_corporation_1;
+    let sound_corporation_2;
+    let sound_control;
+    let sound_corrosive;
+    let sound_electric;
+    let sound_engine;
+    let sound_explosion;
+    let sound_freezing;
+    let sound_hacking;
+    let sound_healing;
+    let sound_laser;
+    let sound_piercing;
+    let sound_melee;
 
-    var level_up_music;
+    let level_up_music;
 
-    var spaceport_display_needs_regeneration = false;
-    var text_admin;
-    var text_admin_time;
-    var text_important;
-    var text_important_time;
-    var total_moved = 0;
-
-
-    var above_tiles;
-    var floor_tiles;
-    var last_move_sent = 0;
-    var layer_floor;
-    var layer_object;
-    var layer_being;
-    var layer_above;
-    var map;
-    var monsters;
-    var object_tiles;
-    var tiles;
-    var user_player = false;
+    let spaceport_display_needs_regeneration = false;
+    let text_admin;
+    let text_admin_time;
+    let text_important;
+    let text_important_time;
+    let total_moved = 0;
 
 
-    var explosion;
-    var explosions;
-    var damage_energies;
+    let above_tiles;
+    let floor_tiles;
+    let last_move_sent = 0;
+    let layer_floor;
+    let layer_object;
+    let layer_being;
+    let layer_above;
+    let map;
+    let object_tiles;
+    let tiles;
+    let user_player = false;
 
-    var hp_bar_y_offset = 30;
-    var chat_mode = 'global';
+
+    let explosion;
+    let explosions;
+    let damage_energies;
+
+    let hp_bar_y_offset = 30;
+    let chat_mode = 'global';
     $('#chatswitch_global').attr('disabled', true);
-    var unread_local_messages = 0;
-    var unread_global_messages = 0;
-    var unread_faction_messages = 0;
-    var unread_system_messages = 0;
+    let unread_local_messages = 0;
+    let unread_global_messages = 0;
+    let unread_faction_messages = 0;
+    let unread_system_messages = 0;
 
 
-    var last_need_coord_data = Math.floor(new Date());
+    let last_need_coord_data = Math.floor(new Date());
 
 
-    var tasks = [];
-    var use_tasks = false;
+    let tasks = [];
+    let use_tasks = false;
     tasks.push({
         'id': 1,
         'name': 'Collect Batteries',
@@ -945,15 +863,14 @@
 
     //console.log(socket);
 
-    var log_success = 'color: #42f471; background-color:black;';
-    var log_warning = 'color: #f1f441; background-color:black;';
-    var log_danger = 'color: #f44141; background-color:black;';
-
+    let log_success = 'color: #42f471; background-color:black;';
+    let log_warning = 'color: #f1f441; background-color:black;';
+    let log_danger = 'color: #f44141; background-color:black;';
 </script>
 
 <script type="text/javascript">
 
-    var SceneGame = new Phaser.Class({
+    let SceneGame = new Phaser.Class({
         Extends: Phaser.Scene,
 
         initialize:
@@ -2344,7 +2261,7 @@
 
             // EFFECTS - END IS TOTAL # of FRAMES - 1 SINCE WE START AT 0
 
-            var addiction_effect_config = {
+            let addiction_effect_config = {
                 key: 'addiction-effect-animation',
                 frames: this.anims.generateFrameNumbers('addiction-effect', {start: 0, end: 7, first: 0}),
                 frameRate: 10,
@@ -2353,7 +2270,7 @@
 
             this.anims.create(addiction_effect_config);
 
-            var blocked_config = {
+            let blocked_config = {
                 key: 'blocked-effect-animation',
                 frames: this.anims.generateFrameNumbers('blocked-effect', {start: 0, end: 6, first: 0}),
                 frameRate: 10,
@@ -2362,7 +2279,7 @@
 
             this.anims.create(blocked_config);
 
-            var electric_effect_config = {
+            let electric_effect_config = {
                 key: 'electric-effect-animation',
                 frames: this.anims.generateFrameNumbers('electric-effect', {start: 0, end: 5, first: 0}),
                 frameRate: 10,
@@ -2371,7 +2288,7 @@
 
             this.anims.create(electric_effect_config);
 
-            var electric_ball_effect_config = {
+            let electric_ball_effect_config = {
                 key: 'electric-ball-effect-animation',
                 frames: this.anims.generateFrameNumbers('electric-ball-effect', {start: 0, end: 3, first: 3}),
                 frameRate: 10,
@@ -2380,7 +2297,7 @@
 
             this.anims.create(electric_ball_effect_config);
 
-            var energy_effect_config = {
+            let energy_effect_config = {
                 key: 'energy-effect-animation',
                 frames: this.anims.generateFrameNumbers('energy-effect', {start: 0, end: 2, first: 0}),
                 frameRate: 10,
@@ -2390,7 +2307,7 @@
             this.anims.create(energy_effect_config);
 
 
-            var explosion_effect_config = {
+            let explosion_effect_config = {
                 key: 'explosion-effect-animation',
                 frames: this.anims.generateFrameNumbers('explosion-effect', {start: 0, end: 11, first: 0}),
                 frameRate: 10,
@@ -2399,7 +2316,7 @@
 
             this.anims.create(explosion_effect_config);
 
-            var fire_effect_config = {
+            let fire_effect_config = {
                 key: 'fire-effect-animation',
                 frames: this.anims.generateFrameNumbers('fire-effect', {start: 0, end: 7, first: 0}),
                 frameRate: 10,
@@ -2408,7 +2325,7 @@
 
             this.anims.create(fire_effect_config);
 
-            var gravity_effect_config = {
+            let gravity_effect_config = {
                 key: 'gravity-effect-animation',
                 frames: this.anims.generateFrameNumbers('gravity-effect', {start: 0, end: 13, first: 0}),
                 frameRate: 10,
@@ -2417,7 +2334,7 @@
 
             this.anims.create(gravity_effect_config);
 
-            var hacking_effect_config = {
+            let hacking_effect_config = {
                 key: 'hacking-effect-animation',
                 frames: this.anims.generateFrameNumbers('hacking-effect', {start: 0, end: 11, first: 0}),
                 frameRate: 10,
@@ -2427,7 +2344,7 @@
             this.anims.create(hacking_effect_config);
 
 
-            var healing_effect_config = {
+            let healing_effect_config = {
                 key: 'healing-effect-animation',
                 frames: this.anims.generateFrameNumbers('healing-effect', {start: 0, end: 4, first: 0}),
                 frameRate: 10,
@@ -2436,7 +2353,7 @@
 
             this.anims.create(healing_effect_config);
 
-            var heat_effect_config = {
+            let heat_effect_config = {
                 key: 'heat-effect-animation',
                 frames: this.anims.generateFrameNumbers('heat-effect', {start: 0, end: 2, first: 0}),
                 frameRate: 10,
@@ -2446,7 +2363,7 @@
             this.anims.create(heat_effect_config);
 
 
-            var laser_effect_config = {
+            let laser_effect_config = {
                 key: 'laser-effect-animation',
                 frames: this.anims.generateFrameNumbers('laser-effect', {start: 0, end: 2, first: 2}),
                 frameRate: 10,
@@ -2455,7 +2372,7 @@
 
             this.anims.create(laser_effect_config);
 
-            var melee_effect_config = {
+            let melee_effect_config = {
                 key: 'melee-effect-animation',
                 frames: this.anims.generateFrameNumbers('melee-effect', {start: 0, end: 8, first: 0}),
                 frameRate: 10,
@@ -2464,7 +2381,7 @@
 
             this.anims.create(melee_effect_config);
 
-            var piercing_effect_config = {
+            let piercing_effect_config = {
                 key: 'piercing-effect-animation',
                 frames: this.anims.generateFrameNumbers('piercing-effect', {start: 0, end: 4, first: 0}),
                 frameRate: 10,
@@ -2473,7 +2390,7 @@
 
             this.anims.create(piercing_effect_config);
 
-            var poison_effect_config = {
+            let poison_effect_config = {
                 key: 'poison-effect-animation',
                 frames: this.anims.generateFrameNumbers('poison-effect', {start: 0, end: 7, first: 0}),
                 frameRate: 10,
@@ -2483,7 +2400,7 @@
             this.anims.create(poison_effect_config);
 
 
-            var radiation_effect_config = {
+            let radiation_effect_config = {
                 key: 'radiation-effect-animation',
                 frames: this.anims.generateFrameNumbers('radiation-effect', {start: 0, end: 7, first: 0}),
                 frameRate: 10,
@@ -2493,7 +2410,7 @@
             this.anims.create(radiation_effect_config);
 
 
-            var repairing_effect_config = {
+            let repairing_effect_config = {
                 key: 'repairing-effect-animation',
                 frames: this.anims.generateFrameNumbers('repairing-effect', {start: 0, end: 10, first: 0}),
                 frameRate: 10,
@@ -2503,7 +2420,7 @@
             this.anims.create(repairing_effect_config);
 
 
-            var mining_effect_config = {
+            let mining_effect_config = {
                 key: 'mining-effect-animation',
                 frames: this.anims.generateFrameNumbers('mining-effect', {start: 0, end: 5, first: 0}),
                 frameRate: 4,
@@ -2512,7 +2429,7 @@
 
             this.anims.create(mining_effect_config);
 
-            var salvaging_effect_config = {
+            let salvaging_effect_config = {
                 key: 'salvaging-effect-animation',
                 frames: this.anims.generateFrameNumbers('salvaging-effect', {start: 0, end: 5, first: 0}),
                 frameRate: 10,
@@ -2521,7 +2438,7 @@
 
             this.anims.create(salvaging_effect_config);
 
-            var thorn_effect_config = {
+            let thorn_effect_config = {
                 key: 'thorn-effect-animation',
                 frames: this.anims.generateFrameNumbers('thorn-effect', {start: 0, end: 9, first: 0}),
                 frameRate: 10,
@@ -2573,9 +2490,9 @@
                     console.log("Worldpoint to tile_x/y: " + tile_x + "," + tile_y);
 
                     // If the click menu is visible, we are just closing it
-                    if ($("#click_menu").is(":visible")) {
+                    if (sel_click_menu.is(":visible")) {
                         console.log("Closing click menu");
-                        $("#click_menu").hide();
+                        sel_click_menu.hide();
                         return;
                     }
 
@@ -3317,7 +3234,7 @@
     });
 
 
-    var config = {
+    let config = {
         type: Phaser.WEBGL,
         width: 704,
         height: 576,
@@ -3332,7 +3249,7 @@
 
 
     /*
-    var config = {
+    let config = {
         type: Phaser.WEBGL,
         scale: {
             mode: Phaser.Scale.FIT,
@@ -3358,9 +3275,9 @@
 
     $(document).ready(function () {
         $("#login").submit(function (event) {
-            var local_email = $('#email').val();
-            var local_player_name = $('#player_name').val();
-            var local_password = $('#password').val();
+            let local_email = $('#email').val();
+            let local_player_name = $('#player_name').val();
+            let local_password = $('#password').val();
             socket.emit('login_data', {player_name: local_player_name, email: local_email, password: local_password});
             //console.log("Sending login data:" + local_player_name + ", " + local_email);
             event.preventDefault();
@@ -3373,7 +3290,7 @@
         mouse_y = e.pageY;
     });
 
-    var start_ping_time;
+    let start_ping_time;
 
     setInterval(function () {
         // Do something every minute
@@ -3423,12 +3340,12 @@
 
 
 <script type="text/javascript">
-    var height = 0;
-    $('#chat_new p').each(function (i, value) {
+    let height = 0;
+    sel_chat_new.each(function () {
         height += parseInt($(this).height());
     });
 
     height += '';
 
-    $('#chat_new').animate({scrollTop: height});
+    sel_chat_new.animate({scrollTop: height});
 </script>
