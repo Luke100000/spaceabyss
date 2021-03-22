@@ -46,13 +46,17 @@
         //socket = io.connect('space.alphacoders.com:8010', { secure: true });
         socket = io.connect('localhost:8010', {secure: true});
 
-        socket.on('connect', () => {
+        socket.on('connect', async () => {
             socket.emit('ready');
+
+            //phase.io might need some extra time to load its stuff
+            while (typeof map == "undefined") {
+                await (new Promise(resolve => setTimeout(resolve, 100)));
+            }
 
             //debug
             if (debug_username) {
                 socket.emit('login_data', {player_name: debug_username, email: debug_email, password: debug_password});
-                event.preventDefault();
             }
         });
 
@@ -282,7 +286,6 @@
             <br><br><br><br><br><br><br><br><br><br><br><br><br><br><br><br><br><br><br><br><br><br><br><br><br><br><br><br><br><br>
         </div>
     </div>
-
 </div>
 
 
@@ -327,12 +330,28 @@
 
         <!-- Our line of buttons! -->
         <script type="text/javascript">
+            function setButton(button, enabled) {
+                let b = document.getElementById("button_" + button);
+                if (b) {
+                    let style = b.style;
+                    if (enabled) {
+                        style.backgroundColor = "#23d160"
+                        style.borderColor = "#189042"
+                    } else {
+                        style.backgroundColor = "#ffffff"
+                        style.borderColor = "#dbdbdb"
+                    }
+                }
+            }
+
             function toggleAssembleDisplay() {
                 if (sel_can_assemble_list.is(":visible")) {
                     sel_can_assemble_list.hide().empty();
+                    setButton("assemble", false)
                 } else {
                     sel_can_assemble_list.show();
                     printAssemblyList();
+                    setButton("assemble", true)
                 }
             }
 
@@ -340,9 +359,11 @@
                 if (sel_faction.is(":visible")) {
                     sel_faction.hide();
                     sel_faction.empty();
+                    setButton("faction", false)
                 } else {
                     sel_faction.show();
                     generateFactionDisplay();
+                    setButton("faction", true)
                 }
             }
 
@@ -350,9 +371,11 @@
                 if (sel_inventory.is(":visible")) {
                     sel_inventory.hide();
                     sel_inventory.empty();
+                    setButton("inventory", false)
                 } else {
                     sel_inventory.show();
                     generateInventoryDisplay();
+                    setButton("inventory", true)
                 }
             }
 
@@ -360,9 +383,11 @@
                 if (sel_management_options.is(":visible")) {
                     sel_management_options.hide();
                     sel_management_options.empty();
+                    setButton("management_options", false)
                 } else {
                     sel_management_options.show();
                     generateManagementOptionsDisplay();
+                    setButton("management_options", true)
                 }
             }
 
@@ -377,6 +402,7 @@
                     //$('#ship_management').hide();
                     //$('#ship_management').empty();
 
+                    setButton("management", false)
                 } else {
                     sel_management.show();
                     //$('#area_management').show();
@@ -385,6 +411,8 @@
                     generateNonAiManagementDisplay(object_index);
                     //generateAreaManagementDisplay();
                     //generateShipManagementDisplay();
+
+                    setButton("management", true)
                 }
 
             }
@@ -393,9 +421,11 @@
                 if (sel_ai_management.is(":visible")) {
                     sel_ai_management.hide();
                     sel_ai_management.empty();
+                    setButton("ai_management", false)
                 } else {
                     sel_ai_management.show();
                     generateAiManagementDisplay(object_index);
+                    setButton("ai_management", true)
                 }
             }
 
@@ -403,9 +433,11 @@
                 if (sel_area_management.is(":visible")) {
                     sel_area_management.hide();
                     sel_area_management.empty();
+                    setButton("area_management", false)
                 } else {
                     sel_area_management.show();
                     generateAreaManagementDisplay();
+                    setButton("area_management", true)
                 }
             }
 
@@ -413,9 +445,11 @@
                 if (sel_player_equipment.is(":visible")) {
                     sel_player_equipment.hide();
                     sel_player_equipment.empty();
+                    setButton("equipment", false)
                 } else {
                     sel_player_equipment.show();
                     generateEquipmentDisplay();
+                    setButton("equipment", true)
                 }
             }
 
@@ -423,9 +457,11 @@
                 if (sel_player_stats.is(":visible")) {
                     sel_player_stats.hide();
                     sel_player_stats.empty();
+                    setButton("player_stats", false)
                 } else {
-                    $('#player_stats').show();
+                    sel_player_stats.show();
                     generatePlayerInfoDisplay();
+                    setButton("player_stats", true)
                 }
             }
 
@@ -433,9 +469,11 @@
                 if (sel_relationships.is(":visible")) {
                     sel_relationships.hide();
                     sel_relationships.empty();
+                    setButton("relationships", false)
                 } else {
                     sel_relationships.show();
                     generateRelationshipDisplay();
+                    setButton("relationships", true)
                 }
             }
 
@@ -444,59 +482,64 @@
                     sel_research.hide();
                     sel_research.empty();
                     sel_discoveries.empty();
+                    setButton("research", false)
                 } else {
                     sel_research.show();
                     generateResearchDisplay();
+                    setButton("research", true)
                 }
             }
 
             function toggleSettingsDisplay() {
                 if (sel_settings.is(":visible")) {
                     sel_settings.hide();
+                    setButton("settings", false)
                 } else {
                     sel_settings.show();
+                    setButton("settings", true)
                 }
             }
         </script>
 
 
         <div class="main-button-wrapper" style="margin-bottom:10px;">
-            <a class="button is-default main-button" onclick="toggleInventoryDisplay();">
-                <i class="fal fa-backpack fa-2x" title="Inventory"></i>
+            <a id="button_inventory" class="button is-default main-button" onclick="toggleInventoryDisplay();">
+                <i class="fas fa-backpack fa-2x" title="Inventory"></i>
             </a>
 
-            <a class="button is-default main-button" onclick="togglePlayerEquipmentDisplay();">
+            <a id="button_equipment" class="button is-default main-button" onclick="togglePlayerEquipmentDisplay();">
                 <i class="fas fa-helmet-battle fa-2x" title="Equipment"></i>
             </a>
 
-            <a class="button is-default main-button" onclick="togglePlayerInfoDisplay();">
+            <a id="button_player_stats" class="button is-default main-button" onclick="togglePlayerInfoDisplay();">
                 <i class="fas fa-book fa-2x" title="Player"></i>
             </a>
 
-            <a class="button is-default main-button" onclick="toggleAssembleDisplay();">
+            <a id="button_assemble" class="button is-default main-button" onclick="toggleAssembleDisplay();">
                 <i class="fas fa-industry-alt fa-2x" title="Assemble"></i>
             </a>
 
-            <a class="button is-default main-button" onclick="toggleResearchDisplay();">
-                <i class="fad fa-vials fa-2x" title="Research"></i>
+            <a id="button_research" class="button is-default main-button" onclick="toggleResearchDisplay();">
+                <i class="fas fa-vials fa-2x" title="Research"></i>
             </a>
 
             <!--
-            <a class="button is-default main-button" onclick="toggleRelationshipDisplay();">
+            <a id="button_relationships" class="button is-default main-button" onclick="toggleRelationshipDisplay();">
                 <i class="fas fa-heartbeat fa-2x" title="Relationships"></i>
             </a>
             -->
 
-            <a class="button is-default main-button" onclick="toggleManagementOptionsDisplay();">
+            <a id="button_management_options" class="button is-default main-button"
+               onclick="toggleManagementOptionsDisplay();">
                 <i class="fas fa-tasks fa-2x" title="Management"></i>
             </a>
 
-            <a class="button is-default main-button" onclick="toggleFactionDisplay();">
-                <i class="fad fa-users-crown fa-2x" title="Factions"></i>
+            <a id="button_faction" class="button is-default main-button" onclick="toggleFactionDisplay();">
+                <i class="fas fa-users-crown fa-2x" title="Factions"></i>
             </a>
 
-            <a class="button is-default main-button" onclick="toggleSettingsDisplay();">
-                <i class="fad fad fa-cogs fa-2x" title="Settings"></i>
+            <a id="button_settings" class="button is-default main-button" onclick="toggleSettingsDisplay();">
+                <i class="fas fa-cogs fa-2x" title="Settings"></i>
             </a>
         </div>
 
@@ -506,7 +549,7 @@
             <div id="launch" style="display:inline; margin-top:10px; padding:10px;"></div>
             <div id="fuel" style="display:inline; margin-top:10px; padding:10px;"></div>
 
-            <div id="inventory" style="margin-bottom:10px;"></div>
+            <div id="inventory" style="display:none;margin-bottom:10px;"></div>
 
             <div class="white-text" id="addiction"></div>
 

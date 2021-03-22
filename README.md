@@ -6,7 +6,7 @@ That started my journey. I hope Space Abyss can help someone else start their jo
 
 The code of Space Abyss is open sourced under the MIT license.
 I've either drawn or paid to have drawn all the art in Space Abyss. It is open sourced under the MIT license as well.
-Please check the artists page (https://space.alphacoders.com/artists) for further details regarding any sound/music used in game.
+Please check the artists page (https://space.alphacoders.com/artist) for further details regarding any sound/music used in game.
 Please check the licenses of any software Space Abyss makes use of ( Phaser, Socket.io, etc ) to make sure
 you are in line with all of their licenses as well.
 

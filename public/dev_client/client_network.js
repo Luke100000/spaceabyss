@@ -664,24 +664,18 @@ socket.on('damaged_data', function(data) {
         addEffect(effect_data);
     }
 
-
-    
     playDamageSound(data.damage_types);
-
-
 });
 
 
 socket.on('disconnect', function() {
     console.log("Disconnected");
 
-
     $("#error_container").show();
     $("#wrapper").hide();
     if(game) {
         game.destroy();
     }
-
 });
 
 
@@ -1077,8 +1071,7 @@ socket.on('inventory_item_info', function(data) {
 
 socket.on('login_data', function(data) {
     //console.log("Got login_data");
-    if(data.status == 'success' || data.is_logged_in == 'true') {
-
+    if(data.status === 'success' || data.is_logged_in === 'true') {
         logged_in = true;
         current_view = data.starting_view;
         console.log("%c We are logged in and set our starting view to: " + current_view, log_success);
@@ -1088,8 +1081,8 @@ socket.on('login_data', function(data) {
         $("#chat_container").show();
         switchChat("global");
 
-
-
+        //inventory starts open
+        toggleInventoryDisplay()
 
         let player_index = players.findIndex(function(obj) { return obj && obj.id === parseInt(client_player_id); });
         client_player_index = player_index;
@@ -1100,7 +1093,6 @@ socket.on('login_data', function(data) {
             socket.emit('request_player_info', { 'player_id': client_player_id });
         } else {
             console.log("Got login data, and already have our player in the players array!");
-
 
             if(!players[client_player_index].sprite) {
                 //console.log("Creating our sprite");
@@ -1120,7 +1112,6 @@ socket.on('login_data', function(data) {
             if(players[client_player_index].sprite) {
                 camera.startFollow(players[client_player_index].sprite);
             }
-
         }
 
 
@@ -1165,14 +1156,9 @@ socket.on('login_data', function(data) {
 
         generateEquipmentDisplay();
 
-        redrawMap();
-
         socket.emit('request_skin_purchase_linker_data');
 
         use_tasks = localStorage.getItem('use_tasks');
-
-
-
     } else if(data.status === 'Failed. You Are Banned') {
         $('#login_status').append("<span style='color:red;'>Login Failed. Your account is banned. Please email spaceabyss@alphacoders.com for more details.</span>");
     }
