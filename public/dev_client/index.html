@@ -41,6 +41,7 @@
 <script src="http://localhost:8010/socket.io/socket.io.js"></script>
 
 <script type="text/javascript">
+    let connected = false;
     let socket = false;
     if (io) {
         //socket = io.connect('space.alphacoders.com:8010', { secure: true });
@@ -50,7 +51,7 @@
             socket.emit('ready');
 
             //phase.io might need some extra time to load its stuff
-            while (typeof map == "undefined") {
+            while (!connected) {
                 await (new Promise(resolve => setTimeout(resolve, 100)));
             }
 
@@ -546,7 +547,7 @@
 
         <!-- The content of our buttons! -->
         <div>
-            <div id="launch" style="display:inline; margin-top:10px; padding:10px;"></div>
+            <div id="launch" style="margin-top:10px; padding:10px;"></div>
             <div id="fuel" style="display:inline; margin-top:10px; padding:10px;"></div>
 
             <div id="inventory" style="display:none;margin-bottom:10px;"></div>
@@ -663,7 +664,6 @@
 <script>
     let camera;
     let logged_in = false;
-    let connected = false;
 
     let mouse_x;
     let mouse_y;
@@ -2744,22 +2744,18 @@
                                     //console.log("body land movement modifier changed floor_modifier to: " + floor_modifier);
                                 }
 
-
                                 if (object_types[player_body_type_index].fluid_movement_modifier !== 1 && floor_types[floor_type_index].movement_type === 'fluid') {
                                     floor_modifier = floor_modifier * object_types[player_body_type_index].fluid_movement_modifier;
                                     //console.log("body fluid movement modifier changed socket.movement_modifier to: " + floor_modifier);
                                 }
-
 
                                 if (object_types[player_body_type_index].air_movement_modifier !== 1 && floor_types[floor_type_index].movement_type === 'air') {
                                     floor_modifier = floor_modifier * object_types[player_body_type_index].air_movement_modifier;
                                     //console.log("body air movement modifier changed socket.movement_modifier to: " + floor_modifier);
                                 }
 
-
                             }
                         }
-
                     }
 
 
@@ -2907,16 +2903,13 @@
                     updateEffectSprites('player', i);
 
                     if (current_view === 'galaxy') {
-
                         let player_ship_index = getObjectIndex(players[i].ship_id);
                         updateEffectSprites('object', player_ship_index);
                     }
 
-
                     if (current_view === 'galaxy' && play_sounds && sound_engine && !sound_engine.isPlaying) {
                         sound_engine.play();
                     }
-
 
                     if (players[i].sprite.y === players[i].destination_y && players[i].sprite.x === players[i].destination_x) {
                         players[i].destination_x = false;

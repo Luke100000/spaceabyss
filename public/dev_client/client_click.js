@@ -42,8 +42,8 @@ function submitAutopilotDestination() {
 
     socket.emit('autopilot_destination', { 'destination_tile_x': destination_tile_x, 'destination_tile_y': destination_tile_y });
 
-    $('#click_menu').empty();
-    $('#click_menu').hide();
+    sel_click_menu.empty();
+    sel_click_menu.hide();
 }
 
 function submitChatMessage() {
@@ -184,8 +184,8 @@ $(document).on('click', 'button', function () {
         let planet_coord_id = $("#" + clicked_id).attr('planet_coord_id');
 
         socket.emit('add_to_area_data', { 'area_id': area_id, 'planet_coord_id': planet_coord_id });
-        $('#click_menu').empty();
-        $('#click_menu').hide();
+        sel_click_menu.empty();
+        sel_click_menu.hide();
     }
 
     // Assemble objects. Depending on the class of the object type, we might need to send in the tile_x and tile_y values
@@ -209,8 +209,8 @@ $(document).on('click', 'button', function () {
             socket.emit("assemble_data", { 'object_type_id': assembling_object_type_id});
         }
 
-        $('#click_menu').empty();
-        $('#click_menu').hide();
+        sel_click_menu.empty();
+        sel_click_menu.hide();
 
     }
 
@@ -232,8 +232,8 @@ $(document).on('click', 'button', function () {
             socket.emit("assemble_data", {floor_type_id: split_name[1], 'being_assembled_in_object_id': being_assembled_in_object_id});
         }
 
-        $('#click_menu').empty();
-        $('#click_menu').hide();
+        sel_click_menu.empty();
+        sel_click_menu.hide();
 
     }
 
@@ -269,8 +269,8 @@ $(document).on('click', 'button', function () {
             socket.emit("attack_data", { player_id: $('#' + clicked_id).attr('player_id') });
         }
 
-        $('#click_menu').empty();
-        $('#click_menu').hide();
+        sel_click_menu.empty();
+        sel_click_menu.hide();
     }
 
 
@@ -298,8 +298,8 @@ $(document).on('click', 'button', function () {
             socket.emit("attack_stop_data", { player_id: $('#' + clicked_id).attr('player_id') });
         }
 
-        $('#click_menu').empty();
-        $('#click_menu').hide();
+        sel_click_menu.empty();
+        sel_click_menu.hide();
     }
 
 
@@ -312,8 +312,8 @@ $(document).on('click', 'button', function () {
         // split_name[1] is populated by the actual ID of the inventory spot in our database
         socket.emit("build_data", { inventory_item_id: split_name[1], x: clicked_x, y: clicked_y});
 
-        $('#click_menu').empty();
-        $('#click_menu').hide();
+        sel_click_menu.empty();
+        sel_click_menu.hide();
     }
 
 
@@ -331,8 +331,8 @@ $(document).on('click', 'button', function () {
             socket.emit('buy_data', { object_type_id: object_type_id });
         }
 
-        $('#click_menu').empty();
-        $('#click_menu').hide();
+        sel_click_menu.empty();
+        sel_click_menu.hide();
     }
 
 
@@ -348,8 +348,8 @@ $(document).on('click', 'button', function () {
         console.log("Player is claiming ship id: " + split_name[1]);
         socket.emit('claim_ship_data', { 'ship_id': split_name[1] });
 
-        $('#click_menu').empty();
-        $('#click_menu').hide();
+        sel_click_menu.empty();
+        sel_click_menu.hide();
     }
 
     if(split_name[0] == 'clear') {
@@ -377,8 +377,8 @@ $(document).on('click', 'button', function () {
         }
 
 
-        $('#click_menu').empty();
-        $('#click_menu').hide();
+        sel_click_menu.empty();
+        sel_click_menu.hide();
     }
 
     // Toggle debug mode
@@ -444,8 +444,8 @@ $(document).on('click', 'button', function () {
 
 
 
-        $('#click_menu').empty();
-        $('#click_menu').hide();
+        sel_click_menu.empty();
+        sel_click_menu.hide();
 
     }
 
@@ -458,8 +458,8 @@ $(document).on('click', 'button', function () {
         console.log("Sending dock_command_data with ship id: " + split_name[1]);
         socket.emit('dock_command_data', { 'ship_id': split_name[1] });
 
-        $('#click_menu').empty();
-        $('#click_menu').hide();
+        sel_click_menu.empty();
+        sel_click_menu.hide();
     }
 
     if(split_name[0] == 'drop') {
@@ -474,14 +474,14 @@ $(document).on('click', 'button', function () {
         socket.emit("drop_data", {inventory_item_id: split_name[1], 'x': clicked_x, 'y':clicked_y,
             'amount': amount });
 
-        $('#click_menu').empty();
-        $('#click_menu').hide();
+        sel_click_menu.empty();
+        sel_click_menu.hide();
     }
 
     if(split_name[0] == 'eat') {
         socket.emit("eat_data", { inventory_item_id: split_name[1]});
-        $('#click_menu').empty();
-        $('#click_menu').hide();
+        sel_click_menu.empty();
+        sel_click_menu.hide();
     }
 
     if(split_name[0] === 'equip') {
@@ -493,8 +493,8 @@ $(document).on('click', 'button', function () {
 
         socket.emit("equip_data", { 'inventory_item_id': inventory_item_id, 'equip_slot': equip_slot });
 
-        $('#click_menu').empty();
-        $('#click_menu').hide();
+        sel_click_menu.empty();
+        sel_click_menu.hide();
     }
 
 
@@ -513,26 +513,26 @@ $(document).on('click', 'button', function () {
 
         socket.emit('give_data', { 'npc_id': $('#' + clicked_id).attr('npc_id'), 'inventory_item_id': $('#' + clicked_id).attr('inventory_item_id') });
 
-        $('#click_menu').empty();
-        $('#click_menu').hide();
+        sel_click_menu.empty();
+        sel_click_menu.hide();
     }
 
 
     if(split_name[0] === 'help') {
 
-        $('#click_menu').css({
+        sel_click_menu.css({
             'top': 250, 'left': 250, 'position': 'absolute', 'max-height': '400px', 'max-width': '640px',
             'overflow-y': 'scroll', 'overflow-x': 'scroll', 'padding': '10px'
         }).fadeIn('fast');
     
-        $('#click_menu').empty();
+        sel_click_menu.empty();
 
 
 
-        $('#click_menu').append("<a target='_blank' class='button is-success is-small' href='/site/tutorial'>View Our Tutorial!</a><br>");
+        sel_click_menu.append("<a target='_blank' class='button is-success is-small' href='/site/tutorial'>View Our Tutorial!</a><br>");
         if(client_player_index !== -1 && players[client_player_index]) {
             console.log("showing report");
-            $('#click_menu').append("<a target='_blank' class='button is-info is-small' href='/player/view/" + players[client_player_index].id + "'>Report A Problem</a><br>");
+            sel_click_menu.append("<a target='_blank' class='button is-info is-small' href='/player/view/" + players[client_player_index].id + "'>Report A Problem</a><br>");
         } else {
             console.log("not showing report");
         }
@@ -543,32 +543,32 @@ $(document).on('click', 'button', function () {
 
             if(recent_failure_messages[i]) {
 
-                $('#click_menu').append("<span class='error-message'>Error: " + recent_failure_messages[i].text + "</span><br>");
+                sel_click_menu.append("<span class='error-message'>Error: " + recent_failure_messages[i].text + "</span><br>");
 
                 if(recent_failure_messages[i].text === 'Your beam mangled up something advanced') {
-                    $('#click_menu').append("<a target='_blank' class='button is-small' href='/site/tutorial/salvaging'>Salvaging Tutorial</a> This object has some complex/advanced salvage opportunities. " + 
+                    sel_click_menu.append("<a target='_blank' class='button is-small' href='/site/tutorial/salvaging'>Salvaging Tutorial</a> This object has some complex/advanced salvage opportunities. " + 
                         "As your salvaging levels up, you'll succeed more often here. <a target='_blank' class='button is-small' href='/site/tutorial/complexity'>Complexity</a>");
                 }
 
                 if(recent_failure_messages[i].text === 'Ship Has No Floor Space') {
-                    $('#click_menu').append("<a target='_blank' class='button is-small' href='/site/tutorial/mining'>Mining Tutorial</a> By default, the things your ship " + 
+                    sel_click_menu.append("<a target='_blank' class='button is-small' href='/site/tutorial/mining'>Mining Tutorial</a> By default, the things your ship " + 
                     "mines and salvages are put on random floor tiles on your ship. Build a Bulk Container for most things, or an Ice Container for ice specifically, and your " + 
                     "ship will automatically store mined/salvaged materials in it.<br><br>You can always just switch to your ship view and pick things up as they are mined/salvaged too.");
                 }
 
                 if(recent_failure_messages[i].text === 'Your beam is a bit weak') {
-                    $('#click_menu').append("<a target='_blank' class='button is-small' href='/site/tutorial/mining'>Mining Tutorial</a> This object has some complex/advanced mining opportunities. " + 
+                    sel_click_menu.append("<a target='_blank' class='button is-small' href='/site/tutorial/mining'>Mining Tutorial</a> This object has some complex/advanced mining opportunities. " + 
                         "As your mining levels up, you'll succeed more often here. <a target='_blank' class='button is-small' href='/site/tutorial/complexity'>Complexity</a>");
                 }
 
                 if(recent_failure_messages[i].text.includes('Assembling') && recent_failure_messages[i].text.includes('Failed')) {
-                    $('#click_menu').append("<a target='_blank' class='button is-small' href='/site/tutorial/manufacturing'>Manufacturing Tutorial</a> The object that you " + 
+                    sel_click_menu.append("<a target='_blank' class='button is-small' href='/site/tutorial/manufacturing'>Manufacturing Tutorial</a> The object that you " + 
                     " tried to make has a higher <a target='_blank' class='button is-small' href='/site/tutorial/complexity'>complexity</a> than your manufacturing skill." + 
                     " keep manufacturing things, and your level will increase, making difficult things easier.");
                 }
 
 
-                $('#click_menu').append("<br><br>");
+                sel_click_menu.append("<br><br>");
             }
 
         }
@@ -643,8 +643,8 @@ $(document).on('click', 'button', function () {
     if(split_name[0] === 'manage' && split_name[1] && split_name[1] === 'areas') {
 
         toggleAreaManagementDisplay();
-        $('#click_menu').empty();
-        $('#click_menu').hide();
+        sel_click_menu.empty();
+        sel_click_menu.hide();
 
     } else if(split_name[0] === 'manage') {
 
@@ -671,8 +671,8 @@ $(document).on('click', 'button', function () {
                 if(object_types[object_type_index].id === 72) {
 
                     toggleAiManagementDisplay(object_index);
-                    $('#click_menu').empty();
-                    $('#click_menu').hide();
+                    sel_click_menu.empty();
+                    sel_click_menu.hide();
 
                     shown_specific = true;
                 } else if(object_types[object_type_index].is_ship) {
@@ -737,8 +737,8 @@ $(document).on('click', 'button', function () {
 
         socket.emit('mine_data', { 'object_id': $('#' + clicked_id).attr('object_id')});
 
-        $('#click_menu').empty();
-        $('#click_menu').hide();
+        sel_click_menu.empty();
+        sel_click_menu.hide();
 
     }
 
@@ -783,27 +783,27 @@ $(document).on('click', 'button', function () {
 
 
 
-        $('#click_menu').empty();
-        $('#click_menu').hide();
+        sel_click_menu.empty();
+        sel_click_menu.hide();
 
     }
 
     if(split_name[0] === "movedownhole") {
         socket.emit('move_data', { 'destination_coord_type': client_player_info.scope, 'destination_coord_id': client_player_info.coord.id, 'movement_direction': 'none' });
-        $('#click_menu').empty();
-        $('#click_menu').hide();
+        sel_click_menu.empty();
+        sel_click_menu.hide();
     }
 
     if(split_name[0] === "moveportal") {
         socket.emit('move_data', { 'destination_coord_type': client_player_info.scope, 'destination_coord_id': client_player_info.coord.id, 'movement_direction': 'none' });
-        $('#click_menu').empty();
-        $('#click_menu').hide();
+        sel_click_menu.empty();
+        sel_click_menu.hide();
     }
 
     if(split_name[0] === "moveupstairs") {
         socket.emit('move_data', { 'destination_coord_type': client_player_info.scope, 'destination_coord_id': client_player_info.coord.id, 'movement_direction': 'none' });
-        $('#click_menu').empty();
-        $('#click_menu').hide();
+        sel_click_menu.empty();
+        sel_click_menu.hide();
     }
 
 
@@ -851,8 +851,8 @@ $(document).on('click', 'button', function () {
         }
 
 
-        $('#click_menu').empty();
-        $('#click_menu').hide();
+        sel_click_menu.empty();
+        sel_click_menu.hide();
 
     }
 
@@ -868,8 +868,8 @@ $(document).on('click', 'button', function () {
         socket.emit('place_data', { inventory_item_id: inventory_item_id, storage_object_id: storage_object_id,
             'amount': amount });
 
-        $('#click_menu').empty();
-        $('#click_menu').hide();
+        sel_click_menu.empty();
+        sel_click_menu.hide();
     }
 
 
@@ -892,8 +892,8 @@ $(document).on('click', 'button', function () {
 
         
 
-        $('#click_menu').empty();
-        $('#click_menu').hide();
+        sel_click_menu.empty();
+        sel_click_menu.hide();
     }
 
     if(split_name[0] == 'playerdata') {
@@ -907,8 +907,8 @@ $(document).on('click', 'button', function () {
 
         socket.emit("replace_floor_data", { inventory_item_id: split_name[1], x: clicked_x, y: clicked_y});
 
-        $('#click_menu').empty();
-        $('#click_menu').hide();
+        sel_click_menu.empty();
+        sel_click_menu.hide();
     }
 
     if(split_name[0] == 'replaceshipwall') {
@@ -919,8 +919,8 @@ $(document).on('click', 'button', function () {
 
         socket.emit("replace_ship_wall_data", { inventory_item_id: inventory_item_id, ship_coord_id: ship_coord_id });
 
-        $('#click_menu').empty();
-        $('#click_menu').hide();
+        sel_click_menu.empty();
+        sel_click_menu.hide();
     }
 
 
@@ -929,8 +929,8 @@ $(document).on('click', 'button', function () {
         let coord_id = $('#' + clicked_id).attr('coord_id');
         socket.emit('repair_data', { coord_id: coord_id });
 
-        $('#click_menu').empty();
-        $('#click_menu').hide();
+        sel_click_menu.empty();
+        sel_click_menu.hide();
     }
 
     if(split_name[0] === 'repairstop') {
@@ -938,8 +938,8 @@ $(document).on('click', 'button', function () {
         let coord_id = $('#' + clicked_id).attr('coord_id');
         socket.emit('repair_stop_data', { coord_id: coord_id });
 
-        $('#click_menu').empty();
-        $('#click_menu').hide();
+        sel_click_menu.empty();
+        sel_click_menu.hide();
     }
 
     if(split_name[0] == 'research') {
@@ -952,8 +952,8 @@ $(document).on('click', 'button', function () {
         //console.log("Sending research data. inventory_id: " + split_name[1] + " in object id: " + clicked_object_id);
         socket.emit("research_data", {inventory_item_id: split_name[1], 'researching_object_id': clicked_object_id });
 
-        $('#click_menu').empty();
-        $('#click_menu').hide();
+        sel_click_menu.empty();
+        sel_click_menu.hide();
     }
 
     if(split_name[0] === 'salvage') {
@@ -977,8 +977,8 @@ $(document).on('click', 'button', function () {
 
         
 
-        $('#click_menu').empty();
-        $('#click_menu').hide();
+        sel_click_menu.empty();
+        sel_click_menu.hide();
 
     }
 
@@ -988,8 +988,8 @@ $(document).on('click', 'button', function () {
         socket.emit('salvage_stop_data', { 'salvaging_linker_id': $('#' + clicked_id).attr('salvaging_linker_id')});
 
 
-        $('#click_menu').empty();
-        $('#click_menu').hide();
+        sel_click_menu.empty();
+        sel_click_menu.hide();
 
     }
 
@@ -1045,12 +1045,12 @@ $(document).on('click', 'button', function () {
         let top = $('#' + clicked_id).attr('top');
         let left = $('#' + clicked_id).attr('left');
 
-        $('#click_menu').css({
+        sel_click_menu.css({
             'top': top, 'left': left, 'position':'absolute', 'height':'200px', 'max-width': '600px',
             'overflow-y':'scroll', 'overflow-x': 'scroll', 'padding':'10px'
         }).fadeIn('fast');
 
-        $('#click_menu').empty();
+        sel_click_menu.empty();
 
         // Lets do a form to let the player give the server an x,y destination
         let html_string = "";
@@ -1061,7 +1061,7 @@ $(document).on('click', 'button', function () {
         html_string += "<input class='button is-default' onclick=\"submitAutopilotDestination(); return false;\" type=\"submit\" value=\"Submit Destination\">";
         html_string += "</form>";
 
-        $('#click_menu').append(html_string);
+        sel_click_menu.append(html_string);
 
 
     }
@@ -1257,15 +1257,15 @@ $(document).on('click', 'button', function () {
         socket.emit('switch_body_data', { 'object_id': split_name[1], 'move_inventory': move_inventory });
 
 
-        $('#click_menu').empty();
-        $('#click_menu').hide();
+        sel_click_menu.empty();
+        sel_click_menu.hide();
     }
 
     if(split_name[0] === 'switchship') {
         socket.emit('switch_ship_data', { 'ship_id': split_name[1] });
 
-        $('#click_menu').empty();
-        $('#click_menu').hide();
+        sel_click_menu.empty();
+        sel_click_menu.hide();
     }
 
     if(split_name[0] === 'take') {
@@ -1283,8 +1283,8 @@ $(document).on('click', 'button', function () {
         //console.log("Sending that player is taking inventory item id: " + inventory_item_id);
 
         if(!shiftKey.isDown) {
-            $('#click_menu').empty();
-            $('#click_menu').hide();
+            sel_click_menu.empty();
+            sel_click_menu.hide();
         } else {
             console.log("Took from something while holding shift. Lets update that display now....");
             let storage_object_id = $('#' + clicked_id).attr('storage_object_id');
@@ -1293,7 +1293,7 @@ $(document).on('click', 'button', function () {
                 let storage_object_index = getObjectIndex(storage_object_id);
                 let object_info = getObjectInfo(storage_object_index);
                 if(object_info.coord) {
-                    $('#click_menu').empty();
+                    sel_click_menu.empty();
                     showClickMenuObject(object_info.coord);
                 }
                 
@@ -1308,8 +1308,8 @@ $(document).on('click', 'button', function () {
     // The player wants to dock at The Great Nomad after understanding the risks
     if(split_name[0] === 'thegreatnomad') {
 
-        $('#click_menu').empty();
-        $('#click_menu').hide();
+        sel_click_menu.empty();
+        sel_click_menu.hide();
 
         //document.cookie = "thegreatnomad=1";
         localStorage.setItem('allowthegreatnomad', true);
@@ -1325,8 +1325,8 @@ $(document).on('click', 'button', function () {
     if(split_name[0] == 'trash') {
 
         socket.emit("trash_data", {inventory_item_id: split_name[1] });
-        $('#click_menu').empty();
-        $('#click_menu').hide();
+        sel_click_menu.empty();
+        sel_click_menu.hide();
     }
 
     if(split_name[0] == 'unequip') {

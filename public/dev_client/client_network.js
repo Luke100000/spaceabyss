@@ -1077,6 +1077,7 @@ socket.on('login_data', function(data) {
         console.log("%c We are logged in and set our starting view to: " + current_view, log_success);
         player_id = parseInt(data.player_id);
         client_player_id = parseInt(data.player_id);
+
         $("#login_container").hide();
         $("#chat_container").show();
         switchChat("global");
@@ -1151,7 +1152,6 @@ socket.on('login_data', function(data) {
 
             //console.log("Calling generateAirlockDisplay 2");
             generateAirlockDisplay();
-
         }
 
         generateEquipmentDisplay();
@@ -1747,7 +1747,7 @@ socket.on('npc_info', function(data) {
                 console.log("redrawing bars due to npc hp");
                 redrawBars();
             }
-        } 
+        }
 
     } else {
 
@@ -1766,18 +1766,13 @@ socket.on('npc_info', function(data) {
                 shouldDraw(client_player_info.coord, planet_coords[old_planet_coord_index], 'npc_info')) {
                 //console.log("Monster is on a new planet coord id. old: " + npcs[npc_index].planet_coord_id +
 
-
                 let new_planet_coord_index = planet_coords.findIndex(function(obj) { return obj && obj.id === data.npc.planet_coord_id; });
 
                 if(new_planet_coord_index !== -1) {
-
                     createNpcSprite(npc_index);
                     //console.log("Got that monster id : " + npcs[npc_index].id + " moved");
                     moveNpcFlow(npc_index, planet_coords[new_planet_coord_index]);
-
-
                 }
-
             }
         }
 
@@ -1844,18 +1839,11 @@ socket.on('npc_info', function(data) {
             npcs[npc_index].destination_x = false;
             npcs[npc_index].destination_y = false;
         }
-
-
-
     }
-
-
 });
 
 
 socket.on('object_info', function(data) {
-
-
     //console.log("Received object_info for object id: " + data.object.id);
 
     if(data.remove ) {
@@ -1897,7 +1885,6 @@ socket.on('object_info', function(data) {
 
         }
 
-
         // If there are any effects associated with this, remove them
         for(let i = 0; i < effect_sprites.length; i++) {
 
@@ -1909,14 +1896,12 @@ socket.on('object_info', function(data) {
             }
         }
 
-
         // If there are any equipment linkers with this, remove them
         for(let i = 0; i < equipment_linkers.length; i++) {
             if(equipment_linkers[i] && equipment_linkers[i].object_id === data.object.id) {
                 delete equipment_linkers[i];
             }
         }
-    
 
         // If there are any inventory items with this, remove them
         for(let i = 0; i < inventory_items.length; i++) {
@@ -1925,9 +1910,7 @@ socket.on('object_info', function(data) {
             }
         }
 
-
         return;
-
     }
 
 
