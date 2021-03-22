@@ -10564,14 +10564,14 @@ function showClickMenuObject(coord) {
 
                     //all
                     if (inventory_item.amount > 1) {
-                        put_in_string += "<button  id='place_" +
+                        put_in_string += "<button id='place_" +
                             inventory_item.id + "_all' class='button is-default is-small' storage_object_id='" + objects[object_index].id + "' " +
                             " inventory_item_id='" + inventory_item.id + "' amount='all'>All</button>";
                     }
 
                     //10
                     if (inventory_item.amount >= 10) {
-                        put_in_string += "<button  id='place_" +
+                        put_in_string += "<button id='place_" +
                             inventory_item.id + "_10' class='button is-default is-small' storage_object_id='" + objects[object_index].id + "' " +
                             " inventory_item_id='" + inventory_item.id + "' amount='10'>10</button>";
                     }

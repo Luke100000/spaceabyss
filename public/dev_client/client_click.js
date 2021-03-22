@@ -158,16 +158,12 @@ function submitShipName(ship_id) {
 
 $(document).on('click', 'button', function () {
     //console.log("Clicked button");
-    var clicked_id = this.id;
-    var clicked_x = false;
-    var clicked_y = false;
+    const clicked_id = this.id;
+    let clicked_x = false;
+    let clicked_y = false;
 
-    var split_name = clicked_id.split("_");
+    const split_name = clicked_id.split("_");
     //console.log("Got click on action: " + split_name[0] + " id: " + split_name[1]);
-
-    if(split_name.length == 3) {
-
-    }
 
     if(split_name[0] === 'activatetasks') {
         localStorage.setItem('use_tasks', true);
@@ -215,7 +211,7 @@ $(document).on('click', 'button', function () {
     }
 
 
-    if(split_name[0] == 'assemblefloor') {
+    if(split_name[0] === 'assemblefloor') {
         console.log("Have assemblefloor click");
 
         var clicked_tile_x = false;
@@ -303,7 +299,6 @@ $(document).on('click', 'button', function () {
     }
 
 
-
     if(split_name[0] === "build") {
         let clicked_x = $('#' + clicked_id).attr('x');
         let clicked_y = $('#' + clicked_id).attr('y');
@@ -318,7 +313,6 @@ $(document).on('click', 'button', function () {
 
 
     if(split_name[0] === 'buy') {
-
         if($('#' + clicked_id).attr('inventory_item_id')) {
             let inventory_item_id = $('#' + clicked_id).attr('inventory_item_id');
             socket.emit('buy_data', { inventory_item_id: inventory_item_id });
@@ -336,12 +330,8 @@ $(document).on('click', 'button', function () {
     }
 
 
-    if(split_name[0] == 'chatswitch') {
-
-
+    if(split_name[0] === 'chatswitch') {
         switchChat(split_name[1]);
-
-
     }
 
     if(split_name[0] === 'claimship') {
@@ -352,7 +342,7 @@ $(document).on('click', 'button', function () {
         sel_click_menu.hide();
     }
 
-    if(split_name[0] == 'clear') {
+    if(split_name[0] === 'clear') {
         resetMap();
     }
 
@@ -383,7 +373,6 @@ $(document).on('click', 'button', function () {
 
     // Toggle debug mode
     if(split_name[0] === 'debug') {
-
         console.log("debug mode click");
 
         $('#debug_mode').empty();
@@ -394,8 +383,6 @@ $(document).on('click', 'button', function () {
 
         // localStorage only actually stores values as strings 
         if(current_debug_status === null || current_debug_status === false || current_debug_status === "false") {
-
-
             $('#debug_mode').append("Debug Mode True");
             $('#debug_mode').append("<button id=\"debug_mode\">Toggle Debug Mode</button>");
 
@@ -404,17 +391,14 @@ $(document).on('click', 'button', function () {
 
             console.log("Set debug_mode to true");
         } else {
-
             localStorage.setItem("debug", false);
             debug_mode = false;
-
 
             $('#debug_mode').append("Debug Mode False");
             $('#debug_mode').append("<button id=\"debug_mode\">Toggle Debug Mode</button>");
             console.log("Set debug_mode to false");
         }
     }
-
 
 
     if(split_name[0] === 'deleterule') {
@@ -424,7 +408,6 @@ $(document).on('click', 'button', function () {
     }
 
     if(split_name[0] === 'destroy') {
-
         if($('#' + clicked_id).attr('object_id')) {
             socket.emit("destroy_data", { object_id: $('#' + clicked_id).attr('object_id') });
         }
@@ -440,9 +423,6 @@ $(document).on('click', 'button', function () {
         if($('#' + clicked_id).attr('coord_id')) {
             socket.emit("destroy_data", { coord_id: $('#' + clicked_id).attr('coord_id') });
         }
-
-
-
 
         sel_click_menu.empty();
         sel_click_menu.hide();
@@ -498,7 +478,7 @@ $(document).on('click', 'button', function () {
     }
 
 
-    if(split_name[0] == 'give') {
+    if(split_name[0] === 'give') {
         console.log("Parsing give data");
 
         var giving_to_player_id = $('#' + clicked_id).attr('player_id');
@@ -526,7 +506,6 @@ $(document).on('click', 'button', function () {
         }).fadeIn('fast');
     
         sel_click_menu.empty();
-
 
 
         sel_click_menu.append("<a target='_blank' class='button is-success is-small' href='/site/tutorial'>View Our Tutorial!</a><br>");
@@ -567,13 +546,9 @@ $(document).on('click', 'button', function () {
                     " keep manufacturing things, and your level will increase, making difficult things easier.");
                 }
 
-
                 sel_click_menu.append("<br><br>");
             }
-
         }
-
-
     }
 
     if(split_name[0] === 'hidearea') {
@@ -637,21 +612,13 @@ $(document).on('click', 'button', function () {
         console.log("Player clicked to leave their faction");
 
         socket.emit('leave_faction_data', {});
-
     }
 
     if(split_name[0] === 'manage' && split_name[1] && split_name[1] === 'areas') {
-
         toggleAreaManagementDisplay();
         sel_click_menu.empty();
         sel_click_menu.hide();
-
     } else if(split_name[0] === 'manage') {
-
-
-
-
-
         console.log("Clicked on div with id: " + clicked_id);
 
         // We can highlight the div of the object we are choosing to manage
@@ -709,20 +676,12 @@ $(document).on('click', 'button', function () {
         }
 
         if(!shown_specific) {
-
             if(object_index !== -1) {
                 toggleManagementDisplay(object_index);
             } else {
                 toggleManagementDisplay();
             }
-
-
         }
-
-
-
-
-
     }
 
     if(split_name[0] === 'messages') {
@@ -739,7 +698,6 @@ $(document).on('click', 'button', function () {
 
         sel_click_menu.empty();
         sel_click_menu.hide();
-
     }
 
     if(split_name[0] === 'minestop') {
@@ -768,24 +726,18 @@ $(document).on('click', 'button', function () {
             }
 
             for(let e = 0; e < effect_sprites.length; e++) {
-
                 if(effect_sprites[e] && effect_sprites[e].visible && effect_sprites[e].object_id === stop_mining_object_id && 
-                    effect_sprites[e].damage_source_type === 'player' && effect_sprites[e].damage_source_id === players[client_player_index].id) {
-                        effect_sprites[e].object_id = false;
-                        effect_sprites[e].setVisible(false);
-                    }
-
+                effect_sprites[e].damage_source_type === 'player' && effect_sprites[e].damage_source_id === players[client_player_index].id) {
+                    effect_sprites[e].object_id = false;
+                    effect_sprites[e].setVisible(false);
+                }
             }
            
             redrawBars();
         }
 
-
-
-
         sel_click_menu.empty();
         sel_click_menu.hide();
-
     }
 
     if(split_name[0] === "movedownhole") {
@@ -814,17 +766,14 @@ $(document).on('click', 'button', function () {
 
         if(current_notify_status === null || current_notify_status === false || current_notify_status === "false") {
 
-
             $('#notify_on_new_player').append("Notify on new player True");
             $('#notify_on_new_player').append("<button id=\"notifynewplayer\">Change to False</button>");
 
             localStorage.setItem("notify_on_new_player", true);
             notify_on_new_player = true;
         } else {
-
             localStorage.setItem("notify_on_new_player", false);
             notify_on_new_player = false;
-
 
             $('#notify_on_new_player').append("Notify on new player False");
             $('#notify_on_new_player').append("<button id=\"notifynewplayer\">Change to True</button>");
@@ -833,9 +782,7 @@ $(document).on('click', 'button', function () {
 
 
     if(split_name[0] === "pickup") {
-
         console.log("Got pickup click");
-
 
         if($('#' + clicked_id).attr('object_id')) {
             socket.emit("pick_up_data", { 'object_id': $('#' + clicked_id).attr('object_id') });
@@ -850,11 +797,10 @@ $(document).on('click', 'button', function () {
             socket.emit("pick_up_data", { 'coord_id': $('#' + clicked_id).attr('coord_id') });
         }
 
-
         sel_click_menu.empty();
         sel_click_menu.hide();
-
     }
+
 
     if(split_name[0] === 'place') {
         console.log("Got place data");
@@ -863,20 +809,20 @@ $(document).on('click', 'button', function () {
         let storage_object_id = $('#' + clicked_id).attr('storage_object_id');
         let amount = $('#' + clicked_id).attr('amount');
 
-
-
         socket.emit('place_data', { inventory_item_id: inventory_item_id, storage_object_id: storage_object_id,
             'amount': amount });
 
-        sel_click_menu.empty();
-        sel_click_menu.hide();
+        if(!shiftKey.isDown) {
+            sel_click_menu.empty();
+            sel_click_menu.hide();
+        }
     }
 
 
-    if(split_name[0] == 'plant') {
-
+    if(split_name[0] === 'plant') {
         console.log("Got plant data");
         console.log("Got clicked_id as " + clicked_id);
+
         let clicked_x = $('#' + clicked_id).attr('x');
         let clicked_y = $('#' + clicked_id).attr('y');
         let planet_coord_id = 0;
@@ -889,19 +835,16 @@ $(document).on('click', 'button', function () {
             socket.emit("plant_data", {inventory_item_id: split_name[1], ship_coord_id, ship_coord_id });
         }
 
-
-        
-
         sel_click_menu.empty();
         sel_click_menu.hide();
     }
 
-    if(split_name[0] == 'playerdata') {
+    if(split_name[0] === 'playerdata') {
         console.log("Asking for updated player data");
         socket.emit('request_player_data');
     }
 
-    if(split_name[0] == 'replacefloor') {
+    if(split_name[0] === 'replacefloor') {
         let clicked_x = $('#' + clicked_id).attr('x');
         let clicked_y = $('#' + clicked_id).attr('y');
 
@@ -911,7 +854,7 @@ $(document).on('click', 'button', function () {
         sel_click_menu.hide();
     }
 
-    if(split_name[0] == 'replaceshipwall') {
+    if(split_name[0] === 'replaceshipwall') {
         let inventory_item_id = $('#' + clicked_id).attr('inventory_item_id');
         let ship_coord_id = $('#' + clicked_id).attr('ship_coord_id');
 
@@ -942,12 +885,11 @@ $(document).on('click', 'button', function () {
         sel_click_menu.hide();
     }
 
-    if(split_name[0] == 'research') {
+    if(split_name[0] === 'research') {
         //console.log("Got research click");
         //console.log("Got clicked_id as " + clicked_id);
 
         let clicked_object_id = $('#' + clicked_id).attr('object_id');
-
 
         //console.log("Sending research data. inventory_id: " + split_name[1] + " in object id: " + clicked_object_id);
         socket.emit("research_data", {inventory_item_id: split_name[1], 'researching_object_id': clicked_object_id });
@@ -957,7 +899,6 @@ $(document).on('click', 'button', function () {
     }
 
     if(split_name[0] === 'salvage') {
-
         // Salvaging an object
         if($('#' + clicked_id).attr('object_id')) {
             let sending_object_id = $('#' + clicked_id).attr('object_id');
@@ -965,6 +906,7 @@ $(document).on('click', 'button', function () {
             
             socket.emit('salvage_data', { 'object_id': sending_object_id });
         }
+
         // Salvaging an object type from a coord
         else if($('#' + clicked_id).attr('coord_id')) {
 
@@ -973,13 +915,9 @@ $(document).on('click', 'button', function () {
             //console.log("Sending salvage request with coord id: " + sending_coord_id + ", coord_type: " + sending_coord_type);
             socket.emit('salvage_data', { 'coord_id': sending_coord_id, 'coord_type': sending_coord_type });
         }
-        
-
-        
 
         sel_click_menu.empty();
         sel_click_menu.hide();
-
     }
 
     if(split_name[0] === 'salvagestop') {
@@ -987,47 +925,34 @@ $(document).on('click', 'button', function () {
 
         socket.emit('salvage_stop_data', { 'salvaging_linker_id': $('#' + clicked_id).attr('salvaging_linker_id')});
 
-
         sel_click_menu.empty();
         sel_click_menu.hide();
-
     }
 
     if(split_name[0] === 'showaioptions') {
-
         if($("#ai_management").is(":visible")) {
             $("#ai_management").hide();
             $("#ai_management").empty();
-
-
         } else {
             $('#ai_management').show();
             generateAiManagementDisplay();
         }
-
-
     }
 
     if(split_name[0] === 'showareaoptions') {
-
         if($("#area_management").is(":visible")) {
             $("#area_management").hide();
             $("#area_management").empty();
-
-
         } else {
             $('#area_management').show();
             generateAreaManagementDisplay();
         }
-
-
     }
 
     if(split_name[0] === 'showarea') {
         console.log("Got showarea click");
 
         let area_id = $('#' + clicked_id).attr('area_id');
-
 
         generateAreaDisplay(area_id);
 
@@ -1041,7 +966,6 @@ $(document).on('click', 'button', function () {
     }
 
     if(split_name[0] === 'showautopilot') {
-
         let top = $('#' + clicked_id).attr('top');
         let left = $('#' + clicked_id).attr('left');
 
@@ -1062,8 +986,6 @@ $(document).on('click', 'button', function () {
         html_string += "</form>";
 
         sel_click_menu.append(html_string);
-
-
     }
 
     if(split_name[0] === 'showdiscoveries') {
@@ -1086,7 +1008,6 @@ $(document).on('click', 'button', function () {
 
         let market_linker_id = $('#' + clicked_id).attr('market_linker_id');
 
-
         generateMarketLinkerDisplay(market_linker_id);
 
         // and we want to replace the show button with a hide  button
@@ -1097,30 +1018,21 @@ $(document).on('click', 'button', function () {
     }
 
     if(split_name[0] === 'showmarketoptions') {
-
         if($("#market").is(":visible")) {
             $("#market").hide();
             $("#market").empty();
-
-
         } else {
             $('#market').show();
             generateMarketDisplay();
 
-
             socket.emit('request_market_data');
-
-
         }
-
-
     }
 
     if(split_name[0] === 'showobject') {
         console.log("Got showobject click");
 
         let object_id = $('#' + clicked_id).attr('object_id');
-
 
         generateObjectDisplay(object_id);
 
@@ -1134,7 +1046,6 @@ $(document).on('click', 'button', function () {
     }
 
     if(split_name[0] === 'showobjectoptions') {
-
         if($("#object_management").is(":visible")) {
             $("#object_management").hide();
             $("#object_management").empty();
@@ -1144,12 +1055,9 @@ $(document).on('click', 'button', function () {
             $('#object_management').show();
             generateNonAiManagementDisplay();
         }
-
-
     }
 
     if(split_name[0] === 'showshipoptions') {
-
         if($("#ship_management").is(":visible")) {
             $("#ship_management").hide();
             $("#ship_management").empty();
@@ -1159,23 +1067,16 @@ $(document).on('click', 'button', function () {
             $('#ship_management').show();
             generateShipManagementDisplay();
         }
-
-
     }
 
     if(split_name[0] === 'showtaskoptions') {
-
         if($("#task_management").is(":visible")) {
             $("#task_management").hide();
             $("#task_management").empty();
-
-
         } else {
             $('#task_management').show();
             generateTaskDisplay();
         }
-
-
     }
 
 
@@ -1194,7 +1095,6 @@ $(document).on('click', 'button', function () {
 
     // Toggle debug mode
     if(split_name[0] === 'sound') {
-
         console.log("sound click");
 
         $('#sound').empty();
@@ -1207,7 +1107,6 @@ $(document).on('click', 'button', function () {
         if(play_sounds === false) {
         //if(current_sound_status === null || current_sound_status === false || current_sound_status === "false") {
 
-
             $('#sound').append("Sound ON");
             $('#sound').append("<button id=\"sound\">Toggle Sound</button>");
 
@@ -1218,14 +1117,11 @@ $(document).on('click', 'button', function () {
                 loadAudio();
                 audio_loaded = true;
             }
-            
 
             console.log("Set play_sounds to true");
         } else {
-
             localStorage.setItem("sound", false);
             play_sounds = false;
-
 
             $('#sound').append("Sound OFF");
             $('#sound').append("<button id=\"sound\">Toggle Sound</button>");
@@ -1244,8 +1140,8 @@ $(document).on('click', 'button', function () {
 
     if(split_name[0] == "spawnmonster") {
         console.log("Admin spawning monster");
-        var clicked_x = $('#' + clicked_id).attr('x');
-        var clicked_y = $('#' + clicked_id).attr('y');
+        clicked_x = $('#' + clicked_id).attr('x');
+        clicked_y = $('#' + clicked_id).attr('y');
         socket.emit("spawn_monster_data", { 'monster_type_id': split_name[1], x: clicked_x, y: clicked_y});
     }
 

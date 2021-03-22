@@ -50,13 +50,13 @@
         socket.on('connect', async () => {
             socket.emit('ready');
 
-            //phase.io might need some extra time to load its stuff
-            while (!connected) {
-                await (new Promise(resolve => setTimeout(resolve, 100)));
-            }
-
             //debug
             if (debug_username) {
+				//phase.io might need some extra time to load its stuff
+				while (!connected) {
+					await (new Promise(resolve => setTimeout(resolve, 100)));
+				}
+				
                 socket.emit('login_data', {player_name: debug_username, email: debug_email, password: debug_password});
             }
         });

@@ -2525,11 +2525,9 @@ async function loginPlayer(socket, dirty, data) {
 
 
         bcrypt.compare(trying_password, user_password_node_version, async function (err, res) {
-
             console.log("New login res: " + res);
 
             if (res === false) {
-
                 socket.emit('login_data', {'status': 'failed'});
                 return false;
             }
@@ -2982,17 +2980,13 @@ async function loginPlayer(socket, dirty, data) {
                             io.emit('spawned_event_info', {'spawned_event': dirty.spawned_events[spawned_event_index]});
                             io.emit('event_info', {'event': dirty.events[event_index]});
                         }
-
                     }
-
                 }
             }
 
             dirty.players[socket.player_index].last_login = helper.getTimestampInSeconds();
 
             dirty.players[socket.player_index].has_change = true;
-
-
         });
 
 
@@ -3000,8 +2994,6 @@ async function loginPlayer(socket, dirty, data) {
         log(chalk.red("Error in loginPlayer:" + error));
         console.error(error);
     }
-
-
 }
 
 module.exports.loginPlayer = loginPlayer;
