@@ -1905,48 +1905,38 @@ function fireCompleteCallback(animation, frame) {
 
 // We take in what the player has researched, and we show things that are assembled via things the player has researched
 function generateDiscoveryDisplay(object_type_id) {
-
-    let object_type_index = object_types.findIndex(function (obj) { return obj && obj.id === parseInt(object_type_id); });
+    let researched_object_type = object_types.find(function (obj) { return obj && obj.id === parseInt(object_type_id); });
 
     $('#discoveries').empty();
 
     let html_string = "";
     html_string += "<div class='message is-success message-inline' style='margin-top:10px;'><div class='message-body'>";
-
-    html_string += "<strong>Discoveries from researching " + object_types[object_type_index].name + ":</strong><br>";
-
+    html_string += "<strong>Discoveries from researching " + researched_object_type.name + ":</strong><br>";
 
     let can_assemble_object_types = object_types.filter(object_type => object_type.is_assembled);
 
     if (can_assemble_object_types && can_assemble_object_types.length > 0) {
-
         can_assemble_object_types.forEach(function (object_type) {
-
             // get the assembly linkers
             let assembly_linkers = object_type_assembly_linkers.filter(linker => linker.required_for_object_type_id === object_type.id);
-
             if (assembly_linkers.length === 0) {
                 return false;
             }
 
-
             let researched_all_items = true;
             let has_applicable_linker = false;
-
 
             if (player_research_linkers.length === 0) {
                 researched_all_items = false;
             }
 
             for (let assembly_linker of assembly_linkers) {
-
-                if (assembly_linker.object_type_id === object_types[object_type_index].id) {
+                if (assembly_linker.object_type_id === researched_object_type.id) {
                     has_applicable_linker = true;
                 }
 
                 let assembly_object_type = object_types.findIndex(function (obj) { return obj && obj.id === assembly_linker.object_type_id; });
                 let researched_this_item = false;
-
 
                 for (let research_linker of player_research_linkers) {
                     if (research_linker.object_type_id === assembly_linker.object_type_id
@@ -1961,8 +1951,7 @@ function generateDiscoveryDisplay(object_type_id) {
             }
 
             // It's also possible that this object type has a required_research_object_type_id
-            if (object_type.required_research_object_type_id === object_types[object_type_index].id) {
-
+            if (object_type.required_research_object_type_id === researched_object_type.id) {
                 html_string += printDiscovery(object_type, assembly_linkers);
             } else {
                 if (!researched_all_items || !has_applicable_linker) {
@@ -1970,21 +1959,15 @@ function generateDiscoveryDisplay(object_type_id) {
                 }
 
                 // show the assembly
-
                 html_string += printDiscovery(object_type, assembly_linkers);
 
                 //$('#discoveries').append(generateAssemblyListItem(object_type, object_type_assembly_linkers));
             }
-
-
-
         });
     }
 
-
     html_string += "</div></div>";
     $('#discoveries').append(html_string);
-
 }
 
 function generateEatingLinkerDisplay() {
@@ -2677,17 +2660,12 @@ function generateRelationshipDisplay() {
 
             adding_string += "</div>";
 
-
             $('#relationships').append(adding_string);
         }
-
-
-
     }
 }
 
 function generateResearchDisplay() {
-
     if (!$("#research").is(":visible")) {
         return false;
     }
@@ -2704,17 +2682,16 @@ function generateResearchDisplay() {
 
         adding_string += "<div id='player_research_linker_" + linker.id + "'>";
 
-        adding_string += object_types[research_object_type_index].name + ": Completed " + linker.researches_completed;
+        adding_string += "<b>" + object_types[research_object_type_index].name + "</b>: Completed " + linker.researches_completed;
         adding_string += "/" + object_types[research_object_type_index].research_times_required;
 
         if (linker.researches_completed >= object_types[research_object_type_index].research_times_required) {
-            adding_string += "<button class='button is-default is-small' " +
+            adding_string += " <button class='button is-default is-small' " +
                 "id='showdiscoveries_" + object_types[research_object_type_index].id + "'" +
                 " object_type_id='" + object_types[research_object_type_index].id + "'>Show Discoveries</button>";
         }
 
         adding_string += "</div>";
-
     }
 
     adding_string += "</div></div>";
@@ -4386,37 +4363,42 @@ function generateEquipmentDisplay() {
         return false;
     }
 
-    let augment_string = "";
+    let augment_string = "<br/>";
     let augment_capacity_used = 0;
-    let head_string = "";
+    let head_string = "<br/>";
     let head_capacity_used = 0;
-    let left_arm_string = "";
+    let left_arm_string = "<br/>";
     let left_arm_capacity_used = 0;
-    let body_string = "";
+    let body_string = "<br/>";
     let body_capacity_used = 0;
-    let right_arm_string = "";
+    let right_arm_string = "<br/>";
     let right_arm_capacity_used = 0;
-    let legs_string = "";
+    let legs_string = "<br/>";
     let legs_capacity_used = 0;
 
-    let equipment_layout_string = "<div style='display:flex;'>";
-    equipment_layout_string += "<div id='equipment_augment' class='player_equipment'><span class='has-text-centered'><strong>Augments</strong></span><br></div>";
+    let break_ = "<div style='flex-basis: 100%;'></div>";
+    let equipment_layout_string = ""
+    equipment_layout_string += "<div style='width=450px;'>";
+    equipment_layout_string += "<div style='display:inline-flex;justify-content:center;flex-flow:wrap;'>";
+    equipment_layout_string += "<div id='equipment_augment' class='player_equipment'><span class='has-text-centered' style='margin: auto;'><strong>Augments</strong></span><br></div>";
     equipment_layout_string += "<div id='equipment_head' class='player_equipment'><strong>Head</strong></div>";
-    equipment_layout_string += "</div><div style='display:flex;'>";
+    equipment_layout_string += break_;
     equipment_layout_string += "<div id='equipment_left_arm' class='player_equipment'><strong>Left Arm</strong></div>";
     equipment_layout_string += "<div id='equipment_body' class='player_equipment'><strong>Body</strong></div>";
     equipment_layout_string += "<div id='equipment_right_arm' class='player_equipment'><strong>Right Arm</strong></div>";
-    equipment_layout_string += "</div><div style='display:flex;'>";
+    equipment_layout_string += break_;
     equipment_layout_string += "<div id='equipment_legs' class='player_equipment'><strong>Legs</strong></div>";
-    equipment_layout_string += "</div><div style='display:flex;'>";
-    equipment_layout_string += "<div id='equipment_body_type' class='player_equipment'><strong>Body Type</strong></div>";
+    equipment_layout_string += break_;
+    equipment_layout_string += "<div id='equipment_body_type' class='player_equipment'><strong>Body Type </strong></div>";
     equipment_layout_string += "<div id='equipment_skins' class='player_equipment'><strong>Skins Purchased</strong></div>";
+    equipment_layout_string += "</div>";
     equipment_layout_string += "</div>";
 
     equipment_linkers.forEach(function (equipment_linker) {
         if (equipment_linker.body_id === players[client_player_index].body_id) {
-
-            let object_type_index = object_types.findIndex(function (obj) { return obj && obj.id === equipment_linker.object_type_id; });
+            let object_type_index = object_types.findIndex(function (obj) {
+                return obj && obj.id === equipment_linker.object_type_id;
+            });
 
             if (object_type_index === -1) {
                 console.log("Could not find object type for equipment linker");
@@ -4431,52 +4413,53 @@ function generateEquipmentDisplay() {
                 return false;
             }
 
-            let equipment_linker_string = "<br>";
-
-            if (equipment_linker.amount > 1) {
-                equipment_linker_string += equipment_linker.amount + " ";
-            }
-
-            equipment_linker_string += " <img title='" + object_types[object_type_index].name + "' style='width:32px; height:32px;' " +
-                " src='/images/" + urlName(object_types[object_type_index].name) + ".png'>";
-
-            equipment_linker_string += " ( ";
-            if (object_types[object_type_index].attack_strength) {
-                equipment_linker_string += " + " + object_types[object_type_index].attack_strength + " attack";
-            }
-
-            if (object_types[object_type_index].defense) {
-                equipment_linker_string += " + " + object_types[object_type_index].defense + " defense";
-            }
-            equipment_linker_string += " )";
-            equipment_linker_string += "<button class='button is-warning is-small' id='unequip_" + equipment_linker.id +
+            //unequip
+            let equipment_linker_string = "";
+            equipment_linker_string += " <button style='display:inline;' class='button is-warning is-small' id='unequip_" + equipment_linker.id +
                 "' equipment_linker_id='" + equipment_linker.id + "'>Unequip</button>";
 
-            if (equipment_linker.equip_slot === 'augment') {
-                augment_string += equipment_linker_string;
-                augment_capacity_used += object_type_equipment_linkers[object_linker_index].capacity_used;
-            } else if (equipment_linker.equip_slot === 'head') {
-                head_string += equipment_linker_string;
-                head_capacity_used += object_type_equipment_linkers[object_linker_index].capacity_used;
-            } else if (equipment_linker.equip_slot === 'left_arm') {
-                left_arm_string += equipment_linker_string;
-                left_arm_capacity_used += object_type_equipment_linkers[object_linker_index].capacity_used;
-            } else if (equipment_linker.equip_slot === 'body') {
-                body_string += equipment_linker_string;
-                body_capacity_used += object_type_equipment_linkers[object_linker_index].capacity_used;
-            } else if (equipment_linker.equip_slot === 'right_arm') {
-                right_arm_string += equipment_linker_string;
-                right_arm_capacity_used += object_type_equipment_linkers[object_linker_index].capacity_used;
-            } else if (equipment_linker.equip_slot === 'legs') {
-                legs_string += equipment_linker_string;
-                legs_capacity_used += object_type_equipment_linkers[object_linker_index].capacity_used;
+            //amount, if present
+            equipment_linker_string += "<br/>"
+            if (equipment_linker.amount > 1) {
+                equipment_linker_string += "<span style='vertical-align:middle;'>" + equipment_linker.amount + "x</span>";
             }
 
+            //image
+            equipment_linker_string += "<span style='vertical-align:middle;'><img title='" + object_types[object_type_index].name +
+                "' style='width:64px; height:64px;vertical-align:middle;' " +
+                " src='/images/" + urlName(object_types[object_type_index].name) + ".png'><td>";
+            equipment_linker_string += "<br/>"
 
+            //attack
+            if (object_types[object_type_index].attack_strength) {
+                equipment_linker_string += "+ " + object_types[object_type_index].attack_strength + " attack <br />";
+            }
 
+            //defence
+            if (object_types[object_type_index].defense) {
+                equipment_linker_string += "+ " + object_types[object_type_index].defense + " defense <br />";
+            }
 
+            if (equipment_linker.equip_slot === 'augment') {
+                augment_string = equipment_linker_string;
+                augment_capacity_used += object_type_equipment_linkers[object_linker_index].capacity_used;
+            } else if (equipment_linker.equip_slot === 'head') {
+                head_string = equipment_linker_string;
+                head_capacity_used += object_type_equipment_linkers[object_linker_index].capacity_used;
+            } else if (equipment_linker.equip_slot === 'left_arm') {
+                left_arm_string = equipment_linker_string;
+                left_arm_capacity_used += object_type_equipment_linkers[object_linker_index].capacity_used;
+            } else if (equipment_linker.equip_slot === 'body') {
+                body_string = equipment_linker_string;
+                body_capacity_used += object_type_equipment_linkers[object_linker_index].capacity_used;
+            } else if (equipment_linker.equip_slot === 'right_arm') {
+                right_arm_string = equipment_linker_string;
+                right_arm_capacity_used += object_type_equipment_linkers[object_linker_index].capacity_used;
+            } else if (equipment_linker.equip_slot === 'legs') {
+                legs_string = equipment_linker_string;
+                legs_capacity_used += object_type_equipment_linkers[object_linker_index].capacity_used;
+            }
         }
-
     });
 
     $('#player_equipment').empty();
@@ -4488,22 +4471,25 @@ function generateEquipmentDisplay() {
     $('#equipment_right_arm').append(right_arm_string);
     $('#equipment_legs').append(legs_string);
 
-    // For each slot, show how full it is
 
-    $('#equipment_augment').append("<br>" + augment_capacity_used + "/Infinite Cap Used");
-    $('#equipment_head').append("<br>" + head_capacity_used + "/5 Cap Used");
-    $('#equipment_left_arm').append("<br>" + left_arm_capacity_used + "/3 Cap Used");
-    $('#equipment_body').append("<br>" + body_capacity_used + "/7 Cap Used");
-    $('#equipment_right_arm').append("<br>" + right_arm_capacity_used + "/3 Cap Used");
-    $('#equipment_legs').append("<br>" + legs_capacity_used + "/4 Cap Used");
+    // For each slot, show how full it is
+    $('#equipment_augment').append(augment_capacity_used + "/Infinite Cap Used");
+    $('#equipment_head').append(head_capacity_used + "/5 Cap Used");
+    $('#equipment_left_arm').append(left_arm_capacity_used + "/3 Cap Used");
+    $('#equipment_body').append(body_capacity_used + "/7 Cap Used");
+    $('#equipment_right_arm').append(right_arm_capacity_used + "/3 Cap Used");
+    $('#equipment_legs').append(legs_capacity_used + "/4 Cap Used");
+
 
     // and show stats on the body type
-    let body_index = objects.findIndex(function (obj) { return obj && obj.id === players[client_player_index].body_id; });
+    let body_index = objects.findIndex(function (obj) {
+        return obj && obj.id === players[client_player_index].body_id;
+    });
     if (body_index !== -1) {
-
-        let body_type_index = object_types.findIndex(function (obj) { return obj && obj.id === objects[body_index].object_type_id; });
+        let body_type_index = object_types.findIndex(function (obj) {
+            return obj && obj.id === objects[body_index].object_type_id;
+        });
         let body_type_string = object_types[body_type_index].name + "<br> ";
-
 
         if (object_types[body_type_index].mining_modifier) {
             body_type_string += " " + object_types[body_type_index].mining_modifier + " Mining<br>";
@@ -4530,18 +4516,12 @@ function generateEquipmentDisplay() {
         }
 
         $('#equipment_body_type').append(body_type_string);
-
-
-
     } else {
         console.log("Don't have player's body object");
     }
 
-
     // If the user has purchased any skins, show them, and let them select them here
-
     if (skin_purchase_linkers.length > 0) {
-
         let skin_string = "<br>";
 
         for (let i = 0; i < skin_purchase_linkers.length; i++) {
@@ -5495,18 +5475,24 @@ function generateShipManagementDisplay() {
 function generateTakeBuyMenu(object_id) {
     let object_index = getObjectIndex(object_id);
 
+    // get anything that is in this object, and add in a take option
+    let object_inventory_items = inventory_items.filter(inventory_item => inventory_item.owned_by_object_id === objects[object_index].id);
+
+    //if empty, skip
+    //todo: does this make sense for all containers?
+    if (object_inventory_items.length == 0) {
+        return;
+    }
+
     let take_string = "<div class='message is-success'>";
 
-    //todo, should not be a cosntant
+    //todo, should not be a constant
     let selling = objects[object_index].object_type_id === 92;
     if (selling) {
         take_string += "<div class='message-header'>Buy</div>";
     } else {
         take_string += "<div class='message-header'>Take</div>";
     }
-
-    // get anything that is in this object, and add in a take option
-    let object_inventory_items = inventory_items.filter(inventory_item => inventory_item.owned_by_object_id === objects[object_index].id);
 
     object_inventory_items.forEach(function (inventory_item) {
         //console.log("Has inventory item id: " + inventory_item.id);
