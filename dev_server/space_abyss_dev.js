@@ -108,7 +108,7 @@ var pool = database.pool;
  @property {number} defending_skill_points
  @property {number} electric_skill_points
  @property {number} explosion_skill_points
- @property {number} freeze_skill_points
+ @property {number} freezing_skill_points
  @property {number} hacking_skill_points
  @property {number} heat_skill_points
  @property {number} gravity_skill_points
@@ -4631,7 +4631,7 @@ async function writePlayerDirty(writing_player, i, show_output = false) {
 
         let sql = "UPDATE players SET body_id = ?, coord_id = ?, control_skill_points = ?, cooking_skill_points = ?, " +
             "corrosive_skill_points = ?, current_hp = ?, defense = ?, defending_skill_points = ?, electric_skill_points = ?, energy = ?, exp = ?, " +
-            "explosion_skill_points = ?, faction_id = ?, farming_skill_points = ?,  freeze_skill_points = ?, hacking_skill_points = ?, " +
+            "explosion_skill_points = ?, faction_id = ?, farming_skill_points = ?,  freezing_skill_points = ?, hacking_skill_points = ?, " +
             "heat_skill_points = ?, gravity_skill_points = ?, laser_skill_points = ?, last_login = ?, level = ?, max_hp = ?, " +
             "manufacturing_skill_points = ?, melee_skill_points = ?, mining_skill_points = ?, " +
             "piercing_skill_points = ?, planet_coord_id = ?, planet_id = ?, " +
@@ -4641,7 +4641,7 @@ async function writePlayerDirty(writing_player, i, show_output = false) {
             "skin_object_type_id = ?, surgery_skill_points = ? WHERE id = ?";
         let inserts = [writing_player.body_id, writing_player.coord_id, writing_player.control_skill_points, writing_player.cooking_skill_points,
             writing_player.corrosive_skill_points, writing_player.current_hp, writing_player.defense, writing_player.defending_skill_points, writing_player.electric_skill_points, writing_player.energy, writing_player.exp,
-            writing_player.explosion_skill_points, writing_player.faction_id, writing_player.farming_skill_points, writing_player.freeze_skill_points, writing_player.hacking_skill_points,
+            writing_player.explosion_skill_points, writing_player.faction_id, writing_player.farming_skill_points, writing_player.freezing_skill_points, writing_player.hacking_skill_points,
             writing_player.heat_skill_points, writing_player.gravity_skill_points, writing_player.laser_skill_points, writing_player.last_login, writing_player.level, writing_player.max_hp,
             writing_player.manufacturing_skill_points, writing_player.melee_skill_points, writing_player.mining_skill_points,
             writing_player.piercing_skill_points, writing_player.planet_coord_id, writing_player.planet_id,

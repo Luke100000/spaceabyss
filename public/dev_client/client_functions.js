@@ -2351,9 +2351,9 @@ function generatePlayerInfoDisplay() {
 
 
     // FREEZE
-    html_string += "Freeze: " + players[client_player_index].freeze_skill_points;
+    html_string += "Freeze: " + players[client_player_index].freezing_skill_points;
     // lets start doing some client side level stuff just to see how it shows
-    let freeze_level = 1 + Math.floor(level_modifier * Math.sqrt(players[client_player_index].freeze_skill_points));
+    let freeze_level = 1 + Math.floor(level_modifier * Math.sqrt(players[client_player_index].freezing_skill_points));
 
     html_string += " Level: " + freeze_level;
 
@@ -7095,8 +7095,8 @@ function checkLevelIncrease(old_player_data, new_player_data) {
         text_important_time = our_time;
     }
 
-    let old_freeze_level = 1 + Math.floor(level_modifier * Math.sqrt(old_player_data.freeze_skill_points));
-    let new_freeze_level = 1 + Math.floor(level_modifier * Math.sqrt(new_player_data.freeze_skill_points));
+    let old_freeze_level = 1 + Math.floor(level_modifier * Math.sqrt(old_player_data.freezing_skill_points));
+    let new_freeze_level = 1 + Math.floor(level_modifier * Math.sqrt(new_player_data.freezing_skill_points));
     if (new_freeze_level > old_freeze_level) {
         addInfoNumber(drawing_x, drawing_y, { 'fill_color': '#FFFFFF', 'text': 'Freeze Skill Leveled Up!' });
         text_important.setText("Freeze Skill Leveled Up!");

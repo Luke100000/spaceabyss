@@ -1587,7 +1587,7 @@ async function getLevel(dirty, data) {
         } else if (data.skill_type === 'farming') {
             level = 1 + Math.floor(global.difficult_level_modifier * Math.sqrt(dirty.players[data.player_index].farming_skill_points));
         } else if (data.skill_type === 'freeze') {
-            level = 1 + Math.floor(global.level_modifier * Math.sqrt(dirty.players[data.player_index].freeze_skill_points));
+            level = 1 + Math.floor(global.level_modifier * Math.sqrt(dirty.players[data.player_index].freezing_skill_points));
         } else if (data.skill_type === 'hacking') {
             level = 1 + Math.floor(global.level_modifier * Math.sqrt(dirty.players[data.player_index].hacking_skill_points));
         } else if (data.skill_type === 'heat') {

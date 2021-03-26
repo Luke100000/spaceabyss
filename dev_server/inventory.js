@@ -775,8 +775,6 @@ async function sendInventory(socket, room, dirty, type, type_id) {
                 } else if (room !== false) {
                     io.to(room).emit('inventory_item_info', {'inventory_item': inventory_item});
                 }
-
-
             });
         }
     } catch (error) {

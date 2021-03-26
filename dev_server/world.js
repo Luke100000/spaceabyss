@@ -3198,7 +3198,7 @@ async function increasePlayerSkill(socket, dirty, player_index, skill_types) {
                     dirty.players[player_index].farming_skill_points++;
                     dirty.players[player_index].has_change = true;
                 } else if (skill_types[i] === 'freeze') {
-                    dirty.players[player_index].freeze_skill_points++;
+                    dirty.players[player_index].freezing_skill_points++;
                     dirty.players[player_index].has_change = true;
                 } else if (skill_types[i] === 'hacking') {
                     dirty.players[player_index].hacking_skill_points++;

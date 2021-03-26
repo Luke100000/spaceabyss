@@ -2854,7 +2854,7 @@ socket.on('player_info', function(data) {
         players[player_index].electric_skill_points = data.player.electric_skill_points;
         players[player_index].explosion_skill_points = data.player.explosion_skill_points;
         players[player_index].farming_skill_points = data.player.farming_skill_points;
-        players[player_index].freeze_skill_points = data.player.freeze_skill_points;
+        players[player_index].freezing_skill_points = data.player.freezing_skill_points;
         players[player_index].hacking_skill_points = data.player.hacking_skill_points;
         players[player_index].heat_skill_points = data.player.heat_skill_points;
         players[player_index].gravity_skill_points = data.player.gravity_skill_points;
