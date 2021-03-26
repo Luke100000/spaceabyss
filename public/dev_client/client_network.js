@@ -94,12 +94,10 @@ socket.on('assembled_in_linker_data', function(data) {
 });
 
 socket.on('assembly_info', function(data) {
-
     if(!data.assembly) {
         console.log("assembly_info with no assembly");
         return false;
     }
-
 
     // lets see if we need to add this to our list of active assemblies
     let active_assembly_index = active_assemblies.findIndex(function (obj) { return obj && obj.id === parseInt(data.assembly.id); });
@@ -116,6 +114,15 @@ socket.on('assembly_info', function(data) {
         // update the active assembly
         active_assemblies[active_assembly_index] = data.assembly;
         active_assemblies[active_assembly_index].id = parseInt(active_assemblies[active_assembly_index].id);
+    }
+
+    //redraw click window if the modified object is open
+    if (active_object_coords) {
+        let object_id = active_object_coords.object_id || active_object_coords.belongs_to_object_id;
+        if (data.assembly.assembler_object_id === object_id) {
+            sel_click_menu.empty();
+            showClickMenuObject(active_object_coords);
+        }
     }
 
     redrawBars();

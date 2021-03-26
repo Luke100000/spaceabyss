@@ -3282,8 +3282,7 @@ function pointerDownDesktop(pointer, pointerTileX, pointerTileY) {
     if (pointer.leftButtonDown()) {
 
 
-        sel_click_menu.empty();
-        sel_click_menu.hide();
+        closeClickMenu();
 
         // NEW SYSTEM
         $('#coord_data').empty();
@@ -4060,9 +4059,7 @@ function generateAiManagementDisplay(object_index = -1) {
 
     html_string += "</div></div>";
 
-
-    sel_click_menu.empty();
-    sel_click_menu.hide();
+    closeClickMenu();
 
     $('#ai_management').empty();
     $('#ai_management').append(html_string);
@@ -4881,9 +4878,7 @@ function generateNonAiManagementDisplay(object_index = -1) {
 
     html_string += "</div></div>";
 
-
-    sel_click_menu.empty();
-    sel_click_menu.hide();
+    closeClickMenu();
 
     $('#object_management').empty();
     $('#object_management').append(html_string);
@@ -5661,9 +5656,7 @@ function generateTaskDisplay() {
 
     html_string += "</div></div>";
 
-
-    sel_click_menu.empty();
-    sel_click_menu.hide();
+    closeClickMenu();
 
     $('#task_management').append(html_string);
 
@@ -9871,10 +9864,8 @@ function showClickMenu(pointer) {
         // OBJECTS
         if (coord.object_id || coord.belongs_to_object_id) {
             showClickMenuObject(coord);
-
         } else if (coord.object_type_id) {
             showClickMenuObjectType(coord);
-
         }
 
         // NPC
@@ -10286,12 +10277,12 @@ function showClickMenuNpc(coord) {
             sel_click_menu.append("<br>No inventory items");
         }               
     }
-
-
-
 }
 
 function showClickMenuObject(coord) {
+    //remember currently open window
+    active_object_coords = coord;
+
     //console.log("Has object id");
     let attack_object_shown = false;
     let object_index = -1;
@@ -10968,6 +10959,13 @@ function showClickMenuObject(coord) {
     }
 }
 
+//close the click menu
+function closeClickMenu() {
+    sel_click_menu.empty();
+    sel_click_menu.hide();
+    active_object_coords = null;
+}
+
 function showClickMenuObjectType(coord) {
     //console.log("In showClickMenuObjectType");
     // there's an object type here - but no object id
@@ -11297,13 +11295,12 @@ function showInventoryOptions(inventory_item_id) {
     //let mouse_x = event.clientX;
     //let mouse_y = event.clientY;
 
+    closeClickMenu();
 
     sel_click_menu.css({
         'top': mouse_y, 'left': mouse_x, 'position': 'absolute', 'max-height': '400px', 'max-width': '600px',
         'overflow-y': 'scroll', 'overflow-x': 'scroll', 'padding': '10px'
     }).fadeIn('fast');
-
-    sel_click_menu.empty();
 
     let inventory_item_index = inventory_items.findIndex(function (obj) { return obj && obj.id === inventory_item_id; });
 
