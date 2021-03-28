@@ -30,10 +30,33 @@
         play_sounds = true;
     }
 
+    let debug_username = urlParams.get('username')
+    let debug_email = urlParams.get('email')
+    let debug_password = urlParams.get('password')
 </script>
 
 <!-- <script src="https://space.alphacoders.com:8010/socket.io/socket.io.js"></script>-->
 <script src="http://localhost:8010/socket.io/socket.io.js"></script>
+
+<script type="text/javascript">
+    var connected = false;
+
+    //phase.io might need some extra time to load its stuff
+    //the connected var is in most cases set to true once all data has been received
+    async function login(username, email, password) {
+        let timeout = 5000;
+        let sleep = 20;
+        while (!connected && timeout > 0) {
+            timeout -= sleep;
+            await (new Promise(resolve => setTimeout(resolve, sleep)));
+        }
+
+        //no login if the client has not connected yet
+        if (connected) {
+            socket.emit('login_data', {player_name: username, email: email, password: password});
+        }
+    }
+</script>
 
 <script type="text/javascript">
     var socket = false;
@@ -43,6 +66,11 @@
 
         socket.on('connect', () => {
             socket.emit('ready');
+
+            //debug
+            if (debug_username) {
+                login(debug_username, debug_email, debug_password);
+            }
         });
 
     } else {
@@ -699,7 +727,6 @@
 
     var camera;
     var logged_in = false;
-    var connected = false;
 
     var mouse_x;
     var mouse_y;
@@ -3340,7 +3367,7 @@
             var local_email = $('#email').val();
             var local_player_name = $('#player_name').val();
             var local_password = $('#password').val();
-            socket.emit('login_data', {player_name: local_player_name, email: local_email, password: local_password });
+            login(local_player_name, local_email, local_password);
             //console.log("Sending login data:" + local_player_name + ", " + local_email);
             event.preventDefault();
             document.getElementById('the_game').focus();
