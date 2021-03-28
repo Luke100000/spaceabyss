@@ -6,7 +6,7 @@ That started my journey. I hope Space Abyss can help someone else start their jo
 
 The code of Space Abyss is open sourced under the MIT license.
 I've either drawn or paid to have drawn all the art in Space Abyss. It is open sourced under the MIT license as well.
-Please check the artists page (https://space.alphacoders.com/artists) for further details regarding any sound/music used in game.
+Please check the artists page (https://space.alphacoders.com/artist) for further details regarding any sound/music used in game.
 Please check the licenses of any software Space Abyss makes use of ( Phaser, Socket.io, etc ) to make sure
 you are in line with all of their licenses as well.
 
@@ -22,6 +22,23 @@ Currently I have Space Abyss running on Ubuntu 20.04
 
 You can find a database schema dump as well as the package.json at the root level of this repo.
 
+# Additional Install Instructions
+(non official information provided by Luke100000)
+* Get additional libraries (phaser, bulma, spectrum, jquery), use e.g. network monitor to track missing files
+    * The fonts are not officially available
+* Run a mysql database
+    * Execute the `populated-game-structure.sql` to populate the databases with data types
+* Start a web server in `public/` via `python -m http.server 8000` for the client, connect at `localhost:8000/dev_client/`
+    * optionally one can supply html url vars `username`, `password` and `email` for automatic debug login
+* Install the required node.js modules as specified in package.json
+* Start a node.js server at `dev_server/space_abyss_dev.js` and following environment variables:
+    * `FILE_SUFFIX=_dev`
+    * `IPADDRESS=127.0.0.1` // database IP
+    * `MYSQLPASSWORD=your_password`
+    * `MYSQLUSER=your_username`
+    * `MYSQLDATABASE=space_abyss` // as created in database
+    * `PORT=8010` // `8010` is the dev port as specified in the `index.html`
+
 # Work In Progress
 Space Abyss is in active, early development. For the time being, there isn't going to be an easy 
 setup guide; instead I'm just going to be building it. Things like the database can be intuited for now from 
@@ -29,7 +46,7 @@ the code, but I know that's a large barrier to understanding/running something. 
 prioritize areas that I get the most questions about.
 
 
-#Structure
+# Structure
 The client is in public/dev_client
 
 The server is in dev_server
