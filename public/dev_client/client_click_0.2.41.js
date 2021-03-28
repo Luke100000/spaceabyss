@@ -529,9 +529,9 @@ $(document).on('click', 'button', function () {
 
 
 
-        $('#click_menu').append("<a target='_blank' class='button is-success is-small' href='https://space.alphacoders.com/site/tutorial'>View Our Tutorial!</a><br>");
+        $('#click_menu').append("<a target='_blank' class='button is-success is-small' href='../site/tutorial'>View Our Tutorial!</a><br>");
         if(client_player_index !== -1 && players[client_player_index]) {
-            $('#click_menu').append("<a target='_blank' class='button is-info is-small' href='https://space.alphacoders.com/player/view/" + players[client_player_index].id + "'>Report A Problem</a><br>");
+            $('#click_menu').append("<a target='_blank' class='button is-info is-small' href='../player/view/" + players[client_player_index].id + "'>Report A Problem</a><br>");
         } 
         
 
@@ -543,24 +543,24 @@ $(document).on('click', 'button', function () {
                 $('#click_menu').append("<span class='error-message'>Error: " + recent_failure_messages[i].text + "</span><br>");
 
                 if(recent_failure_messages[i].text === 'Your beam mangled up something advanced') {
-                    $('#click_menu').append("<a target='_blank' class='button is-small' href='https://space.alphacoders.com/site/tutorial/salvaging'>Salvaging Tutorial</a> This object has some complex/advanced salvage opportunities. " + 
-                        "As your salvaging levels up, you'll succeed more often here. <a target='_blank' class='button is-small' href='https://space.alphacoders.com/site/tutorial/complexity'>Complexity</a>");
+                    $('#click_menu').append("<a target='_blank' class='button is-small' href='../site/tutorial/salvaging'>Salvaging Tutorial</a> This object has some complex/advanced salvage opportunities. " + 
+                        "As your salvaging levels up, you'll succeed more often here. <a target='_blank' class='button is-small' href='../site/tutorial/complexity'>Complexity</a>");
                 }
 
                 if(recent_failure_messages[i].text === 'Ship Has No Floor Space') {
-                    $('#click_menu').append("<a target='_blank' class='button is-small' href='https://space.alphacoders.com/site/tutorial/mining'>Mining Tutorial</a> By default, the things your ship " + 
+                    $('#click_menu').append("<a target='_blank' class='button is-small' href='../site/tutorial/mining'>Mining Tutorial</a> By default, the things your ship " + 
                     "mines and salvages are put on random floor tiles on your ship. Build a Bulk Container for most things, or an Ice Container for ice specifically, and your " + 
                     "ship will automatically store mined/salvaged materials in it.<br><br>You can always just switch to your ship view and pick things up as they are mined/salvaged too.");
                 }
 
                 if(recent_failure_messages[i].text === 'Your beam is a bit weak') {
-                    $('#click_menu').append("<a target='_blank' class='button is-small' href='https://space.alphacoders.com/site/tutorial/mining'>Mining Tutorial</a> This object has some complex/advanced mining opportunities. " + 
-                        "As your mining levels up, you'll succeed more often here. <a target='_blank' class='button is-small' href='https://space.alphacoders.com/site/tutorial/complexity'>Complexity</a>");
+                    $('#click_menu').append("<a target='_blank' class='button is-small' href='../site/tutorial/mining'>Mining Tutorial</a> This object has some complex/advanced mining opportunities. " + 
+                        "As your mining levels up, you'll succeed more often here. <a target='_blank' class='button is-small' href='../site/tutorial/complexity'>Complexity</a>");
                 }
 
                 if(recent_failure_messages[i].text.includes('Assembling') && recent_failure_messages[i].text.includes('Failed')) {
-                    $('#click_menu').append("<a target='_blank' class='button is-small' href='https://space.alphacoders.com/site/tutorial/manufacturing'>Manufacturing Tutorial</a> The object that you " + 
-                    " tried to make has a higher <a target='_blank' class='button is-small' href='https://space.alphacoders.com/site/tutorial/complexity'>complexity</a> than your manufacturing skill." + 
+                    $('#click_menu').append("<a target='_blank' class='button is-small' href='../site/tutorial/manufacturing'>Manufacturing Tutorial</a> The object that you " + 
+                    " tried to make has a higher <a target='_blank' class='button is-small' href='../site/tutorial/complexity'>complexity</a> than your manufacturing skill." + 
                     " keep manufacturing things, and your level will increase, making difficult things easier.");
                 }
 
@@ -725,7 +725,7 @@ $(document).on('click', 'button', function () {
     if(split_name[0] === 'messages') {
         console.log("Player is trying to open their messages");
         if(client_player_index !== -1 && players[client_player_index]) {
-            window.open("https://space.alphacoders.com/user/messages/" + players[client_player_index].user_id);
+            window.open("../user/messages/" + players[client_player_index].user_id);
         }
         
     }

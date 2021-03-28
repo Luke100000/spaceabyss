@@ -1449,7 +1449,7 @@ function displayClickObject(object_id) {
     if (objects[object_index].player_id) {
         let player_index = players.findIndex(function (obj) { return obj && obj.id === objects[object_index].player_id; });
         if (player_index !== -1) {
-            $('#coord_data').append("&nbsp;&nbsp;Owned By Player <a target='_blank' href='https://space.alphacoders.com/player/view/" + 
+            $('#coord_data').append("&nbsp;&nbsp;Owned By Player <a target='_blank' href='../player/view/" + 
                 players[player_index].id + "'>" + players[player_index].name + "</a><br>");
 
         } else {
@@ -2101,7 +2101,7 @@ function generateFactionDisplay() {
         */
 
         // Link to where they can search for factions
-        html_string += "<a target=\"_blank\" href=\"https://space.alphacoders.com/faction\">View All Factions</a>";
+        html_string += "<a target=\"_blank\" href=\"../faction\">View All Factions</a>";
 
         // Let them join by faction id
         html_string += "<form action='#'>";
@@ -2114,10 +2114,10 @@ function generateFactionDisplay() {
     } else {
         let faction_index = factions.findIndex(function (obj) { return obj && obj.id === faction_linkers[player_faction_linker_index].faction_id; });
         if (faction_index !== -1) {
-            html_string += "Your current faction: <a target='_blank' href='https://space.alphacoders.com/faction/view/" +
+            html_string += "Your current faction: <a target='_blank' href='../faction/view/" +
                 factions[faction_index].id + "'>" + factions[faction_index].name + "</a> ";
         } else {
-            html_string += "Your current faction id: <a target='_blank' href='https://space.alphacoders.com/faction/view/" +
+            html_string += "Your current faction id: <a target='_blank' href='../faction/view/" +
                 players[client_player_index].faction_id + "'>" + players[client_player_index].faction_id + "</a> ";
         }
 
@@ -3185,7 +3185,7 @@ function playBackgroundMusic(type, type_id) {
         if(rand_num === 1) {
             if(!sound_corporation_1) {
                 scene_game.load.on('filecomplete', processAudioFile, this);
-                scene_game.load.audio('corporation_1', ['https://space.alphacoders.com/corporation_1.mp3']);
+                scene_game.load.audio('corporation_1', ['../corporation_1.mp3']);
                 scene_game.load.start();
             } else {
     
@@ -3196,7 +3196,7 @@ function playBackgroundMusic(type, type_id) {
         } else {
             if(!sound_corporation_2) {
                 scene_game.load.on('filecomplete', processAudioFile, this);
-                scene_game.load.audio('corporation_2', ['https://space.alphacoders.com/corporation_2.mp3']);
+                scene_game.load.audio('corporation_2', ['../corporation_2.mp3']);
                 scene_game.load.start();
             } else {
     
@@ -3236,7 +3236,7 @@ function playDamageSound(damage_types) {
                 sound_electric.play();
             } else {
                 scene_game.load.on('filecomplete', processAudioFile, this);
-                scene_game.load.audio('electric', ['https://space.alphacoders.com/electricity.mp3']);
+                scene_game.load.audio('electric', ['../electricity.mp3']);
                 scene_game.load.start();
             }
         } else if(damage_types[i] === 'hacking') {
@@ -3244,7 +3244,7 @@ function playDamageSound(damage_types) {
                 sound_hacking.play();
             } else {
                 scene_game.load.on('filecomplete', processAudioFile, this);
-                scene_game.load.audio('hacking', ['https://space.alphacoders.com/hacking.mp3']);
+                scene_game.load.audio('hacking', ['../hacking.mp3']);
                 scene_game.load.start();
             }
         } else if(damage_types[i] === 'healing') {
@@ -3252,7 +3252,7 @@ function playDamageSound(damage_types) {
                 sound_healing.play();
             } else {
                 scene_game.load.on('filecomplete', processAudioFile, this);
-                scene_game.load.audio('healing', ['https://space.alphacoders.com/healing.wav']);
+                scene_game.load.audio('healing', ['../healing.wav']);
                 scene_game.load.start();
             }
         } else if(damage_types[i] === 'laser') {
@@ -3261,7 +3261,7 @@ function playDamageSound(damage_types) {
                 sound_laser.play();
             } else {
                 scene_game.load.on('filecomplete', processAudioFile, this);
-                scene_game.load.audio('laser', ['https://space.alphacoders.com/laser.wav']);
+                scene_game.load.audio('laser', ['../laser.wav']);
                 scene_game.load.start();
             }
         } else if(damage_types[i] === 'melee') {
@@ -3269,7 +3269,7 @@ function playDamageSound(damage_types) {
                 sound_melee.play();
             } else {
                 scene_game.load.on('filecomplete', processAudioFile, this);
-                scene_game.load.audio('melee', ['https://space.alphacoders.com/melee.mp3']);
+                scene_game.load.audio('melee', ['../melee.mp3']);
                 scene_game.load.start();
             }
         } else if(damage_types[i] === 'piercing') {
@@ -3277,7 +3277,7 @@ function playDamageSound(damage_types) {
                 sound_piercing.play();
             } else {
                 scene_game.load.on('filecomplete', processAudioFile, this);
-                scene_game.load.audio('piercing', ['https://space.alphacoders.com/piercing.mp3']);
+                scene_game.load.audio('piercing', ['../piercing.mp3']);
                 scene_game.load.start();
             }
         } else {
@@ -3286,7 +3286,7 @@ function playDamageSound(damage_types) {
                 sound_melee.play();
             } else {
                 scene_game.load.on('filecomplete', processAudioFile, this);
-                scene_game.load.audio('melee', ['https://space.alphacoders.com/melee.mp3']);
+                scene_game.load.audio('melee', ['../melee.mp3']);
                 scene_game.load.start();
             }
             
@@ -3990,7 +3990,7 @@ function printDiscovery(object_type, assembly_linkers) {
     html_string += "<div class='box has-text-centered' style='display: inline-block;'>";
 
     html_string += object_type.name + "<br>";
-    html_string += "<img src='https://space.alphacoders.com/images/" + urlName(object_type.name) + ".png'><br>";
+    html_string += "<img src='../images/" + urlName(object_type.name) + ".png'><br>";
 
     // Show what is required to assemble it
     assembly_linkers.forEach(function (assembly_linker) {
@@ -3999,7 +3999,7 @@ function printDiscovery(object_type, assembly_linkers) {
 
         html_string += " " + assembly_linker.amount + " ";
         if (required_object_type_index !== -1) {
-            html_string += object_types[required_object_type_index].name + " <img style='width:16px; height:16px;' src='https://space.alphacoders.com/images/" +
+            html_string += object_types[required_object_type_index].name + " <img style='width:16px; height:16px;' src='../images/" +
                 urlName(object_types[required_object_type_index].name) + ".png'>";
         } else {
             html_string += "" + assembly_linker.object_type_id;
@@ -4204,7 +4204,7 @@ function generateAssemblyListItem(object_type, object_assembly_linkers, assembli
     }
     
     html_string += "<br>";
-    html_string += "<img src='https://space.alphacoders.com/images/" + urlName(object_type.name) + ".png'>";
+    html_string += "<img src='../images/" + urlName(object_type.name) + ".png'>";
 
     // Show what is required to assemble it
 
@@ -4217,8 +4217,8 @@ function generateAssemblyListItem(object_type, object_assembly_linkers, assembli
 
             html_string += "<br> " + assembly_linker.amount + " ";
             if (required_object_type_index !== -1) {
-                html_string += object_types[required_object_type_index].name + " <a target='_blank' href='https://space.alphacoders.com/object-type/view/" + 
-                object_types[required_object_type_index].id + "'><img style='width:16px; height:16px;' src='https://space.alphacoders.com/images/" +
+                html_string += object_types[required_object_type_index].name + " <a target='_blank' href='../object-type/view/" + 
+                object_types[required_object_type_index].id + "'><img style='width:16px; height:16px;' src='../images/" +
                     urlName(object_types[required_object_type_index].name) + ".png'></a>";
 
                     
@@ -4290,7 +4290,7 @@ function generateAssemblyListItem(object_type, object_assembly_linkers, assembli
 function generateAssemblyListItemFloor(floor_type, floor_assembly_linkers, coord = false, assembling_object = false) {
     let html_string = "";
     html_string += "<table class='assemble'><tr><td><div class='center'><strong>" + floor_type.name + " Floor</strong><br>";
-    html_string += "<img src='https://space.alphacoders.com/images/floor-" + urlName(floor_type.name) + ".png'>";
+    html_string += "<img src='../images/floor-" + urlName(floor_type.name) + ".png'>";
 
     // Show what is required to assemble it
     floor_assembly_linkers.forEach(function (assembly_linker) {
@@ -4299,7 +4299,7 @@ function generateAssemblyListItemFloor(floor_type, floor_assembly_linkers, coord
 
         html_string += "<br> " + assembly_linker.amount + " ";
         if (required_object_type_index !== -1) {
-            html_string += object_types[required_object_type_index].name + " <img style='width:16px; height:16px;' src='https://space.alphacoders.com/images/" +
+            html_string += object_types[required_object_type_index].name + " <img style='width:16px; height:16px;' src='../images/" +
                 urlName(object_types[required_object_type_index].name) + ".png'>";
         } else {
             html_string += "" + assembly_linker.object_type_id;
@@ -4454,7 +4454,7 @@ function generateCanAssembleListDeprecated() {
 
                 html_string += "</td><td>";
 
-                html_string += "<img src='https://space.alphacoders.com/images/" + urlName(floor_types[i].name) + ".png'>";
+                html_string += "<img src='../images/" + urlName(floor_types[i].name) + ".png'>";
 
                 html_string += "</td></tr></table>";
 
@@ -4465,7 +4465,7 @@ function generateCanAssembleListDeprecated() {
 
 
     if ($('#can_assemble_list').is(':empty')) {
-        $('#can_assemble_list').append("We have a <a target='_blank' href='https://space.alphacoders.com/site/tutorial'>tutorial</a> that can help you get started");
+        $('#can_assemble_list').append("We have a <a target='_blank' href='../site/tutorial'>tutorial</a> that can help you get started");
     }
 
 }
@@ -4538,7 +4538,7 @@ function generateEquipmentDisplay() {
             }
 
             equipment_linker_string += " <img title='" + object_types[object_type_index].name + "' style='width:32px; height:32px;' " +
-                " src='https://space.alphacoders.com/images/" + urlName(object_types[object_type_index].name) + ".png'>";
+                " src='../images/" + urlName(object_types[object_type_index].name) + ".png'>";
 
             equipment_linker_string += " ( ";
             if (object_types[object_type_index].attack_strength) {
@@ -4772,10 +4772,10 @@ function generateInventoryDisplay() {
         // Internal div
         if (object_type_index !== -1) {
             adding_string += "<div style='width:60px; height:60px; background-size: cover; position:relative; " +
-                " background-image: url(https://space.alphacoders.com/images/" + urlName(object_types[object_type_index].name) + ".png); '>";
+                " background-image: url(../images/" + urlName(object_types[object_type_index].name) + ".png); '>";
         } else if (floor_type_index !== -1) {
             adding_string += "<div style='width:60px; height:60px; background-size: cover; position:relative; " +
-                " background-image: url(https://space.alphacoders.com/images/floor-" + urlName(floor_types[floor_type_index].name) + ".png); '>";
+                " background-image: url(../images/floor-" + urlName(floor_types[floor_type_index].name) + ".png); '>";
         }
 
 
@@ -4898,10 +4898,10 @@ function generateInventoryItemDisplay(inventory_item_index) {
     // Internal div
     if (object_type_index !== -1) {
         adding_string += "<div style='width:60px; height:60px; background-size: cover; position:relative; " +
-            " background-image: url(https://space.alphacoders.com/images/" + urlName(object_types[object_type_index].name) + ".png); '>";
+            " background-image: url(../images/" + urlName(object_types[object_type_index].name) + ".png); '>";
     } else if (floor_type_index !== -1) {
         adding_string += "<div style='width:60px; height:60px; background-size: cover; position:relative; " +
-            " background-image: url(https://space.alphacoders.com/images/floor-" + urlName(floor_types[floor_type_index].name) + ".png); '>";
+            " background-image: url(../images/floor-" + urlName(floor_types[floor_type_index].name) + ".png); '>";
     }
 
 
@@ -5636,7 +5636,7 @@ function generateTakeBuyMenu(object_id) {
 
 
                             take_string += "<div style='display:inline-block; position:relative; width:174px; height:74px; " +
-                            " background-image: url(https://space.alphacoders.com/images/" +
+                            " background-image: url(../images/" +
                             urlName(object_types[inventory_item_object_type_index].name) + ".png); background-repeat: no-repeat; " +
                             " background-position: top; " +
                             " border: 1px #c8c1c1 solid; border-radius:6px; margin:2px;'>";
@@ -5716,7 +5716,7 @@ function generateTakeBuyMenu(object_id) {
                 }
                 // It's something that is being sold
                 else if (inventory_item.price) {
-                    take_string += "<img style='width:28px;' src='https://space.alphacoders.com/images/" + urlName(object_types[inventory_item_object_type_index].name) + ".png'>" +
+                    take_string += "<img style='width:28px;' src='../images/" + urlName(object_types[inventory_item_object_type_index].name) + ".png'>" +
                         "<button class='button is-default' id='buy_" + inventory_item.id + "' storage_object_id='" + objects[object_index].id + "' " +
                         " inventory_item_id='" + inventory_item.id + "'>Buy $" + inventory_item.price + "</button><br>";
                 } 
@@ -7387,11 +7387,11 @@ function loadAudio() {
     // Lets try some audio stuff
 
     scene_game.load.on('filecomplete', processAudioFile, this);
-    scene_game.load.audio('level-up', ['https://space.alphacoders.com/level-up.wav']);
+    scene_game.load.audio('level-up', ['../level-up.wav']);
     scene_game.load.start();
 
     scene_game.load.on('filecomplete', processAudioFile, this);
-    scene_game.load.audio('engine', ['https://space.alphacoders.com/engine.mp3']);
+    scene_game.load.audio('engine', ['../engine.mp3']);
     scene_game.load.start();
     
 
@@ -7486,7 +7486,7 @@ function loadPlayerSprites(object_type_id) {
 
         if(!scene_game.textures.exists('player-destroyer')) {
             scene_game.load.on('filecomplete', processPlayerFile, this);
-            scene_game.load.spritesheet('player-destroyer', "https://space.alphacoders.com/images/destroyer-animated.png",
+            scene_game.load.spritesheet('player-destroyer', "../images/destroyer-animated.png",
                 { frameWidth: 128, frame_height: 128, endFrame: 12 });
             scene_game.load.start();
         }
@@ -7498,7 +7498,7 @@ function loadPlayerSprites(object_type_id) {
 
         if(!scene_game.textures.exists('player-garden-ship')) {
             scene_game.load.on('filecomplete', processPlayerFile, this);
-            scene_game.load.spritesheet('player-garden-ship', "https://space.alphacoders.com/images/garden-ship-animated.png",
+            scene_game.load.spritesheet('player-garden-ship', "../images/garden-ship-animated.png",
                 { frameWidth: 128, frame_height: 128, endFrame: 2 });
             scene_game.load.start();
         }
@@ -7510,7 +7510,7 @@ function loadPlayerSprites(object_type_id) {
 
         if(!scene_game.textures.exists('player-researching')) {
             scene_game.load.on('filecomplete', processPlayerFile, this);
-            scene_game.load.spritesheet('player-researching', "https://space.alphacoders.com/images/researching-body-animated.png",
+            scene_game.load.spritesheet('player-researching', "../images/researching-body-animated.png",
                 { frameWidth: 64, frame_height: 64, endFrame: 30 });
             scene_game.load.start();
         }
@@ -7522,7 +7522,7 @@ function loadPlayerSprites(object_type_id) {
 
         if(!scene_game.textures.exists('player-silk-ship')) {
             scene_game.load.on('filecomplete', processPlayerFile, this);
-            scene_game.load.spritesheet('player-silk-ship', "https://space.alphacoders.com/images/silk-ship-animated.png",
+            scene_game.load.spritesheet('player-silk-ship', "../images/silk-ship-animated.png",
                 { frameWidth: 64, frame_height: 64, endFrame: 8 });
             scene_game.load.start();
         }
@@ -7534,7 +7534,7 @@ function loadPlayerSprites(object_type_id) {
 
         if(!scene_game.textures.exists('player-vueg')) {
             scene_game.load.on('filecomplete', processPlayerFile, this);
-            scene_game.load.spritesheet('player-vueg', "https://space.alphacoders.com/images/vueg-body-animated.png",
+            scene_game.load.spritesheet('player-vueg', "../images/vueg-body-animated.png",
                 { frameWidth: 64, frame_height: 64, endFrame: 31 });
             scene_game.load.start();
         }
@@ -7558,7 +7558,7 @@ function loadMonsterSprites(type, type_id) {
 
             scene_game.load.on('filecomplete', processFile, this);
             console.log("")
-            scene_game.load.spritesheet(monster_sprites[i].key, "https://space.alphacoders.com/images/" + monster_sprites[i].key + ".png",
+            scene_game.load.spritesheet(monster_sprites[i].key, "../images/" + monster_sprites[i].key + ".png",
                 { frameWidth: monster_sprites[i].frame_width, frameHeight: monster_sprites[i].frame_height, endFrame: monster_sprites[i].frame_count });
             scene_game.load.start();
         }
@@ -10069,7 +10069,7 @@ function showClickMenu(pointer) {
                     "player_id='" + coord.player_id + "' class='button is-warning is-small' source='player-generic'>Attack Player</button>");
             }
 
-            $('#click_menu').append("<br><a target='_blank' href='https://space.alphacoders.com/player/view/" + players[other_player_index].id + "'>View Profile</a>");
+            $('#click_menu').append("<br><a target='_blank' href='../player/view/" + players[other_player_index].id + "'>View Profile</a>");
         }
 
 
@@ -10115,7 +10115,7 @@ function showClickMenu(pointer) {
                             let inventory_options_string = "";
 
                             inventory_options_string += "<div style='display:inline-block; position:relative; width:146px; height:74px; " +
-                                " background-image: url(https://space.alphacoders.com/images/" +
+                                " background-image: url(../images/" +
                                 urlName(object_types[object_type_index].name) + ".png); background-repeat: no-repeat; " +
                                 " background-position: top; " +
                                 " border: 1px #c8c1c1 solid; border-radius:6px; margin:2px;'>";
@@ -10436,7 +10436,7 @@ function showClickMenuNpc(coord) {
                 let inventory_object_type_index = getObjectTypeIndex(inventory_items[i].object_type_id);
 
                 $('#click_menu').append("<img style='width:28px;'" +
-                " src='https://space.alphacoders.com/images/" + urlName(object_types[inventory_object_type_index].name) + ".png'>" +
+                " src='../images/" + urlName(object_types[inventory_object_type_index].name) + ".png'>" +
                 "<button class='button is-small' id='buy_" + inventory_items[i].id + "' npc_id='" + npcs[npc_index].id + "' " +
                 " inventory_item_id='" + inventory_items[i].id + "'>Buy $" + inventory_items[i].price + "</button><br>");
             } else {
@@ -10758,7 +10758,7 @@ function showClickMenuObject(coord) {
 
                 let put_in_string = "";
                 put_in_string += "<div style='display:inline-block; position:relative; width:146px; height:74px; " +
-                    " background-image: url(https://space.alphacoders.com/images/" +
+                    " background-image: url(../images/" +
                     urlName(object_types[inventory_item_object_type_index].name) + ".png); background-repeat: no-repeat; " +
                     " background-position: top; " +
                     " border: 1px #c8c1c1 solid; border-radius:6px; margin:2px;'>";
@@ -10788,7 +10788,7 @@ function showClickMenuObject(coord) {
                 $('#click_menu').append(put_in_string);
 
                 /*
-                $('#click_menu').append("<img style='width:28px;' src='https://space.alphacoders.com/" + urlName(object_types[object_type_index].name) + ".png'>" +
+                $('#click_menu').append("<img style='width:28px;' src='../" + urlName(object_types[object_type_index].name) + ".png'>" +
                     "<button id='place_" + inventory_item.id + "' class='button is-default' storage_object_id='" + objects[object_index].id + "' " +
                     " inventory_item_id='" + inventory_item.id + "'>Put In</button><br>");
                 */
@@ -11057,7 +11057,7 @@ function showClickMenuObject(coord) {
                             // 1. Its our auto doc
                             if (objects[object_index].player_id && client_player_id && objects[object_index].player_id === client_player_id) {
                                 $('#click_menu').append("<img style='width:32px; height:32px;' " +
-                                    "src='https://space.alphacoders.com/images/" + urlName(object_types[inventory_item_object_type_index].name) + ".png'> " +
+                                    "src='../images/" + urlName(object_types[inventory_item_object_type_index].name) + ".png'> " +
                                     "<button id='equip_" + inventory_items[i].id + "_" + object_type_equipment_linkers[j].equip_slot +
                                     "' inventory_item_id='" + inventory_items[i].id + "' equip_slot='" + object_type_equipment_linkers[j].equip_slot + "' " +
                                     " class='button is-small'>Implant " + object_types[inventory_item_object_type_index].name + " Into Your " +
@@ -11068,7 +11068,7 @@ function showClickMenuObject(coord) {
                                 let npc_surgery_level = 1 + Math.floor(difficult_level_modifier * Math.sqrt(npcs[object_npc_index].surgery_skill_points));
 
                                 $('#click_menu').append("<img style='width:32px; height:32px;' " +
-                                    "src='https://space.alphacoders.com/images/" + urlName(object_types[inventory_item_object_type_index].name) + ".png'> " +
+                                    "src='../images/" + urlName(object_types[inventory_item_object_type_index].name) + ".png'> " +
                                     "<button id='equip_" + inventory_items[i].id + "_" + object_type_equipment_linkers[j].equip_slot +
                                     "' inventory_item_id='" + inventory_items[i].id + "' equip_slot='" + object_type_equipment_linkers[j].equip_slot + "' " +
                                     " class='button is-small'>Pay $" + npc_surgery_level + " Credits: Implant " + object_types[inventory_item_object_type_index].name + " Into Your " +
@@ -11206,7 +11206,7 @@ function showClickMenuObject(coord) {
                     "' class='button is-warning is-small' source='object_type_can_be_attacked'>Attack " +
                     object_types[object_type_index].name + "</button><br>");
                 } else {
-                    $('#click_menu').append("<br><a target='_blank' href='https://space.alphacoders.com/site/tutorial/ship-building'>Build A Better Ship To Attack</a>");
+                    $('#click_menu').append("<br><a target='_blank' href='../site/tutorial/ship-building'>Build A Better Ship To Attack</a>");
                 }
                 
             }
@@ -11436,7 +11436,7 @@ function showClickMenuShipEngine(coord) {
                 }
 
                 ship_engine_string += "<div style='display:inline-block; position:relative; width:146px; height:74px; " +
-                    " background-image: url(https://space.alphacoders.com/images/" +
+                    " background-image: url(../images/" +
                     urlName(object_types[object_type_index].name) + ".png); background-repeat: no-repeat; " +
                     " background-position: top; " +
                     " border: 1px #c8c1c1 solid; border-radius:6px; margin:2px;'>";
@@ -11483,7 +11483,7 @@ function showClickMenuShipWeapon(coord) {
                 }
 
                 ship_weapon_string += "<div style='display:inline-block; position:relative; width:146px; height:74px; " +
-                    " background-image: url(https://space.alphacoders.com/images/" +
+                    " background-image: url(../images/" +
                     urlName(object_types[object_type_index].name) + ".png); background-repeat: no-repeat; " +
                     " background-position: top; " +
                     " border: 1px #c8c1c1 solid; border-radius:6px; margin:2px;'>";
@@ -11697,7 +11697,7 @@ function showSalvageOption(object_index, object_type_index, coord = {}) {
             let player_ship_index = objects.findIndex(function (obj) { return obj && obj.id === players[client_player_index].ship_id; });
             if (player_ship_index !== -1 && objects[player_ship_index].object_type_id === 114) {
                 player_can_salvage = false;
-                $('#click_menu').append("<a target='_blank' href='https://space.alphacoders.com/site/tutorial/ship-building'>Build A Better Ship To Salvage</a>");
+                $('#click_menu').append("<a target='_blank' href='../site/tutorial/ship-building'>Build A Better Ship To Salvage</a>");
             }
         }
 
