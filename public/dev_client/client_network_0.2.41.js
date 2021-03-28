@@ -1085,6 +1085,8 @@ socket.on('login_data', function(data) {
         switchChat("global");
 
 
+        //inventory starts open
+        toggleInventoryDisplay()
 
 
         let player_index = players.findIndex(function(obj) { return obj && obj.id === parseInt(client_player_id); });
