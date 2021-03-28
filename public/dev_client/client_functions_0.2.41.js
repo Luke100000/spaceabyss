@@ -3143,25 +3143,15 @@ function getRandomIntInclusive(min, max) {
 }
 
 function isFalse(the_value) {
-
-    if(typeof the_value === "undefined" || the_value === 0 || the_value === "0" ||
-        the_value === false || the_value === null || the_value === "null" || 
-        (the_value.constructor === Object && Object.keys(the_value).length === 0) ) {
-        return true;
-    }
-
-    return false;
+    return typeof the_value === "undefined" || the_value === 0 || the_value === "0" ||
+        the_value === false || the_value === null || the_value === "null" ||
+        (the_value.constructor === Object && Object.keys(the_value).length === 0);
 }
 
 
 function notFalse(the_value) {
-
-    if(typeof the_value === "undefined" || the_value === 0 || the_value === "0" ||
-        the_value === false || the_value === null || the_value === "null" || the_value === "") {
-        return false;
-    }
-
-    return true;
+    return !(typeof the_value === "undefined" || the_value === 0 || the_value === "0" ||
+        the_value === false || the_value === null || the_value === "null" || the_value === "");
 }
 
 function playBackgroundMusic(type, type_id) {
@@ -8733,9 +8723,6 @@ function movePlayerInstant(player_index, x, y) {
     */
 
     redrawBars();
-    return;
-
-
 }
 
 function pixelToTileX(pixel_number) {
@@ -9530,8 +9517,6 @@ function removeNpc(npc_id) {
     //console.log("Done removing monster");
 
     redrawBars();
-    return;
-
 }
 
 function redrawMap() {

@@ -1,3 +1,4 @@
+<!--suppress ALL -->
 <script type="text/javascript">
     // Get settings from cookies on the client
     var debug_mode = false;
@@ -154,7 +155,7 @@
         }
 
         div.chat-container {
-            display:block; order: 3; display:none;
+            order: 3; display:none;
         }
 
         div.flex-wrapper {
@@ -326,7 +327,6 @@
                 <button id="chatswitch_system" class="button is-default">System</button>
                 <button id="help" class="button is-success">Help</button>
                 <button id="messages" class="button is-default"><i class="fas fa-envelope"></i></button>
-                </ul>
             </div>
             <div class="chat" id="chat_local">
                 <p>This is local chat - your current planet, or the galaxy</p>
@@ -347,10 +347,8 @@
                 <button onclick="submitChatMessage(); return false;" type="submit">Send</button>
             </form>
         </div>
-
-
-
     </div>
+
     <div style="flex: 1; order: 2; margin-left:10px; margin-top:10px; height: 100vh; overflow-y: scroll;">
 
         <!-- Our line of buttons! -->
@@ -585,13 +583,9 @@
 
             <div id="inventory" style="margin-bottom:10px;"></div>
 
-            <div id="addiction" class="white-text">
+            <div id="addiction" class="white-text"></div>
 
-            </div>
-
-            <div id="eating_data" class="white-text">
-
-            </div>
+            <div id="eating_data" class="white-text"></div>
 
             <!-- starts out invisible -->
             <div id="player_equipment" style="display:none;"></div>
@@ -622,35 +616,19 @@
 
             <div id="task_management" style="display:none; margin-top:10px; margin-left:10px;"></div>
 
-            <div id="other_player_data">
+            <div id="other_player_data"></div>
 
-            </div>
-            <div id="attack_box">
+            <div id="attack_box"></div>
 
-            </div>
+            <div id="trade"></div>
 
+            <div id="planet_data"></div>
 
+            <div id="coord_data" class="white-text"></div>
 
+            <div id="object_inventory"></div>
 
-
-            <div id="trade">
-
-            </div>
-
-
-            <div id="planet_data">
-
-            </div>
-
-            <div id="coord_data" class="white-text">
-
-            </div>
-            <div id="object_inventory">
-            </div>
-
-            <div id="admin_data">
-
-            </div>
+            <div id="admin_data"></div>
 
 
             <div id="settings" class="white-text" style="display:none">
@@ -671,6 +649,7 @@
                 <div id="sound">
 
                 </div>
+
                 <div id="notify_on_new_player">
 
                 </div>

@@ -220,10 +220,6 @@ socket.on('battle_linker_info', function(data) {
         } else {
             //console.log("Didn't have it anyways");
         }
-        return;
-
-
-
     } else if(data.battle_linker) {
 
 
@@ -3189,7 +3185,6 @@ socket.on('repairing_linker_info', function(data) {
         delete repairing_linkers[index];
         console.log("Removed repairing linker");
         redrawBars();
-        return;
     } else if(!data.remove && index === -1) {
         console.log("Pushing repairing linker");
         index = repairing_linkers.push(data.repairing_linker) - 1;
@@ -3437,10 +3432,6 @@ socket.on('salvaging_linker_info', function(data) {
     
             redrawBars();
         }
-
-      
-
-        return;
     } else if(index === -1) {
         index = salvaging_linkers.push(data.salvaging_linker) - 1;
 

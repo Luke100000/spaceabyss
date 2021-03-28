@@ -158,16 +158,12 @@ function submitShipName(ship_id) {
 
 $(document).on('click', 'button', function () {
     //console.log("Clicked button");
-    var clicked_id = this.id;
-    var clicked_x = false;
-    var clicked_y = false;
+    const clicked_id = this.id;
+    let clicked_x = false;
+    let clicked_y = false;
 
-    var split_name = clicked_id.split("_");
+    const split_name = clicked_id.split("_");
     //console.log("Got click on action: " + split_name[0] + " id: " + split_name[1]);
-
-    if(split_name.length == 3) {
-
-    }
 
     if(split_name[0] === 'activatetasks') {
         localStorage.setItem('use_tasks', true);
@@ -218,14 +214,12 @@ $(document).on('click', 'button', function () {
     if(split_name[0] == 'assemblefloor') {
         console.log("Have assemblefloor click");
 
-        var clicked_tile_x = false;
-        var clicked_tile_y = false;
         console.log("tile_x attribute: " + $('#' + clicked_id).attr('tile_x'));
         let being_assembled_in_object_id = $('#' + clicked_id).attr('being_assembled_in_object_id');
         if($('#' + clicked_id).attr('tile_x')) {
             console.log("Assembly click has tile_x");
-            var clicked_tile_x = $('#' + clicked_id).attr('tile_x');
-            var clicked_tile_y = $('#' + clicked_id).attr('tile_y');
+            let clicked_tile_x = $('#' + clicked_id).attr('tile_x');
+            let clicked_tile_y = $('#' + clicked_id).attr('tile_y');
 
             socket.emit("assemble_data", {floor_type_id: split_name[1], 'tile_x': clicked_tile_x, 'tile_y': clicked_tile_y, 'being_assembled_in_object_id': being_assembled_in_object_id });
         } else {
@@ -874,8 +868,8 @@ $(document).on('click', 'button', function () {
 
         console.log("Got plant data");
         console.log("Got clicked_id as " + clicked_id);
-        let clicked_x = $('#' + clicked_id).attr('x');
-        let clicked_y = $('#' + clicked_id).attr('y');
+        clicked_x = $('#' + clicked_id).attr('x');
+        clicked_y = $('#' + clicked_id).attr('y');
         let planet_coord_id = 0;
         if($('#' + clicked_id).attr('planet_coord_id')) {
             planet_coord_id = $('#' + clicked_id).attr('planet_coord_id');
@@ -1241,8 +1235,8 @@ $(document).on('click', 'button', function () {
 
     if(split_name[0] == "spawnmonster") {
         console.log("Admin spawning monster");
-        var clicked_x = $('#' + clicked_id).attr('x');
-        var clicked_y = $('#' + clicked_id).attr('y');
+        clicked_x = $('#' + clicked_id).attr('x');
+        clicked_y = $('#' + clicked_id).attr('y');
         socket.emit("spawn_monster_data", { 'monster_type_id': split_name[1], x: clicked_x, y: clicked_y});
     }
 

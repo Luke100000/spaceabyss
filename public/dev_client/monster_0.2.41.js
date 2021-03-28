@@ -145,6 +145,4 @@ function removeMonster(monster_id) {
     //console.log("Done removing monster");
 
     redrawBars();
-    return;
-
 }
