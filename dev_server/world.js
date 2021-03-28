@@ -4,7 +4,7 @@ var io = io_handler.io;
 var database = require('./database.js');
 var pool = database.pool;
 const PF = require('pathfinding');
-const {v1: uuidv1} = require('uuid');
+const { v1: uuidv1 } = require('uuid');
 const chalk = require('chalk');
 const log = console.log;
 
@@ -20,6 +20,7 @@ const monster = require('./monster.js');
 const npc = require('./npc.js');
 const planet = require('./planet.js');
 const player = require('./player.js');
+
 
 
 /*
@@ -77,7 +78,7 @@ async function addBattleLinker(socket, dirty, data) {
 
         // attach and get our socket ids if we are dealing with players
         if (data.attacking_type === 'player') {
-            attacking_index = await player.getIndex(dirty, {'player_id': data.attacking_id});
+            attacking_index = await player.getIndex(dirty, { 'player_id': data.attacking_id });
             if (attacking_index !== -1) {
                 // make sure the other player is connected
                 Object.keys(io.sockets.sockets).forEach(function (id) {
@@ -97,7 +98,7 @@ async function addBattleLinker(socket, dirty, data) {
         }
 
         if (data.being_attacked_type === 'player') {
-            being_attacked_index = await player.getIndex(dirty, {'player_id': data.being_attacked_id});
+            being_attacked_index = await player.getIndex(dirty, { 'player_id': data.being_attacked_id });
             if (being_attacked_index !== -1) {
                 // make sure the other player is connected
                 Object.keys(io.sockets.sockets).forEach(function (id) {
@@ -112,11 +113,11 @@ async function addBattleLinker(socket, dirty, data) {
                 return false;
             }
 
-            if (helper.isFalse(room)) {
+            if(helper.isFalse(room)) {
                 let defending_player_info = await player.getCoordAndRoom(dirty, being_attacked_index);
                 room = defending_player_info.room;
             }
-
+            
         }
 
 
@@ -126,15 +127,16 @@ async function addBattleLinker(socket, dirty, data) {
         if (data.attacking_type === 'player') {
 
 
+
             // Spaceport tile check
             if (dirty.players[attacking_index].planet_coord_id) {
-                let attacking_coord_index = await main.getPlanetCoordIndex({'planet_coord_id': dirty.players[attacking_index].planet_coord_id});
+                let attacking_coord_index = await main.getPlanetCoordIndex({ 'planet_coord_id': dirty.players[attacking_index].planet_coord_id });
 
                 if (attacking_coord_index === -1) {
                     return false;
                 }
 
-                if (helper.notFalse(dirty.players[attacking_index].planet_coord_index) &&
+                if(helper.notFalse(dirty.players[attacking_index].planet_coord_index) && 
                     dirty.planet_coords[dirty.players[attacking_index].planet_coord_index].id !== dirty.planet_coords[attacking_coord_index].id) {
                     log(chalk.yellow("Player planet_coord_index is desynced from the player's planet_coord_id!!!"));
                 }
@@ -143,7 +145,7 @@ async function addBattleLinker(socket, dirty, data) {
                     console.log("No attacking when spaceport tiles are involved");
 
                     // Let the player know this reason
-                    socket.emit('chat', {'message': "You can't attack while on a spaceport", 'scope': 'system'});
+                    socket.emit('chat', { 'message': "You can't attack while on a spaceport", 'scope': 'system' });
                     return false;
                 }
 
@@ -202,7 +204,7 @@ async function addBattleLinker(socket, dirty, data) {
 
             // Spaceport tile check
             if (dirty.players[being_attacked_index].planet_coord_id) {
-                let being_attacked_coord_index = await main.getPlanetCoordIndex({'planet_coord_id': dirty.players[being_attacked_index].planet_coord_id});
+                let being_attacked_coord_index = await main.getPlanetCoordIndex({ 'planet_coord_id': dirty.players[being_attacked_index].planet_coord_id });
 
                 if (being_attacked_coord_index === -1) {
                     return false;
@@ -226,10 +228,7 @@ async function addBattleLinker(socket, dirty, data) {
             if (dirty.objects[being_attacked_object_index].object_type_id === 114 && dirty.objects[being_attacked_object_index].player_id) {
 
                 // Let the attacking player know you can't attack pods
-                socket.emit('chat', {
-                    'message': "Occupied pods cannot be attacked - only abandoned pods can be attacked",
-                    'scope': 'system'
-                });
+                socket.emit('chat', { 'message': "Occupied pods cannot be attacked - only abandoned pods can be attacked", 'scope': 'system' });
 
                 return false;
             }
@@ -241,12 +240,8 @@ async function addBattleLinker(socket, dirty, data) {
 
         let battle_linker = {
             'id': uuidv1(),
-            'attacking_id': data.attacking_id,
-            'attacking_type': data.attacking_type,
-            'being_attacked_id': data.being_attacked_id,
-            'being_attacked_type': data.being_attacked_type,
-            'socket_id': socket_id,
-            'being_attacked_socket_id': being_attacked_socket_id,
+            'attacking_id': data.attacking_id, 'attacking_type': data.attacking_type, 'being_attacked_id': data.being_attacked_id,
+            'being_attacked_type': data.being_attacked_type, 'socket_id': socket_id, 'being_attacked_socket_id': being_attacked_socket_id,
             'turn_count': 0,
             'room': room
         };
@@ -257,17 +252,11 @@ async function addBattleLinker(socket, dirty, data) {
 
 
         if (socket_id) {
-            io.to(socket_id).emit('battle_linker_info', {
-                'something': 'yes',
-                'battle_linker': dirty.battle_linkers[battle_linker_index]
-            });
+            io.to(socket_id).emit('battle_linker_info', { 'something': 'yes', 'battle_linker': dirty.battle_linkers[battle_linker_index] });
         }
 
         if (being_attacked_socket_id) {
-            io.to(being_attacked_socket_id).emit('battle_linker_info', {
-                'something': 'yes',
-                'battle_linker': dirty.battle_linkers[battle_linker_index]
-            });
+            io.to(being_attacked_socket_id).emit('battle_linker_info', { 'something': 'yes', 'battle_linker': dirty.battle_linkers[battle_linker_index] });
         }
 
         // If it's a player and they were attacking something else previously, we will stop that previous attack
@@ -283,27 +272,26 @@ async function addBattleLinker(socket, dirty, data) {
 
                 if (dirty.battle_linkers[previous_battle_linker_index].socket_id) {
                     io.to(dirty.battle_linkers[previous_battle_linker_index].socket_id).emit('battle_linker_info',
-                        {'remove': 'true', 'battle_linker': dirty.battle_linkers[previous_battle_linker_index]});
+                        { 'remove': 'true', 'battle_linker': dirty.battle_linkers[previous_battle_linker_index] });
                 }
 
                 if (dirty.battle_linkers[previous_battle_linker_index].being_attacked_socket_id) {
                     io.to(dirty.battle_linkers[previous_battle_linker_index].being_attacked_socket_id).emit('battle_linker_info',
-                        {'remove': true, 'battle_linker': dirty.battle_linkers[previous_battle_linker_index]});
+                        { 'remove': true, 'battle_linker': dirty.battle_linkers[previous_battle_linker_index] });
                 }
 
                 // we need to send to the room as well
-                if (typeof dirty.battle_linkers[previous_battle_linker_index].room !== 'undefined' && helper.notFalse(dirty.battle_linkers[previous_battle_linker_index].room)) {
-                    io.to(dirty.battle_linkers[previous_battle_linker_index].room).emit('battle_linker_info', {
-                        'remove': true,
-                        'battle_linker': dirty.battle_linkers[previous_battle_linker_index]
-                    });
+                if(typeof dirty.battle_linkers[previous_battle_linker_index].room !== 'undefined' && helper.notFalse(dirty.battle_linkers[previous_battle_linker_index].room)) {
+                    io.to(dirty.battle_linkers[previous_battle_linker_index].room).emit('battle_linker_info', { 'remove': true, 'battle_linker': dirty.battle_linkers[previous_battle_linker_index] });
                 }
+
 
 
                 delete dirty.battle_linkers[previous_battle_linker_index];
 
             }
         }
+
 
 
     } catch (error) {
@@ -342,8 +330,8 @@ async function addObjectToCoord(dirty, object_index, coord_index) {
     }
 
 
-}
 
+}
 exports.addObjectToCoord = addObjectToCoord;
 
 async function addObjectToPlanetCoord(dirty, object_index, planet_coord_index) {
@@ -383,8 +371,8 @@ async function addObjectToPlanetCoord(dirty, object_index, planet_coord_index) {
     }
 
 
-}
 
+}
 exports.addObjectToPlanetCoord = addObjectToPlanetCoord;
 
 async function addObjectToShipCoord(dirty, object_index, ship_coord_index) {
@@ -403,8 +391,9 @@ async function addObjectToShipCoord(dirty, object_index, ship_coord_index) {
     dirty.objects[object_index].has_change = true;
 
 }
-
 exports.addObjectToShipCoord = addObjectToShipCoord;
+
+
 
 
 /**
@@ -425,7 +414,7 @@ async function addPlayerLog(dirty, player_index, message, data = {}) {
 
         let player_id = 0;
 
-        if (player_index !== -1 && dirty.players[player_index]) {
+        if(player_index !== -1 && dirty.players[player_index]) {
             player_id = dirty.players[player_index].id;
         }
 
@@ -436,31 +425,31 @@ async function addPlayerLog(dirty, player_index, message, data = {}) {
 
         let new_player_log_id = result.insertId;
 
-        if (data.ship_id) {
+        if(data.ship_id) {
             let sql = "UPDATE player_logs SET ship_id = ? WHERE id = ?";
             let inserts = [data.ship_id, new_player_log_id];
-
+    
             let [result] = await (pool.query(sql, inserts));
         }
 
-        if (data.planet_id) {
+        if(data.planet_id) {
             let sql = "UPDATE player_logs SET planet_id = ? WHERE id = ?";
             let inserts = [data.planet_id, new_player_log_id];
-
+    
             let [result] = await (pool.query(sql, inserts));
         }
 
-        if (data.event_id) {
+        if(data.event_id) {
             let sql = "UPDATE player_logs SET event_id = ? WHERE id = ?";
             let inserts = [data.event_id, new_player_log_id];
-
+    
             let [result] = await (pool.query(sql, inserts));
         }
 
-        if (data.scope) {
+        if(data.scope) {
             let sql = "UPDATE player_logs SET scope = ? WHERE id = ?";
             let inserts = [data.scope, new_player_log_id];
-
+    
             let [result] = await (pool.query(sql, inserts));
         }
 
@@ -489,7 +478,7 @@ async function addRule(socket, dirty, data) {
 
         // For now we are just going to have a master list
         let rule_values = [
-            "allow_all_players", "allow_faction_players", "allow_creator", "allow_monsters",
+            "allow_all_players", "allow_faction_players", "allow_creator", "allow_monsters", 
             "attack_all_players", "attack_all_players_except_creator", "attack_all_players_except_creator_faction",
             "building_no_others",
             "floor_no_others",
@@ -521,14 +510,14 @@ async function addRule(socket, dirty, data) {
 
         let can_add_rules = false;
 
-        if (typeof data.allow !== 'undefined') {
+        if(typeof data.allow !== 'undefined') {
             can_add_rules = true;
         } else if (helper.notFalse(socket) && dirty.players[socket.player_index].id === dirty.objects[object_index].player_id) {
-
+            
             can_add_rules = true;
         }
 
-        if (!can_add_rules) {
+        if(!can_add_rules) {
             log(chalk.yellow("Not that player's object to add rules for"));
             return false;
         }
@@ -584,14 +573,11 @@ async function addRule(socket, dirty, data) {
 
             for (let x = starting_tile_x; x <= ending_tile_x; x++) {
                 for (let y = starting_tile_y; y <= ending_tile_y; y++) {
-                    let coord_index = await main.getCoordIndex({'tile_x': x, 'tile_y': y});
+                    let coord_index = await main.getCoordIndex({ 'tile_x': x, 'tile_y': y });
 
                     if (coord_index !== -1 && !dirty.coords[coord_index].watched_by_object_id) {
 
-                        main.updateCoordGeneric(socket, {
-                            'coord_index': coord_index,
-                            'watched_by_object_id': dirty.objects[object_index].id
-                        });
+                        main.updateCoordGeneric(socket, { 'coord_index': coord_index, 'watched_by_object_id': dirty.objects[object_index].id });
                     }
                 }
             }
@@ -628,7 +614,7 @@ async function addToArea(socket, dirty, data) {
         }
 
         if (data.planet_coord_id) {
-            let planet_coord_index = await main.getPlanetCoordIndex({'planet_coord_id': data.planet_coord_id});
+            let planet_coord_index = await main.getPlanetCoordIndex({ 'planet_coord_id': data.planet_coord_id });
 
             if (planet_coord_index === -1) {
                 return false;
@@ -639,7 +625,7 @@ async function addToArea(socket, dirty, data) {
         }
 
         if (data.ship_coord_id) {
-            let ship_coord_index = await main.getShipCoordIndex({'ship_coord_id': data.ship_coord_id});
+            let ship_coord_index = await main.getShipCoordIndex({ 'ship_coord_id': data.ship_coord_id });
 
             if (ship_coord_index === -1) {
                 return false;
@@ -650,6 +636,8 @@ async function addToArea(socket, dirty, data) {
         }
 
 
+
+
     } catch (error) {
         log(chalk.red("Error in world.addToArea: " + error));
         console.error(error);
@@ -657,6 +645,7 @@ async function addToArea(socket, dirty, data) {
 }
 
 exports.addToArea = addToArea;
+
 
 
 /*
@@ -701,15 +690,15 @@ async function aiAttack(dirty, data) {
         let being_attacked_index = -1;
         let being_attacked_coord_index = -1;
 
-        if (data.attacking_type === 'player') {
-            being_attacked_index = await player.getIndex(dirty, {'player_id': data.attacking_id});
-        } else if (data.attacking_type === 'object') {
+        if(data.attacking_type === 'player') {
+            being_attacked_index = await player.getIndex(dirty, { 'player_id': data.attacking_id });
+        } else if(data.attacking_type === 'object') {
             being_attacked_index = await game_object.getIndex(dirty, data.attacking_id);
-        } else if (data.attacking_type === 'monster') {
+        } else if(data.attacking_type === 'monster') {
             being_attacked_index = await monster.getIndex(dirty, data.attacking_id);
         }
 
-        if (being_attacked_index === -1) {
+        if(being_attacked_index === -1) {
             log(chalk.yellow("Could not find what the AI is supposed to attack"));
             return false;
         }
@@ -719,59 +708,59 @@ async function aiAttack(dirty, data) {
         let origin_tile_y = -1;
 
         // Next up - find our scope and origin coord
-        if (data.attacking_type === 'player' && dirty.players[being_attacked_index].planet_coord_id) {
+        if(data.attacking_type === 'player' && dirty.players[being_attacked_index].planet_coord_id) {
             console.log("Set scope to planet");
             scope = 'planet';
             being_attacked_coord_index = await main.getPlanetCoordIndex(
-                {'planet_coord_id': dirty.players[being_attacked_index].planet_coord_id});
-            if (being_attacked_coord_index === -1) {
+                { 'planet_coord_id': dirty.players[being_attacked_index].planet_coord_id });
+            if(being_attacked_coord_index === -1) {
                 log(chalk.yellow("Could not find that planet coord"));
                 return false;
             }
             origin_tile_x = dirty.planet_coords[being_attacked_coord_index].tile_x;
             origin_tile_y = dirty.planet_coords[being_attacked_coord_index].tile_y;
 
-        } else if (data.attacking_type === 'player' && dirty.players[being_attacked_index].ship_coord_id) {
+        } else if(data.attacking_type === 'player' && dirty.players[being_attacked_index].ship_coord_id) {
             console.log("Set scope to ship");
             scope = 'ship';
             being_attacked_coord_index = await main.getShipCoordIndex(
-                {'ship_coord_id': dirty.players[being_attacked_index].ship_coord_id});
-            if (being_attacked_coord_index === -1) {
+                { 'ship_coord_id': dirty.players[being_attacked_index].ship_coord_id });
+            if(being_attacked_coord_index === -1) {
                 log(chalk.yellow("Could not find that ship coord"));
                 return false;
             }
             origin_tile_x = dirty.ship_coords[being_attacked_coord_index].tile_x;
             origin_tile_y = dirty.ship_coords[being_attacked_coord_index].tile_y;
 
-        } else if (data.attacking_type === 'object' && dirty.objects[being_attacked_index].coord_id) {
+        } else if(data.attacking_type === 'object' && dirty.objects[being_attacked_index].coord_id) {
             console.log("Set scope to galaxy");
             scope = 'galaxy';
             spawn_monster_type_id = 107;
-            being_attacked_coord_index = await main.getCoordIndex({'coord_id': dirty.objects[being_attacked_index].coord_id});
-            if (being_attacked_coord_index === -1) {
+            being_attacked_coord_index = await main.getCoordIndex({ 'coord_id': dirty.objects[being_attacked_index].coord_id });
+            if(being_attacked_coord_index === -1) {
                 log(chalk.yellow("Could not find that galaxy coord"));
                 return false;
             }
             origin_tile_x = dirty.coords[being_attacked_coord_index].tile_x;
             origin_tile_y = dirty.coords[being_attacked_coord_index].tile_y;
 
-        } else if (data.attacking_type === 'monster' && dirty.monsters[being_attacked_index].planet_coord_id) {
+        } else if(data.attacking_type === 'monster' && dirty.monsters[being_attacked_index].planet_coord_id) {
             console.log("Set scope to planet");
             scope = 'planet';
             being_attacked_coord_index = await main.getPlanetCoordIndex(
-                {'planet_coord_id': dirty.monsters[being_attacked_index].planet_coord_id});
-            if (being_attacked_coord_index === -1) {
+                { 'planet_coord_id': dirty.monsters[being_attacked_index].planet_coord_id });
+            if(being_attacked_coord_index === -1) {
                 log(chalk.yellow("Could not find that planet coord"));
                 return false;
             }
             origin_tile_x = dirty.planet_coords[being_attacked_coord_index].tile_x;
             origin_tile_y = dirty.planet_coords[being_attacked_coord_index].tile_y;
-        } else if (data.attacking_type === 'monster' && dirty.monsters[being_attacked_index].ship_coord_id) {
+        } else if(data.attacking_type === 'monster' && dirty.monsters[being_attacked_index].ship_coord_id) {
             console.log("Set scope to ship");
             scope = 'ship';
             being_attacked_coord_index = await main.getShipCoordIndex(
-                {'ship_coord_id': dirty.monsters[being_attacked_index].ship_coord_id});
-            if (being_attacked_coord_index === -1) {
+                { 'ship_coord_id': dirty.monsters[being_attacked_index].ship_coord_id });
+            if(being_attacked_coord_index === -1) {
                 log(chalk.yellow("Could not find that ship coord"));
                 return false;
             }
@@ -780,7 +769,7 @@ async function aiAttack(dirty, data) {
         } else {
 
             console.log("Did not set scope");
-            if (data.attacking_type === 'object') {
+            if(data.attacking_type === 'object') {
                 console.log("galaxy/planet/ship coord_id: " + dirty.objects[being_attacked_index].coord_id + "," + dirty.objects[being_attacked_index].planet_coord_id +
                     "," + dirty.objects[being_attacked_index].ship_coord_id);
             }
@@ -790,10 +779,10 @@ async function aiAttack(dirty, data) {
 
         // Lets Find Our Coord!
         let placing_coord_index = -1;
-        for (let x = origin_tile_x - 1; x <= origin_tile_x + 1 && placing_coord_index === -1; x++) {
-            for (let y = origin_tile_y - 1; y <= origin_tile_y + 1 && placing_coord_index === -1; y++) {
+        for(let x = origin_tile_x - 1; x <= origin_tile_x + 1 && placing_coord_index === -1; x++) {
+            for(let y = origin_tile_y - 1; y <= origin_tile_y + 1 && placing_coord_index === -1; y++) {
 
-                if (scope === 'planet') {
+                if(scope === 'planet') {
                     console.log("Checking planet x,y: " + x + "," + y);
 
                     let checking_data = {
@@ -807,7 +796,7 @@ async function aiAttack(dirty, data) {
 
                         let can_place_result = await monster.canPlace(dirty, 'planet',
                             dirty.planet_coords[checking_planet_coord_index],
-                            {'monster_type_id': spawn_monster_type_id});
+                            { 'monster_type_id': spawn_monster_type_id });
 
                         if (can_place_result === true) {
                             placing_coord_index = checking_planet_coord_index;
@@ -818,7 +807,7 @@ async function aiAttack(dirty, data) {
 
                     }
 
-                } else if (scope === 'ship') {
+                } else if(scope === 'ship') {
                     console.log("Checking ship x,y: " + x + "," + y);
 
                     let checking_data = {
@@ -832,7 +821,7 @@ async function aiAttack(dirty, data) {
 
                         let can_place_result = await monster.canPlace(dirty, 'ship',
                             dirty.ship_coords[checking_ship_coord_index],
-                            {'monster_type_id': spawn_monster_type_id});
+                            { 'monster_type_id': spawn_monster_type_id });
 
                         if (can_place_result === true) {
                             placing_coord_index = checking_ship_coord_index;
@@ -843,7 +832,7 @@ async function aiAttack(dirty, data) {
 
                     }
 
-                } else if (scope === 'galaxy') {
+                } else if(scope === 'galaxy') {
                     console.log("Checking galaxy x,y: " + x + "," + y);
                     let checking_data = {
                         'tile_x': x, 'tile_y': y
@@ -854,7 +843,7 @@ async function aiAttack(dirty, data) {
 
                         let can_place_result = await monster.canPlace(dirty, 'galaxy',
                             dirty.coords[checking_coord_index],
-                            {'monster_type_id': spawn_monster_type_id});
+                            { 'monster_type_id': spawn_monster_type_id });
 
                         if (can_place_result === true) {
                             placing_coord_index = checking_coord_index;
@@ -873,31 +862,32 @@ async function aiAttack(dirty, data) {
         }
 
         // If we can't place, open up a rift in FREAKING SPACE TIME AND GRAVITY THE CLEVER GIRL!
-        if (placing_coord_index === -1) {
+        if(placing_coord_index === -1) {
             log(chalk.cyan("AI IS DIRECLTY DOING DAMAGE BABY!! BUG OR CLEVER PLAYER!?!"));
 
             // AI attacks directly without using an edifice. 
-            if (data.attacking_type === 'player') {
-                player.damage(dirty, {'player_index': being_attacked_index, 'damage_amount': 50, 'damage_types': []});
-            } else if (data.attacking_type === 'object') {
+            if(data.attacking_type === 'player') {
+                player.damage(dirty, { 'player_index': being_attacked_index, 'damage_amount': 50, 'damage_types': [] });
+            } else if(data.attacking_type === 'object') {
                 let object_info = await game_object.getCoordAndRoom(dirty, being_attacked_index);
-                game_object.damage(dirty, being_attacked_index, 50, {'object_info': object_info});
-            } else if (data.attacking_type === 'monster') {
+                game_object.damage(dirty, being_attacked_index, 50, { 'object_info': object_info });
+            } else if(data.attacking_type === 'monster') {
                 monster.damage(dirty, being_attacked_index, 50, {});
             }
             return false;
         }
 
 
+
         // The potential for escalation!
         // TODO eventually we should just 'attach' the AI core count to AIs like we do with ships to save on lookups
-        if (data.attack_level === 2 && dirty.objects[ai_index].energy >= 500 && (scope === 'planet' || scope === 'ship')) {
+        if(data.attack_level === 2 && dirty.objects[ai_index].energy >= 500 && (scope === 'planet' || scope === 'ship') ) {
             let ai_core_count = 0;
 
-            for (let i = 0; i < dirty.objects.length && ai_core_count < 1; i++) {
-                if (dirty.objects[i] && dirty.objects[i].object_type_id === 162) {
+            for(let i = 0; i < dirty.objects.length && ai_core_count < 1; i++ ) {
+                if(dirty.objects[i] && dirty.objects[i].object_type_id === 162) {
 
-                    if (dirty.objects[ai_index].planet_coord_id && dirty.objects[i].planet_id === dirty.objects[ai_index].planet_id) {
+                    if(dirty.objects[ai_index].planet_coord_id && dirty.objects[i].planet_id === dirty.objects[ai_index].planet_id) {
                         ai_core_count++;
 
                     } else if (dirty.objects[ai_index].ship_coord_id && dirty.objects[i].ship_id === dirty.objects[ai_index].ship_id) {
@@ -907,18 +897,19 @@ async function aiAttack(dirty, data) {
                 }
             }
 
-            if (ai_core_count >= 1) {
+            if(ai_core_count >= 1) {
                 spawn_monster_type_id = 57;
                 energy_used = 500;
                 log(chalk.green("Set to spawn edifice"));
 
             }
-
+            
         }
 
 
         spawn_monster_data.ai_id = dirty.objects[ai_index].id;
         monster.spawn(dirty, spawn_monster_type_id, spawn_monster_data);
+
 
 
         dirty.objects[ai_index].energy -= energy_used;
@@ -927,6 +918,7 @@ async function aiAttack(dirty, data) {
         // send the updated ai (object) info to the room
         console.log("Sending updated ai info to room");
         await game_object.sendInfo(false, room, dirty, ai_index);
+
 
 
     } catch (error) {
@@ -1180,7 +1172,7 @@ async function aiRetaliate(dirty, ai_index, attacking_type, attacking_id) {
         } else {
             //console.log("AI is already attacking.");
         }
-    } catch (error) {
+    } catch(error) {
         log(chalk.red("Error in world.aiRetaliate: " + error));
         console.error(error);
     }
@@ -1200,8 +1192,8 @@ async function attachShipEngines(dirty, ship_index) {
         //console.time("attachShipEngines");
 
         let engine_object_type_ids = [];
-        for (let i = 0; i < dirty.object_types.length; i++) {
-            if (dirty.object_types[i] && dirty.object_types[i].is_ship_engine) {
+        for(let i = 0; i < dirty.object_types.length; i++) {
+            if(dirty.object_types[i] && dirty.object_types[i].is_ship_engine) {
                 engine_object_type_ids.push(dirty.object_types[i].id);
             }
         }
@@ -1215,7 +1207,7 @@ async function attachShipEngines(dirty, ship_index) {
         let max_engine_energy = 0;
 
         for (let i = 0; i < dirty.ship_coords.length; i++) {
-            if (dirty.ship_coords[i] && dirty.ship_coords[i].ship_id === dirty.objects[ship_index].id &&
+            if (dirty.ship_coords[i] && dirty.ship_coords[i].ship_id === dirty.objects[ship_index].id && 
                 engine_object_type_ids.indexOf(dirty.ship_coords[i].object_type_id) !== -1) {
 
                 let drive_index = await game_object.getIndex(dirty, dirty.ship_coords[i].object_id);
@@ -1225,7 +1217,7 @@ async function attachShipEngines(dirty, ship_index) {
                     engine_indexes.push(drive_index);
 
                     let drive_object_type_index = main.getObjectTypeIndex(dirty.ship_coords[i].object_type_id);
-                    if (drive_object_type_index !== -1) {
+                    if(drive_object_type_index !== -1) {
                         total_engine_power += dirty.object_types[drive_object_type_index].engine_power;
                         current_engine_energy += dirty.objects[drive_index].energy;
                         max_engine_energy += dirty.object_types[drive_object_type_index].max_energy_storage;
@@ -1303,13 +1295,13 @@ async function changeArea(socket, dirty, area_id, data) {
             dirty.areas[area_index].name = data.new_name;
             dirty.areas[area_index].has_change = true;
 
-            socket.emit('area_info', {'area': dirty.areas[area_index]});
+            socket.emit('area_info', { 'area': dirty.areas[area_index] });
 
 
         }
 
-        if (typeof data.auto_market !== "undefined") {
-            if (data.auto_market) {
+        if(typeof data.auto_market !== "undefined") {
+            if(data.auto_market) {
                 dirty.areas[area_index].auto_market = true;
             } else {
                 dirty.areas[area_index].auto_market = false;
@@ -1344,7 +1336,9 @@ async function changeArea(socket, dirty, area_id, data) {
                     market_linker.has_change = false;
                     let market_linker_index = dirty.market_linkers.push(market_linker) - 1;
 
-                    socket.emit('market_linker_info', {'market_linker': dirty.market_linkers[market_linker_index]});
+                    socket.emit('market_linker_info', { 'market_linker': dirty.market_linkers[market_linker_index] });
+
+
 
 
                 }
@@ -1385,16 +1379,17 @@ async function changeFloor(dirty, data) {
             dirty.planet_coords[data.planet_coord_index].floor_type_id = dirty.floor_types[floor_type_index].id;
             dirty.planet_coords[data.planet_coord_index].has_change = true;
 
-            io.to("planet_" + dirty.planet_coords[data.planet_coord_index].planet_id).emit('planet_coord_info', {'planet_coord': dirty.planet_coords[data.planet_coord_index]});
+            io.to("planet_" + dirty.planet_coords[data.planet_coord_index].planet_id).emit('planet_coord_info', { 'planet_coord': dirty.planet_coords[data.planet_coord_index] });
         } else if (typeof data.ship_coord_index !== "undefined") {
             dirty.ship_coords[data.ship_coord_index].floor_type_id = dirty.floor_types[floor_type_index].id;
             dirty.ship_coords[data.ship_coord_index].has_change = true;
-            io.to("ship_" + dirty.ship_coords[data.ship_coord_index].ship_id).emit('ship_coord_info', {'ship_coord': dirty.ship_coords[data.ship_coord_index]});
+            io.to("ship_" + dirty.ship_coords[data.ship_coord_index].ship_id).emit('ship_coord_info', { 'ship_coord': dirty.ship_coords[data.ship_coord_index] });
         } else if (typeof data.coord_index !== "undefined") {
             dirty.coords[data.coord_index].floor_type_id = dirty.floor_types[floor_type_index].id;
             dirty.coords[data.coord_index].has_change = true;
-            io.to("galaxy").emit('coord_info', {'coord': dirty.coords[data.coord_index]});
+            io.to("galaxy").emit('coord_info', { 'coord': dirty.coords[data.coord_index] });
         }
+
 
 
         // send the new planet coord info to the room
@@ -1423,16 +1418,14 @@ async function checkMonsterBattleConditions(dirty, monster_id, checking_type, ch
             return false;
         }
 
-        let monster_type_index = dirty.monster_types.findIndex(function (obj) {
-            return obj && obj.id === dirty.monsters[monster_index].monster_type_id;
-        });
+        let monster_type_index = dirty.monster_types.findIndex(function (obj) { return obj && obj.id === dirty.monsters[monster_index].monster_type_id; });
 
         if (monster_type_index === -1) {
             log(chalk.yellow("Could not find monster type"));
             return false;
         }
 
-        if (!dirty.monster_types[monster_type_index].auto_attack) {
+        if(!dirty.monster_types[monster_type_index].auto_attack) {
             //console.log("Monster type does not auto attack");
             return false;
         }
@@ -1461,15 +1454,15 @@ async function checkMonsterBattleConditions(dirty, monster_id, checking_type, ch
 
         // If the monster is trying to attack a player, make sure the player isn't on a spaceport tile
         if (checking_type === 'player') {
-            player_index = await player.getIndex(dirty, {'player_id': checking_id});
+            player_index = await player.getIndex(dirty, { 'player_id': checking_id });
 
-            if (player_index === -1) {
+            if(player_index === -1) {
                 log(chalk.yellow("Could not find the player"));
                 return false;
             }
 
 
-            if (dirty.monsters[monster_index].planet_coord_id) {
+            if(dirty.monsters[monster_index].planet_coord_id) {
                 let player_coord_index = await player.getCoordIndex(dirty, player_index, 'planet');
                 //let player_coord_index = await main.getPlanetCoordIndex(
                 //    { 'planet_coord_id': dirty.players[player_index].planet_coord_id });
@@ -1480,8 +1473,9 @@ async function checkMonsterBattleConditions(dirty, monster_id, checking_type, ch
                         can_attack = false;
                     }
                 }
-            }
+            } 
 
+               
 
         }
 
@@ -1513,7 +1507,7 @@ async function checkMonsterBattleConditions(dirty, monster_id, checking_type, ch
         let new_battle_linker_index = dirty.battle_linkers.push(battle_linker_data) - 1;
 
         if (helper.notFalse(player_socket)) {
-            player_socket.emit('battle_linker_info', {'battle_linker': dirty.battle_linkers[new_battle_linker_index]});
+            player_socket.emit('battle_linker_info', { 'battle_linker': dirty.battle_linkers[new_battle_linker_index] });
 
             // We could uncomment this to have the monster auto INSTA attack the player
             //battle.monsterAttackPlayer(dirty, dirty.battle_linkers[new_battle_linker_index]);
@@ -1562,21 +1556,23 @@ async function checkObjectBattleConditions(socket, dirty, object_id, checking_ty
         }
 
 
+
+
         let player_index = -1;
         let player_info = {};
         if (checking_type === 'player') {
-            player_index = await player.getIndex(dirty, {'player_id': checking_id});
+            player_index = await player.getIndex(dirty, { 'player_id': checking_id });
 
             if (player_index === -1) {
                 log(chalk.yellow("Could not find the player"));
                 return false;
-
+                
             }
 
             player_info = await player.getCoordAndRoom(dirty, player_index);
 
             // If the player is on a spaceport tile, we won't be able to attack the player
-            if (player_info.coord && (player_info.coord.floor_type_id === 11 || player_info.coord.floor_type_id === 44)) {
+            if (player_info.coord && (player_info.coord.floor_type_id === 11 || player_info.coord.floor_type_id === 44) ) {
                 return false;
             }
         }
@@ -1607,6 +1603,7 @@ async function checkObjectBattleConditions(socket, dirty, object_id, checking_ty
         }
 
 
+
         let battle_linker_data = {
             'id': uuidv1(),
             'attacking_id': object_id, 'attacking_type': 'object', 'being_attacked_id': checking_id,
@@ -1622,7 +1619,7 @@ async function checkObjectBattleConditions(socket, dirty, object_id, checking_ty
         let new_battle_linker_index = dirty.battle_linkers.push(battle_linker_data) - 1;
 
         if (socket) {
-            socket.emit('battle_linker_info', {'battle_linker': dirty.battle_linkers[new_battle_linker_index]});
+            socket.emit('battle_linker_info', { 'battle_linker': dirty.battle_linkers[new_battle_linker_index] });
         }
 
 
@@ -1643,9 +1640,9 @@ async function checkPlanetImpact(dirty, data) {
 
 
         if (data.planet_coord_id) {
-            let planet_coord_index = await main.getPlanetCoordIndex({'planet_coord_id': parseInt(data.planet_coord_id)});
+            let planet_coord_index = await main.getPlanetCoordIndex({ 'planet_coord_id': parseInt(data.planet_coord_id) });
             if (planet_coord_index !== -1) {
-                planet_index = await planet.getIndex(dirty, {'planet_id': dirty.planet_coords[planet_coord_index].planet_id});
+                planet_index = await planet.getIndex(dirty, { 'planet_id': dirty.planet_coords[planet_coord_index].planet_id });
             }
         }
 
@@ -1740,6 +1737,8 @@ async function connectLevel(socket, dirty, data) {
         }
 
 
+
+
         // So the grid is going to be the base size. We will have to translate the actual planet coords
         // back and forth due to the offset
         let grid = new PF.Grid(level_x_size, level_y_size);
@@ -1802,6 +1801,7 @@ async function connectLevel(socket, dirty, data) {
                     //console.log(path);
 
 
+
                     // For any walled off tiles we went through, we need to unwall them
                     for (let p = 0; p < path.length; p++) {
                         let path_x = path[p][0];
@@ -1811,9 +1811,7 @@ async function connectLevel(socket, dirty, data) {
 
                         let path_coord_index = await main.getPlanetCoordIndex({
                             'planet_id': dirty.planets[data.planet_index].id,
-                            'planet_level': data.connecting_level,
-                            'tile_x': path_x + starting_x_offset,
-                            'tile_y': path_y + starting_y_offset
+                            'planet_level': data.connecting_level, 'tile_x': path_x + starting_x_offset, 'tile_y': path_y + starting_y_offset
                         });
 
                         if (dirty.planet_coords[path_coord_index].object_type_id === dirty.planet_types[data.planet_type_index].wall_object_type_id) {
@@ -1865,7 +1863,7 @@ async function createPlanetCoord(socket, dirty, data) {
 
         let new_id = result.insertId;
 
-        let new_planet_coord_index = await main.getPlanetCoordIndex({'planet_coord_id': new_id});
+        let new_planet_coord_index = await main.getPlanetCoordIndex({ 'planet_coord_id': new_id });
 
         // get a random floor
         let floor_type_id = data.coord_floor_type_ids[Math.floor(Math.random() * data.coord_floor_type_ids.length)];
@@ -1887,6 +1885,7 @@ async function createPlanetCoord(socket, dirty, data) {
             console.log(data.coord_floor_type_ids);
             return false;
         }
+
 
 
         dirty.planet_coords[new_planet_coord_index].has_change = true;
@@ -1923,7 +1922,7 @@ async function createShipCoord(dirty, ship_index, linker, data = {}) {
             sql = "INSERT INTO ship_coords(ship_id, tile_x, tile_y, level, object_type_id, floor_type_id, " +
                 "is_engine_hardpoint, is_weapon_hardpoint, spawns_monster_type_id) VALUES(?,?,?,?,?,?,?,?,?)";
             inserts = [dirty.objects[ship_index].id, linker.position_x, linker.position_y, linker.level, linker.object_type_id, linker.floor_type_id,
-                linker.is_engine_hardpoint, linker.is_weapon_hardpoint, linker.spawns_monster_type_id];
+            linker.is_engine_hardpoint, linker.is_weapon_hardpoint, linker.spawns_monster_type_id];
 
         } else {
 
@@ -1938,7 +1937,7 @@ async function createShipCoord(dirty, ship_index, linker, data = {}) {
 
         // Get the ID of the inserted ship coord
         let new_ship_coord_id = result.insertId;
-        let new_ship_coord_index = await main.getShipCoordIndex({'ship_coord_id': new_ship_coord_id});
+        let new_ship_coord_index = await main.getShipCoordIndex({ 'ship_coord_id': new_ship_coord_id });
 
         // We have a monster that we need to create, and add to the ship coord
         if (linker.spawns_monster_type_id || linker.monster_type_id) {
@@ -1960,32 +1959,26 @@ async function createShipCoord(dirty, ship_index, linker, data = {}) {
 
             // Gotta spawn an object!
             let spawn_object_data = {'object_type_id': dirty.object_types[linker_object_type_index].id};
-            if (typeof data.spawned_event_id !== 'undefined') {
+            if(typeof data.spawned_event_id !== 'undefined') {
                 spawn_object_data.spawned_event_id = data.spawned_event_id;
             }
 
             let new_object_index = await insertObjectType(false, dirty, spawn_object_data);
 
 
-            await game_object.place(false, dirty, {
-                'object_index': new_object_index,
-                'ship_coord_index': new_ship_coord_index,
-                'reason': 'generate_ship'
-            });
+            await game_object.place(false, dirty, { 'object_index': new_object_index, 'ship_coord_index': new_ship_coord_index, 'reason': 'generate_ship' });
 
             dirty.objects[new_object_index].player_id = dirty.objects[ship_index].player_id;
             dirty.objects[new_object_index].has_change = true;
 
-            if (dirty.objects[new_object_index].object_type_id === 266) {
+            if(dirty.objects[new_object_index].object_type_id === 266) {
                 console.log("Adding default allow creator rule to airlock");
-                addRule({}, dirty, {
-                    'object_id': dirty.objects[new_object_index].id, 'new_rule': 'allow_creator',
-                    'allow': true
-                });
+                addRule({}, dirty, { 'object_id': dirty.objects[new_object_index].id, 'new_rule': 'allow_creator',
+                    'allow': true });
                 dirty.objects[ship_index].airlock_index = new_ship_coord_index;
             }
         }
-    } catch (error) {
+    } catch(error) {
         log(chalk.red("Error in world.createShipCoord:" + error));
         console.error(error);
     }
@@ -1995,14 +1988,15 @@ async function createShipCoord(dirty, ship_index, linker, data = {}) {
 exports.createShipCoord = createShipCoord;
 
 
+
 // Returns an ai_index if the AI will protect the thing passed in
 /**
- *
- * @param {Object} dirty
+ * 
+ * @param {Object} dirty 
  * @param {number} damage_amount
  * @param {Object} coord
  * @param {string} attacking_type
- * @param {Object} data
+ * @param {Object} data 
  * @param {number=} data.monster_index
  * @param {number=} data.object_index
  * @param {number=} data.planet_index
@@ -2016,25 +2010,22 @@ async function getAIProtector(dirty, damage_amount, coord, attacking_type, data)
         //console.log("in getAIProtector. Attacking type: " + attacking_type);
         let ai_index = -1;
         let is_protected = false;
-
-
+    
+    
         if (data.monster_index) {
             // TODO code in AI's being able to protect monsters
         }
         // Checking for an object
         else if (typeof data.object_index !== 'undefined') {
-
+    
             // Something like a ship that will directly have an ai_id
             if (dirty.objects[data.object_index].ai_id) {
                 ai_index = await game_object.getIndex(dirty, dirty.objects[data.object_index].ai_id);
             } else {
-
+    
                 // Check the room we are in, and if there's one, see if the rules apply to us
                 if (coord.planet_id) {
-                    let planet_index = await planet.getIndex(dirty, {
-                        'planet_id': coord.planet_id,
-                        'source': 'world.getAIProtector'
-                    });
+                    let planet_index = await planet.getIndex(dirty, { 'planet_id': coord.planet_id, 'source': 'world.getAIProtector' });
                     if (planet_index !== -1 && dirty.planets[planet_index].ai_id) {
                         ai_index = await game_object.getIndex(dirty, dirty.planets[planet_index].ai_id);
                     }
@@ -2044,40 +2035,40 @@ async function getAIProtector(dirty, damage_amount, coord, attacking_type, data)
                         ai_index = await game_object.getIndex(dirty, dirty.objects[ship_index].ai_id);
                     }
                 }
-
+    
             }
-
+    
             // Didn't find an AI, no use in checking rules
             if (ai_index === -1) {
                 if (data.show_output && data.show_output === true) {
                     //console.log("No AI was found");
                 }
-
+    
                 return -1;
             }
-
+    
             // Now we just need to make sure there's a rule that matches our relationship to the AI
             let rules = dirty.rules.filter(rule => rule.object_id === dirty.objects[ai_index].id);
-
+    
             // Plain for since we want to await in here for the potential trues
             for (let i = 0; i < rules.length; i++) {
-
+    
                 if (rules[i].rule === 'protect_creator_property' && dirty.objects[data.object_index].player_id === dirty.objects[ai_index].player_id) {
                     is_protected = true;
                 }
-
-
+    
+    
             }
 
-        } else if (typeof data.planet_index !== 'undefined') {
+        } else if(typeof data.planet_index !== 'undefined') {
 
-            if (!dirty.planets[data.planet_index].ai_id) {
+            if(!dirty.planets[data.planet_index].ai_id) {
                 return -1;
             }
 
             ai_index = await game_object.getIndex(dirty, dirty.planets[data.planet_index].ai_id);
 
-            if (ai_index === -1) {
+            if(ai_index === -1) {
                 return -1;
             }
 
@@ -2086,24 +2077,21 @@ async function getAIProtector(dirty, damage_amount, coord, attacking_type, data)
 
             // Plain for since we want to await in here for the potential trues
             for (let i = 0; i < rules.length; i++) {
-
+    
                 if (rules[i].rule === 'protect_creator_property') {
                     is_protected = true;
                 }
-
-
+    
+    
             }
 
 
         } else if (typeof data.player_index !== 'undefined') {
-
+    
 
             // Check the room we are in, and if there's one, see if the rules apply to us
             if (coord.planet_id) {
-                let planet_index = await planet.getIndex(dirty, {
-                    'planet_id': coord.planet_id,
-                    'source': 'world.getAIProtector - data.player_index'
-                });
+                let planet_index = await planet.getIndex(dirty, { 'planet_id': coord.planet_id, 'source': 'world.getAIProtector - data.player_index' });
                 if (planet_index !== -1 && dirty.planets[planet_index].ai_id) {
                     ai_index = await game_object.getIndex(dirty, dirty.planets[planet_index].ai_id);
                 }
@@ -2113,57 +2101,57 @@ async function getAIProtector(dirty, damage_amount, coord, attacking_type, data)
                     ai_index = await game_object.getIndex(dirty, dirty.objects[ship_index].ai_id);
                 }
             }
-
+    
             // Didn't find an AI, no use in checking rules
             if (ai_index === -1) {
                 if (data.show_output && data.show_output === true) {
                     //console.log("No AI was found");
                 }
-
+    
                 return -1;
             }
-
+    
             // Now we just need to make sure there's a rule that matches our relationship to the AI
             let rules = dirty.rules.filter(rule => rule.object_id === dirty.objects[ai_index].id);
-
+    
             // Plain for since we want to await in here for the potential trues
             for (let i = 0; i < rules.length; i++) {
-
+    
                 if (rules[i].rule === 'protect_all_players') {
                     is_protected = true;
-                } else if (rules[i].rule === 'protect_players_from_players' && attacking_type === 'player') {
+                }  else if(rules[i].rule === 'protect_players_from_players' && attacking_type === 'player') {
                     is_protected = true;
-                } else if (rules[i].rule === 'protect_players_from_monsters' && attacking_type === 'monster') {
+                } else if(rules[i].rule === 'protect_players_from_monsters' && attacking_type === 'monster') {
 
                 } else if (rules[i].rule === 'protect_creator' && dirty.players[data.player_index].id === dirty.objects[ai_index].player_id) {
                     is_protected = true;
                 }
-
+    
                 // TODO add in support for faction support
-
-
+    
+    
             }
         }
-
-
+    
+    
         if (!is_protected) {
             if (data.show_output && data.show_output === true) {
                 console.log("Not protected");
             }
             return -1;
         }
-
+    
         // See if there's enough energy
         if (dirty.objects[ai_index].energy < damage_amount) {
-
+    
             if (data.show_output && data.show_output === true) {
                 console.log("AI does not have enough energy");
             }
             return -1;
         }
-
+    
         return ai_index;
-    } catch (error) {
+    } catch(error) {
         log(chalk.red("Error in world.getAIProtector: " + error));
         console.error(error);
     }
@@ -2185,7 +2173,7 @@ async function getNpcCoordAndRoom(dirty, npc_index) {
 
         if (dirty.npcs[npc_index].coord_id) {
             coord_index = await main.getCoordIndex(
-                {'coord_id': dirty.npcs[npc_index].coord_id});
+                { 'coord_id': dirty.npcs[npc_index].coord_id });
             if (coord_index !== -1) {
                 room = "galaxy";
                 scope = "galaxy";
@@ -2195,7 +2183,7 @@ async function getNpcCoordAndRoom(dirty, npc_index) {
 
         if (dirty.npcs[npc_index].planet_coord_id) {
             coord_index = await main.getPlanetCoordIndex(
-                {'planet_coord_id': dirty.npcs[npc_index].planet_coord_id});
+                { 'planet_coord_id': dirty.npcs[npc_index].planet_coord_id });
             if (coord_index !== -1) {
                 room = "planet_" + dirty.planet_coords[coord_index].planet_id;
                 scope = "planet";
@@ -2203,7 +2191,7 @@ async function getNpcCoordAndRoom(dirty, npc_index) {
             }
 
         } else if (dirty.npcs[npc_index].ship_coord_id) {
-            coord_index = await main.getShipCoordIndex({'ship_coord_id': dirty.npcs[npc_index].ship_coord_id});
+            coord_index = await main.getShipCoordIndex({ 'ship_coord_id': dirty.npcs[npc_index].ship_coord_id });
             if (coord_index !== -1) {
                 room = "ship_" + dirty.ship_coords[coord_index].ship_id;
                 scope = "ship";
@@ -2211,7 +2199,7 @@ async function getNpcCoordAndRoom(dirty, npc_index) {
             }
         }
 
-        return {'room': room, 'coord_index': coord_index, 'coord': coord, 'scope': scope};
+        return { 'room': room, 'coord_index': coord_index, 'coord': coord, 'scope': scope };
     } catch (error) {
         log(chalk.red("Error in world.getNpcCoordAndRoom: " + error));
         console.error(error);
@@ -2266,6 +2254,7 @@ async function getNpcLevel(dirty, npc_index, level_type) {
 exports.getNpcLevel = getNpcLevel;
 
 
+
 // TODO make enslaving more complicated - general goal is to make it harder for more successful npcs
 
 //  data:   slaver_player_index   |   slaver_npc_index   |   being_enslaved_npc_index
@@ -2310,6 +2299,7 @@ async function enslave(socket, dirty, data) {
 }
 
 exports.enslave = enslave;
+
 
 
 async function generatePlanet(socket, dirty, planet_index, planet_type_index) {
@@ -2386,7 +2376,7 @@ async function generatePlanet(socket, dirty, planet_index, planet_type_index) {
                 let possible_hole_coords = dirty.planet_coords.filter(planet_coord =>
                     planet_coord.planet_id === dirty.planets[planet_index].id &&
                     planet_coord.level === level_above && !planet_coord.npc_id && !planet_coord.spawns_monster_type_id &&
-                    planet_coord.floor_type_id !== 26 && planet_coord.floor_type_id !== 11 && planet_coord.floor_type_id !== 44 &&
+                    planet_coord.floor_type_id !== 26 && planet_coord.floor_type_id !== 11 && planet_coord.floor_type_id !== 44 && 
                     !planet_coord.object_id &&
                     planet_coord.tile_x < dirty.planet_types[planet_type_index].x_size_under + underground_x_offset &&
                     planet_coord.tile_y < dirty.planet_types[planet_type_index].y_size_under + underground_y_offset &&
@@ -2408,7 +2398,7 @@ async function generatePlanet(socket, dirty, planet_index, planet_type_index) {
                     dirty.planet_coords[stairs_coord_index].has_change = true;
 
 
-                    let hole_coord_index = await main.getPlanetCoordIndex({'planet_coord_id': hole_coord.id});
+                    let hole_coord_index = await main.getPlanetCoordIndex({ 'planet_coord_id': hole_coord.id });
                     dirty.planet_coords[hole_coord_index].object_type_id = 62;
                     dirty.planet_coords[hole_coord_index].has_change = true;
 
@@ -2445,6 +2435,7 @@ async function generatePlanet(socket, dirty, planet_index, planet_type_index) {
                     }
 
                     // Lets clear the tiles of walls around the hole if we can or its needed
+
                     for (let x = starting_tile_x; x <= starting_tile_x + 2; x++) {
                         for (let y = starting_tile_y; y <= starting_tile_y + 2; y++) {
 
@@ -2474,6 +2465,7 @@ async function generatePlanet(socket, dirty, planet_index, planet_type_index) {
                     }
 
 
+
                     // A very inefficient quick fix for holes not being connected, since we are connecting the level below them.
                     // I liked having the connect level here, but I think it's gonna make sense to do it after we have the holes/stairs setup
                     /*
@@ -2489,7 +2481,9 @@ async function generatePlanet(socket, dirty, planet_index, planet_type_index) {
                 }
 
 
+
             }
+
 
 
         }
@@ -2505,6 +2499,7 @@ async function generatePlanet(socket, dirty, planet_index, planet_type_index) {
         console.timeEnd("generatePlanet");
 
 
+
     } catch (error) {
         log(chalk.red("Error in world.generatePlanet: " + error));
         console.error(error);
@@ -2517,6 +2512,8 @@ exports.generatePlanet = generatePlanet;
 //  data:   planet_index   |   generating_level
 async function generatePlanetLevel(socket, dirty, data) {
     try {
+
+
         if (!socket.is_admin) {
             log(chalk.red("We think a socket with player id: " + socket.player_id + " is trying to be mr hacker man"));
             return false;
@@ -2545,6 +2542,7 @@ async function generatePlanetLevel(socket, dirty, data) {
                 starting_y_offset = (dirty.planet_types[planet_type_index].y_size_above - dirty.planet_types[planet_type_index].y_size_under) / 2;
             }
         }
+
 
 
         // For levels < 0 we need to generate a cave structure
@@ -2600,6 +2598,7 @@ async function generatePlanetLevel(socket, dirty, data) {
                 //console.log(coord_floor_type_ids);
 
 
+
                 let coord_data = {};
                 coord_data.planet_id = dirty.planets[data.planet_index].id;
                 coord_data.level = data.generating_level;
@@ -2616,6 +2615,7 @@ async function generatePlanetLevel(socket, dirty, data) {
 
             }
         }
+
 
 
     } catch (error) {
@@ -2717,15 +2717,15 @@ exports.generateShip = generateShip;
 
 
 /**
- * @param {Object} dirty
- * @param {String} coord_type
- * @param {number} base_coord_index
- * @param {('player'|'object'|'object_type'|'monster'|'monster_type')} placing_type
- * @param {number} placing_index
- * @param {number} distance_left
- * @param {Array=} block_directions
- * @returns {Promise<number>} - coord_index
- */
+* @param {Object} dirty
+* @param {String} coord_type
+* @param {number} base_coord_index
+* @param {('player'|'object'|'object_type'|'monster'|'monster_type')} placing_type
+* @param {number} placing_index
+* @param {number} distance_left
+* @param {Array=} block_directions
+* @returns {Promise<number>} - coord_index
+*/
 
 async function getOpenCoordIndex(dirty, coord_type, base_coord_index, placing_type, placing_index, distance_left, block_directions = []) {
 
@@ -2734,300 +2734,300 @@ async function getOpenCoordIndex(dirty, coord_type, base_coord_index, placing_ty
         //console.log("In getOpenCoordIndex");
 
         let base_coord = {};
-        if (coord_type === 'ship') {
+        if(coord_type === 'ship') {
             base_coord = dirty.ship_coords[base_coord_index];
-        } else if (coord_type === 'planet') {
+        } else if(coord_type === 'planet') {
             base_coord = dirty.planet_coords[base_coord_index];
-        } else if (coord_type === 'galaxy') {
+        } else if(coord_type === 'galaxy') {
             base_coord = dirty.coords[base_coord_index];
-        } else if (coord_type === 'virtual') {
+        } else if(coord_type === 'virtual') {
             base_coord = dirty.virtual_coords[base_coord_index];
         }
 
-        if (helper.isFalse(base_coord)) {
+        if(helper.isFalse(base_coord)) {
             log(chalk.yellow("Invalid base coord sent into getOpenCoordIndex"));
             console.trace("this");
             return -1;
         }
 
-        if (placing_type === 'object_type' && helper.isFalse(dirty.object_types[placing_index])) {
+        if(placing_type === 'object_type' && helper.isFalse(dirty.object_types[placing_index])) {
             log(chalk.yellow("Invalid object type sent in getOpenCoordIndex."));
             console.trace("here");
             return -1;
         }
 
         // If there's no block direction, try the base coord. Otherwise we will have already tried the base coord
-        if (block_directions.length < 1) {
-            if (placing_type === 'player') {
+        if(block_directions.length < 1) {
+            if(placing_type === 'player') {
                 let can_place_result = await player.canPlace(dirty, coord_type, base_coord, placing_index);
 
-                if (can_place_result === true) {
+                if(can_place_result === true) {
                     return base_coord_index;
                 }
 
-            } else if (placing_type === 'object') {
-                let can_place_result = await game_object.canPlace(dirty, coord_type, base_coord, {'object_index': placing_index});
+            } else if(placing_type === 'object') {
+                let can_place_result = await game_object.canPlace(dirty, coord_type, base_coord,  {'object_index': placing_index } );
 
-                if (can_place_result === true) {
+                if(can_place_result === true) {
                     return base_coord_index;
                 }
-            } else if (placing_type === 'object_type') {
-                let can_place_result = await game_object.canPlace(dirty, coord_type, base_coord, {'object_type_id': dirty.object_types[placing_index].id});
-
-                if (can_place_result === true) {
+            } else if(placing_type === 'object_type') {
+                let can_place_result = await game_object.canPlace(dirty, coord_type, base_coord,  {'object_type_id': dirty.object_types[placing_index].id } );
+                
+                if(can_place_result === true) {
                     return base_coord_index;
                 }
-            } else if (placing_type === 'monster') {
-                let can_place_result = await monster.canPlace(dirty, coord_type, base_coord, {'monster_index': placing_index});
-
-                if (can_place_result === true) {
+            } else if(placing_type === 'monster') {
+                let can_place_result = await monster.canPlace(dirty, coord_type, base_coord,  {'monster_index': placing_index } );
+                
+                if(can_place_result === true) {
                     return base_coord_index;
                 }
-            } else if (placing_type === 'monster_type') {
-                let can_place_result = await monster.canPlace(dirty, coord_type, base_coord, {'monster_type_id': dirty.monster_types[placing_index].id});
-
-                if (can_place_result === true) {
+            } else if(placing_type === 'monster_type') {
+                let can_place_result = await monster.canPlace(dirty, coord_type, base_coord,  {'monster_type_id': dirty.monster_types[placing_index].id } );
+                
+                if(can_place_result === true) {
                     return base_coord_index;
                 }
             }
         }
 
         // left
-        if (!block_directions.includes('left')) {
+        if(!block_directions.includes('left')) {
 
             await map.getCoordNeighbor(dirty, coord_type, base_coord_index, 'left');
 
 
-            if (base_coord.left_coord_index !== -1) {
-
+            if(base_coord.left_coord_index !== -1) {
+    
                 let left_coord = {};
-
-                if (coord_type === 'ship') {
+    
+                if(coord_type === 'ship') {
                     left_coord = dirty.ship_coords[dirty.ship_coords[base_coord_index].left_coord_index];
-                } else if (coord_type === 'planet') {
+                } else if(coord_type === 'planet') {
                     left_coord = dirty.planet_coords[dirty.planet_coords[base_coord_index].left_coord_index];
-                } else if (coord_type === 'galaxy') {
+                } else if(coord_type === 'galaxy') {
                     left_coord = dirty.coords[dirty.coords[base_coord_index].left_coord_index];
-                } else if (coord_type === 'virtual') {
+                } else if(coord_type === 'virtual') {
                     left_coord = dirty.virtual_coords[dirty.virtual_coords[base_coord_index].left_coord_index];
                 }
-
-
-                if (placing_type === 'player') {
+    
+    
+                if(placing_type === 'player') {
                     let can_place_result = await player.canPlace(dirty, coord_type, left_coord, placing_index);
-
-                    if (can_place_result === true) {
+    
+                    if(can_place_result === true) {
                         return base_coord.left_coord_index;
                     }
-                } else if (placing_type === 'object') {
-                    let can_place_result = await game_object.canPlace(dirty, coord_type, left_coord, {'object_index': placing_index});
-
-                    if (can_place_result === true) {
+                } else if(placing_type === 'object') {
+                    let can_place_result = await game_object.canPlace(dirty, coord_type, left_coord,  {'object_index': placing_index } );
+    
+                    if(can_place_result === true) {
                         return base_coord.left_coord_index;
                     }
-                } else if (placing_type === 'object_type') {
-                    let can_place_result = await game_object.canPlace(dirty, coord_type, left_coord, {'object_type_id': dirty.object_types[placing_index].id});
-
-                    if (can_place_result === true) {
+                } else if(placing_type === 'object_type') {
+                    let can_place_result = await game_object.canPlace(dirty, coord_type, left_coord,  {'object_type_id': dirty.object_types[placing_index].id } );
+                    
+                    if(can_place_result === true) {
                         //console.log("Can place result was true");
                         return base_coord.left_coord_index;
                     }
-                } else if (placing_type === 'monster') {
-                    let can_place_result = await monster.canPlace(dirty, coord_type, left_coord, {'monster_index': placing_index});
-
-                    if (can_place_result === true) {
+                } else if(placing_type === 'monster') {
+                    let can_place_result = await monster.canPlace(dirty, coord_type, left_coord,  {'monster_index': placing_index } );
+                    
+                    if(can_place_result === true) {
                         return base_coord_index;
                     }
-                } else if (placing_type === 'monster_type') {
-                    let can_place_result = await monster.canPlace(dirty, coord_type, left_coord, {'monster_type_id': dirty.monster_types[placing_index].id});
-
-                    if (can_place_result === true) {
+                } else if(placing_type === 'monster_type') {
+                    let can_place_result = await monster.canPlace(dirty, coord_type, left_coord,  {'monster_type_id': dirty.monster_types[placing_index].id } );
+                    
+                    if(can_place_result === true) {
                         return base_coord_index;
                     }
                 }
-
+                
             }
         }
-
+        
 
         //right
-        if (!block_directions.includes('right')) {
+        if(!block_directions.includes('right')) {
             await map.getCoordNeighbor(dirty, coord_type, base_coord_index, 'right');
 
-            if (base_coord.right_coord_index !== -1) {
+            if(base_coord.right_coord_index !== -1) {
                 let right_coord = {};
-
-                if (coord_type === 'ship') {
+    
+                if(coord_type === 'ship') {
                     right_coord = dirty.ship_coords[dirty.ship_coords[base_coord_index].right_coord_index];
-                } else if (coord_type === 'planet') {
+                } else if(coord_type === 'planet') {
                     right_coord = dirty.planet_coords[dirty.planet_coords[base_coord_index].right_coord_index];
-                } else if (coord_type === 'galaxy') {
+                } else if(coord_type === 'galaxy') {
                     right_coord = dirty.coords[dirty.coords[base_coord_index].right_coord_index];
-                } else if (coord_type === 'virtual') {
+                } else if(coord_type === 'virtual') {
                     right_coord = dirty.virtual_coords[dirty.virtual_coords[base_coord_index].right_coord_index];
                 }
-
-
-                if (placing_type === 'player') {
+        
+        
+                if(placing_type === 'player') {
                     let can_place_result = await player.canPlace(dirty, coord_type, right_coord, placing_index);
-
-                    if (can_place_result === true) {
+        
+                    if(can_place_result === true) {
                         return base_coord.right_coord_index;
                     }
-                } else if (placing_type === 'object') {
-                    let can_place_result = await game_object.canPlace(dirty, coord_type, right_coord, {'object_index': placing_index});
-
-                    if (can_place_result === true) {
+                } else if(placing_type === 'object') {
+                    let can_place_result = await game_object.canPlace(dirty, coord_type, right_coord,  {'object_index': placing_index } );
+    
+                    if(can_place_result === true) {
                         return base_coord.right_coord_index;
                     }
-                } else if (placing_type === 'object_type') {
-                    let can_place_result = await game_object.canPlace(dirty, coord_type, right_coord, {'object_type_id': dirty.object_types[placing_index].id});
-
-                    if (can_place_result === true) {
+                } else if(placing_type === 'object_type') {
+                    let can_place_result = await game_object.canPlace(dirty, coord_type, right_coord,  {'object_type_id': dirty.object_types[placing_index].id } );
+                    
+                    if(can_place_result === true) {
                         return base_coord.right_coord_index;
                     }
-                } else if (placing_type === 'monster') {
-                    let can_place_result = await monster.canPlace(dirty, coord_type, right_coord, {'monster_index': placing_index});
-
-                    if (can_place_result === true) {
+                } else if(placing_type === 'monster') {
+                    let can_place_result = await monster.canPlace(dirty, coord_type, right_coord,  {'monster_index': placing_index } );
+                    
+                    if(can_place_result === true) {
                         return base_coord_index;
                     }
-                } else if (placing_type === 'monster_type') {
-                    let can_place_result = await monster.canPlace(dirty, coord_type, right_coord, {'monster_type_id': dirty.monster_types[placing_index].id});
-
-                    if (can_place_result === true) {
+                } else if(placing_type === 'monster_type') {
+                    let can_place_result = await monster.canPlace(dirty, coord_type, right_coord,  {'monster_type_id': dirty.monster_types[placing_index].id } );
+                    
+                    if(can_place_result === true) {
                         return base_coord_index;
                     }
                 }
-            }
+            } 
         }
-
+        
 
         // up
-        if (!block_directions.includes('up')) {
+        if(!block_directions.includes('up')) {
 
             await map.getCoordNeighbor(dirty, coord_type, base_coord_index, 'up');
 
-            if (base_coord.up_coord_index !== -1) {
+            if(base_coord.up_coord_index !== -1) {
                 let up_coord = {};
-
-                if (coord_type === 'ship') {
+    
+                if(coord_type === 'ship') {
                     up_coord = dirty.ship_coords[dirty.ship_coords[base_coord_index].up_coord_index];
-                } else if (coord_type === 'planet') {
+                } else if(coord_type === 'planet') {
                     up_coord = dirty.planet_coords[dirty.planet_coords[base_coord_index].up_coord_index];
-                } else if (coord_type === 'galaxy') {
+                } else if(coord_type === 'galaxy') {
                     up_coord = dirty.coords[dirty.coords[base_coord_index].up_coord_index];
-                } else if (coord_type === 'virtual') {
+                } else if(coord_type === 'virtual') {
                     up_coord = dirty.virtual_coords[dirty.virtual_coords[base_coord_index].up_coord_index];
                 }
-
-
-                if (placing_type === 'player') {
+        
+        
+                if(placing_type === 'player') {
                     let can_place_result = await player.canPlace(dirty, coord_type, up_coord, placing_index);
-
-                    if (can_place_result === true) {
+        
+                    if(can_place_result === true) {
                         return base_coord.up_coord_index;
                     }
-                } else if (placing_type === 'object') {
-                    let can_place_result = await game_object.canPlace(dirty, coord_type, up_coord, {'object_index': placing_index});
-
-                    if (can_place_result === true) {
+                } else if(placing_type === 'object') {
+                    let can_place_result = await game_object.canPlace(dirty, coord_type, up_coord,  {'object_index': placing_index } );
+    
+                    if(can_place_result === true) {
                         return base_coord.up_coord_index;
                     }
-                } else if (placing_type === 'object_type') {
-                    let can_place_result = await game_object.canPlace(dirty, coord_type, up_coord, {'object_type_id': dirty.object_types[placing_index].id});
-
-                    if (can_place_result === true) {
+                } else if(placing_type === 'object_type') {
+                    let can_place_result = await game_object.canPlace(dirty, coord_type, up_coord,  {'object_type_id': dirty.object_types[placing_index].id } );
+                    
+                    if(can_place_result === true) {
                         return base_coord.up_coord_index;
                     }
-                } else if (placing_type === 'monster') {
-                    let can_place_result = await monster.canPlace(dirty, coord_type, up_coord, {'monster_index': placing_index});
-
-                    if (can_place_result === true) {
+                } else if(placing_type === 'monster') {
+                    let can_place_result = await monster.canPlace(dirty, coord_type, up_coord,  {'monster_index': placing_index } );
+                    
+                    if(can_place_result === true) {
                         return base_coord_index;
                     }
-                } else if (placing_type === 'monster_type') {
-                    let can_place_result = await monster.canPlace(dirty, coord_type, up_coord, {'monster_type_id': dirty.monster_types[placing_index].id});
-
-                    if (can_place_result === true) {
+                } else if(placing_type === 'monster_type') {
+                    let can_place_result = await monster.canPlace(dirty, coord_type, up_coord,  {'monster_type_id': dirty.monster_types[placing_index].id } );
+                    
+                    if(can_place_result === true) {
                         return base_coord_index;
                     }
                 }
             }
 
-
+            
         }
-
+        
 
         // down
-        if (!block_directions.includes('down')) {
+        if(!block_directions.includes('down')) {
             await map.getCoordNeighbor(dirty, coord_type, base_coord_index, 'down');
 
-            if (base_coord.down_coord_index !== -1) {
+            if(base_coord.down_coord_index !== -1) {
                 let down_coord = {};
-
-                if (coord_type === 'ship') {
+    
+                if(coord_type === 'ship') {
                     down_coord = dirty.ship_coords[dirty.ship_coords[base_coord_index].down_coord_index];
-                } else if (coord_type === 'planet') {
+                } else if(coord_type === 'planet') {
                     down_coord = dirty.planet_coords[dirty.planet_coords[base_coord_index].down_coord_index];
-                } else if (coord_type === 'galaxy') {
+                } else if(coord_type === 'galaxy') {
                     down_coord = dirty.coords[dirty.coords[base_coord_index].down_coord_index];
-                } else if (coord_type === 'virtual') {
+                } else if(coord_type === 'virtual') {
                     down_coord = dirty.virtual_coords[dirty.virtual_coords[base_coord_index].down_coord_index];
                 }
-
-
-                if (placing_type === 'player') {
+        
+        
+                if(placing_type === 'player') {
                     let can_place_result = await player.canPlace(dirty, coord_type, down_coord, placing_index);
-
-                    if (can_place_result === true) {
+        
+                    if(can_place_result === true) {
                         return base_coord.down_coord_index;
                     }
-                } else if (placing_type === 'object') {
-                    let can_place_result = await game_object.canPlace(dirty, coord_type, down_coord, {'object_index': placing_index});
-
-                    if (can_place_result === true) {
+                } else if(placing_type === 'object') {
+                    let can_place_result = await game_object.canPlace(dirty, coord_type, down_coord,  {'object_index': placing_index } );
+    
+                    if(can_place_result === true) {
                         return base_coord.down_coord_index;
                     }
-                } else if (placing_type === 'object_type') {
-                    let can_place_result = await game_object.canPlace(dirty, coord_type, down_coord, {'object_type_id': dirty.object_types[placing_index].id});
-
-                    if (can_place_result === true) {
+                } else if(placing_type === 'object_type') {
+                    let can_place_result = await game_object.canPlace(dirty, coord_type, down_coord,  {'object_type_id': dirty.object_types[placing_index].id } );
+                    
+                    if(can_place_result === true) {
                         return base_coord.down_coord_index;
                     }
-                } else if (placing_type === 'monster') {
-                    let can_place_result = await monster.canPlace(dirty, coord_type, down_coord, {'monster_index': placing_index});
-
-                    if (can_place_result === true) {
+                } else if(placing_type === 'monster') {
+                    let can_place_result = await monster.canPlace(dirty, coord_type, down_coord,  {'monster_index': placing_index } );
+                    
+                    if(can_place_result === true) {
                         return base_coord_index;
                     }
-                } else if (placing_type === 'monster_type') {
-                    let can_place_result = await monster.canPlace(dirty, coord_type, down_coord, {'monster_type_id': dirty.monster_types[placing_index].id});
-
-                    if (can_place_result === true) {
+                } else if(placing_type === 'monster_type') {
+                    let can_place_result = await monster.canPlace(dirty, coord_type, down_coord,  {'monster_type_id': dirty.monster_types[placing_index].id } );
+                    
+                    if(can_place_result === true) {
                         return base_coord_index;
                     }
                 }
             }
-
+            
         }
-
+        
 
         //console.log("Didn't find a spot at base, left/right/up/down");
 
         // Didn't find a coord, and we have some disance left we can go
-        if (distance_left > 0) {
+        if(distance_left > 0) {
 
             //console.log("Going to new base coords. Distance left: " + distance_left);
             //console.log(block_directions);
             let new_distance = distance_left - 1;
 
-            if (base_coord.left_coord_index !== -1 && !block_directions.includes('left')) {
+            if(base_coord.left_coord_index !== -1 && !block_directions.includes('left')) {
                 //console.log("left");
                 let new_block_directions = [...block_directions];
                 new_block_directions.push('right');
                 let found_coord_index = await getOpenCoordIndex(dirty, coord_type, base_coord.left_coord_index, placing_type, placing_index, new_distance, block_directions);
-                if (found_coord_index !== -1) {
+                if(found_coord_index !== -1) {
                     return found_coord_index;
                 }
             }
@@ -3035,12 +3035,12 @@ async function getOpenCoordIndex(dirty, coord_type, base_coord_index, placing_ty
             //console.log("Done with left on Distance left: " + distance_left);
             //console.log(block_directions);
 
-            if (base_coord.right_coord_index !== -1 && !block_directions.includes('right')) {
+            if(base_coord.right_coord_index !== -1 && !block_directions.includes('right')) {
                 //console.log("right");
                 let new_block_directions = [...block_directions];
                 new_block_directions.push('left');
                 let found_coord_index = await getOpenCoordIndex(dirty, coord_type, base_coord.right_coord_index, placing_type, placing_index, new_distance, block_directions);
-                if (found_coord_index !== -1) {
+                if(found_coord_index !== -1) {
                     return found_coord_index;
                 }
             }
@@ -3048,24 +3048,24 @@ async function getOpenCoordIndex(dirty, coord_type, base_coord_index, placing_ty
             //console.log("Done with right on Distance left: " + distance_left);
             //console.log(block_directions);
 
-            if (base_coord.up_coord_index !== -1 && !block_directions.includes('up')) {
+            if(base_coord.up_coord_index !== -1 && !block_directions.includes('up')) {
                 //console.log("up");
                 let new_block_directions = [...block_directions];
                 new_block_directions.push('down');
                 let found_coord_index = await getOpenCoordIndex(dirty, coord_type, base_coord.up_coord_index, placing_type, placing_index, new_distance, block_directions);
-                if (found_coord_index !== -1) {
+                if(found_coord_index !== -1) {
                     return found_coord_index;
                 }
             }
 
-            if (base_coord.down_coord_index !== -1 && !block_directions.includes('down')) {
+            if(base_coord.down_coord_index !== -1 && !block_directions.includes('down')) {
                 //console.log("down");
 
-
+                
                 let new_block_directions = [...block_directions];
                 new_block_directions.push('up');
                 let found_coord_index = await getOpenCoordIndex(dirty, coord_type, base_coord.down_coord_index, placing_type, placing_index, new_distance, block_directions);
-                if (found_coord_index !== -1) {
+                if(found_coord_index !== -1) {
                     return found_coord_index;
                 }
             }
@@ -3075,7 +3075,8 @@ async function getOpenCoordIndex(dirty, coord_type, base_coord_index, placing_ty
         return -1;
 
 
-    } catch (error) {
+
+    } catch(error) {
         log(chalk.red("Error in world.getOpenCoordIndex: " + error));
         console.error(error);
     }
@@ -3083,6 +3084,7 @@ async function getOpenCoordIndex(dirty, coord_type, base_coord_index, placing_ty
 }
 
 exports.getOpenCoordIndex = getOpenCoordIndex;
+
 
 
 function getPlayerSocket(dirty, player_index) {
@@ -3105,6 +3107,7 @@ function getPlayerSocket(dirty, player_index) {
         log(chalk.red("Error in world.getPlayerSocket: " + error));
         console.error(error);
     }
+
 
 
 }
@@ -3159,8 +3162,8 @@ async function increaseNpcSkill(dirty, npc_index, skill_types) {
     }
 
 
-}
 
+}
 exports.increaseNpcSkill = increaseNpcSkill;
 
 
@@ -3197,7 +3200,7 @@ async function increasePlayerSkill(socket, dirty, player_index, skill_types) {
                 } else if (skill_types[i] === 'farming') {
                     dirty.players[player_index].farming_skill_points++;
                     dirty.players[player_index].has_change = true;
-                } else if (skill_types[i] === 'freeze') {
+                } else if (skill_types[i] === 'freezing') {
                     dirty.players[player_index].freezing_skill_points++;
                     dirty.players[player_index].has_change = true;
                 } else if (skill_types[i] === 'hacking') {
@@ -3248,6 +3251,8 @@ async function increasePlayerSkill(socket, dirty, player_index, skill_types) {
                 }
             }
         }
+
+
 
 
         /*
@@ -3333,7 +3338,7 @@ async function increasePlayerSkill(socket, dirty, player_index, skill_types) {
 
         */
 
-        socket.emit('player_info', {'player': dirty.players[player_index]});
+        socket.emit('player_info', { 'player': dirty.players[player_index] });
 
 
     } catch (error) {
@@ -3342,8 +3347,8 @@ async function increasePlayerSkill(socket, dirty, player_index, skill_types) {
     }
 
 
-}
 
+}
 exports.increasePlayerSkill = increasePlayerSkill;
 
 // object_type_id   |   player_id   |   npc_id   |   spawned_event_id
@@ -3372,14 +3377,14 @@ async function insertObjectType(socket, dirty, data) {
 
         //console.log("in insertObjectType. Going to insert object_type_id: " + data.object_type_id);
 
-        let object_type_index = dirty.object_types.findIndex(function (obj) {
-            return obj && obj.id === data.object_type_id;
-        });
+        let object_type_index = dirty.object_types.findIndex(function (obj) { return obj && obj.id === data.object_type_id; });
 
         if (object_type_index === -1) {
             log(chalk.yellow("Could not find object type"));
             return -1;
         }
+
+
 
 
         // we need to create an object
@@ -3455,7 +3460,7 @@ async function insertObjectType(socket, dirty, data) {
         if (dirty.object_types[object_type_index].is_ship) {
 
             let generate_ship_data = {};
-            if (typeof data.spawned_event_id !== 'undefined') {
+            if(typeof data.spawned_event_id !== 'undefined') {
                 generate_ship_data.spawned_event_id = data.spawned_event_id;
             }
             await generateShip(dirty, object_index, generate_ship_data);
@@ -3474,6 +3479,7 @@ async function insertObjectType(socket, dirty, data) {
         }
 
 
+
         return object_index;
 
 
@@ -3482,7 +3488,6 @@ async function insertObjectType(socket, dirty, data) {
         console.error(error);
     }
 }
-
 exports.insertObjectType = insertObjectType;
 
 
@@ -3537,7 +3542,7 @@ async function manageElevatorLinkers(socket, dirty, object_id) {
 
             let new_elevator_group_id = highest_elevator_linker_group + 1;
 
-            let planet_coord_index = await main.getPlanetCoordIndex({'planet_coord_id': dirty.objects[object_index].planet_coord_id});
+            let planet_coord_index = await main.getPlanetCoordIndex({ 'planet_coord_id': dirty.objects[object_index].planet_coord_id });
 
             if (planet_coord_index === -1) {
                 log(chalk.yellow("Could not find the planet coord the elevator is on"));
@@ -3546,12 +3551,10 @@ async function manageElevatorLinkers(socket, dirty, object_id) {
 
             base_elevator_linker_index = dirty.elevator_linkers.push({
                 'id': uuidv1(),
-                'object_id': dirty.objects[object_index].id,
-                'level': dirty.planet_coords[planet_coord_index].level,
-                'group_id': new_elevator_group_id
+                'object_id': dirty.objects[object_index].id, 'level': dirty.planet_coords[planet_coord_index].level, 'group_id': new_elevator_group_id
             }) - 1;
 
-            socket.emit('elevator_linker_info', {'elevator_linker': dirty.elevator_linkers[base_elevator_linker_index]});
+            socket.emit('elevator_linker_info', { 'elevator_linker': dirty.elevator_linkers[base_elevator_linker_index] });
 
             // Check levels going down
             let starting_level = dirty.planet_coords[planet_coord_index].level;
@@ -3564,9 +3567,7 @@ async function manageElevatorLinkers(socket, dirty, object_id) {
 
                 let down_planet_coord_index = await main.getPlanetCoordIndex({
                     'planet_id': dirty.planet_coords[planet_coord_index].planet_id,
-                    'planet_level': next_level_down,
-                    'tile_x': dirty.planet_coords[planet_coord_index].tile_x,
-                    'tile_y': dirty.planet_coords[planet_coord_index].tile_y
+                    'planet_level': next_level_down, 'tile_x': dirty.planet_coords[planet_coord_index].tile_x, 'tile_y': dirty.planet_coords[planet_coord_index].tile_y
                 });
 
                 if (down_planet_coord_index === -1 || dirty.planet_coords[down_planet_coord_index].object_type_id !== 269) {
@@ -3575,20 +3576,17 @@ async function manageElevatorLinkers(socket, dirty, object_id) {
                     next_level_down--;
 
                     /// If there's already a match, remove it - this way when a new elevator is placed, we ensure that everything connected is linked
-                    let previous_down_index = dirty.elevator_linkers.findIndex(function (obj) {
-                        return obj && obj.object_id === dirty.planet_coords[down_planet_coord_index].object_id;
-                    });
+                    let previous_down_index = dirty.elevator_linkers.findIndex(function (obj) { return obj && obj.object_id === dirty.planet_coords[down_planet_coord_index].object_id; });
                     if (previous_down_index !== -1) {
                         delete dirty.elevator_linkers[previous_down_index];
                     }
 
                     let down_elevator_linker_index = dirty.elevator_linkers.push({
                         'id': uuidv1(),
-                        'object_id': dirty.planet_coords[down_planet_coord_index].object_id,
-                        'level': dirty.planet_coords[down_planet_coord_index].level,
+                        'object_id': dirty.planet_coords[down_planet_coord_index].object_id, 'level': dirty.planet_coords[down_planet_coord_index].level,
                         'group_id': new_elevator_group_id
                     }) - 1;
-                    socket.emit('elevator_linker_info', {'elevator_linker': dirty.elevator_linkers[down_elevator_linker_index]});
+                    socket.emit('elevator_linker_info', { 'elevator_linker': dirty.elevator_linkers[down_elevator_linker_index] });
 
                 }
 
@@ -3600,9 +3598,7 @@ async function manageElevatorLinkers(socket, dirty, object_id) {
 
                 let up_planet_coord_index = await main.getPlanetCoordIndex({
                     'planet_id': dirty.planet_coords[planet_coord_index].planet_id,
-                    'planet_level': next_level_up,
-                    'tile_x': dirty.planet_coords[planet_coord_index].tile_x,
-                    'tile_y': dirty.planet_coords[planet_coord_index].tile_y
+                    'planet_level': next_level_up, 'tile_x': dirty.planet_coords[planet_coord_index].tile_x, 'tile_y': dirty.planet_coords[planet_coord_index].tile_y
                 });
 
                 if (up_planet_coord_index === -1 || dirty.planet_coords[up_planet_coord_index].object_type_id !== 269) {
@@ -3611,20 +3607,17 @@ async function manageElevatorLinkers(socket, dirty, object_id) {
                     next_level_up++;
 
                     /// If there's already a match, remove it - this way when a new elevator is placed, we ensure that everything connected is linked
-                    let previous_up_index = dirty.elevator_linkers.findIndex(function (obj) {
-                        return obj && obj.object_id === dirty.planet_coords[up_planet_coord_index].object_id;
-                    });
+                    let previous_up_index = dirty.elevator_linkers.findIndex(function (obj) { return obj && obj.object_id === dirty.planet_coords[up_planet_coord_index].object_id; });
                     if (previous_up_index !== -1) {
                         delete dirty.elevator_linkers[previous_up_index];
                     }
 
                     let up_elevator_linker_index = dirty.elevator_linkers.push({
                         'id': uuidv1(),
-                        'object_id': dirty.planet_coords[up_planet_coord_index].object_id,
-                        'level': dirty.planet_coords[up_planet_coord_index].level,
+                        'object_id': dirty.planet_coords[up_planet_coord_index].object_id, 'level': dirty.planet_coords[up_planet_coord_index].level,
                         'group_id': new_elevator_group_id
                     }) - 1;
-                    socket.emit('elevator_linker_info', {'elevator_linker': dirty.elevator_linkers[up_elevator_linker_index]});
+                    socket.emit('elevator_linker_info', { 'elevator_linker': dirty.elevator_linkers[up_elevator_linker_index] });
 
                 }
 
@@ -3635,13 +3628,14 @@ async function manageElevatorLinkers(socket, dirty, object_id) {
             // Just send all the elevator linkers in this group
             for (let i = 0; i < dirty.elevator_linkers.length; i++) {
                 if (dirty.elevator_linkers[i] && dirty.elevator_linkers[i].group_id === dirty.elevator_linkers[base_elevator_linker_index].group_id) {
-                    socket.emit('elevator_linker_info', {'elevator_linker': dirty.elevator_linkers[i]});
+                    socket.emit('elevator_linker_info', { 'elevator_linker': dirty.elevator_linkers[i] });
                 }
             }
 
         }
 
         console.log("Finished in world.manageElevatorLinkers");
+
 
 
     } catch (error) {
@@ -3727,10 +3721,8 @@ async function objectFindTarget(dirty, object_index) {
 
                 if (dirty.objects[object_index].planet_coord_id) {
                     let planet_coord_data = {
-                        'planet_id': dirty.planet_coords[coord_index].planet_id,
-                        'planet_level': dirty.planet_coords[coord_index].level,
-                        'tile_x': i,
-                        'tile_y': j
+                        'planet_id': dirty.planet_coords[coord_index].planet_id, 'planet_level': dirty.planet_coords[coord_index].level,
+                        'tile_x': i, 'tile_y': j
                     };
                     checking_coord_index = await main.getPlanetCoordIndex(planet_coord_data);
 
@@ -3762,10 +3754,8 @@ async function objectFindTarget(dirty, object_index) {
                                 dirty.objects[checking_object_index].faction_id !== dirty.objects[object_index].faction_id) {
 
                                 let battle_linker_data = {
-                                    'attacking_id': dirty.objects[object_index].id,
-                                    'attacking_type': 'object',
-                                    'being_attacked_id': dirty.objects[checking_object_index].id,
-                                    'being_attacked_type': 'object'
+                                    'attacking_id': dirty.objects[object_index].id, 'attacking_type': 'object',
+                                    'being_attacked_id': dirty.objects[checking_object_index].id, 'being_attacked_type': 'object'
                                 };
 
                                 await addBattleLinker(false, dirty, battle_linker_data);
@@ -3776,10 +3766,8 @@ async function objectFindTarget(dirty, object_index) {
                                 dirty.objects[checking_object_index].player_id !== dirty.objects[object_index].player_id) {
 
                                 let battle_linker_data = {
-                                    'attacking_id': dirty.objects[object_index].id,
-                                    'attacking_type': 'object',
-                                    'being_attacked_id': dirty.objects[checking_object_index].id,
-                                    'being_attacked_type': 'object'
+                                    'attacking_id': dirty.objects[object_index].id, 'attacking_type': 'object',
+                                    'being_attacked_id': dirty.objects[checking_object_index].id, 'being_attacked_type': 'object'
                                 };
 
                                 await addBattleLinker(false, dirty, battle_linker_data);
@@ -3791,17 +3779,15 @@ async function objectFindTarget(dirty, object_index) {
 
                     // There's a player! See if we attack it
                     if (temp_coord.player_id) {
-                        let checking_player_index = await player.getIndex(dirty, {'player_id': dirty.objects[object_index].player_id});
+                        let checking_player_index = await player.getIndex(dirty, { 'player_id': dirty.objects[object_index].player_id });
 
                         if (checking_player_index !== -1) {
                             if (dirty.players[checking_player_index].faction_id &&
                                 dirty.players[checking_player_index].faction_id !== dirty.objects[object_index].faction_id) {
 
                                 let battle_linker_data = {
-                                    'attacking_id': dirty.objects[object_index].id,
-                                    'attacking_type': 'object',
-                                    'being_attacked_id': dirty.players[checking_player_index].id,
-                                    'being_attacked_type': 'player'
+                                    'attacking_id': dirty.objects[object_index].id, 'attacking_type': 'object',
+                                    'being_attacked_id': dirty.players[checking_player_index].id, 'being_attacked_type': 'player'
                                 };
 
                                 await addBattleLinker(false, dirty, battle_linker_data);
@@ -3812,10 +3798,8 @@ async function objectFindTarget(dirty, object_index) {
                                 dirty.players[checking_player_index].player_id !== dirty.objects[object_index].player_id) {
 
                                 let battle_linker_data = {
-                                    'attacking_id': dirty.objects[object_index].id,
-                                    'attacking_type': 'object',
-                                    'being_attacked_id': dirty.players[checking_player_index].id,
-                                    'being_attacked_type': 'player'
+                                    'attacking_id': dirty.objects[object_index].id, 'attacking_type': 'object',
+                                    'being_attacked_id': dirty.players[checking_player_index].id, 'being_attacked_type': 'player'
                                 };
 
                                 await addBattleLinker(false, dirty, battle_linker_data);
@@ -3835,8 +3819,9 @@ async function objectFindTarget(dirty, object_index) {
         console.error(error);
     }
 }
-
 exports.objectFindTarget = objectFindTarget;
+
+
 
 
 async function reloadEvent(dirty, event_id) {
@@ -3918,7 +3903,7 @@ exports.reloadEvent = reloadEvent;
  * @param {number=} data.npc_id
  * @param {number=} data.object_id
  * @param {number=} data.player_id
- *
+ * 
  */
 async function removeBattleLinkers(dirty, data) {
 
@@ -3935,22 +3920,20 @@ async function removeBattleLinkers(dirty, data) {
 
             if (dirty.battle_linkers[battle_linker_index].socket_id) {
                 io.to(dirty.battle_linkers[battle_linker_index].socket_id).emit('battle_linker_info',
-                    {'remove': true, 'battle_linker': dirty.battle_linkers[battle_linker_index]});
+                    { 'remove': true, 'battle_linker': dirty.battle_linkers[battle_linker_index] });
             }
 
             if (dirty.battle_linkers[battle_linker_index].being_attacked_socket_id) {
                 io.to(dirty.battle_linkers[battle_linker_index].being_attacked_socket_id).emit('battle_linker_info',
-                    {'remove': true, 'battle_linker': dirty.battle_linkers[battle_linker_index]});
+                    { 'remove': true, 'battle_linker': dirty.battle_linkers[battle_linker_index] });
             }
 
 
             // we need to send to the room as well
-            if (typeof dirty.battle_linkers[battle_linker_index].room !== 'undefined' && helper.notFalse(dirty.battle_linkers[battle_linker_index].room)) {
-                io.to(dirty.battle_linkers[battle_linker_index].room).emit('battle_linker_info', {
-                    'remove': true,
-                    'battle_linker': dirty.battle_linkers[battle_linker_index]
-                });
+            if(typeof dirty.battle_linkers[battle_linker_index].room !== 'undefined' && helper.notFalse(dirty.battle_linkers[battle_linker_index].room)) {
+                io.to(dirty.battle_linkers[battle_linker_index].room).emit('battle_linker_info', { 'remove': true, 'battle_linker': dirty.battle_linkers[battle_linker_index] });
             }
+            
 
 
             delete dirty.battle_linkers[battle_linker_index];
@@ -3958,11 +3941,11 @@ async function removeBattleLinkers(dirty, data) {
         // Removing all of one type
         else {
 
-            for (let i = 0; i < dirty.battle_linkers.length; i++) {
+            for(let i = 0; i < dirty.battle_linkers.length; i++) {
 
-                if (dirty.battle_linkers[i]) {
+                if(dirty.battle_linkers[i]) {
                     let remove_battle_linker = false;
-
+    
                     if (data.monster_id) {
                         //console.log("In removeBattleLinkers for monster id: " + data.monster_id);
                         if (
@@ -3974,7 +3957,7 @@ async function removeBattleLinkers(dirty, data) {
 
                         }
                     }
-
+    
                     if (data.npc_id) {
                         if (
                             (dirty.battle_linkers[i].attacking_type === 'npc' && dirty.battle_linkers[i].attacking_id === data.npc_id) ||
@@ -3982,10 +3965,10 @@ async function removeBattleLinkers(dirty, data) {
                         ) {
                             //log(chalk.cyan("Removing battle linker with npc"));
                             remove_battle_linker = true;
-
+    
                         }
                     }
-
+    
                     if (data.object_id) {
                         if (
                             (dirty.battle_linkers[i].attacking_type === 'object' && dirty.battle_linkers[i].attacking_id === data.object_id) ||
@@ -3993,13 +3976,13 @@ async function removeBattleLinkers(dirty, data) {
                         ) {
                             //log(chalk.cyan("Removing battle linker with object"));
                             remove_battle_linker = true;
-
+    
                         }
                     }
-
+    
                     if (data.player_id) {
                         //console.log("In removeBattleLinkers for player id: " + data.player_id);
-
+    
                         if (
                             (dirty.battle_linkers[i].attacking_type === 'player' && dirty.battle_linkers[i].attacking_id === data.player_id) ||
                             (dirty.battle_linkers[i].being_attacked_type === 'player' && dirty.battle_linkers[i].being_attacked_id === data.player_id)
@@ -4008,34 +3991,25 @@ async function removeBattleLinkers(dirty, data) {
                             remove_battle_linker = true;
                         }
                     }
-
-
+    
+    
                     if (remove_battle_linker) {
-
+    
                         if (dirty.battle_linkers[i].socket_id) {
                             //console.log("Sending to socket_id");
-                            io.to(dirty.battle_linkers[i].socket_id).emit('battle_linker_info', {
-                                'remove': true,
-                                'battle_linker': dirty.battle_linkers[i]
-                            });
+                            io.to(dirty.battle_linkers[i].socket_id).emit('battle_linker_info', { 'remove': true, 'battle_linker': dirty.battle_linkers[i] });
                         }
-
+    
                         if (dirty.battle_linkers[i].being_attacked_socket_id) {
                             //console.log("Sending to being_attacked_socket_id");
-                            io.to(dirty.battle_linkers[i].being_attacked_socket_id).emit('battle_linker_info', {
-                                'remove': true,
-                                'battle_linker': dirty.battle_linkers[i]
-                            });
+                            io.to(dirty.battle_linkers[i].being_attacked_socket_id).emit('battle_linker_info', { 'remove': true, 'battle_linker': dirty.battle_linkers[i] });
                         }
 
                         // we need to send to the room as well
-                        if (typeof dirty.battle_linkers[i].room !== 'undefined' && helper.notFalse(dirty.battle_linkers[i].room)) {
-                            io.to(dirty.battle_linkers[i].room).emit('battle_linker_info', {
-                                'remove': true,
-                                'battle_linker': dirty.battle_linkers[i]
-                            });
+                        if(typeof dirty.battle_linkers[i].room !== 'undefined' && helper.notFalse(dirty.battle_linkers[i].room)) {
+                            io.to(dirty.battle_linkers[i].room).emit('battle_linker_info', { 'remove': true, 'battle_linker': dirty.battle_linkers[i] });
                         }
-
+    
                         delete dirty.battle_linkers[i];
                     }
                 }
@@ -4062,7 +4036,7 @@ async function sendAreas(socket, room, dirty, data) {
         let ship_coord_index = -1;
 
         if (data.planet_coord_id) {
-            let planet_coord_index = await main.getPlanetCoordIndex({'planet_coord_id': parseInt(data.planet_coord_id)});
+            let planet_coord_index = await main.getPlanetCoordIndex({ 'planet_coord_id': parseInt(data.planet_coord_id) });
             if (planet_coord_index === -1) {
                 return false;
             }
@@ -4070,7 +4044,7 @@ async function sendAreas(socket, room, dirty, data) {
         }
 
         if (data.ship_coord_id) {
-            let ship_coord_index = await main.getShipCoordIndex({'ship_coord_id': parseInt(data.ship_coord_id)});
+            let ship_coord_index = await main.getShipCoordIndex({ 'ship_coord_id': parseInt(data.ship_coord_id) });
             if (ship_coord_index === -1) {
                 return false;
             }
@@ -4082,11 +4056,11 @@ async function sendAreas(socket, room, dirty, data) {
                     (ship_coord_index !== -1 && dirty.ship_coords[ship_coord_index].ship_id === dirty.areas[i].ship_id)
                 ) {
                     if (socket) {
-                        socket.emit('area_info', {'area': dirty.areas[i]});
+                        socket.emit('area_info', { 'area': dirty.areas[i] });
                     }
 
                     if (room) {
-                        socket.emit('area_info', {'area': dirty.areas[i]});
+                        socket.emit('area_info', { 'area': dirty.areas[i] });
                     }
                 }
             }
@@ -4111,12 +4085,13 @@ function sendActiveSalvaging(socket, room, dirty, active_salvaging_index, remove
             'total_salvaged': dirty.active_salvagings[active_salvaging_index].total_salvaged
         };
 
-        if (typeof dirty.active_salvagings[active_salvaging_index].object_id !== 'undefined') {
+        if(typeof dirty.active_salvagings[active_salvaging_index].object_id !== 'undefined') {
             temp_salvaging.object_id = dirty.active_salvagings[active_salvaging_index].object_id;
         } else {
             temp_salvaging.coord_id = dirty.active_salvagings[active_salvaging_index].coord_id;
             temp_salvaging.coord_type = dirty.active_salvagings[active_salvaging_index].coord_type;
         }
+
 
 
         if (socket) {
@@ -4126,16 +4101,16 @@ function sendActiveSalvaging(socket, room, dirty, active_salvaging_index, remove
                     'remove': true
                 });
             } else {
-                socket.emit('salvaging_linker_info', {'salvaging_linker': temp_salvaging});
+                socket.emit('salvaging_linker_info', { 'salvaging_linker': temp_salvaging });
             }
 
         }
 
         if (room) {
             if (remove === true) {
-                io.to(room).emit('salvaging_linker_info', {'salvaging_linker': temp_salvaging, 'remove': true});
+                io.to(room).emit('salvaging_linker_info', { 'salvaging_linker': temp_salvaging, 'remove': true });
             } else {
-                io.to(room).emit('salvaging_linker_info', {'salvaging_linker': temp_salvaging});
+                io.to(room).emit('salvaging_linker_info', { 'salvaging_linker': temp_salvaging });
             }
         }
 
@@ -4148,11 +4123,11 @@ exports.sendActiveSalvaging = sendActiveSalvaging;
 
 
 /**
- *
- * @param {Object} socket
- * @param {string} room
- * @param {Object} dirty
- * @param {Object} data
+ * 
+ * @param {Object} socket 
+ * @param {string} room 
+ * @param {Object} dirty 
+ * @param {Object} data 
  * @param {number=} data.coord_id
  * @param {number=} data.coord_index
  */
@@ -4164,7 +4139,7 @@ async function sendCoordInfo(socket, room, dirty, data) {
         if (data.coord_index) {
             coord_index = data.coord_index;
         } else if (data.coord_id) {
-            coord_index = await main.getCoordIndex({'coord_id': data.coord_id});
+            coord_index = await main.getCoordIndex({ 'coord_id': data.coord_id });
         }
 
         if (coord_index === -1) {
@@ -4172,11 +4147,11 @@ async function sendCoordInfo(socket, room, dirty, data) {
         }
 
         if (socket) {
-            socket.emit('coord_info', {'coord': dirty.coords[coord_index]});
+            socket.emit('coord_info', { 'coord': dirty.coords[coord_index] });
         }
 
         if (room) {
-            io.to(room).emit('coord_info', {'coord': dirty.coords[coord_index]});
+            io.to(room).emit('coord_info', { 'coord': dirty.coords[coord_index] });
         }
 
     } catch (error) {
@@ -4186,6 +4161,7 @@ async function sendCoordInfo(socket, room, dirty, data) {
 }
 
 exports.sendCoordInfo = sendCoordInfo;
+
 
 
 async function sendMarketData(socket, dirty) {
@@ -4224,17 +4200,17 @@ async function sendMarketData(socket, dirty) {
                 let area_index = await main.getAreaIndex(dirty.market_linkers[i].area_id);
 
                 if (area_index !== -1) {
-                    socket.emit('area_info', {'area': dirty.areas[area_index]});
+                    socket.emit('area_info', { 'area': dirty.areas[area_index] });
 
                     for (let b = 0; b < dirty.bid_linkers.length; b++) {
                         if (dirty.bid_linkers[b] && dirty.bid_linkers[b].area_id === dirty.areas[area_index].id) {
-                            socket.emit('bid_linker_info', {'bid_linker': dirty.bid_linkers[b]});
+                            socket.emit('bid_linker_info', { 'bid_linker': dirty.bid_linkers[b] });
                         }
                     }
                 }
 
 
-                socket.emit('market_linker_info', {'market_linker': dirty.market_linkers[i]});
+                socket.emit('market_linker_info', { 'market_linker': dirty.market_linkers[i] });
             }
         }
 
@@ -4254,28 +4230,22 @@ async function sendNpcInfo(socket, room, dirty, npc_id) {
 
         if (npc_index === -1) {
             console.log("Sending remove npc " + npc_id + " to player");
-            socket.emit('npc_info', {'npc_id': npc_id, 'action': 'remove'});
+            socket.emit('npc_info', { 'npc_id': npc_id, 'action': 'remove' });
 
             // if a coord still has this npc id, lets remove that as well
-            let planet_coord_index = dirty.planet_coords.findIndex(function (obj) {
-                return obj && obj.npc_id === npc_id;
-            });
+            let planet_coord_index = dirty.planet_coords.findIndex(function (obj) { return obj && obj.npc_id === npc_id; });
             if (planet_coord_index !== -1) {
                 dirty.planet_coords[planet_coord_index].npc_id = false;
                 dirty.planet_coords[planet_coord_index].has_change = true;
             }
 
-            let ship_coord_index = dirty.ship_coords.findIndex(function (obj) {
-                return obj && obj.npc_id === npc_id;
-            });
+            let ship_coord_index = dirty.ship_coords.findIndex(function (obj) { return obj && obj.npc_id === npc_id; });
             if (ship_coord_index !== -1) {
                 dirty.ship_coords[ship_coord_index].npc_id = false;
                 dirty.ship_coords[ship_coord_index].has_change = true;
             }
 
-            let coord_index = dirty.coords.findIndex(function (obj) {
-                return obj && obj.npc_id === npc_id;
-            });
+            let coord_index = dirty.coords.findIndex(function (obj) { return obj && obj.npc_id === npc_id; });
             if (coord_index !== -1) {
                 dirty.coords[coord_index].npc_id = false;
                 dirty.coords[coord_index].has_change = true;
@@ -4287,11 +4257,11 @@ async function sendNpcInfo(socket, room, dirty, npc_id) {
 
 
         if (socket !== false) {
-            socket.emit('npc_info', {'npc': dirty.npcs[npc_index]});
+            socket.emit('npc_info', { 'npc': dirty.npcs[npc_index] });
         }
 
         if (room !== false) {
-            io.to(room).emit('npc_info', {'npc': dirty.npcs[npc_index]});
+            io.to(room).emit('npc_info', { 'npc': dirty.npcs[npc_index] });
         }
 
         // Send any inventory items that have a price
@@ -4301,11 +4271,11 @@ async function sendNpcInfo(socket, room, dirty, npc_id) {
             dirty.inventory_items.forEach(function (inventory_item, i) {
                 if (inventory_item.npc_id === dirty.npcs[npc_index].id && inventory_item.price) {
                     if (socket !== false) {
-                        socket.emit('inventory_item_info', {'inventory_item': dirty.inventory_items[i]});
+                        socket.emit('inventory_item_info', { 'inventory_item': dirty.inventory_items[i] });
                     }
 
                     if (room !== false) {
-                        io.to(room).emit('inventory_item_info', {'inventory_item': dirty.inventory_items[i]});
+                        io.to(room).emit('inventory_item_info', { 'inventory_item': dirty.inventory_items[i] });
                     }
                 }
             });
@@ -4327,6 +4297,7 @@ async function sendNpcInfo(socket, room, dirty, npc_id) {
     }
 
 
+
 }
 
 exports.sendNpcInfo = sendNpcInfo;
@@ -4345,6 +4316,7 @@ async function sendPlayerAIs(socket, room, dirty, player_id) {
                 await game_object.sendInfo(socket, room, dirty, a);
 
 
+
                 // see if there are any ai_rules attached to this AI
                 let rules = dirty.rules.filter(rule => rule.object_id === dirty.objects[a].id);
                 if (rules) {
@@ -4359,18 +4331,19 @@ async function sendPlayerAIs(socket, room, dirty, player_id) {
 
                     let planet_coord_index = await game_object.getCoordIndex(dirty, a, 'planet');
 
+                   
 
                     if (planet_coord_index !== -1) {
-                        await planet.sendInfo(socket, room, dirty, {'planet_id': dirty.planet_coords[planet_coord_index].planet_id});
-                        await sendAreas(socket, room, dirty, {'planet_id': dirty.planet_coords[planet_coord_index].planet_id});
+                        await planet.sendInfo(socket, room, dirty, { 'planet_id': dirty.planet_coords[planet_coord_index].planet_id });
+                        await sendAreas(socket, room, dirty, { 'planet_id': dirty.planet_coords[planet_coord_index].planet_id });
                     }
 
                 } else if (dirty.objects[a].ship_coord_id) {
-                    let ship_coord_index = await main.getShipCoordIndex({'ship_coord_id': dirty.objects[a].ship_coord_id});
+                    let ship_coord_index = await main.getShipCoordIndex({ 'ship_coord_id': dirty.objects[a].ship_coord_id });
                     if (ship_coord_index !== -1) {
                         let ship_index = await game_object.getIndex(dirty, dirty.ship_coords[ship_coord_index].ship_id);
                         await game_object.sendInfo(socket, room, dirty, ship_index, 'world.sendPlayerAIs');
-                        await sendAreas(socket, room, dirty, {'ship_id': dirty.ship_coords[ship_coord_index].ship_id});
+                        await sendAreas(socket, room, dirty, { 'ship_id': dirty.ship_coords[ship_coord_index].ship_id });
                     }
                 }
             }
@@ -4388,7 +4361,7 @@ async function sendPlayerAreas(socket, dirty, player_index) {
 
         for (let i = 0; i < dirty.areas.length; i++) {
             if (dirty.areas[i].owner_id === socket.player_id || dirty.areas[i].renting_player_id === socket.player_id) {
-                socket.emit('area_info', {'area': dirty.areas[i]});
+                socket.emit('area_info', { 'area': dirty.areas[i] });
             }
         }
 
@@ -4404,7 +4377,7 @@ function sendPlayerCount(socket) {
     try {
 
         //console.log("In sendPlayerCount");
-        socket.emit('player_count_info', {'player_count': Object.keys(io.sockets.sockets).length});
+        socket.emit('player_count_info', { 'player_count': Object.keys(io.sockets.sockets).length });
 
 
     } catch (error) {
@@ -4422,9 +4395,9 @@ async function sendRuleInfo(socket, room, dirty, rule_id) {
 
         if (rule_index !== -1) {
             if (helper.notFalse(socket)) {
-                socket.emit('rule_info', {'rule': dirty.rules[rule_index]});
+                socket.emit('rule_info', { 'rule': dirty.rules[rule_index] });
             } else if (helper.notFalse(room)) {
-                io.to(room).emit('rule_info', {'rule': dirty.rules[rule_index]});
+                io.to(room).emit('rule_info', { 'rule': dirty.rules[rule_index] });
             }
         }
     } catch (error) {
@@ -4444,7 +4417,7 @@ async function sendShipCoordInfo(socket, room, dirty, data) {
         if (data.ship_coord_index) {
             coord_index = data.ship_coord_index;
         } else if (data.ship_coord_id) {
-            coord_index = await main.getShipCoordIndex({'ship_coord_id': data.ship_coord_id});
+            coord_index = await main.getShipCoordIndex({ 'ship_coord_id': data.ship_coord_id });
         }
 
         if (coord_index === -1) {
@@ -4452,11 +4425,11 @@ async function sendShipCoordInfo(socket, room, dirty, data) {
         }
 
         if (socket) {
-            socket.emit('ship_coord_info', {'ship_coord': dirty.ship_coords[coord_index]});
+            socket.emit('ship_coord_info', { 'ship_coord': dirty.ship_coords[coord_index] });
         }
 
         if (room) {
-            io.to(room).emit('ship_coord_info', {'ship_coord': dirty.ship_coords[coord_index]});
+            io.to(room).emit('ship_coord_info', { 'ship_coord': dirty.ship_coords[coord_index] });
         }
 
     } catch (error) {
@@ -4478,15 +4451,13 @@ async function sendSkinPurchaseLinkers(socket, dirty) {
 
             for (let i = 0; i < rows.length; i++) {
 
-                let existing_skin_purchase_linker_index = dirty.skin_purchase_linkers.findIndex(function (obj) {
-                    return obj && obj.id === rows[i].id;
-                });
+                let existing_skin_purchase_linker_index = dirty.skin_purchase_linkers.findIndex(function (obj) { return obj && obj.id === rows[i].id; });
 
                 if (existing_skin_purchase_linker_index === -1) {
                     dirty.skin_purchase_linkers.push(rows[i]);
                 }
 
-                socket.emit('skin_purchase_linker_info', {'skin_purchase_linker': rows[i]});
+                socket.emit('skin_purchase_linker_info', { 'skin_purchase_linker': rows[i] });
             }
 
         }
@@ -4531,7 +4502,7 @@ async function setPlanetType(socket, dirty, data) {
 
         console.log("Setting planet id: " + dirty.planets[data.planet_index].id + " to planet type id: " + dirty.planet_types[data.planet_type_index].id);
 
-        let coord_index = await main.getCoordIndex({'coord_id': dirty.planets[data.planet_index].coord_id});
+        let coord_index = await main.getCoordIndex({ 'coord_id': dirty.planets[data.planet_index].coord_id });
 
 
         let can_place_all_tiles = true;
@@ -4545,10 +4516,7 @@ async function setPlanetType(socket, dirty, data) {
                     let checking_tile_x = dirty.coords[coord_index].tile_x + dirty.planet_type_display_linkers[i].position_x;
                     let checking_tile_y = dirty.coords[coord_index].tile_y + dirty.planet_type_display_linkers[i].position_y;
 
-                    let checking_coord_index = await main.getCoordIndex({
-                        'tile_x': checking_tile_x,
-                        'tile_y': checking_tile_y
-                    });
+                    let checking_coord_index = await main.getCoordIndex({ 'tile_x': checking_tile_x, 'tile_y': checking_tile_y });
 
                     if (checking_coord_index === -1 || dirty.coords[checking_coord_index].player_id || dirty.coords[checking_coord_index].object_id ||
                         (dirty.coords[checking_coord_index].planet_id && dirty.coords[checking_coord_index].planet_id !== dirty.planets[data.planet_index].id) ||
@@ -4587,10 +4555,7 @@ async function setPlanetType(socket, dirty, data) {
                     let checking_tile_x = dirty.coords[coord_index].tile_x + dirty.planet_type_display_linkers[i].position_x;
                     let checking_tile_y = dirty.coords[coord_index].tile_y + dirty.planet_type_display_linkers[i].position_y;
 
-                    let checking_coord_index = await main.getCoordIndex({
-                        'tile_x': checking_tile_x,
-                        'tile_y': checking_tile_y
-                    });
+                    let checking_coord_index = await main.getCoordIndex({ 'tile_x': checking_tile_x, 'tile_y': checking_tile_y });
 
                     if (checking_coord_index !== -1) {
                         console.log("Set belongs_to_planet_id");
@@ -4634,10 +4599,7 @@ async function setPlayerBody(dirty, player_index) {
         // let get the basic human body type
         let body_object_type_index = main.getObjectTypeIndex(110);
         let body_object_index = await insertObjectType({}, dirty,
-            {
-                'object_type_id': dirty.object_types[body_object_type_index].id,
-                'player_id': dirty.players[player_index].id
-            });
+            { 'object_type_id': dirty.object_types[body_object_type_index].id, 'player_id': dirty.players[player_index].id });
         if (body_object_index !== -1) {
             dirty.players[player_index].body_id = dirty.objects[body_object_index].id;
             dirty.players[player_index].current_hp = dirty.object_types[body_object_type_index].hp;
@@ -4697,33 +4659,35 @@ async function setPlayerMoveDelay(socket, dirty, player_index) {
 
                         socket.move_delay = dirty.object_types[ship_type_index].move_delay;
 
-                        if (dirty.object_types[ship_type_index].needs_engines && typeof dirty.objects[ship_index].current_engine_power !== 'undefined') {
+                        if(dirty.object_types[ship_type_index].needs_engines && typeof dirty.objects[ship_index].current_engine_power !== 'undefined') {
 
                             // Division by 0 is bad stuff - just set it to 1000000 and if move delay is 1000000, always deny the move
-                            if (dirty.objects[ship_index].current_engine_power === 0) {
+                            if(dirty.objects[ship_index].current_engine_power === 0) {
                                 socket.move_delay = 1000000;
                             } else {
-                                socket.move_delay = socket.move_delay * (dirty.object_types[ship_type_index].engine_power_required / dirty.objects[ship_index].current_engine_power);
+                                socket.move_delay = socket.move_delay * ( dirty.object_types[ship_type_index].engine_power_required / dirty.objects[ship_index].current_engine_power);
                             }
 
+                            
 
                             //console.log("Ship engines changed move delay to: " + socket.move_delay);
                         } else {
-                            if (!dirty.object_types[ship_type_index].needs_engines) {
+                            if(!dirty.object_types[ship_type_index].needs_engines) {
                                 //console.log("Ship does not require engines");
                             }
 
-                            if (typeof dirty.objects[ship_index].current_engine_power === 'undefined') {
+                            if(typeof dirty.objects[ship_index].current_engine_power === 'undefined') {
                                 console.log("Ship current_engine_power is undefined");
                             }
                         }
-
+                        
                     }
                 }
             }
         } else {
             console.log("Apparently we are calling this before we place the player");
         }
+
 
 
         // Just incase we failed to set it - set it to the default
@@ -4754,7 +4718,7 @@ async function skinRemove(socket, dirty, skin_object_type_id) {
         dirty.players[socket.player_index].skin_object_type_id = false;
         dirty.players[socket.player_index].has_change = true;
 
-        await player.sendInfo(socket, player_info.room, dirty, dirty.players[socket.player_index].id);
+        await player.sendInfo( socket, player_info.room, dirty, dirty.players[socket.player_index].id);
 
         console.log("Done in skin remove");
 
@@ -4778,7 +4742,7 @@ async function skinUse(socket, dirty, skin_object_type_id) {
 
         if (skin_purchase_linker_index === -1) {
             log(chalk.yellow("Player is trying to use a skin they don't own"));
-            socket.emit('result_info', {'failure': "Not owned"});
+            socket.emit('result_info', { 'failure': "Not owned" });
             return false;
         }
 
@@ -4787,7 +4751,7 @@ async function skinUse(socket, dirty, skin_object_type_id) {
         dirty.players[socket.player_index].skin_object_type_id = skin_object_type_id;
         dirty.players[socket.player_index].has_change = true;
 
-        await player.sendInfo(socket, player_info.room, dirty, dirty.players[socket.player_index].id);
+        await player.sendInfo( socket, player_info.room, dirty, dirty.players[socket.player_index].id);
 
     } catch (error) {
         log(chalk.red("Error in world.skinUse: " + error));
@@ -4818,11 +4782,11 @@ async function spawnAdjacent(dirty, data) {
             base_coord = dirty.planet_coords[data.base_coord_index];
         } else if (data.scope === 'ship') {
             base_coord = dirty.ship_coords[data.base_coord_index];
-        } else if (data.scope === 'galaxy') {
+        } else if(data.scope === 'galaxy') {
             base_coord = dirty.coords[data.base_coord_index];
         }
 
-        if (helper.isFalse(base_coord)) {
+        if(helper.isFalse(base_coord)) {
             log(chalk.yellow("Invalid base coord sent into world.spawnAdjacent"));
             console.trace("here");
             return false;
@@ -4834,18 +4798,18 @@ async function spawnAdjacent(dirty, data) {
         let placing_index = -1;
         let spawning_type_for_get_open_coord_index = data.spawning_type;
         let being_spawned_object_type_index = -1;
-
+        
         // Keep this as an object type until we confirm an open coord so we aren't spawning 
         // objects we can't place anywhere
-        if (spawning_type_for_get_open_coord_index === 'object') {
-
+        if(spawning_type_for_get_open_coord_index === 'object') {
+            
             being_spawned_object_type_index = main.getObjectTypeIndex(data.spawning_type_id);
-
+             
             spawning_type_for_get_open_coord_index = 'object_type';
             placing_index = being_spawned_object_type_index;
-
-
-        } else if (spawning_type_for_get_open_coord_index === 'monster') {
+        
+            
+        } else if(spawning_type_for_get_open_coord_index === 'monster') {
 
             let monster_type_index = main.getMonsterTypeIndex(data.spawning_type_id);
             placing_index = monster_type_index;
@@ -4856,13 +4820,14 @@ async function spawnAdjacent(dirty, data) {
         }
 
 
+
         //let placing_coord_index = -1;
         //let placing_coord = false;
 
         let placing_coord = {};
         let placing_coord_index = await getOpenCoordIndex(dirty, data.scope, data.base_coord_index, spawning_type_for_get_open_coord_index, placing_index, 1);
 
-        if (placing_coord_index === -1) {
+        if(placing_coord_index === -1) {
             placing_coord_index = await getOpenCoordIndex(dirty, data.scope, data.base_coord_index, spawning_type_for_get_open_coord_index, placing_index, 3);
         }
 
@@ -4871,50 +4836,52 @@ async function spawnAdjacent(dirty, data) {
             return false;
         }
 
-        if (dirty.object_types[being_spawned_object_type_index].assembled_as_object) {
+        if(dirty.object_types[being_spawned_object_type_index].assembled_as_object) {
             console.log("Now lets create it!");
             spawning_type_for_get_open_coord_index = 'object';
 
             // and we have to create the object
-            placing_index = await insertObjectType({}, dirty, {'object_type_id': dirty.object_types[being_spawned_object_type_index].id});
+            placing_index = await insertObjectType({}, dirty, { 'object_type_id': dirty.object_types[being_spawned_object_type_index].id });
 
         }
 
         // If it was an object type, and that object type is assembled as an object, we can now create it
 
 
-        if (data.scope === 'planet') {
+        if(data.scope === 'planet') {
 
             placing_coord = dirty.planet_coords[placing_coord_index];
-        } else if (data.scope === 'ship') {
+        } else if(data.scope === 'ship') {
             placing_coord = dirty.ship_coords[placing_coord_index];
-        } else if (data.scope === 'galaxy') {
+        } else if(data.scope === 'galaxy') {
             placing_coord = dirty.coords[placing_coord_index];
         }
 
         if (data.spawning_type === 'object') {
 
 
+
             // We need to insert an object, and add it to the coord
             if (dirty.object_types[being_spawned_object_type_index].assembled_as_object) {
 
-                let place_object_data = {'object_index': placing_index};
+                let place_object_data = { 'object_index': placing_index };
                 if (data.scope === 'planet') {
                     place_object_data.planet_coord_index = placing_coord_index;
                 } else if (data.scope === 'ship') {
                     place_object_data.ship_coord_index = placing_coord_index;
-                } else if (data.scope === 'galaxy') {
+                } else if(data.scope === 'galaxy') {
                     place_object_data.coord_index = placing_coord_index;
                 }
 
                 await game_object.place({}, dirty, place_object_data);
 
 
+
             }
             // We only need to set the object_type_id and the amount for the coord
             else {
 
-                let update_coord_data = {'object_type_id': dirty.object_types[being_spawned_object_type_index].id};
+                let update_coord_data = { 'object_type_id': dirty.object_types[being_spawned_object_type_index].id };
 
                 // We can just increment the count
                 if (placing_coord.object_type_id === data.spawning_type_id) {
@@ -4928,7 +4895,7 @@ async function spawnAdjacent(dirty, data) {
                 } else if (data.scope === "ship") {
                     update_coord_data.ship_coord_index = placing_coord_index;
 
-                } else if (data.scope === 'galaxy') {
+                } else if(data.scope === 'galaxy') {
                     update_coord_data.coord_index = placing_coord_index;
                 }
 
@@ -4937,13 +4904,14 @@ async function spawnAdjacent(dirty, data) {
             }
 
 
+
         } else if (data.spawning_type === 'monster') {
-            let spawn_monster_data = {};
+            let spawn_monster_data = { };
             if (data.scope === 'planet') {
                 spawn_monster_data.planet_coord_index = placing_coord_index;
             } else if (data.scope === 'ship') {
                 spawn_monster_data.ship_coord_index = placing_coord_index;
-            } else if (data.scope === 'galaxy') {
+            } else if(data.scope === 'galaxy') {
                 spawn_monster_data.coord_index = placing_coord_index;
             }
 
@@ -5053,6 +5021,10 @@ exports.spawnGalaxyObjects = spawnGalaxyObjects;
  */
 
 
+
+
+
+
 async function shielded(dirty, damage_amount, object_index) {
 
     try {
@@ -5137,11 +5109,15 @@ async function submitBid(socket, dirty, data) {
 
             if (area_index !== -1) {
                 if (dirty.areas[area_index].planet_id) {
-                    io.to("planet_" + dirty.areas[area_index].planet_id).emit('bid_linker_info', {'bid_linker': dirty.bid_linkers[bid_linker_index]});
+                    io.to("planet_" + dirty.areas[area_index].planet_id).emit('bid_linker_info', { 'bid_linker': dirty.bid_linkers[bid_linker_index] });
                 } else if (dirty.areas[area_index].ship_id) {
-                    io.to("ship_" + dirty.areas[area_index].ship_id).emit('bid_linker_info', {'bid_linker': dirty.bid_linkers[bid_linker_index]});
+                    io.to("ship_" + dirty.areas[area_index].ship_id).emit('bid_linker_info', { 'bid_linker': dirty.bid_linkers[bid_linker_index] });
                 }
             }
+
+
+
+
 
 
         }
@@ -5159,24 +5135,24 @@ exports.submitBid = submitBid;
 async function tickGalaxy(dirty) {
 
     try {
-        for (let i = 0; i < dirty.galaxies.length; i++) {
+        for(let i = 0; i < dirty.galaxies.length; i++) {
 
 
-            if (dirty.galaxies[i]) {
+            if(dirty.galaxies[i]) {
                 dirty.galaxies[i].month++;
-
-                if (dirty.galaxies[i].month >= 13) {
+    
+                if(dirty.galaxies[i].month >= 13) {
                     dirty.galaxies[i].month = 1;
                     dirty.galaxies[i].year++;
                 }
             }
-
+    
         }
-    } catch (error) {
+    } catch(error) {
         log(chalk.red("Error in world.tickGalaxy: " + error));
         console.error(error);
     }
-
+   
 
 }
 
@@ -5185,30 +5161,30 @@ exports.tickGalaxy = tickGalaxy;
 
 async function tickNomad(dirty, admin_command = false) {
 
-    try {
+     try {
 
         console.log("In world.tickNomad");
 
         // Admin commands always tick The Great Nomad. Otherwise it's a 10% chance every 12 hours
-        if (admin_command === false) {
-            let rand_chance = helper.getRandomIntInclusive(1, 10);
+        if(admin_command === false) {
+            let rand_chance = helper.getRandomIntInclusive(1,10);
 
-            if (rand_chance !== 4) {
+            if(rand_chance !== 4) {
                 return false;
             }
         }
-
+        
 
         let nomad_index = await game_object.getIndex(dirty, 105913);
 
-        if (nomad_index === -1) {
+        if(nomad_index === -1) {
             log(chalk.yellow("Could not find The Great Nomad"));
             return false;
         }
 
 
         // Remove it from the coord
-        if (dirty.objects[nomad_index].coord_id) {
+        if(dirty.objects[nomad_index].coord_id) {
 
             console.log("Removing The Great Nomad From coord id: " + dirty.objects[nomad_index].coord_id);
 
@@ -5216,32 +5192,31 @@ async function tickNomad(dirty, admin_command = false) {
 
             addPlayerLog(dirty, -1, "The Great Nomad has left the galaxy");
 
+            
+            
 
-        }
+        } 
         // Try to add it to a random galaxy coord
         else {
 
-            let random_x = helper.getRandomIntInclusive(4, 96);
-            let random_y = helper.getRandomIntInclusive(4, 96)
+            let random_x = helper.getRandomIntInclusive(4,96);
+            let random_y = helper.getRandomIntInclusive(4,96)
 
             // testing on the same coord each time
-            let coord_index = await main.getCoordIndex({'tile_x': random_x, 'tile_y': random_y});
+            let coord_index = await main.getCoordIndex({ 'tile_x': random_x, 'tile_y': random_y });
 
-            if (coord_index === -1) {
+            if(coord_index === -1) {
                 log(chalk.yellow("Could not find galaxy coord at: " + random_x + "," + random_y));
                 return false;
             }
 
-            let can_place_result = await game_object.canPlace(dirty, 'galaxy', dirty.coords[coord_index], {'object_index': nomad_index});
+            let can_place_result = await game_object.canPlace(dirty, 'galaxy', dirty.coords[coord_index], { 'object_index': nomad_index });
 
-            if (can_place_result) {
+            if(can_place_result) {
                 console.log("Trying to place The Great Nomad at: " + random_x + "," + random_y);
-                let placed_result = await game_object.place(false, dirty, {
-                    'object_index': nomad_index,
-                    'coord_index': coord_index
-                });
+                let placed_result = await game_object.place(false, dirty, { 'object_index': nomad_index, 'coord_index': coord_index });
 
-                if (placed_result) {
+                if(placed_result) {
                     console.log("Successfully placed The Great Nomad");
                     addPlayerLog(dirty, -1, "The Great Nomad has returned to the galaxy");
 
@@ -5251,7 +5226,7 @@ async function tickNomad(dirty, admin_command = false) {
                     log(chalk.yellow("Failed to place The Great Nomad"));
                 }
 
-
+                
             } else {
                 console.log("Can't place The Great Nomad at: " + random_x + "," + random_y);
             }
@@ -5259,77 +5234,80 @@ async function tickNomad(dirty, admin_command = false) {
         }
 
 
-    } catch (error) {
-        log(chalk.red("Error in world.tickNomad: " + error));
-        console.error(error);
-    }
+
+     } catch(error) {
+         log(chalk.red("Error in world.tickNomad: " + error));
+         console.error(error);
+     }
 
 }
 
 exports.tickNomad = tickNomad;
 
 
+
 /**
  * @param {Object} dirty
  * @param {number} force_event_id
- *
+ * 
  */
 async function tickStorytellers(dirty, force_event_id = 0) {
 
     try {
 
 
-        //console.log("in tickStorytellers");
-        for (let i = 0; i < dirty.storytellers.length; i++) {
 
-            if (helper.isFalse(dirty.storytellers[i].current_spawned_event_id)) {
+        //console.log("in tickStorytellers");
+        for(let i = 0; i < dirty.storytellers.length; i++) {
+
+            if(helper.isFalse(dirty.storytellers[i].current_spawned_event_id)) {
 
                 console.log("No current spawned event");
 
                 // If there's no current spawned event, randomly choose a good/bad one!
-                let rand_chance = helper.getRandomIntInclusive(1, 100);
+                let rand_chance = helper.getRandomIntInclusive(1,100);
                 console.log("Rand chance: " + rand_chance);
-                if (rand_chance < 4 || force_event_id) {
+                if(rand_chance < 4 || force_event_id) {
 
                     let difficulty_ceiling = 5;
                     let difficulty_floor = 0;
 
-                    if (dirty.storytellers[i].previous_difficulty && dirty.storytellers[i].previous_difficulty > 5) {
+                    if(dirty.storytellers[i].previous_difficulty && dirty.storytellers[i].previous_difficulty > 5) {
                         difficulty_ceiling = dirty.storytellers[i].previous_difficulty;
                         difficulty_floor = difficulty_ceiling - 5;
                     }
 
 
                     // If the previous event took a long time for players to remove, we can tick difficulty down a bit
-                    if (dirty.storytellers[i].previous_difficulty && dirty.storytellers[i].previous_event_ticks > 100 && difficulty_ceiling > 5) {
+                    if(dirty.storytellers[i].previous_difficulty && dirty.storytellers[i].previous_event_ticks > 100 && difficulty_ceiling > 5) {
                         difficulty_ceiling -= 5;
                         difficulty_floor -= 5;
 
-                    }
+                    } 
                     // Players took care of this fast, we can increase difficulty
-                    else if (dirty.storytellers[i].previous_difficulty) {
+                    else if(dirty.storytellers[i].previous_difficulty) {
                         difficulty_ceiling += 5;
                         difficulty_floor += 5;
                     }
-
+    
 
                     let possible_events = dirty.events.filter(event_filter => event_filter.difficulty <= difficulty_ceiling);
-                    if (possible_events.length > 0) {
+                    if(possible_events.length > 0) {
 
-                        let chosen_event = possible_events[Math.floor(Math.random() * possible_events.length)];
+                        let chosen_event = possible_events[Math.floor(Math.random()*possible_events.length)];
 
                         let event_index = event.getIndex(dirty, chosen_event.id);
 
                         let chosen_planet_index = helper.getRandomIntInclusive(0, dirty.planets.length - 1);
 
-                        if (dirty.planets[chosen_planet_index]) {
+                        if(dirty.planets[chosen_planet_index]) {
                             console.log("Storyller is going to try to spawn event " + dirty.events[event_index].name + " on planet id: " + dirty.planets[chosen_planet_index].id);
-                            let spawned_event_index = await event.spawn(dirty, event_index, {'planet_id': dirty.planets[chosen_planet_index].id});
+                            let spawned_event_index = await event.spawn(dirty, event_index, { 'planet_id': dirty.planets[chosen_planet_index].id });
 
                             console.log("spawned_event_index:");
                             console.log(spawned_event_index);
 
-                            if (spawned_event_index === -1) {
+                            if(spawned_event_index === -1) {
                                 console.log("Looks like the event failed to spawn");
                             } else {
                                 dirty.storytellers[i].current_spawned_event_id = dirty.spawned_events[spawned_event_index].id;
@@ -5341,26 +5319,30 @@ async function tickStorytellers(dirty, force_event_id = 0) {
 
                                 let player_log_message = "The " + dirty.planet_types[planet_type_index].name + " planet " + dirty.planets[chosen_planet_index].name;
 
-                                if (dirty.events[event_index].id === 90) {
+                                if(dirty.events[event_index].id === 90) {
                                     player_log_message += " is being attacked by bugs";
-                                } else if (dirty.events[event_index].id === 22) {
+                                } else if(dirty.events[event_index].id === 22) {
                                     player_log_message += " is being attacked by an Acid Fiend";
                                 }
 
 
-                                addPlayerLog(dirty, -1, player_log_message,
-                                    {'planet_id': dirty.planets[chosen_planet_index].id, 'event_id': chosen_event.id});
+                                addPlayerLog(dirty, -1,  player_log_message,
+                                    { 'planet_id': dirty.planets[chosen_planet_index].id, 'event_id': chosen_event.id });
                             }
                         } else {
                             console.log("Was unable to pick a planet. chosen_planet_index: " + chosen_planet_index);
                         }
 
-
+                        
+        
                     } else {
                         log(chalk.yellow("WARNING! Storyteller has no events in the difficult range " + difficulty_floor + " - " + difficulty_ceiling))
                     }
 
 
+
+
+                    
                 }
 
             } else {
@@ -5371,17 +5353,21 @@ async function tickStorytellers(dirty, force_event_id = 0) {
             }
 
 
-        }
 
-    } catch (error) {
+
+        }
+        
+    } catch(error) {
         log(chalk.red("Error in world.tickStorytellers: " + error));
         console.error(error);
     }
 
 
+
 }
 
 exports.tickStorytellers = tickStorytellers;
+
 
 
 // Waiting drops will either have an object_index, or an object_type_id. Waiting drops will also either have a planet_coord_index, or a ship_coord_index
@@ -5392,13 +5378,13 @@ async function tickWaitingDrops(dirty) {
         //let hrstart = new process.hrtime();
         //console.log("In world.tickWaitingDrops");
 
-        for (let i = 0; i < dirty.waiting_drops.length; i++) {
+        for(let i = 0; i < dirty.waiting_drops.length; i++) {
 
-            if (dirty.waiting_drops[i]) {
+            if(dirty.waiting_drops[i]) {
                 //console.log("Have waiting drop!");
                 //console.log(dirty.waiting_drops[i]);
 
-                if (typeof dirty.waiting_drops[i].object_type_id !== 'undefined' && helper.isFalse(dirty.waiting_drops[i].object_type_id)) {
+                if(typeof dirty.waiting_drops[i].object_type_id !== 'undefined' && helper.isFalse(dirty.waiting_drops[i].object_type_id)) {
                     log(chalk.yellow("INVALID WAITING LINKER!"));
                     delete dirty.waiting_drops[i];
 
@@ -5412,41 +5398,41 @@ async function tickWaitingDrops(dirty) {
 
 
                 // 
-                if (typeof dirty.waiting_drops[i].planet_coord_index !== "undefined") {
+                if(typeof dirty.waiting_drops[i].planet_coord_index !== "undefined") {
                     place_around_data.planet_coord_index = dirty.waiting_drops[i].planet_coord_index;
                     coord_type = 'planet';
                     base_coord_index = dirty.waiting_drops[i].planet_coord_index;
                 }
 
-                if (typeof dirty.waiting_drops[i].ship_coord_index !== "undefined") {
+                if(typeof dirty.waiting_drops[i].ship_coord_index !== "undefined") {
                     place_around_data.ship_coord_index = dirty.waiting_drops[i].ship_coord_index;
                     coord_type = 'ship';
                     base_coord_index = dirty.waiting_drops[i].ship_coord_index;
                 }
 
-                if (typeof dirty.waiting_drops[i].coord_index !== "undefined") {
+                if(typeof dirty.waiting_drops[i].coord_index !== "undefined") {
                     place_around_data.coord_index = dirty.waiting_drops[i].coord_index;
                     coord_type = 'galaxy';
                     base_coord_index = dirty.waiting_drops[i].coord_index;
                 }
 
-                if (typeof dirty.waiting_drops[i].virtual_coord_index !== "undefined") {
+                if(typeof dirty.waiting_drops[i].virtual_coord_index !== "undefined") {
                     place_around_data.virtual_coord_index = dirty.waiting_drops[i].virtual_coord_index;
                     coord_type = 'virtual';
                     base_coord_index = dirty.waiting_drops[i].virtual_coord_index;
                 }
 
-                if (typeof dirty.waiting_drops[i].object_index !== "undefined") {
+                if(typeof dirty.waiting_drops[i].object_index !== "undefined") {
                     place_around_data.object_index = dirty.waiting_drops[i].object_index;
                     placing_type = 'object';
                     placing_index = dirty.waiting_drops[i].object_index;
                 }
 
-                if (typeof dirty.waiting_drops[i].object_type_id !== "undefined") {
+                if(typeof dirty.waiting_drops[i].object_type_id !== "undefined") {
                     place_around_data.object_type_id = dirty.waiting_drops[i].object_type_id;
                     placing_type = 'object_type';
                     placing_index = main.getObjectTypeIndex(dirty.waiting_drops[i].object_type_id);
-
+                
                 }
 
 
@@ -5459,34 +5445,35 @@ async function tickWaitingDrops(dirty) {
                 //console.timeEnd("getOpenCoordIndex");
 
 
-                if (placing_coord_index !== -1) {
+                if(placing_coord_index !== -1) {
                     log(chalk.green("We found a coord where we can put our waiting drop!"));
 
                     let update_coord_data = {};
                     let placing_coord = {};
 
                     // Get our planet/ship/galaxy/virtual set
-                    if (coord_type === 'planet') {
+                    if(coord_type === 'planet') {
                         placing_coord = dirty.planet_coords[placing_coord_index];
                         update_coord_data.planet_coord_index = placing_coord_index;
-
-                    } else if (coord_type === 'ship') {
+                      
+                    } else if(coord_type === 'ship') {
                         placing_coord = dirty.ship_coords[placing_coord_index];
                         update_coord_data.ship_coord_index = placing_coord_index;
-
-                    } else if (coord_type === 'galaxy') {
+                       
+                    } else if(coord_type === 'galaxy') {
                         placing_coord = dirty.coords[placing_coord_index];
                         update_coord_data.coord_index = placing_coord_index;
-                    } else if (coord_type === 'virtual') {
+                    } else if(coord_type === 'virtual') {
                         placing_coord = dirty.virtual_coords[placing_coord_index];
                         update_coord_data.virtual_coord_index = placing_coord_index;
                     }
 
 
-                    // It's possible that if we are dropping an object type, we returned a coord with that object type already on it, and we are
+
+                    // It's possible that if we are dropping an object type, we returned a coord with that object type already on it, and we are 
                     // only incrementing the amount of the coord
                     let only_updating_amount = false;
-                    if (typeof dirty.waiting_drops[i].object_type_id !== "undefined" && placing_coord.object_type_id === dirty.waiting_drops[i].object_type_id) {
+                    if(typeof dirty.waiting_drops[i].object_type_id !== "undefined" && placing_coord.object_type_id === dirty.waiting_drops[i].object_type_id) {
                         console.log("Old coord amount: " + placing_coord.object_amount + " waiting drops amount: " + dirty.waiting_drops[i].amount);
                         only_updating_amount = true;
                         update_coord_data.amount = placing_coord.object_amount + dirty.waiting_drops[i].amount;
@@ -5495,22 +5482,22 @@ async function tickWaitingDrops(dirty) {
                     }
 
 
-                    if (!only_updating_amount) {
-                        if (typeof dirty.waiting_drops[i].object_index !== "undefined") {
+                    if(!only_updating_amount) {
+                        if(typeof dirty.waiting_drops[i].object_index !== "undefined") {
                             update_coord_data.object_index = dirty.waiting_drops[i].object_index;
                         }
-
-                        if (typeof dirty.waiting_drops[i].object_type_id !== "undefined") {
+        
+                        if(typeof dirty.waiting_drops[i].object_type_id !== "undefined") {
                             update_coord_data.object_type_id = dirty.waiting_drops[i].object_type_id;
                         }
-
-                        if (dirty.waiting_drops[i].amount) {
+    
+                        if(dirty.waiting_drops[i].amount) {
                             update_coord_data.amount = dirty.waiting_drops[i].amount;
                         }
-
+    
                     }
-
-
+                   
+                    
                     console.log("Sending to updateCoordGeneric:");
                     console.log(update_coord_data);
 
@@ -5519,7 +5506,7 @@ async function tickWaitingDrops(dirty) {
                     delete dirty.waiting_drops[i];
 
                 }
-
+                
 
             }
 
@@ -5528,7 +5515,7 @@ async function tickWaitingDrops(dirty) {
         //let hrend = process.hrtime(hrstart);
         //console.info('Time to process waitingDrops (hr): %ds %dms', hrend[0], hrend[1] / 1000000);
 
-    } catch (error) {
+    } catch(error) {
         log(chalk.red("Error in world.tickWaitingDrops: " + error));
         console.error(error);
     }
@@ -5553,6 +5540,8 @@ async function updatePlayerRelationship(socket, dirty, player_index, data) {
         // lets update it
         dirty.player_relationship_linkers[relationship_linker_index].score += data.change;
         dirty.player_relationship_linkers[relationship_linker_index].has_change = true;
+
+
 
 
     } catch (error) {

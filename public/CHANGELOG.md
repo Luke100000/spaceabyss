@@ -1,3 +1,49 @@
+## [0.2.40] - 2021-03-24
+
+
+### Added
+- System message when salvaging fails, and links to the tutorial via the help button about it.
+- Purple Algae, Purple Juice
+
+
+### Changed
+- Removed test.html (https://github.com/Luke100000/spaceabyss/commit/771717961cf0d06209018bbc93465824689c933a)
+- Admin ability to spawn events now can go past the planet/galaxy limit.
+
+
+### Fixed
+- Bug with admins spawning events in the galaxy
+- Ability to pick up object types from the galaxy
+- Display issue with broken giants not disappearing once fully salvaged
+- Object types associated with a spawned event will now give that coord a spawned event id
+- Vueg player body will now idle after movement like the other bodies
+- Monsters not being harvestable
+- 
+
+### Notes For Developers
+- I'm still playing catchup on improvements from Luke100000. I'm hoping to have caught up to the current commit with the next update (probably coming next week)
+- 4 Database changes in 0.2.40
+- alter table space_abyss_dev.coords ADD spawned_event_id int default 0;
+- alter table space_abyss_dev.planet_coords ADD spawned_event_id int default 0;
+- alter table space_abyss_dev.ship_coords ADD spawned_event_id int default 0;
+- alter table space_abyss_dev.players CHANGE freeze_skill_points freezing_skill_points int default 1;
+
+## [0.2.39] - 2021-03-22
+
+
+### Fixed
+- Issue with not exporting monster.getCoordIndex
+- Issue with picking objects up from the galaxy not removing them from the coord (hotfixed in 0.2.38 on 3/19/2020)
+- Issue with monsters having an outdated ship coord index
+
+
+### Changed
+- Asteroid city spawn from 2 to 1 at a time
+- Diamond Asteroids from Asteroid Cities are now more rare
+- Players are now soft deleted initially, instead of fully deleted. Need to expand on this system (will add in the user that deleted it, 
+reasoning, and require email verification to fully delete)
+
+
 ## [0.2.38] - 2021-03-18
 
 ### Added

@@ -12,6 +12,7 @@ const main = require('./space_abyss' + process.env.FILE_SUFFIX + '.js');
 const player = require('./player.js');
 
 
+
 async function getCoordAndRoom(dirty, planet_index) {
 
     try {
@@ -23,19 +24,19 @@ async function getCoordAndRoom(dirty, planet_index) {
 
         if (!dirty.planets[planet_index]) {
             log(chalk.yellow("Could not find the planet. Planet index: " + planet_index));
-            return {'room': room, 'coord_index': coord_index, 'coord': coord, 'scope': scope};
+            return { 'room': room, 'coord_index': coord_index, 'coord': coord, 'scope': scope };
         }
 
 
         coord_index = await main.getCoordIndex(
-            {'coord_id': dirty.planets[planet_index].coord_id});
+            { 'coord_id': dirty.planets[planet_index].coord_id });
         if (coord_index !== -1) {
             room = "galaxy";
             scope = "galaxy";
             coord = dirty.coords[coord_index];
         }
 
-        return {'room': room, 'coord_index': coord_index, 'coord': coord, 'scope': scope};
+        return { 'room': room, 'coord_index': coord_index, 'coord': coord, 'scope': scope };
     } catch (error) {
         log(chalk.red("Error in planet.getCoordAndRoom: " + error));
         console.error(error);
@@ -47,9 +48,9 @@ exports.getCoordAndRoom = getCoordAndRoom;
 
 
 /**
- *
- * @param {Object} dirty
- * @param {Object} data
+ * 
+ * @param {Object} dirty 
+ * @param {Object} data 
  * @param {number} data.planet_id
  * @param {string=} data.source
  */
@@ -60,22 +61,18 @@ async function getIndex(dirty, data) {
         data.planet_id = parseInt(data.planet_id);
 
 
-        let planet_index = dirty.planets.findIndex(function (obj) {
-            return obj && obj.id === data.planet_id;
-        });
+        let planet_index = dirty.planets.findIndex(function(obj) { return obj && obj.id === data.planet_id; });
 
-        if (planet_index === -1) {
+        if(planet_index === -1) {
 
             let [rows, fields] = await (pool.query("SELECT * FROM planets WHERE id = ?",
                 [data.planet_id]));
 
-            if (rows[0]) {
+            if(rows[0]) {
 
                 // make sure we didn't add it in the time it took us to do the mysql query
-                planet_index = dirty.planets.findIndex(function (obj) {
-                    return obj && obj.id === data.planet_id;
-                });
-                if (planet_index === -1) {
+                planet_index = dirty.planets.findIndex(function(obj) { return obj && obj.id === data.planet_id; });
+                if(planet_index === -1) {
                     planet_index = dirty.planets.push(rows[0]) - 1;
                 }
 
@@ -85,9 +82,9 @@ async function getIndex(dirty, data) {
 
         return planet_index;
 
-    } catch (error) {
+    } catch(error) {
 
-        if (!data.source) {
+        if(!data.source) {
             data.source = "";
         }
         log(chalk.red("Error in planet.getIndex: " + error + " source: " + data.source));
@@ -105,16 +102,16 @@ async function regenerateFloor(dirty, planet_id, floor_level) {
 
         console.log("In planet.regenerateFloor. Planet id: " + planet_id + " floor_level: " + floor_level);
 
-        let planet_index = await getIndex(dirty, {'planet_id': planet_id});
+        let planet_index = await getIndex(dirty, { 'planet_id': planet_id });
 
-        if (planet_index === -1) {
+        if(planet_index === -1) {
             log(chalk.yellow("Could not get planet"));
             return false;
         }
 
-        for (let i = 0; i < dirty.planet_coords.length; i++) {
+        for(let i = 0; i < dirty.planet_coords.length; i++) {
 
-            if (dirty.planet_coords[i] && dirty.planet_coords[i].planet_id === planet_id && dirty.planet_coords[i].level === floor_level) {
+            if(dirty.planet_coords[i] && dirty.planet_coords[i].planet_id === planet_id && dirty.planet_coords[i].level === floor_level) {
 
 
                 let floor_rarity = helper.rarityRoll();
@@ -136,14 +133,14 @@ async function regenerateFloor(dirty, planet_id, floor_level) {
                 dirty.planet_coords[i].floor_type_id = floor_type_id;
                 dirty.planet_coords[i].has_change = true;
 
-                sendCoordInfo(false, "planet_" + planet_id, dirty, {'planet_coord_index': i});
-
+                sendCoordInfo(false, "planet_" + planet_id, dirty, { 'planet_coord_index': i });
+            
 
             }
 
         }
 
-    } catch (error) {
+    } catch(error) {
         log(chalk.red("Error in planet.regenerateFloor: " + error));
         console.error(error);
     }
@@ -168,7 +165,7 @@ async function sendCoordInfo(socket, room, dirty, data) {
         if (data.planet_coord_index) {
             coord_index = data.planet_coord_index;
         } else if (data.planet_coord_id) {
-            coord_index = await main.getPlanetCoordIndex({'planet_coord_id': data.planet_coord_id});
+            coord_index = await main.getPlanetCoordIndex({ 'planet_coord_id': data.planet_coord_id });
         }
 
         if (coord_index === -1) {
@@ -176,11 +173,11 @@ async function sendCoordInfo(socket, room, dirty, data) {
         }
 
         if (socket) {
-            socket.emit('planet_coord_info', {'planet_coord': dirty.planet_coords[coord_index]});
+            socket.emit('planet_coord_info', { 'planet_coord': dirty.planet_coords[coord_index] });
         }
 
         if (room) {
-            io.to(room).emit('planet_coord_info', {'planet_coord': dirty.planet_coords[coord_index]});
+            io.to(room).emit('planet_coord_info', { 'planet_coord': dirty.planet_coords[coord_index] });
         }
 
     } catch (error) {
@@ -199,56 +196,56 @@ async function sendInfo(socket, room, dirty, data) {
 
     try {
 
-        if (data.planet_id) {
+        if(data.planet_id) {
             let planet_id = parseInt(data.planet_id);
 
-            if (!data.source) {
+            if(!data.source) {
                 data.source = false;
             }
 
-            if (isNaN(planet_id)) {
+            if(isNaN(planet_id)) {
                 log(chalk.red("NaN planet_id sent into sendPlanetInfo. Source: " + data.source));
                 console.trace("RRRRR");
                 return false;
             }
 
-            data.planet_index = await getIndex(dirty, {'planet_id': planet_id, 'source': 'planet.sendInfo'});
+            data.planet_index = await getIndex(dirty, {'planet_id': planet_id, 'source': 'planet.sendInfo' });
 
-        } else if (data.planet_index) {
+        } else if(data.planet_index) {
 
         }
 
 
-        if (typeof data.planet_index === 'undefined' || data.planet_index === -1) {
+        if(typeof data.planet_index === 'undefined' || data.planet_index === -1) {
             log(chalk.red("Could not send planet info"));
 
-            if (data.source) {
+            if(data.source) {
                 log(chalk.yellow("Source: " + data.source));
             }
             return false;
         }
 
 
-        if (socket !== false) {
-            socket.emit('planet_info', {'planet': dirty.planets[data.planet_index]});
+        if(socket !== false) {
+            socket.emit('planet_info', { 'planet': dirty.planets[data.planet_index] });
         }
 
-        if (room !== false) {
-            io.to(room).emit('planet_info', {'planet': dirty.planets[data.planet_index]});
+        if(room !== false) {
+            io.to(room).emit('planet_info', { 'planet': dirty.planets[data.planet_index] });
         }
 
 
         // we need to send things related to the planet. If there's a player, AI, AI rules
-        if (dirty.planets[data.planet_index].player_id) {
+        if(dirty.planets[data.planet_index].player_id) {
             await player.sendInfo(socket, room, dirty, dirty.planets[data.planet_index].player_id);
         }
 
         // see if there is an AI on this planet
-        if (dirty.planets[data.planet_index].ai_id) {
+        if(dirty.planets[data.planet_index].ai_id) {
             //console.log("Calling sendObjectInfo from planet.sendInfo");
             let ai_index = await game_object.getIndex(dirty, dirty.planets[data.planet_index].ai_id);
 
-            if (ai_index !== -1) {
+            if(ai_index !== -1) {
                 await game_object.sendInfo(socket, room, dirty, ai_index);
             }
             // AI is gone for some reason
@@ -259,10 +256,11 @@ async function sendInfo(socket, room, dirty, data) {
 
         }
 
-    } catch (error) {
+    } catch(error) {
         log(chalk.red("Error in planet.sendInfo: " + error));
         console.error(error);
     }
+
 
 
 }

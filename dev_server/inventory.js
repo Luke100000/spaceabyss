@@ -30,13 +30,13 @@ async function addToInventory(socket, dirty, data) {
 
         // gotta make sure those ints are ints!
         let price = 0;
-        if (data.price) {
+        if(data.price) {
             price = data.price;
         }
 
         data.amount = parseInt(data.amount);
 
-        if (data.amount === 0) {
+        if(data.amount === 0) {
             log(chalk.yellow("Tried adding 0 of something to inventory. Returning false"));
             return false;
         }
@@ -47,17 +47,17 @@ async function addToInventory(socket, dirty, data) {
         let inventory_item_index = -1;
         let sending_to_room = "";
 
-        if (data.adding_to_type === 'object') {
+        if(data.adding_to_type === 'object') {
             owner_object_index = await game_object.getIndex(dirty, data.adding_to_id);
 
-            if (owner_object_index === -1) {
+            if(owner_object_index === -1) {
                 log(chalk.yellow("Could not find the object we are putting something into"));
                 return false;
             }
-        } else if (data.adding_to_type === 'npc') {
+        } else if(data.adding_to_type === 'npc') {
             npc_index = await npc.getIndex(dirty, data.adding_to_id);
 
-            if (npc_index !== -1) {
+            if(npc_index !== -1) {
                 sending_to_room = dirty.npcs[npc_index].room;
             } else {
                 console.log("Failed to get the npc in dirty");
@@ -65,13 +65,15 @@ async function addToInventory(socket, dirty, data) {
         }
 
 
+        
+
         // I could potentiall use socket.player_index here - HOWEVER - I might be sending in a valid socket when
         // an admin does something - not sure. I have to check all instances of addToInventory to see if I should 
         // send socket = false sometimes.
-        if (data.adding_to_type === 'player') {
-            player_index = await player.getIndex(dirty, {'player_id': data.adding_to_id});
+        if(data.adding_to_type === 'player') {
+            player_index = await player.getIndex(dirty, { 'player_id': data.adding_to_id });
 
-            if (player_index === -1) {
+            if(player_index === -1) {
                 log(chalk.yellow("Could not find player to add inventory to"));
                 return false;
             }
@@ -79,33 +81,33 @@ async function addToInventory(socket, dirty, data) {
 
 
         // if we have an object id, we aways just have to push a new inventory item
-        if (data.object_id) {
+        if(data.object_id) {
             let sql = "";
             let inserts;
 
             let object_index = await game_object.getIndex(dirty, data.object_id);
 
-            if (object_index === -1) {
+            if(object_index === -1) {
 
-                socket.emit('result_info', {'status': 'failure', 'text': "It looks like that inventory item decayed"});
+                socket.emit('result_info', { 'status': 'failure', 'text': "It looks like that inventory item decayed" });
                 return false;
             }
 
             let object_type_index = main.getObjectTypeIndex(dirty.objects[object_index].object_type_id);
             // Lets grab it
-            if (!data.object_type_id) {
+            if(!data.object_type_id) {
 
                 data.object_type_id = dirty.object_types[object_type_index].id;
             }
 
-            if (data.adding_to_type === 'player') {
+            if(data.adding_to_type === 'player') {
 
                 sql = "INSERT INTO inventory_items(player_id,body_id,object_id,object_type_id,amount, price) VALUES(?,?,?,?,?,?)";
                 inserts = [data.adding_to_id, dirty.players[player_index].body_id, data.object_id, data.object_type_id, 1, price];
-            } else if (data.adding_to_type === 'npc') {
+            } else if(data.adding_to_type === 'npc') {
                 sql = "INSERT INTO inventory_items(npc_id,object_id,object_type_id,amount, price) VALUES(?,?,?,?,?)";
                 inserts = [data.adding_to_id, data.object_id, data.object_type_id, 1, price];
-            } else if (data.adding_to_type === 'object') {
+            } else if(data.adding_to_type === 'object') {
                 sql = "INSERT INTO inventory_items(owned_by_object_id,object_id,object_type_id,amount, price) VALUES(?,?,?,?,?)";
                 inserts = [data.adding_to_id, data.object_id, data.object_type_id, 1, price];
             }
@@ -116,7 +118,7 @@ async function addToInventory(socket, dirty, data) {
             let new_id = result.insertId;
             //console.log("Got new inventory item id: " + new_id);
             let [rows, fields] = await (pool.query("SELECT * FROM inventory_items WHERE id = ?", [new_id]));
-            if (rows[0]) {
+            if(rows[0]) {
                 let adding_inventory_item = rows[0];
                 adding_inventory_item.has_change = false;
 
@@ -129,7 +131,7 @@ async function addToInventory(socket, dirty, data) {
                 // and send the new inventory item to the socket that took it
 
                 let sending_to_room = "";
-                if (npc_index !== -1) {
+                if(npc_index !== -1) {
                     sending_to_room = dirty.npcs[npc_index].room;
                 }
 
@@ -137,29 +139,29 @@ async function addToInventory(socket, dirty, data) {
                 //console.log("Sent new inventory item to socket");
 
 
+
             }
 
-        } else if (data.object_type_id) {
+        } else if(data.object_type_id) {
+
 
 
             // lets see if we have an inventory item index
-            if (data.adding_to_type === 'player') {
+            if(data.adding_to_type === 'player') {
                 inventory_item_index = dirty.inventory_items.findIndex(function (obj) {
-                    return obj && obj.player_id === data.adding_to_id && obj.body_id === dirty.players[player_index].body_id && obj.object_type_id === data.object_type_id;
-                });
-            } else if (data.adding_to_type === 'npc') {
+                    return obj && obj.player_id === data.adding_to_id && obj.body_id === dirty.players[player_index].body_id && obj.object_type_id === data.object_type_id; });
+            } else if(data.adding_to_type === 'npc') {
                 inventory_item_index = dirty.inventory_items.findIndex(function (obj) {
-                    return obj && obj.npc_id === data.adding_to_id && obj.object_type_id === data.object_type_id;
-                });
-            } else if (data.adding_to_type === 'object') {
+                    return obj && obj.npc_id === data.adding_to_id && obj.object_type_id === data.object_type_id; });
+            } else if(data.adding_to_type === 'object') {
                 inventory_item_index = dirty.inventory_items.findIndex(function (obj) {
-                    return obj && obj.owned_by_object_id === data.adding_to_id && obj.object_type_id === data.object_type_id;
-                });
+                    return obj && obj.owned_by_object_id === data.adding_to_id && obj.object_type_id === data.object_type_id; });
             }
 
-            if (inventory_item_index !== -1) {
+            if(inventory_item_index !== -1) {
                 dirty.inventory_items[inventory_item_index].amount += data.amount;
                 dirty.inventory_items[inventory_item_index].has_change = true;
+
 
 
                 sendInventoryItem(socket, sending_to_room, dirty, inventory_item_index, 'take');
@@ -170,13 +172,13 @@ async function addToInventory(socket, dirty, data) {
                 let inserts;
 
 
-                if (data.adding_to_type === 'player') {
+                if(data.adding_to_type === 'player') {
                     sql = "INSERT INTO inventory_items(player_id,body_id,object_type_id,amount,price) VALUES(?,?,?,?,?)";
                     inserts = [data.adding_to_id, dirty.players[player_index].body_id, data.object_type_id, data.amount, price];
-                } else if (data.adding_to_type === 'npc') {
+                } else if(data.adding_to_type === 'npc') {
                     sql = "INSERT INTO inventory_items(npc_id,object_type_id,amount,price)VALUES(?,?,?,?)";
                     inserts = [data.adding_to_id, data.object_type_id, data.amount, price];
-                } else if (data.adding_to_type === 'object') {
+                } else if(data.adding_to_type === 'object') {
                     sql = "INSERT INTO inventory_items(owned_by_object_id,object_type_id,amount,price)VALUES(?,?,?,?)";
                     inserts = [data.adding_to_id, data.object_type_id, data.amount, price];
                 }
@@ -187,7 +189,7 @@ async function addToInventory(socket, dirty, data) {
                 let new_id = result.insertId;
                 //console.log("Got new inventory item id: " + new_id);
                 let [rows, fields] = await (pool.query("SELECT * FROM inventory_items WHERE id = ?", [new_id]));
-                if (rows[0]) {
+                if(rows[0]) {
                     let adding_inventory_item = rows[0];
                     adding_inventory_item.has_change = false;
                     inventory_item_index = dirty.inventory_items.push(adding_inventory_item) - 1;
@@ -198,22 +200,21 @@ async function addToInventory(socket, dirty, data) {
             }
 
 
-        } else if (data.floor_type_id) {
+
+        } else if(data.floor_type_id) {
 
             inventory_item_index = -1;
 
-            if (data.adding_to_type === 'player') {
+            if(data.adding_to_type === 'player') {
                 inventory_item_index = dirty.inventory_items.findIndex(function (obj) {
                     return obj && obj.player_id === data.adding_to_id && obj.floor_type_id === data.floor_type_id;
                 });
-            } else if (data.adding_to_type === 'npc') {
+            } else if(data.adding_to_type === 'npc') {
                 inventory_item_index = dirty.inventory_items.findIndex(function (obj) {
-                    return obj && obj.npc_id === data.adding_to_id && obj.floor_type_id === data.floor_type_id;
-                });
-            } else if (data.adding_to_type === 'object') {
+                    return obj && obj.npc_id === data.adding_to_id && obj.floor_type_id === data.floor_type_id; });
+            } else if(data.adding_to_type === 'object') {
                 inventory_item_index = dirty.inventory_items.findIndex(function (obj) {
-                    return obj && obj.owned_by_object_id === data.adding_to_id && obj.floor_type_id === data.floor_type_id;
-                });
+                    return obj && obj.owned_by_object_id === data.adding_to_id && obj.floor_type_id === data.floor_type_id; });
             }
 
             if (inventory_item_index !== -1) {
@@ -226,13 +227,13 @@ async function addToInventory(socket, dirty, data) {
                 let sql = "";
                 let inserts;
 
-                if (data.adding_to_type === 'player') {
+                if(data.adding_to_type === 'player') {
                     sql = "INSERT INTO inventory_items(player_id,body_id,floor_type_id,amount,price) VALUES(?,?,?,?,?)";
                     inserts = [data.adding_to_id, dirty.players[player_index].body_id, data.floor_type_id, data.amount, price];
-                } else if (data.adding_to_type === 'npc') {
+                } else if(data.adding_to_type === 'npc') {
                     sql = "INSERT INTO inventory_items(npc_id,floor_type_id,amount,price)VALUES(?,?,?,?)";
                     inserts = [data.adding_to_id, data.floor_type_id, data.amount, price];
-                } else if (data.adding_to_type === 'object') {
+                } else if(data.adding_to_type === 'object') {
                     sql = "INSERT INTO inventory_items(owned_by_object_id,floor_type_id,amount,price)VALUES(?,?,?,?)";
                     inserts = [data.adding_to_id, data.floor_type_id, data.amount, price];
                 }
@@ -259,13 +260,13 @@ async function addToInventory(socket, dirty, data) {
         }
 
 
-        if (data.adding_to_type === 'player') {
+        if(data.adding_to_type === 'player') {
 
             await sendInventory(socket, false, dirty, 'player', data.adding_to_id);
-        } else if (data.adding_to_type === 'object' && owner_object_index !== -1) {
+        } else if(data.adding_to_type === 'object' && owner_object_index !== -1) {
 
             //console.log("Owner object index was " + owner_object_index);
-            if (!dirty.objects[owner_object_index].has_inventory) {
+            if(!dirty.objects[owner_object_index].has_inventory) {
                 log(chalk.cyan("Setting has_inventory to true for object id: " + dirty.objects[owner_object_index].id));
                 dirty.objects[owner_object_index].has_inventory = true;
                 dirty.objects[owner_object_index].has_change = true;
@@ -275,27 +276,27 @@ async function addToInventory(socket, dirty, data) {
             }
 
 
-        } else if (data.adding_to_type === 'npc' && npc_index !== -1) {
+        } else if(data.adding_to_type === 'npc' && npc_index !== -1) {
 
             //console.log("NPC added something to its inventory");
-            if (!dirty.npcs[npc_index].has_inventory) {
+            if(!dirty.npcs[npc_index].has_inventory) {
                 dirty.npcs[npc_index].has_inventory = true;
                 dirty.npcs[npc_index].has_change = true;
             }
 
-            // and we set the price based on how many we have
-            if (inventory_item_index !== -1 && dirty.inventory_items[inventory_item_index].object_type_id !== 74) {
+             // and we set the price based on how many we have
+             if(inventory_item_index !== -1 && dirty.inventory_items[inventory_item_index].object_type_id !== 74) {
                 let price = Math.ceil(1000 / dirty.inventory_items[inventory_item_index].amount);
                 //console.log("Setting price of npc's inventory item to: " + price);
                 dirty.inventory_items[inventory_item_index].price = price;
                 dirty.inventory_items[inventory_item_index].has_change = true;
             } else {
 
-                if (inventory_item_index === -1) {
+                if(inventory_item_index === -1) {
                     console.log("inventory_item_index was -1");
                 }
 
-                if (dirty.inventory_items[inventory_item_index].object_type_id === 74) {
+                if(dirty.inventory_items[inventory_item_index].object_type_id === 74) {
                     console.log("was credits, not setting a price.");
                 }
 
@@ -305,13 +306,14 @@ async function addToInventory(socket, dirty, data) {
             await world.sendNpcInfo(false, "planet_" + dirty.npcs[npc_index].planet_id, dirty, dirty.npcs[npc_index].id);
         }
 
-    } catch (error) {
+    } catch(error) {
         log(chalk.red("Error in inventory.addToInventory: " + error));
         console.error(error);
     }
 
 
 }
+
 
 
 exports.addToInventory = addToInventory;
@@ -327,7 +329,7 @@ async function buy(socket, dirty, data) {
 
         let inventory_item_index = await main.getInventoryItemIndex(inventory_item_id);
 
-        if (inventory_item_index === -1) {
+        if(inventory_item_index === -1) {
             log(chalk.yellow("Unable to find inventory_item with that id"));
             return false;
         }
@@ -337,23 +339,22 @@ async function buy(socket, dirty, data) {
 
 
         // Something is not right here
-        if (inventory_item_price <= 0) {
+        if(inventory_item_price <= 0) {
             log(chalk.yellow("Player is buying something (inventory_item_id: " + inventory_item_id + " that has a price <= 0. This is odd"));
             return false;
         }
 
-        let player_inventory_item_index = dirty.inventory_items.findIndex(function (obj) {
-            return obj && obj.player_id === socket.player_id && obj.body_id === dirty.players[socket.player_index].body_id && obj.object_type_id === 74;
-        });
+        let player_inventory_item_index = dirty.inventory_items.findIndex(function(obj) { 
+            return obj && obj.player_id === socket.player_id && obj.body_id === dirty.players[socket.player_index].body_id && obj.object_type_id === 74; });
 
 
-        if (player_inventory_item_index === -1) {
-            socket.emit('result_info', {'status': 'failure', "text": "It looks like you can't afford that"});
+        if(player_inventory_item_index === -1) {
+            socket.emit('result_info', { 'status': 'failure', "text": "It looks like you can't afford that" });
             return false;
         }
 
-        if (dirty.inventory_items[player_inventory_item_index].amount < inventory_item_price) {
-            socket.emit('result_info', {'status': 'failure', "text": "It looks like you can't afford that"});
+        if(dirty.inventory_items[player_inventory_item_index].amount < inventory_item_price) {
+            socket.emit('result_info', { 'status': 'failure', "text": "It looks like you can't afford that" });
             return false;
         }
 
@@ -361,39 +362,30 @@ async function buy(socket, dirty, data) {
         console.log("Player can afford this!");
 
 
-        // remove the credits from the buying player
-        let remove_player_inventory_data = {
-            'inventory_item_id': dirty.inventory_items[player_inventory_item_index].id,
-            'amount': dirty.inventory_items[inventory_item_index].price
-        };
-        await removeFromInventory(socket, dirty, remove_player_inventory_data);
 
-        if (dirty.inventory_items[inventory_item_index].object_type_id) {
-            let adding_to_data = {
-                'adding_to_type': 'player', 'adding_to_id': socket.player_id,
-                'object_type_id': dirty.inventory_items[inventory_item_index].object_type_id, 'amount': 1
-            };
+        // remove the credits from the buying player
+        let remove_player_inventory_data = { 'inventory_item_id': dirty.inventory_items[player_inventory_item_index].id,
+        'amount': dirty.inventory_items[inventory_item_index].price };
+            await removeFromInventory(socket, dirty, remove_player_inventory_data);
+
+        if(dirty.inventory_items[inventory_item_index].object_type_id) {
+            let adding_to_data = { 'adding_to_type':'player', 'adding_to_id':socket.player_id,
+                'object_type_id': dirty.inventory_items[inventory_item_index].object_type_id, 'amount':1};
 
             await addToInventory(socket, dirty, adding_to_data);
-        } else if (dirty.inventory_items[inventory_item_index].floor_type_id) {
-            let adding_to_data = {
-                'adding_to_type': 'player', 'adding_to_id': socket.player_id,
-                'floor_type_id': dirty.inventory_items[inventory_item_index].floor_type_id, 'amount': 1
-            };
+        } else if(dirty.inventory_items[inventory_item_index].floor_type_id) {
+            let adding_to_data = { 'adding_to_type':'player', 'adding_to_id':socket.player_id,
+                'floor_type_id': dirty.inventory_items[inventory_item_index].floor_type_id, 'amount':1};
 
             await addToInventory(socket, dirty, adding_to_data);
         }
 
 
         // add the credits to whoever owned that inventory item
-        if (dirty.inventory_items[inventory_item_index].owned_by_object_id) {
+        if(dirty.inventory_items[inventory_item_index].owned_by_object_id) {
 
-            let adding_to_data = {
-                'adding_to_type': 'object',
-                'adding_to_id': dirty.inventory_items[inventory_item_index].owned_by_object_id,
-                'object_type_id': 74,
-                'amount': dirty.inventory_items[inventory_item_index].price
-            };
+            let adding_to_data = { 'adding_to_type':'object', 'adding_to_id': dirty.inventory_items[inventory_item_index].owned_by_object_id,
+            'object_type_id': 74, 'amount': dirty.inventory_items[inventory_item_index].price };
 
             await addToInventory(socket, dirty, adding_to_data);
 
@@ -414,28 +406,24 @@ async function buy(socket, dirty, data) {
                 }
             }
             */
-        } else if (dirty.inventory_items[inventory_item_index].player_id) {
-            let adding_to_data = {
-                'adding_to_type': 'player', 'adding_to_id': socket.player_id,
-                'object_type_id': 74, 'amount': dirty.inventory_items[inventory_item_index].price
-            };
+        } else if(dirty.inventory_items[inventory_item_index].player_id) {
+            let adding_to_data = { 'adding_to_type':'player', 'adding_to_id':socket.player_id,
+                'object_type_id': 74, 'amount': dirty.inventory_items[inventory_item_index].price };
 
             await addToInventory(socket, dirty, adding_to_data);
-        } else if (dirty.inventory_items[inventory_item_index].npc_id) {
-            let adding_to_data = {
-                'adding_to_type': 'npc', 'adding_to_id': dirty.inventory_items[inventory_item_index].npc_id,
-                'object_type_id': 74, 'amount': dirty.inventory_items[inventory_item_index].price
-            };
+        } else if(dirty.inventory_items[inventory_item_index].npc_id) {
+            let adding_to_data = { 'adding_to_type':'npc', 'adding_to_id': dirty.inventory_items[inventory_item_index].npc_id,
+                'object_type_id': 74, 'amount': dirty.inventory_items[inventory_item_index].price };
 
             await addToInventory(socket, dirty, adding_to_data);
-        }
+        } 
 
         // remove the item from the old place
-        let remove_inventory_data = {'inventory_item_id': dirty.inventory_items[inventory_item_index].id, 'amount': 1};
+        let remove_inventory_data = { 'inventory_item_id': dirty.inventory_items[inventory_item_index].id, 'amount': 1};
         await removeFromInventory(socket, dirty, remove_inventory_data);
-
-
-    } catch (error) {
+           
+        
+    } catch(error) {
         log(chalk.red("Error in inventory.buy : " + error));
     }
 
@@ -453,8 +441,9 @@ async function place(socket, dirty, data) {
         let storage_object_id = parseInt(data.storage_object_id);
 
 
+
         let inventory_item_index = -1;
-        if (data.inventory_item_id) {
+        if(data.inventory_item_id) {
             //log(chalk.green("Got place data. inventory_item_id: " + data.inventory_item_id + " storage_object_id: " +
             //    storage_object_id + " amount: " + data.amount));
             inventory_item_index = await main.getInventoryItemIndex(parseInt(data.inventory_item_id));
@@ -463,12 +452,12 @@ async function place(socket, dirty, data) {
         let storage_object_index = await game_object.getIndex(dirty, storage_object_id);
 
 
-        if (storage_object_index === -1) {
+        if(storage_object_index === -1) {
             log(chalk.yellow("Unable to get storage object"));
             return false;
         }
 
-        if (data.inventory_item_id && inventory_item_index === -1) {
+        if(data.inventory_item_id && inventory_item_index === -1) {
             log(chalk.yellow("Unable to get inventory item"));
             return false;
         }
@@ -478,29 +467,30 @@ async function place(socket, dirty, data) {
 
         let storage_object_type_index = main.getObjectTypeIndex(dirty.objects[storage_object_index].object_type_id);
 
-        if (dirty.object_types[storage_object_type_index].is_converter) {
+        if(dirty.object_types[storage_object_type_index].is_converter) {
             log(chalk.red("Use game.convert instead!"));
             console.trace("TRACED!!!");
             return false;
         }
 
-        if (!dirty.object_types[storage_object_type_index].can_have_inventory) {
+        if(!dirty.object_types[storage_object_type_index].can_have_inventory) {
             log(chalk.yellow("Storage object type cannot have inventory"));
             return false;
         }
 
 
         let put_amount = 1;
-        if (data.amount === 'all') {
+        if(data.amount === 'all') {
             put_amount = dirty.inventory_items[inventory_item_index].amount;
-        } else if (parseInt(data.amount) === 10) {
+        } else if(parseInt(data.amount) === 10) {
             put_amount = 10;
 
-            if (dirty.inventory_items[inventory_item_index].amount < 10) {
+            if(dirty.inventory_items[inventory_item_index].amount < 10) {
                 put_amount = dirty.inventory_items[inventory_item_index].amount;
             }
         }
 
+        
 
         // The other type is simple storing objects/object_types
         // TODO allow for rules for storing (and taking) things
@@ -509,45 +499,39 @@ async function place(socket, dirty, data) {
 
         let adding_to_data;
 
-        if (dirty.inventory_items[inventory_item_index].object_id) {
-            adding_to_data = {
-                'adding_to_type': 'object', 'adding_to_id': dirty.objects[storage_object_index].id,
+        if(dirty.inventory_items[inventory_item_index].object_id) {
+            adding_to_data = { 'adding_to_type': 'object', 'adding_to_id': dirty.objects[storage_object_index].id,
                 'object_id': dirty.inventory_items[inventory_item_index].object_id,
-                'object_type_id': dirty.inventory_items[inventory_item_index].object_type_id, 'amount': put_amount
-            };
-        } else if (dirty.inventory_items[inventory_item_index].object_type_id) {
-            adding_to_data = {
-                'adding_to_type': 'object', 'adding_to_id': dirty.objects[storage_object_index].id,
-                'object_type_id': dirty.inventory_items[inventory_item_index].object_type_id, 'amount': put_amount
-            };
-        } else if (dirty.inventory_items[inventory_item_index].floor_type_id) {
-            adding_to_data = {
-                'adding_to_type': 'object', 'adding_to_id': dirty.objects[storage_object_index].id,
-                'floor_type_id': dirty.inventory_items[inventory_item_index].floor_type_id, 'amount': put_amount
-            };
+                'object_type_id': dirty.inventory_items[inventory_item_index].object_type_id, 'amount':put_amount };
+        } else if(dirty.inventory_items[inventory_item_index].object_type_id) {
+            adding_to_data = { 'adding_to_type': 'object', 'adding_to_id': dirty.objects[storage_object_index].id,
+                'object_type_id': dirty.inventory_items[inventory_item_index].object_type_id, 'amount':put_amount };
+        } else if(dirty.inventory_items[inventory_item_index].floor_type_id) {
+            adding_to_data = { 'adding_to_type': 'object', 'adding_to_id': dirty.objects[storage_object_index].id,
+                'floor_type_id': dirty.inventory_items[inventory_item_index].floor_type_id, 'amount':put_amount };
         }
 
         await addToInventory(socket, dirty, adding_to_data);
 
-        let remove_inventory_data = {
-            'inventory_item_id': dirty.inventory_items[inventory_item_index].id,
-            'amount': put_amount
-        };
+        let remove_inventory_data = { 'inventory_item_id': dirty.inventory_items[inventory_item_index].id,
+            'amount': put_amount };
         await removeFromInventory(socket, dirty, remove_inventory_data);
         //removeInventoryItem(socket, dirty, inventory_item.id);
 
         await sendInventory(socket, false, dirty, 'player', socket.player_id);
         await game_object.sendInfo(socket, storage_object_info.room, dirty, storage_object_index);
         await sendInventory(socket, storage_object_info.room, dirty, 'object', dirty.objects[storage_object_index].id);
+        
 
 
-    } catch (error) {
+    } catch(error) {
         log(chalk.red("Error in inventory.place: " + error));
         console.error(error);
     }
 }
 
 exports.place = place;
+
 
 
 async function priceUpdate(socket, dirty, inventory_item_id, new_price) {
@@ -557,14 +541,14 @@ async function priceUpdate(socket, dirty, inventory_item_id, new_price) {
 
         console.log("Player is updating price for " + inventory_item_id + " to " + new_price);
 
-        if (typeof socket.player_index === 'undefined') {
+        if(typeof socket.player_index === 'undefined') {
             log(chalk.yellow("Socket is not associated with a player"));
             return false;
         }
 
         let inventory_item_index = await main.getInventoryItemIndex(inventory_item_id);
 
-        if (inventory_item_index === -1) {
+        if(inventory_item_index === -1) {
             log(chalk.yellow("Could not find that inventory item"));
             return false;
         }
@@ -573,19 +557,19 @@ async function priceUpdate(socket, dirty, inventory_item_id, new_price) {
 
 
         // It's an inventory item the player directly owns - not actually sure this will ever trigger
-        if (helper.notFalse(dirty.inventory_items[inventory_item_index].player_id) && dirty.inventory_items[inventory_item_index].player_id === socket.player_id) {
+        if(helper.notFalse(dirty.inventory_items[inventory_item_index].player_id) && dirty.inventory_items[inventory_item_index].player_id === socket.player_id) {
             player_can_edit = true;
         }
         // It's an inventory item in an object our player might own
-        else if (dirty.inventory_items[inventory_item_index].owned_by_object_id) {
+        else if(dirty.inventory_items[inventory_item_index].owned_by_object_id) {
             let owner_object_index = await game_object.getIndex(dirty, dirty.inventory_items[inventory_item_index].owned_by_object_id);
-            if (owner_object_index !== -1 && dirty.objects[owner_object_index].player_id === socket.player_id) {
+            if(owner_object_index !== -1 && dirty.objects[owner_object_index].player_id === socket.player_id) {
                 player_can_edit = true;
             }
         }
 
 
-        if (!player_can_edit) {
+        if(!player_can_edit) {
             log(chalk.yellow("Player is trying to edit the price of an inventory item they aren't allowed to"));
             return false;
         }
@@ -595,7 +579,7 @@ async function priceUpdate(socket, dirty, inventory_item_id, new_price) {
 
         sendInventoryItem(socket, '', dirty, inventory_item_index);
 
-    } catch (error) {
+    } catch(error) {
         log(chalk.red("Error in inventory.priceUpdate: " + error));
         console.error(error);
     }
@@ -606,10 +590,10 @@ async function priceUpdate(socket, dirty, inventory_item_id, new_price) {
 exports.priceUpdate = priceUpdate;
 
 /**
- *
- * @param {Object} socket
- * @param {Object} dirty
- * @param {Object} data
+ * 
+ * @param {Object} socket 
+ * @param {Object} dirty 
+ * @param {Object} data 
  * @param {number} data.inventory_item_id
  * @param {number} data.amount
  * @param {number=} data.player_index
@@ -630,20 +614,20 @@ async function removeFromInventory(socket, dirty, data) {
             //console.log("Was sent in inventory item id: " + inventory_item_id);
             inventory_item_index = await main.getInventoryItemIndex(inventory_item_id);
 
-        } else if (typeof data.player_index !== 'undefined') {
+        }  else if(typeof data.player_index !== 'undefined') {
             inventory_item_index = dirty.inventory_items.findIndex(function (obj) {
-                return obj && obj.player_id === dirty.players[data.player_index].id && obj.body_id === dirty.players[data.player_index].body_id &&
-                    obj.object_type_id === data.removing_object_type_id;
+                return obj && obj.player_id === dirty.players[data.player_index].id && obj.body_id === dirty.players[data.player_index].body_id && 
+                obj.object_type_id === data.removing_object_type_id;
             });
-
-
+            
+        
         } else if (data.object_id) {
             inventory_item_index = dirty.inventory_items.findIndex(function (obj) {
                 return obj && obj.object_id === data.object_id && obj.object_type_id === data.removing_object_type_id;
             });
         }
 
-        if (inventory_item_index === -1) {
+        if(inventory_item_index === -1) {
             log(chalk.yellow("Couldn't find inventory item"));
             return false;
         }
@@ -660,30 +644,27 @@ async function removeFromInventory(socket, dirty, data) {
 
 
             // send new inventory item data
-            if (dirty.inventory_items[inventory_item_index].player_id && dirty.inventory_items[inventory_item_index].player_id === socket.player_id) {
+            if(dirty.inventory_items[inventory_item_index].player_id && dirty.inventory_items[inventory_item_index].player_id === socket.player_id) {
                 //console.log("Telling client to remove inventory item");
-                socket.emit('inventory_item_info', {
-                    'remove': true,
-                    'inventory_item': dirty.inventory_items[inventory_item_index]
-                });
+                socket.emit('inventory_item_info', { 'remove': true, 'inventory_item': dirty.inventory_items[inventory_item_index] });
             }
 
             // Send to people in the room to remove this inventory item
             // I'm working on making sure when someone takes from somewhere, that it is updated
-            if (dirty.inventory_items[inventory_item_index].owned_by_object_id) {
+            if(dirty.inventory_items[inventory_item_index].owned_by_object_id) {
                 let inventory_object_index = await game_object.getIndex(dirty, dirty.inventory_items[inventory_item_index].owned_by_object_id);
-                if (inventory_item_index !== -1) {
-                    if (dirty.objects[inventory_object_index].planet_coord_id) {
-                        let coord_index = await main.getPlanetCoordIndex({'planet_coord_id': dirty.objects[inventory_object_index].planet_coord_id});
-                        if (coord_index !== -1) {
+                if(inventory_item_index !== -1) {
+                    if(dirty.objects[inventory_object_index].planet_coord_id) {
+                        let coord_index = await main.getPlanetCoordIndex({ 'planet_coord_id': dirty.objects[inventory_object_index].planet_coord_id });
+                        if(coord_index !== -1) {
                             io.to("planet_" + dirty.planet_coords[coord_index].planet_id).emit('inventory_item_info',
-                                {'remove': true, 'inventory_item': dirty.inventory_items[inventory_item_index]});
+                                { 'remove': true, 'inventory_item': dirty.inventory_items[inventory_item_index] });
                         }
-                    } else if (dirty.objects[inventory_object_index].ship_coord_id) {
-                        let coord_index = await main.getShipCoordIndex({'ship_coord_id': dirty.objects[inventory_object_index].ship_coord_id});
-                        if (coord_index !== -1) {
+                    } else if(dirty.objects[inventory_object_index].ship_coord_id) {
+                        let coord_index = await main.getShipCoordIndex({ 'ship_coord_id': dirty.objects[inventory_object_index].ship_coord_id });
+                        if(coord_index !== -1) {
                             io.to("ship_" + dirty.ship_coords[coord_index].ship_id).emit('inventory_item_info',
-                                {'remove': true, 'inventory_item': dirty.inventory_items[inventory_item_index]});
+                                { 'remove': true, 'inventory_item': dirty.inventory_items[inventory_item_index] });
                         }
                     }
                 }
@@ -700,26 +681,26 @@ async function removeFromInventory(socket, dirty, data) {
 
 
             // They took from it - they should know about the change
-            if (socket) {
-                socket.emit('inventory_item_info', {'inventory_item': dirty.inventory_items[inventory_item_index]});
+            if(socket) {
+                socket.emit('inventory_item_info', { 'inventory_item': dirty.inventory_items[inventory_item_index] });
             }
 
             // Send to people in the room to remove this inventory item
             // I'm working on making sure when someon takes from somewhere, that it is updated
-            if (dirty.inventory_items[inventory_item_index].owned_by_object_id) {
+            if(dirty.inventory_items[inventory_item_index].owned_by_object_id) {
                 let inventory_object_index = await game_object.getIndex(dirty, dirty.inventory_items[inventory_item_index].owned_by_object_id);
-                if (inventory_item_index !== -1) {
-                    if (dirty.objects[inventory_object_index].planet_coord_id) {
-                        let coord_index = await main.getPlanetCoordIndex({'planet_coord_id': dirty.objects[inventory_object_index].planet_coord_id});
-                        if (coord_index !== -1) {
+                if(inventory_item_index !== -1) {
+                    if(dirty.objects[inventory_object_index].planet_coord_id) {
+                        let coord_index = await main.getPlanetCoordIndex({ 'planet_coord_id': dirty.objects[inventory_object_index].planet_coord_id });
+                        if(coord_index !== -1) {
                             io.to("planet_" + dirty.planet_coords[coord_index].planet_id).emit('inventory_item_info',
-                                {'inventory_item': dirty.inventory_items[inventory_item_index]});
+                                { 'inventory_item': dirty.inventory_items[inventory_item_index] });
                         }
-                    } else if (dirty.objects[inventory_object_index].ship_coord_id) {
-                        let coord_index = await main.getShipCoordIndex({'ship_coord_id': dirty.objects[inventory_object_index].ship_coord_id});
-                        if (coord_index !== -1) {
+                    } else if(dirty.objects[inventory_object_index].ship_coord_id) {
+                        let coord_index = await main.getShipCoordIndex({ 'ship_coord_id': dirty.objects[inventory_object_index].ship_coord_id });
+                        if(coord_index !== -1) {
                             io.to("ship_" + dirty.planet_coords[coord_index].planet_id).emit('inventory_item_info',
-                                {'inventory_item': dirty.inventory_items[inventory_item_index]});
+                                { 'inventory_item': dirty.inventory_items[inventory_item_index] });
                         }
                     }
                 }
@@ -727,7 +708,7 @@ async function removeFromInventory(socket, dirty, data) {
             }
         }
 
-    } catch (error) {
+    } catch(error) {
         log(chalk.red("Error in inventory.removeFromInventory: " + error));
         console.error(error);
     }
@@ -743,12 +724,13 @@ function removeSpawnedObject(object_id) {
     sql = "UPDATE objects SET has_spawned_object = false WHERE id = ?";
     inserts = [object_id];
     sql = mysql.format(sql, inserts);
-    pool.query(sql, function (err, result) {
-        if (err) throw err;
+    pool.query(sql, function(err, result) {
+        if(err) throw err;
     });
 }
 
 exports.removeSpawnedObject = removeSpawnedObject;
+
 
 
 // For sending the entire inventory of a player, object, ect
@@ -757,27 +739,29 @@ async function sendInventory(socket, room, dirty, type, type_id) {
     try {
         let inventory_items = false;
 
-        if (type === 'player') {
+        if(type === 'player') {
 
             inventory_items = dirty.inventory_items.filter(inventory_item => inventory_item.player_id === type_id);
 
-        } else if (type === 'object') {
+        } else if(type === 'object') {
             //console.log("Sending object Inventory for object id " + type_id);
             inventory_items = dirty.inventory_items.filter(inventory_item => inventory_item.owned_by_object_id === type_id);
         }
 
 
-        if (inventory_items !== false) {
-            inventory_items.forEach(function (inventory_item) {
+        if(inventory_items !== false) {
+            inventory_items.forEach(function(inventory_item) {
 
-                if (helper.notFalse(socket)) {
-                    socket.emit('inventory_item_info', {'inventory_item': inventory_item});
-                } else if (room !== false) {
-                    io.to(room).emit('inventory_item_info', {'inventory_item': inventory_item});
+                if(helper.notFalse(socket)) {
+                    socket.emit('inventory_item_info', { 'inventory_item': inventory_item });
+                } else if(room !== false) {
+                    io.to(room).emit('inventory_item_info', { 'inventory_item': inventory_item });
                 }
+
+
             });
         }
-    } catch (error) {
+    } catch(error) {
         log(chalk.red("Error in inventory.sendInventory:" + error));
         console.error(error);
     }
@@ -792,25 +776,25 @@ function sendInventoryItem(socket, room, dirty, inventory_item_index, action) {
     try {
         //console.log("Sending inventory item to socket with player id: " + socket.player_id);
 
-        if (action === 'remove') {
+        if(action === 'remove') {
             let sending_inventory_item = dirty.inventory_items[inventory_item_index];
             sending_inventory_item.remove = true;
-            if (helper.notFalse(socket)) {
-                socket.emit('inventory_item_info', {'inventory_item': sending_inventory_item});
+            if(helper.notFalse(socket)) {
+                socket.emit('inventory_item_info', { 'inventory_item': sending_inventory_item });
             }
-
+            
         } else {
 
-            if (helper.notFalse(socket)) {
-                socket.emit('inventory_item_info', {'inventory_item': dirty.inventory_items[inventory_item_index]});
+            if(helper.notFalse(socket)) {
+                socket.emit('inventory_item_info', { 'inventory_item': dirty.inventory_items[inventory_item_index] });
             }
 
-            if (helper.notFalse(room)) {
-                io.to(room).emit('inventory_item_info', {'inventory_item': dirty.inventory_items[inventory_item_index]});
+            if(helper.notFalse(room)) {
+                io.to(room).emit('inventory_item_info', { 'inventory_item': dirty.inventory_items[inventory_item_index] });
             }
-
+            
         }
-    } catch (error) {
+    } catch(error) {
         log(chalk.red("Error in inventory.sendInventoryItem: " + error));
         console.error(error);
     }
@@ -825,7 +809,7 @@ async function take(socket, dirty, inventory_item_id, amount) {
 
     try {
 
-        if (typeof socket.player_index === 'undefined') {
+        if(typeof socket.player_index === 'undefined') {
             return false;
         }
 
@@ -834,72 +818,64 @@ async function take(socket, dirty, inventory_item_id, amount) {
 
         let inventory_item_index = await main.getInventoryItemIndex(inventory_item_id);
 
-        if (inventory_item_index === -1) {
+        if(inventory_item_index === -1) {
             log(chalk.yellow("Unable to find inventory item"));
             return false;
         }
 
         // Don't let random people take from a vending machine
-        if (dirty.inventory_items[inventory_item_index].owned_by_object_id) {
+        if(dirty.inventory_items[inventory_item_index].owned_by_object_id) {
             let owner_object_index = await game_object.getIndex(dirty, dirty.inventory_items[inventory_item_index].owned_by_object_id);
-            if (owner_object_index !== -1 && dirty.objects[owner_object_index].object_type_id === 92 && dirty.objects[owner_object_index].player_id !== dirty.players[socket.player_index].id) {
+            if(owner_object_index !== -1 && dirty.objects[owner_object_index].object_type_id === 92 && dirty.objects[owner_object_index].player_id !== dirty.players[socket.player_index].id) {
                 console.log("Not allowed to take from a vending machine that isn't theirs");
                 return false;
             }
         }
 
         let take_amount = 1;
-        if (amount === 'all') {
+        if(amount === 'all') {
             take_amount = dirty.inventory_items[inventory_item_index].amount;
-        } else if (parseInt(amount) === 10) {
+        } else if(parseInt(amount) === 10) {
             take_amount = 10;
 
-            if (dirty.inventory_items[inventory_item_index].amount < 10) {
+            if(dirty.inventory_items[inventory_item_index].amount < 10) {
                 take_amount = dirty.inventory_items[inventory_item_index].amount;
             }
-        } else if (parseInt(amount) === 100) {
+        } else if(parseInt(amount) === 100) {
             take_amount = 100;
 
-            if (dirty.inventory_items[inventory_item_index].amount < 100) {
+            if(dirty.inventory_items[inventory_item_index].amount < 100) {
                 take_amount = dirty.inventory_items[inventory_item_index].amount;
             }
         }
 
-        if (dirty.inventory_items[inventory_item_index].object_id) {
-            let adding_to_data = {
-                'adding_to_type': 'player', 'adding_to_id': socket.player_id,
+        if(dirty.inventory_items[inventory_item_index].object_id) {
+            let adding_to_data = { 'adding_to_type': 'player', 'adding_to_id': socket.player_id,
                 'object_id': dirty.inventory_items[inventory_item_index].object_id,
-                'object_type_id': dirty.inventory_items[inventory_item_index].object_type_id, 'amount': take_amount
-            };
+                'object_type_id': dirty.inventory_items[inventory_item_index].object_type_id, 'amount':take_amount };
 
             // Trying to not await for these two. Since they do mysql inserts and deletes
             let added_result = await addToInventory(socket, dirty, adding_to_data);
 
-            if (added_result === false) {
-                socket.emit('inventory_item_info', {'remove': true, 'inventory_item': {'id': inventory_item_id}});
+            if(added_result === false) {
+                socket.emit('inventory_item_info', { 'remove': true, 'inventory_item': { 'id': inventory_item_id } });
                 return false;
             }
-            await removeFromInventory(socket, dirty, {
-                'inventory_item_id': dirty.inventory_items[inventory_item_index].id,
-                'amount': dirty.inventory_items[inventory_item_index].amount
-            });
+            await removeFromInventory(socket, dirty, { 'inventory_item_id': dirty.inventory_items[inventory_item_index].id,
+                'amount': dirty.inventory_items[inventory_item_index].amount });
 
         } else {
-            let adding_to_data = {
-                'adding_to_type': 'player', 'adding_to_id': socket.player_id,
-                'object_type_id': dirty.inventory_items[inventory_item_index].object_type_id, 'amount': take_amount
-            };
+            let adding_to_data = { 'adding_to_type': 'player', 'adding_to_id': socket.player_id,
+                'object_type_id': dirty.inventory_items[inventory_item_index].object_type_id, 'amount':take_amount };
 
             // Trying to not await for these two. Since they do mysql inserts and deletes
             await addToInventory(socket, dirty, adding_to_data);
-            await removeFromInventory(socket, dirty, {
-                'inventory_item_id': dirty.inventory_items[inventory_item_index].id,
-                'amount': take_amount
-            });
+            await removeFromInventory(socket, dirty, { 'inventory_item_id': dirty.inventory_items[inventory_item_index].id,
+                'amount': take_amount });
         }
 
 
-    } catch (error) {
+    } catch(error) {
         log(chalk.red("Error in inventory.take: " + error));
         console.error(error);
     }
@@ -915,57 +891,56 @@ async function transferInventory(socket, dirty, data) {
     try {
 
         // Default to one of the inventory item if nothing is set
-        if (!data.amount) {
+        if(!data.amount) {
             data.amount = 1;
         }
 
         let inventory_item_index = await main.getInventoryItemIndex(data.inventory_item_id);
 
-        if (inventory_item_index === -1) {
+        if(inventory_item_index === -1) {
             log(chalk.yellow("Could not find inventory item"));
             return false;
         }
 
         // Make sure it's our inventory item
-        if (dirty.inventory_items[inventory_item_index].user_id !== socket.user_id) {
+        if(dirty.inventory_items[inventory_item_index].user_id !== socket.user_id) {
             log(chalk.yellow("Not that user's inventory item"));
             return false;
         }
 
         // Make sure we have enough of the thing
-        if (dirty.inventory_items[inventory_item_index].amount < data.amount) {
+        if(dirty.inventory_items[inventory_item_index].amount < data.amount) {
             log(chalk.yellow("Inventory item doesn't have enough amount"));
             return false;
         }
 
         let npc_index = -1;
         // we are giving this item to an npc
-        if (data.npc_id) {
+        if(data.npc_id) {
             npc_index = await npc.getIndex(dirty, data.npc_id);
 
-            if (npc_index === -1) {
+            if(npc_index === -1) {
                 console.log("Was unable to get the npc");
                 return false;
             }
         }
 
 
+
         // Lets setup the remove and add data before we potentially remove the inventory item from the database/dirty
-        let remove_inventory_data = {
-            'inventory_item_id': dirty.inventory_items[inventory_item_index].id,
-            'amount': data.amount
-        };
+        let remove_inventory_data = { 'inventory_item_id': dirty.inventory_items[inventory_item_index].id,
+            'amount': data.amount };
 
         let adding_to_data = {};
 
         // and add to the other inventory
-        if (npc_index !== -1) {
+        if(npc_index !== -1) {
             adding_to_data.adding_to_type = 'npc';
             adding_to_data.adding_to_id = dirty.npcs[npc_index].id;
 
         }
 
-        if (dirty.inventory_items[inventory_item_index].object_id) {
+        if(dirty.inventory_items[inventory_item_index].object_id) {
             adding_to_data.object_id = dirty.inventory_items[inventory_item_index].object_id;
             adding_to_data.object_type_id = dirty.inventory_items[inventory_item_index].object_type_id;
         } else {
@@ -979,12 +954,14 @@ async function transferInventory(socket, dirty, data) {
         await sendInventory(socket, false, dirty, 'player', socket.player_id);
 
 
+
+
         await addToInventory(socket, dirty, adding_to_data);
 
 
         // If this is something the npc wanted, we increase the relationship
-        if (npc_index !== -1) {
-            if (dirty.npcs[npc_index].wants_object_type_id === adding_to_data.object_type_id) {
+        if(npc_index !== -1) {
+            if(dirty.npcs[npc_index].wants_object_type_id === adding_to_data.object_type_id) {
 
 
                 await world.updatePlayerRelationship(socket, dirty, socket.player_index, {
@@ -996,11 +973,11 @@ async function transferInventory(socket, dirty, data) {
 
         console.log("Gone with inventory transfer");
 
-        if (socket) {
-            socket.emit('result_info', {'status': 'success', 'npc_id': dirty.npcs[npc_index].id, 'text': 'Thanks'});
+        if(socket) {
+            socket.emit('result_info', { 'status': 'success', 'npc_id': dirty.npcs[npc_index].id, 'text': 'Thanks' });
         }
 
-    } catch (error) {
+    } catch(error) {
         log(chalk.red("Error in inventory.transferInventory: " + error));
     }
 }

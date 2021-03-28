@@ -11,12 +11,13 @@ const player = require('./player.js');
 const main = require('./space_abyss' + process.env.FILE_SUFFIX + '.js');
 
 
+
 async function create(socket, dirty, data) {
 
     try {
 
 
-        if (typeof socket.player_index === 'undefined' || socket.player_index === -1) {
+        if(typeof socket.player_index === 'undefined' || socket.player_index === -1) {
             return false;
         }
 
@@ -27,29 +28,24 @@ async function create(socket, dirty, data) {
         console.log("Sanitized version: " + name);
 
         // Name is too short!
-        if (name.length <= 2) {
-            socket.emit('chat', {'message': 'Faction name is too short', 'scope': 'system'});
-            socket.emit('result_info', {'status': 'failure', 'text': 'Faction name is too short'});
+        if(name.length <= 2) {
+            socket.emit('chat', { 'message': 'Faction name is too short', 'scope': 'system' });
+            socket.emit('result_info', {'status': 'failure', 'text': 'Faction name is too short' });
             return false;
         }
 
-        if (name.length >= 60) {
-            socket.emit('chat', {'message': 'Faction name is too long', 'scope': 'system'});
-            socket.emit('result_info', {'status': 'failure', 'text': 'Faction name is too long'});
+        if(name.length >= 60) {
+            socket.emit('chat', { 'message': 'Faction name is too long', 'scope': 'system' });
+            socket.emit('result_info', {'status': 'failure', 'text': 'Faction name is too long' });
             return false;
         }
 
 
         // see if there's a matching faction name already
-        let faction_index = dirty.factions.findIndex(function (obj) {
-            return obj && obj.name === name;
-        });
+        let faction_index = dirty.factions.findIndex(function (obj) { return obj && obj.name === name; });
 
         if (faction_index !== -1) {
-            socket.emit('chat', {
-                'message': 'A faction with that name already exists. Please try a different name',
-                'scope': 'system'
-            });
+            socket.emit('chat', { 'message': 'A faction with that name already exists. Please try a different name', 'scope': 'system' });
             return false;
         }
 
@@ -57,10 +53,7 @@ async function create(socket, dirty, data) {
 
         // Make sure the player isn't already part of a faction
         if (player_faction_linker_index !== -1) {
-            socket.emit('chat', {
-                'message': 'You will need to leave your current faction before creating one',
-                'scope': 'system'
-            });
+            socket.emit('chat', { 'message': 'You will need to leave your current faction before creating one', 'scope': 'system' });
             return false;
         }
 
@@ -81,7 +74,7 @@ async function create(socket, dirty, data) {
 
             let new_faction_index = dirty.factions.push(rows[0]) - 1;
 
-            socket.emit('faction_info', {'faction': dirty.factions[new_faction_index]});
+            socket.emit('faction_info', { 'faction': dirty.factions[new_faction_index] });
 
             // and have the player join!
             let sql_linker = "INSERT INTO faction_linkers(player_id,faction_id,role) VALUES(?,?,'admin')";
@@ -93,9 +86,9 @@ async function create(socket, dirty, data) {
 
             if (rows_linker[0]) {
                 let new_faction_linker_index = dirty.faction_linkers.push(rows_linker[0]) - 1;
-                socket.emit('faction_linker_info', {'faction_linker': dirty.faction_linkers[new_faction_linker_index]});
+                socket.emit('faction_linker_info', { 'faction_linker': dirty.faction_linkers[new_faction_linker_index]});
             }
-
+        
         }
 
 
@@ -112,10 +105,8 @@ exports.create = create;
 function getIndex(dirty, faction_id) {
     try {
 
-        return dirty.factions.findIndex(function (obj) {
-            return obj && obj.id === parseInt(faction_id);
-        });
-    } catch (error) {
+        return dirty.factions.findIndex(function(obj) { return obj && obj.id === parseInt(faction_id); });
+    } catch(error) {
         log(chalk.red("Error in faction.getIndex: " + error));
         console.error(error);
     }
@@ -126,16 +117,14 @@ exports.getIndex = getIndex;
 /**
  * @param {Object} dirty
  * @param {number} player_id
- *
+ * 
  */
 function getLinkerIndex(dirty, player_id) {
     try {
 
-        return dirty.faction_linkers.findIndex(function (obj) {
-            return obj && obj.player_id === parseInt(player_id);
-        });
+        return dirty.faction_linkers.findIndex(function(obj) { return obj && obj.player_id === parseInt(player_id); });
 
-    } catch (error) {
+    } catch(error) {
         log(chalk.red("Error in faction.getLinkerIndex: " + error));
         console.error(error);
     }
@@ -148,23 +137,23 @@ async function join(socket, dirty, data) {
     try {
 
         console.log("In faction.join with faction id: " + data.faction_id);
-        if (typeof socket.player_index === 'undefined' || socket.player_index === -1) {
+        if(typeof socket.player_index === 'undefined' || socket.player_index === -1) {
             return false;
         }
 
         let faction_index = getIndex(dirty, parseInt(data.faction_id));
 
-        if (faction_index === -1) {
-            socket.emit('result_info', {'status': 'failure', 'text': 'Could not find that faction'});
+        if(faction_index === -1) {
+            socket.emit('result_info', { 'status': 'failure', 'text': 'Could not find that faction' });
             return false;
         }
 
         let faction_invitation_id = 0;
 
-        if (dirty.factions[faction_index].requires_invite) {
+        if(dirty.factions[faction_index].requires_invite) {
 
             let [rows, fields] = await (pool.query("SELECT * FROM faction_invitations WHERE invited_player_id = ? AND faction_id = ?",
-                [dirty.players[socket.player_index].id, dirty.factions[faction_index].id]));
+            [dirty.players[socket.player_index].id, dirty.factions[faction_index].id]));
             if (rows[0]) {
                 // Woot! There's the invite!
                 faction_invitation_id = rows[0].id;
@@ -172,7 +161,7 @@ async function join(socket, dirty, data) {
             } else {
 
 
-                socket.emit('result_info', {'status': 'failure', 'text': 'Joining this faction requires an invite'});
+                socket.emit('result_info', { 'status': 'failure', 'text': 'Joining this faction requires an invite' });
                 return false;
 
             }
@@ -190,25 +179,25 @@ async function join(socket, dirty, data) {
 
         if (rows_linker[0]) {
             let new_faction_linker_index = dirty.faction_linkers.push(rows_linker[0]) - 1;
-            socket.emit('faction_linker_info', {'faction_linker': dirty.faction_linkers[new_faction_linker_index]});
+            socket.emit('faction_linker_info', { 'faction_linker': dirty.faction_linkers[new_faction_linker_index]});
 
-            socket.emit('result_info', {
-                'status': 'success',
-                'text': "Joined " + dirty.factions[faction_index].name + " Faction!"
-            });
+            socket.emit('result_info', { 'status': 'success', 'text': "Joined " + dirty.factions[faction_index].name + " Faction!"});
 
-            if (faction_invitation_id !== 0) {
+            if(faction_invitation_id !== 0) {
                 // and remove the invitation
                 (pool.query("DELETE FROM faction_invitations WHERE id = ?", [faction_invitation_id]));
             }
 
             dirty.factions[faction_index].player_count++;
             dirty.factions[faction_index].has_change = true;
-
+            
         }
 
 
-    } catch (error) {
+
+
+
+    } catch(error) {
         log(chalk.red("Error in faction.join: " + error));
         console.error(error);
     }
@@ -224,30 +213,24 @@ exports.join = join;
 async function leave(socket, dirty) {
     try {
 
-        if (typeof socket.player_index === 'undefined' || socket.player_index === -1) {
+        if(typeof socket.player_index === 'undefined' || socket.player_index === -1) {
             return false;
         }
 
-        let faction_linker_index = dirty.faction_linkers.findIndex(function (obj) {
-            return obj && obj.player_id === dirty.players[socket.player_index].id;
-        });
+        let faction_linker_index = dirty.faction_linkers.findIndex(function(obj) { return obj && obj.player_id === dirty.players[socket.player_index].id; });
 
-        if (faction_linker_index === -1) {
-            socket.emit('result_info', {'status': 'failure', 'text': "You are not part of any faction"});
+        if(faction_linker_index === -1) {
+            socket.emit('result_info', { 'status': 'failure', 'text': "You are not part of any faction" });
             return false;
         }
 
-        let faction_index = dirty.factions.findIndex(function (obj) {
-            return obj && obj.id === dirty.faction_linkers[faction_linker_index].faction_id;
-        });
+        let faction_index = dirty.factions.findIndex(function(obj) { return obj && obj.id === dirty.faction_linkers[faction_linker_index].faction_id; });
 
         (pool.query("DELETE FROM faction_linkers WHERE id = ?", [dirty.faction_linkers[faction_linker_index].id]));
 
-        socket.emit('faction_linker_info', {
-            'remove': true,
-            'faction_linker': dirty.faction_linkers[faction_linker_index]
-        });
+        socket.emit('faction_linker_info', { 'remove': true, 'faction_linker': dirty.faction_linkers[faction_linker_index] });
         delete dirty.faction_linkers[faction_linker_index];
+
 
 
         dirty.players[socket.player_index].faction_id = false;
@@ -256,7 +239,7 @@ async function leave(socket, dirty) {
         let player_info = await player.getCoordAndRoom(dirty, socket.player_index);
 
         if (player_info.room) {
-            io.to(player_info.room).emit('player_info', {'player': dirty.players[socket.player_index]});
+            io.to(player_info.room).emit('player_info', { 'player': dirty.players[socket.player_index] });
         }
 
         // Decrease the faction's player count
@@ -265,7 +248,7 @@ async function leave(socket, dirty) {
             dirty.factions[faction_index].has_change = true;
         }
 
-
+        return;
 
     } catch (error) {
         log(chalk.red("Error in world.leaveFaction: " + error));
@@ -279,8 +262,8 @@ exports.leave = leave;
 async function sendData(socket, dirty) {
     //console.log("Client is requesting faction data");
 
-    dirty.factions.forEach(function (faction) {
-        socket.emit('faction_info', {'faction': faction});
+    dirty.factions.forEach(function(faction) {
+        socket.emit('faction_info', { 'faction': faction });
     });
 
 
