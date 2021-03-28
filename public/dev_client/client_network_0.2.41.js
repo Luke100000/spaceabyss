@@ -76,7 +76,7 @@ socket.on('area_info', function(data) {
 
     }
 
-    if($("#area_management").is(":visible")) {
+    if(sel_area_management.is(":visible")) {
         generateAreaManagementDisplay();
     }
 });
@@ -272,7 +272,7 @@ socket.on('bid_linker_info', function(data) {
 
 
     /*
-    if($("#area_management").is(":visible")) {
+    if(sel_area_management.is(":visible")) {
         generateAreaManagementDisplay();
     }
 
@@ -1064,7 +1064,7 @@ socket.on('inventory_item_info', function(data) {
     */
 
     // lets populate our build/assemble tab
-    //$('#can_assemble_list').empty();
+    //sel_can_assemble_list.empty();
 
     //console.log("At object_types adding to assemble part");
     //printAssemblyList();
@@ -1123,16 +1123,16 @@ socket.on('login_data', function(data) {
         // populate the launch button so we can navigate out of our starting view
         if(current_view === 'galaxy') {
             //console.log("Emptied launch in login_data");
-            $('#launch').empty();
+            sel_launch.empty();
 
             let html_string = "";
 
             html_string += "<button class='button is-success' id='viewchange' newview='ship'>";
             html_string += "<i class='fad fa-space-shuttle'></i> Ship View</button>";
-            $('#launch').append(html_string);
+            sel_launch.append(html_string);
         } else if(current_view === 'planet') {
-            //$('#launch').empty();
-            //$('#launch').append('<button class="btn btn-block btn-success" id="viewchange" newview="galaxy">Launch From Planet</button>');
+            //sel_launch.empty();
+            //sel_launch.append('<button class="btn btn-block btn-success" id="viewchange" newview="galaxy">Launch From Planet</button>');
             //console.log("In starting view on planet");
             if(typeof client_player_info.coord === "undefined" || !client_player_info.coord) {
                 //console.log("Don't have the coord for the player yet");
@@ -2440,7 +2440,7 @@ socket.on('object_type_info', function(data) {
 
     /* SHOULD NOT KEEP THIS HERE ITS INEFFICIENT */
     // lets populate our build/assemble tab
-    //$('#can_assemble_list').empty();
+    //sel_can_assemble_list.empty();
 
     //console.log("At object_types adding to assemble part");
     //printAssemblyList();
@@ -2723,8 +2723,8 @@ socket.on('planet_type_display_linker_info', function(data) {
 });
 
 socket.on('player_count_info', function(data) {
-    $('#players_connected').empty();
-    $('#players_connected').append(data.player_count + " Players Connected");
+    sel_players_connected.empty();
+    sel_players_connected.append(data.player_count + " Players Connected");
 
     if(!sent_loney_player_message) {
         sent_loney_player_message = true;
@@ -3060,8 +3060,8 @@ socket.on('player_research_linker_info', function(data) {
 
 socket.on('pong_client', function(data) {
     let latency = Date.now() - start_ping_time;
-    $("#ping").empty();
-    $("#ping").append("Server ping: " + latency);
+    sel_ping.empty();
+    sel_ping.append("Server ping: " + latency);
 });
 
 socket.on('race_info', function(data) {
@@ -3738,8 +3738,8 @@ socket.on('unread_message_info', function(data) {
     unread_message_count = data.unread_message_count;
 
     if(client_player_index !== -1 && players[client_player_index]) {
-        $('#messages').empty();
-        $('#messages').append("<i class='fas fa-envelope'></i> " + unread_message_count);
+        sel_messages.empty();
+        sel_messages.append("<i class='fas fa-envelope'></i> " + unread_message_count);
     }
     
 });
@@ -3798,13 +3798,13 @@ socket.on('view_change_data', function(data) {
         on_planet = false;
 
         //console.log("Emptied launch in view_change_data");
-        $('#launch').empty();
+        sel_launch.empty();
 
         let html_string = "";
 
         html_string += "<button class='button is-success' id='viewchange' newview='ship'>";
         html_string += "<i class='fad fa-space-shuttle'></i> Ship View</button>";
-        $('#launch').append(html_string);
+        sel_launch.append(html_string);
 
         current_view = 'galaxy';
 
@@ -3832,8 +3832,8 @@ socket.on('view_change_data', function(data) {
 
         current_view = 'planet';
 
-        //$('#launch').empty();
-        //$('#launch').append('<button class="btn btn-block btn-success" id="viewchange" newview="galaxy">Launch From Planet</button>');
+        //sel_launch.empty();
+        //sel_launch.append('<button class="btn btn-block btn-success" id="viewchange" newview="galaxy">Launch From Planet</button>');
 
         battle_linkers = [];
         coords = [];

@@ -208,10 +208,9 @@
         }
     </style>
 </head>
+
+
 <body style="background-image: url('../images/void.png'); background-repeat: repeat;">
-
-
-
 <div id="login_container">
 
     <div class="columns">
@@ -357,12 +356,12 @@
             function toggleAssembleDisplay() {
 
 
-                if($("#can_assemble_list").is(":visible")) {
-                    $("#can_assemble_list").hide();
-                    $("#can_assemble_list").empty();
+                if(sel_can_assemble_list.is(":visible")) {
+                    sel_can_assemble_list.hide();
+                    sel_can_assemble_list.empty();
 
                 } else {
-                    $('#can_assemble_list').show();
+                    sel_can_assemble_list.show();
                     printAssemblyList();
                 }
 
@@ -371,12 +370,12 @@
             function toggleFactionDisplay() {
 
 
-                if($("#faction").is(":visible")) {
-                    $("#faction").hide();
-                    $("#faction").empty();
+                if(sel_faction.is(":visible")) {
+                    sel_faction.hide();
+                    sel_faction.empty();
 
                 } else {
-                    $('#faction').show();
+                    sel_faction.show();
                     generateFactionDisplay();
                 }
 
@@ -385,25 +384,25 @@
             function toggleInventoryDisplay() {
 
 
-                if($("#inventory").is(":visible")) {
-                    $("#inventory").hide();
-                    $("#inventory").empty();
+                if(sel_inventory.is(":visible")) {
+                    sel_inventory.hide();
+                    sel_inventory.empty();
 
                 } else {
-                    $('#inventory').show();
+                    sel_inventory.show();
                     generateInventoryDisplay();
                 }
 
             }
 
             function toggleManagementOptionsDisplay() {
-                if($("#management_options").is(":visible")) {
-                    $("#management_options").hide();
-                    $("#management_options").empty();
+                if(sel_management_options.is(":visible")) {
+                    sel_management_options.hide();
+                    sel_management_options.empty();
 
 
                 } else {
-                    $('#management_options').show();
+                    sel_management_options.show();
 
                     generateManagementOptionsDisplay();
 
@@ -413,20 +412,20 @@
             function toggleManagementDisplay(object_index = -1) {
 
 
-                if($("#management").is(":visible")) {
-                    $("#management").hide();
-                    $("#management").empty();
+                if(sel_management.is(":visible")) {
+                    sel_management.hide();
+                    sel_management.empty();
                     
-                    //$('#area_management').hide();
-                    //$('#area_management').empty();
+                    //sel_area_management.hide();
+                    //sel_area_management.empty();
 
-                    //$('#ship_management').hide();
-                    //$('#ship_management').empty();
+                    //sel_ship_management.hide();
+                    //sel_ship_management.empty();
 
                 } else {
-                    $('#management').show();
-                    //$('#area_management').show();
-                    //$('#ship_management').show();
+                    sel_management.show();
+                    //sel_area_management.show();
+                    //sel_ship_management.show();
 
                     generateNonAiManagementDisplay(object_index);
                     //generateAreaManagementDisplay();
@@ -436,13 +435,13 @@
             }
 
             function toggleAiManagementDisplay(object_index = -1) {
-                if($("#ai_management").is(":visible")) {
-                    $("#ai_management").hide();
-                    $("#ai_management").empty();
+                if(sel_ai_management.is(":visible")) {
+                    sel_ai_management.hide();
+                    sel_ai_management.empty();
 
 
                 } else {
-                    $('#ai_management').show();
+                    sel_ai_management.show();
 
                     generateAiManagementDisplay(object_index);
 
@@ -450,13 +449,13 @@
             }
 
             function toggleAreaManagementDisplay() {
-                if($("#area_management").is(":visible")) {
-                    $("#area_management").hide();
-                    $("#area_management").empty();
+                if(sel_area_management.is(":visible")) {
+                    sel_area_management.hide();
+                    sel_area_management.empty();
 
 
                 } else {
-                    $('#area_management').show();
+                    sel_area_management.show();
 
                     generateAreaManagementDisplay();
 
@@ -465,12 +464,12 @@
 
             function togglePlayerEquipmentDisplay() {
 
-                if($("#player_equipment").is(":visible")) {
-                    $("#player_equipment").hide();
-                    $("#player_equipment").empty();
+                if(sel_player_equipment.is(":visible")) {
+                    sel_player_equipment.hide();
+                    sel_player_equipment.empty();
 
                 } else {
-                    $('#player_equipment').show();
+                    sel_player_equipment.show();
                     generateEquipmentDisplay();
                 }
 
@@ -480,12 +479,12 @@
 
                 console.log("in togglePlayerInfoDisplay");
 
-                if($("#player_stats").is(":visible")) {
-                    $("#player_stats").hide();
-                    $("#player_stats").empty();
+                if(sel_player_stats.is(":visible")) {
+                    sel_player_stats.hide();
+                    sel_player_stats.empty();
 
                 } else {
-                    $('#player_stats').show();
+                    sel_player_stats.show();
                     generatePlayerInfoDisplay();
                 }
 
@@ -494,12 +493,12 @@
             function toggleRelationshipDisplay() {
 
 
-                if($("#relationships").is(":visible")) {
-                    $("#relationships").hide();
-                    $("#relationships").empty();
+                if(sel_relationships.is(":visible")) {
+                    sel_relationships.hide();
+                    sel_relationships.empty();
 
                 } else {
-                    $('#relationships').show();
+                    sel_relationships.show();
                     generateRelationshipDisplay();
                 }
 
@@ -508,23 +507,23 @@
             function toggleResearchDisplay() {
 
 
-                if($("#research").is(":visible")) {
-                    $("#research").hide();
-                    $("#research").empty();
-                    $('#discoveries').empty();
+                if(sel_research.is(":visible")) {
+                    sel_research.hide();
+                    sel_research.empty();
+                    sel_discoveries.empty();
 
                 } else {
-                    $('#research').show();
+                    sel_research.show();
                     generateResearchDisplay();
                 }
 
             }
 
             function toggleSettingsDisplay() {
-                if($("#settings").is(":visible")) {
-                    $("#settings").hide();
+                if(sel_settings.is(":visible")) {
+                    sel_settings.hide();
                 } else {
-                    $('#settings').show();
+                    sel_settings.show();
                 }
             }
 
@@ -657,46 +656,87 @@
 
         </div>
 
-
-
     </div>
-
-
-
-
-
 
 </div>
 
-<script type="text/javascript">
-    if(debug_mode) {
-        $('#debug_mode').append("Debug Mode True <button id=\"debug_mode\">Toggle Debug Mode</button>");
-    } else {
-        $('#debug_mode').append("Debug Mode False <button id=\"debug_mode\">Toggle Debug Mode</button>");
-    }
 
-    if(notify_on_new_player) {
-        $('#notify_on_new_player').append("Notify when new player joins: True <button id=\"notifynewplayer\">Set to False</button>");
-    } else {
-        $('#notify_on_new_player').append("Notify when new player joins: False <button id=\"notifynewplayer\">Set to True</button>");
-    }
+<div id="click_menu" style="background-color:white; border-radius:5px; padding:3px; display:none;"></div>
 
-    if(play_sounds) {
-        $('#sound').append("Sound ON");
-        $('#sound').append("<button id=\"sound\">Toggle Sound</button>");
-    } else {
-        $('#sound').append("Sound OFF");
-        $('#sound').append("<button id=\"sound\">Toggle Sound</button>");
-    }
 
+<script>
+    //JQuery selectors
+
+    //misc
+    const sel_coord_data = $("#coord_data");
+    const sel_launch = $("#launch");
+    const sel_fuel = $("#fuel");
+    const sel_messages = $("#messages");
+    const sel_eating_data = $("#eating_data");
+    const sel_addiction = $("#addiction");
+    const sel_can_assemble_list  = $("#can_assemble_list ");
+
+    //click menu
+    const sel_click_menu = $("#click_menu");
+
+    //windows
+    const sel_faction = $("#faction");
+    const sel_inventory = $("#inventory");
+    const sel_player_stats = $("#player_stats");
+    const sel_research = $("#research");
+    const sel_settings = $("#settings");
+    const sel_discoveries = $("#discoveries");
+    const sel_relationships = $("#relationships");
+    const sel_market = $("#market");
+
+    //settings
+    const sel_players_connected = $("#players_connected");
+    const sel_ping = $("#ping");
+    const sel_notify_on_new_player = $("#notify_on_new_player");
+    const sel_debug_mode = $("#debug_mode");
+    const sel_sound = $("#sound");
+
+    //equipment
+    const sel_player_equipment = $("#player_equipment");
+    const sel_equipment_augment = $("#equipment_augment");
+    const sel_equipment_head = $("#equipment_head");
+    const sel_equipment_left_arm = $("#equipment_left_arm");
+    const sel_equipment_body = $("#equipment_body");
+    const sel_equipment_right_arm = $("#equipment_right_arm");
+    const sel_equipment_legs = $("#equipment_legs");
+
+    //management
+    const sel_management = $("#management");
+    const sel_management_options = $("#management_options");
+    const sel_area_management = $("#area_management");
+    const sel_ship_management = $("#ship_management");
+    const sel_ai_management = $("#ai_management");
+    const sel_object_management = $("#object_management");
+    const sel_task_management = $("#task_management");
 </script>
 
 
+<script type="text/javascript">
+    if(debug_mode) {
+        sel_debug_mode.append("Debug Mode True <button id=\"debug_mode\">Toggle Debug Mode</button>");
+    } else {
+        sel_debug_mode.append("Debug Mode False <button id=\"debug_mode\">Toggle Debug Mode</button>");
+    }
 
-<div id="click_menu" style="background-color:white; border-radius:5px; padding:3px; display:none;">
+    if(notify_on_new_player) {
+        sel_notify_on_new_player.append("Notify when new player joins: True <button id=\"notifynewplayer\">Set to False</button>");
+    } else {
+        sel_notify_on_new_player.append("Notify when new player joins: False <button id=\"notifynewplayer\">Set to True</button>");
+    }
 
-</div>
-
+    if(play_sounds) {
+        sel_sound.append("Sound ON");
+        sel_sound.append("<button id=\"sound\">Toggle Sound</button>");
+    } else {
+        sel_sound.append("Sound OFF");
+        sel_sound.append("<button id=\"sound\">Toggle Sound</button>");
+    }
+</script>
 
 </body>
 </html>
@@ -2556,9 +2596,9 @@
                     console.log("Worldpoint to tile_x/y: " + tile_x + "," + tile_y);
 
                     // If the click menu is visible, we are just closing it
-                    if($("#click_menu").is(":visible")) {
+                    if(sel_click_menu.is(":visible")) {
                         console.log("Closing click menu");
-                        $("#click_menu").hide();
+                        sel_click_menu.hide();
                         return;
                     }
 

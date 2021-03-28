@@ -574,16 +574,16 @@ function canPlacePlayer(scope, coord, player_index, show_output = false) {
             } 
             // Players need to confirm
             else {
-                $('#click_menu').css({
+                sel_click_menu.css({
                     'top': 250, 'left': 250, 'position': 'absolute', 'max-height': '400px', 'max-width': '640px',
                     'overflow-y': 'scroll', 'overflow-x': 'scroll', 'padding': '10px'
                 }).fadeIn('fast');
             
-                $('#click_menu').empty();
+                sel_click_menu.empty();
     
-                $('#click_menu').append("This ship is The Great Nomad. No player can control it. It will randomly leave and re-enter our galaxy.<br><br>");
-                $('#click_menu').append("While outside of the galaxy, there is no way to return other than dying");
-                $('#click_menu').append("<button id='thegreatnomad' class='button is-info'>I understand the risks. Let me dock at The Great Nomad</button>");
+                sel_click_menu.append("This ship is The Great Nomad. No player can control it. It will randomly leave and re-enter our galaxy.<br><br>");
+                sel_click_menu.append("While outside of the galaxy, there is no way to return other than dying");
+                sel_click_menu.append("<button id='thegreatnomad' class='button is-info'>I understand the risks. Let me dock at The Great Nomad</button>");
                 return false;
             }
 
@@ -1416,7 +1416,7 @@ function displayClickNpc(npc_id) {
         adding_html += " ID: " + npcs[npc_index].id;
     }
 
-    $('#coord_data').append(adding_html + "<br>");
+    sel_coord_data.append(adding_html + "<br>");
 }
 
 function displayClickObject(object_id) {
@@ -1436,20 +1436,20 @@ function displayClickObject(object_id) {
         return false;
     }
 
-    $('#coord_data').append(object_types[object_type_index].name + "<br>");
+    sel_coord_data.append(object_types[object_type_index].name + "<br>");
 
 
     if(object_types[object_type_index].max_energy_storage) {
-        $('#coord_data').append("Energy: " + objects[object_index].energy + "/" + object_types[object_type_index].max_energy_storage + "<br>");
+        sel_coord_data.append("Energy: " + objects[object_index].energy + "/" + object_types[object_type_index].max_energy_storage + "<br>");
     } else if(objects[object_index].energy) {
-        $('#coord_data').append("Energy: " + objects[object_index].energy + "<br>");
+        sel_coord_data.append("Energy: " + objects[object_index].energy + "<br>");
     }
 
 
     if (objects[object_index].player_id) {
         let player_index = players.findIndex(function (obj) { return obj && obj.id === objects[object_index].player_id; });
         if (player_index !== -1) {
-            $('#coord_data').append("&nbsp;&nbsp;Owned By Player <a target='_blank' href='../player/view/" + 
+            sel_coord_data.append("&nbsp;&nbsp;Owned By Player <a target='_blank' href='../player/view/" + 
                 players[player_index].id + "'>" + players[player_index].name + "</a><br>");
 
         } else {
@@ -1462,41 +1462,41 @@ function displayClickObject(object_id) {
             let ai_index = objects.findIndex(function (obj) { return obj && obj.id === objects[object_index].ai_id });
 
             if (ai_index !== -1) {
-                $('#coord_data').append("&nbsp;&nbsp;An AI Is Present<br>");
+                sel_coord_data.append("&nbsp;&nbsp;An AI Is Present<br>");
 
 
                 // get any AI Rules
                 rules.forEach(function (rule) {
                     if (rule.object_id === objects[ai_index].id) {
-                        $('#coord_data').append("&nbsp;&nbsp;&nbsp;&nbsp;AI Rule: " + displayRule(rule.rule) + " <br>");
+                        sel_coord_data.append("&nbsp;&nbsp;&nbsp;&nbsp;AI Rule: " + displayRule(rule.rule) + " <br>");
                     }
                 });
             } else {
-                $('#coord_data').append("&nbsp;&nbsp;Need AI Data<br>");
+                sel_coord_data.append("&nbsp;&nbsp;Need AI Data<br>");
                 socket.emit('request_object_info', { 'object_id': objects[object_index].ai_id });
             }
         }
     }
 
     if (objects[object_index].npc_id) {
-        $('#coord_data').append("&nbsp;&nbsp;Owned By NPC ID: " + objects[object_index].npc_id);
+        sel_coord_data.append("&nbsp;&nbsp;Owned By NPC ID: " + objects[object_index].npc_id);
     }
 
     if (objects[object_index].current_hp !== object_types[object_type_index].hp) {
-        $('#coord_data').append("&nbsp;&nbsp;HP: " + objects[object_index].current_hp + "/" + object_types[object_type_index].hp);
+        sel_coord_data.append("&nbsp;&nbsp;HP: " + objects[object_index].current_hp + "/" + object_types[object_type_index].hp);
     }
 
     if(object_types[object_type_index].max_energy_storage) {
 
-        $('#coord_data').append("&nbsp;&nbsp;Energy: " + objects[object_index].energy + "/" + object_types[object_type_index].max_energy_storage + " <br>");
+        sel_coord_data.append("&nbsp;&nbsp;Energy: " + objects[object_index].energy + "/" + object_types[object_type_index].max_energy_storage + " <br>");
         
     }
 
     if (debug_mode) {
-        $('#coord_data').append("&nbsp;&nbsp;Object ID: " + object_id + "<br>");
-        $('#coord_data').append("&nbsp;&nbsp;Has inventory: " + objects[object_index].has_inventory + "<br>");
+        sel_coord_data.append("&nbsp;&nbsp;Object ID: " + object_id + "<br>");
+        sel_coord_data.append("&nbsp;&nbsp;Has inventory: " + objects[object_index].has_inventory + "<br>");
 
-        $('#coord_data').append("&nbsp;&nbsp;Current HP: " + objects[object_index].current_hp + "<br>");
+        sel_coord_data.append("&nbsp;&nbsp;Current HP: " + objects[object_index].current_hp + "<br>");
 
 
         if (object_types[object_type_index].spawns_object_type_id) {
@@ -1506,12 +1506,12 @@ function displayClickObject(object_id) {
             });
 
             if (spawned_object_type_index !== -1) {
-                $('#coord_data').append("&nbsp;&nbsp;Spawns " + object_types[spawned_object_type_index].name + "<br>");
+                sel_coord_data.append("&nbsp;&nbsp;Spawns " + object_types[spawned_object_type_index].name + "<br>");
             }
         }
 
         if (objects[object_index].spawned_event_id) {
-            $('#coord_data').append("&nbsp;&nbsp;Spawned Event ID:" + objects[object_index].spawned_event_id + "<br>");
+            sel_coord_data.append("&nbsp;&nbsp;Spawned Event ID:" + objects[object_index].spawned_event_id + "<br>");
         }
 
 
@@ -1519,7 +1519,7 @@ function displayClickObject(object_id) {
 
 
     if (object_types[object_type_index].is_ship && !objects[object_index].player_id && !objects[object_index].npc_id) {
-        $('#coord_data').append("This ship has been abandoned");
+        sel_coord_data.append("This ship has been abandoned");
     }
 
 
@@ -1908,7 +1908,7 @@ function generateDiscoveryDisplay(object_type_id) {
 
     let object_type_index = object_types.findIndex(function (obj) { return obj && obj.id === parseInt(object_type_id); });
 
-    $('#discoveries').empty();
+    sel_discoveries.empty();
 
     let html_string = "";
     html_string += "<div class='message is-success message-inline' style='margin-top:10px;'><div class='message-body'>";
@@ -1973,7 +1973,7 @@ function generateDiscoveryDisplay(object_type_id) {
 
                 html_string += printDiscovery(object_type, assembly_linkers);
 
-                //$('#discoveries').append(generateAssemblyListItem(object_type, object_type_assembly_linkers));
+                //sel_discoveries.append(generateAssemblyListItem(object_type, object_type_assembly_linkers));
             }
 
 
@@ -1983,7 +1983,7 @@ function generateDiscoveryDisplay(object_type_id) {
 
 
     html_string += "</div></div>";
-    $('#discoveries').append(html_string);
+    sel_discoveries.append(html_string);
 
 }
 
@@ -1994,7 +1994,7 @@ function generateEatingLinkerDisplay() {
     }
     //console.log("In generateEatingLinkerDisplay");
 
-    $('#eating_data').empty();
+    sel_eating_data.empty();
 
     let player_index = players.findIndex(function (obj) { return obj && obj.id === player_id; });
 
@@ -2060,13 +2060,13 @@ function generateEatingLinkerDisplay() {
 
     html_string += "</div></div>";
 
-    $('#eating_data').append(html_string);
+    sel_eating_data.append(html_string);
 }
 
 function generateFactionDisplay() {
     console.log("Generating faction display");
 
-    if (!$("#faction").is(":visible")) {
+    if (!sel_faction.is(":visible")) {
         return false;
     }
 
@@ -2077,7 +2077,7 @@ function generateFactionDisplay() {
 
     let player_faction_linker_index = faction_linkers.findIndex(function(obj) { return obj && obj.player_id === players[client_player_index].id; });
 
-    $('#faction').empty();
+    sel_faction.empty();
 
 
 
@@ -2129,7 +2129,7 @@ function generateFactionDisplay() {
 
 
     html_string += "</div></div>";
-    $('#faction').append(html_string);
+    sel_faction.append(html_string);
 }
 
 
@@ -2137,7 +2137,7 @@ function generateFactionDisplay() {
 function generateFuelDisplay() {
 
     if(current_view === 'planet') {
-        $('#fuel').empty();
+        sel_fuel.empty();
         return;
     }
 
@@ -2162,7 +2162,7 @@ function generateFuelDisplay() {
     if(client_ship_type_index !== -1) {
         if(object_types[client_ship_type_index].needs_engines) {
 
-            $('#fuel').empty();
+            sel_fuel.empty();
 
         
             if(current_view !== 'planet') {
@@ -2180,7 +2180,7 @@ function generateFuelDisplay() {
                         objects[client_ship_index].max_engine_energy + "</span>";
                     }
     
-                    $('#fuel').append(html_string);
+                    sel_fuel.append(html_string);
     
                 }
             }
@@ -2193,7 +2193,7 @@ function generateFuelDisplay() {
 // Shows all our stuff
 function generatePlayerInfoDisplay() {
 
-    if (!$("#player_stats").is(":visible")) {
+    if (!sel_player_stats.is(":visible")) {
         return false;
     }
 
@@ -2202,7 +2202,7 @@ function generatePlayerInfoDisplay() {
         return false;
     }
 
-    $('#player_stats').empty();
+    sel_player_stats.empty();
 
     let html_string = "";
 
@@ -2654,17 +2654,17 @@ function generatePlayerInfoDisplay() {
 
     html_string += "</div></div>";
 
-    $('#player_stats').append(html_string);
+    sel_player_stats.append(html_string);
 
 }
 
 function generateRelationshipDisplay() {
 
-    if (!$("#relationships").is(":visible")) {
+    if (!sel_relationships.is(":visible")) {
         return false;
     }
 
-    $('#relationships').empty();
+    sel_relationships.empty();
 
     for (let linker of player_relationship_linkers) {
 
@@ -2678,7 +2678,7 @@ function generateRelationshipDisplay() {
             adding_string += "</div>";
 
 
-            $('#relationships').append(adding_string);
+            sel_relationships.append(adding_string);
         }
 
 
@@ -2688,11 +2688,11 @@ function generateRelationshipDisplay() {
 
 function generateResearchDisplay() {
 
-    if (!$("#research").is(":visible")) {
+    if (!sel_research.is(":visible")) {
         return false;
     }
 
-    $('#research').empty();
+    sel_research.empty();
 
     let adding_string = "";
 
@@ -2719,7 +2719,7 @@ function generateResearchDisplay() {
 
     adding_string += "</div></div>";
 
-    $('#research').append(adding_string);
+    sel_research.append(adding_string);
 }
 
 function getMonsterInfo(monster_index) {
@@ -2923,7 +2923,7 @@ function generateAirlockDisplay() {
 
     //console.log("In generateAirlockDisplay");
 
-    $('#launch').empty();
+    sel_launch.empty();
 
 
     let client_ship_index = objects.findIndex(function (obj) { return obj && obj.id === players[client_player_index].ship_id; });
@@ -2955,14 +2955,14 @@ function generateAirlockDisplay() {
 
     if (client_ship_index !== -1 && ship_coord_index !== -1 && ship_coords[ship_coord_index].ship_id === objects[client_ship_index].id) {
         //console.log("We are on our ship");
-        $('#launch').append('<button class="button is-success" id="viewchange" newview="galaxy"><i class="fad fa-stars"></i> Back To Galaxy</button>');
+        sel_launch.append('<button class="button is-success" id="viewchange" newview="galaxy"><i class="fad fa-stars"></i> Back To Galaxy</button>');
 
         generateFuelDisplay();
 
 
     } else if (current_view === "ship") {
 
-        $('#launch').append('<button class="button is-success" id="viewchange" newview="galaxy"><i class="fad fa-rocket"></i> Launch With Current Ship</button>');
+        sel_launch.append('<button class="button is-success" id="viewchange" newview="galaxy"><i class="fad fa-rocket"></i> Launch With Current Ship</button>');
     } else {
         console.log("%c Didn't draw back to galaxy OR launch buttons");
     }
@@ -2982,7 +2982,7 @@ function generateAirlockDisplay() {
 
         if (docked_ships.length > 0) {
 
-            $('#launch').append("<br>");
+            sel_launch.append("<br>");
 
 
             docked_ships.forEach(function (ship) {
@@ -2991,7 +2991,7 @@ function generateAirlockDisplay() {
                 let html_string = showDockedShip(ship);
 
 
-                $('#launch').append(html_string);
+                sel_launch.append(html_string);
 
                 if (ship.object_type_id === 114) {
                     has_pod = true;
@@ -3002,7 +3002,7 @@ function generateAirlockDisplay() {
         // we should only let the player have one pod at a spaceport
         // TODO check this on the server side David!
         if (!has_pod) {
-            //$('#launch').append('<button class="button is-default" id="buy_pod" object_type_id="114">Buy A Pod</button>');
+            //sel_launch.append('<button class="button is-default" id="buy_pod" object_type_id="114">Buy A Pod</button>');
         }
 
         // If we own the station, we can switch to that too
@@ -3016,20 +3016,20 @@ function generateAirlockDisplay() {
 
                     // The station is already our current ship
                     if (objects[on_ship_index].id === players[client_player_index].ship_id) {
-                        $('#launch').append("<span class='tag is-success'>Station Is Current Ship</span>");
+                        sel_launch.append("<span class='tag is-success'>Station Is Current Ship</span>");
                     }
                     // we can switch to the station
                     else {
 
                         if (debug_mode) {
-                            $('#launch').append("Ship ID: " + objects[on_ship_index].id);
+                            sel_launch.append("Ship ID: " + objects[on_ship_index].id);
                         }
 
                         if (objects[on_ship_index].name) {
-                            $('#launch').append(" " + objects[on_ship_index].name + " ");
+                            sel_launch.append(" " + objects[on_ship_index].name + " ");
                         }
 
-                        $('#launch').append("<button id='switchship_" + objects[on_ship_index].id + "' object_id='" +
+                        sel_launch.append("<button id='switchship_" + objects[on_ship_index].id + "' object_id='" +
                             objects[on_ship_index].id + "' class='button is-warning is-small'>Switch To Station</button>");
                     }
 
@@ -3057,7 +3057,7 @@ function generateAirlockDisplay() {
         //console.log("Player is on an airlock");
         if(show_emergency_pod) {
             console.log("Showing emergency pod button");
-            $('#launch').append('<button class="button is-danger" id="buy_pod" object_type_id="114">Use Emergency Pod</button>');
+            sel_launch.append('<button class="button is-danger" id="buy_pod" object_type_id="114">Use Emergency Pod</button>');
         }
         
 
@@ -3091,7 +3091,7 @@ function generateSpaceportDisplay() {
 
 
         //console.log("Emptied launch in generateSpaceportDisplay");
-        $('#launch').empty();
+        sel_launch.empty();
 
         html_string += "<div class='white-text'>";
         html_string += "<button class='button is-success' id='viewchange' newview='galaxy'>" +
@@ -3129,10 +3129,10 @@ function generateSpaceportDisplay() {
 
         html_string += "</div>";
 
-        $('#launch').append(html_string);
+        sel_launch.append(html_string);
     } else {
         //console.log("Emptied launch in generateSpaceportDisplay");
-        $('#launch').empty();
+        sel_launch.empty();
     }
 }
 
@@ -3295,13 +3295,13 @@ function pointerDownDesktop(pointer, pointerTileX, pointerTileY) {
     if (pointer.leftButtonDown()) {
 
 
-        $('#click_menu').empty();
-        $('#click_menu').hide();
+        sel_click_menu.empty();
+        sel_click_menu.hide();
 
         // NEW SYSTEM
-        $('#coord_data').empty();
-        $('#coord_data').attr('class', 'message is-info');
-        $('#coord_data').attr('style', 'display:inline-block; margin-top:10px; padding:10px;');
+        sel_coord_data.empty();
+        sel_coord_data.attr('class', 'message is-info');
+        sel_coord_data.attr('style', 'display:inline-block; margin-top:10px; padding:10px;');
 
 
 
@@ -3368,12 +3368,12 @@ function pointerDownDesktop(pointer, pointerTileX, pointerTileY) {
 
 
 
-            $('#coord_data').append("<strong>" + temp_coord.tile_x + "," + temp_coord.tile_y + "</strong>");
+            sel_coord_data.append("<strong>" + temp_coord.tile_x + "," + temp_coord.tile_y + "</strong>");
             if (debug_mode) {
                 $("#coord_data").append(" ID: " + temp_coord.id);
             }
 
-            $('#coord_data').append("<br>");
+            sel_coord_data.append("<br>");
 
 
             if (temp_coord.planet_id && current_view === 'galaxy') {
@@ -3387,7 +3387,7 @@ function pointerDownDesktop(pointer, pointerTileX, pointerTileY) {
 
 
                 if (debug_mode) {
-                    $('#coord_data').append("Belongs to planet id: " + temp_coord.belongs_to_planet_id + "<br>");
+                    sel_coord_data.append("Belongs to planet id: " + temp_coord.belongs_to_planet_id + "<br>");
                 }
             }
 
@@ -3401,23 +3401,23 @@ function pointerDownDesktop(pointer, pointerTileX, pointerTileY) {
 
                     if (monster_type_index !== -1) {
 
-                        $('#coord_data').append("Monster " + monster_types[monster_type_index].name + "<br>");
+                        sel_coord_data.append("Monster " + monster_types[monster_type_index].name + "<br>");
                         if (debug_mode) {
-                            $('#coord_data').append("&nbsp;&nbsp;ID: " + monsters[monster_index].id + "<br>");
-                            $('#coord_data').append("&nbsp;&nbsp;Monster Type ID: " + monster_types[monster_type_index].id + "<br>");
+                            sel_coord_data.append("&nbsp;&nbsp;ID: " + monsters[monster_index].id + "<br>");
+                            sel_coord_data.append("&nbsp;&nbsp;Monster Type ID: " + monster_types[monster_type_index].id + "<br>");
                             if (monsters[monster_index].spawned_event_id) {
-                                $('#coord_data').append("&nbsp;&nbsp;Spawned Event ID:" + monsters[monster_index].spawned_event_id + "<br>");
+                                sel_coord_data.append("&nbsp;&nbsp;Spawned Event ID:" + monsters[monster_index].spawned_event_id + "<br>");
                             }
                         }
 
 
                     }
                 } else if (debug_mode) {
-                    $('#coord_data').append("Coord has monster id " + temp_coord.monster_id + " but we don't have this monster<br>");
+                    sel_coord_data.append("Coord has monster id " + temp_coord.monster_id + " but we don't have this monster<br>");
                 }
             } else if (temp_coord.belongs_to_monster_id) {
                 if (debug_mode) {
-                    $('#coord_data').append("Belongs to monster id: " + temp_coord.belongs_to_monster_id + "<br>");
+                    sel_coord_data.append("Belongs to monster id: " + temp_coord.belongs_to_monster_id + "<br>");
                 }
             }
 
@@ -3431,7 +3431,7 @@ function pointerDownDesktop(pointer, pointerTileX, pointerTileY) {
 
                 displayClickObject(temp_coord.belongs_to_object_id);
                 if (debug_mode) {
-                    $('#coord_data').append("Belongs to object id: " + temp_coord.belongs_to_object_id);
+                    sel_coord_data.append("Belongs to object id: " + temp_coord.belongs_to_object_id);
 
                 }
             }
@@ -3441,16 +3441,16 @@ function pointerDownDesktop(pointer, pointerTileX, pointerTileY) {
                 if (object_type_index !== -1) {
 
                     if (temp_coord.object_amount > 1) {
-                        $('#coord_data').append(temp_coord.object_amount + " ");
+                        sel_coord_data.append(temp_coord.object_amount + " ");
                     }
 
-                    $('#coord_data').append(object_types[object_type_index].name);
+                    sel_coord_data.append(object_types[object_type_index].name);
 
                     if (debug_mode) {
-                        $('#coord_data').append("Object Type ID (No object): " + temp_coord.object_type_id);
+                        sel_coord_data.append("Object Type ID (No object): " + temp_coord.object_type_id);
                     }
 
-                    $('#coord_data').append("<br>");
+                    sel_coord_data.append("<br>");
                 }
 
 
@@ -3461,13 +3461,13 @@ function pointerDownDesktop(pointer, pointerTileX, pointerTileY) {
                 let other_player_index = players.findIndex(function (obj) { return obj && obj.id === temp_coord.player_id; });
 
                 if (other_player_index !== -1) {
-                    $('#coord_data').append("Player " + players[other_player_index].name);
+                    sel_coord_data.append("Player " + players[other_player_index].name);
 
                     if (debug_mode) {
-                        $('#coord_data').append(" ID: " + players[other_player_index].id);
+                        sel_coord_data.append(" ID: " + players[other_player_index].id);
                     }
 
-                    $('#coord_data').append("<br>");
+                    sel_coord_data.append("<br>");
 
                     if (current_view === "galaxy") {
                         let other_ship_index = objects.findIndex(function (obj) {
@@ -3480,13 +3480,13 @@ function pointerDownDesktop(pointer, pointerTileX, pointerTileY) {
                                     obj.id === objects[other_ship_index].object_type_id;
                             });
                             if (other_ship_type_index !== -1) {
-                                $('#coord_data').append("Ship: " + object_types[other_ship_type_index].name);
+                                sel_coord_data.append("Ship: " + object_types[other_ship_type_index].name);
 
                                 if (debug_mode) {
-                                    $('#coord_data').append(" Ship ID: " + objects[other_ship_index].id);
+                                    sel_coord_data.append(" Ship ID: " + objects[other_ship_index].id);
                                 }
 
-                                $('#coord_data').append("<br>");
+                                sel_coord_data.append("<br>");
                             }
 
                         } else {
@@ -3510,46 +3510,46 @@ function pointerDownDesktop(pointer, pointerTileX, pointerTileY) {
             }
 
             if(temp_coord.floor_type_id === 44) {
-                $('#coord_data').append("This is a Spaceport Merchant Spot!<br>");
+                sel_coord_data.append("This is a Spaceport Merchant Spot!<br>");
             }
 
             if (temp_coord.floor_type_id && debug_mode) {
                 let floor_type_index = floor_types.findIndex(function (obj) { return obj && obj.id === temp_coord.floor_type_id; });
                 if (floor_type_index !== -1) {
-                    $('#coord_data').append("Floor: " + floor_types[floor_type_index].name + "<br>");
+                    sel_coord_data.append("Floor: " + floor_types[floor_type_index].name + "<br>");
                 }
             }
 
             if (temp_coord.spawns_monster_type_id) {
-                $('#coord_data').append("Spawns monster type id: " + temp_coord.spawns_monster_type_id);
+                sel_coord_data.append("Spawns monster type id: " + temp_coord.spawns_monster_type_id);
             }
 
             if (temp_coord.area_id) {
                 let area_index = areas.findIndex(function (obj) { return obj && obj.id === temp_coord.area_id; });
 
                 if (area_index !== -1) {
-                    $('#coord_data').append("Area: " + areas[area_index].name + "<br>");
+                    sel_coord_data.append("Area: " + areas[area_index].name + "<br>");
                 } else {
-                    $('#coord_data').append("Area ID: " + temp_coord.area_id + "<br>");
+                    sel_coord_data.append("Area ID: " + temp_coord.area_id + "<br>");
                     socket.emit('request_area_data', { 'area_id': temp_coord.area_id });
                 }
             }
 
             if (temp_coord.structure_id && debug_mode) {
-                $('#coord_data').append("Structure ID: " + temp_coord.structure_id);
+                sel_coord_data.append("Structure ID: " + temp_coord.structure_id);
             }
 
             if(temp_coord.is_engine_hardpoint) {
-                $('#coord_data').append("Engine Hardpoint");
+                sel_coord_data.append("Engine Hardpoint");
             }
 
             if(temp_coord.is_weapon_hardpoint) {
-                $('#coord_data').append("Weapon Hardpoint");
+                sel_coord_data.append("Weapon Hardpoint");
             }
 
         } else {
 
-            $('#coord_data').append("Unable to find coord. Current view is: " + current_view);
+            sel_coord_data.append("Unable to find coord. Current view is: " + current_view);
         }
 
 
@@ -3576,11 +3576,11 @@ function printAssemblyList(assembling_object = false, coord = false) {
     // basic assemblies. Is assembled, no research required, and doesn't need to be assembled in another object type
     if (assembling_object === false) {
 
-        if (!$("#can_assemble_list").is(":visible")) {
+        if (!sel_can_assemble_list.is(":visible")) {
             return false;
         }
 
-        $('#can_assemble_list').empty();
+        sel_can_assemble_list.empty();
         let html_string = "";
 
         html_string += "<div class='message is-info'><div class='message-body'>";
@@ -3685,7 +3685,7 @@ function printAssemblyList(assembling_object = false, coord = false) {
 
         html_string += "</div></div>";
 
-        $('#can_assemble_list').append(html_string);
+        sel_can_assemble_list.append(html_string);
 
 
 
@@ -3731,7 +3731,7 @@ function printAssemblyList(assembling_object = false, coord = false) {
         }
 
 
-        $('#click_menu').append(html_string);
+        sel_click_menu.append(html_string);
 
     }
     else {
@@ -3875,7 +3875,7 @@ function printAssemblyList(assembling_object = false, coord = false) {
 
         html_string += "</div>";
 
-        $('#click_menu').append(html_string);
+        sel_click_menu.append(html_string);
 
 
 
@@ -3967,7 +3967,7 @@ function printAssemblyList(assembling_object = false, coord = false) {
 
         html_string += "</div>";
 
-        $('#click_menu').append(html_string);
+        sel_click_menu.append(html_string);
 
     }
 
@@ -4019,7 +4019,7 @@ function generateAddictionDisplay() {
     }
 
     //console.log("Generating addiction display");
-    $('#addiction').empty();
+    sel_addiction.empty();
 
     // If there are no longer any active addiction linkers, we can remove the div
     let active_count = 0;
@@ -4116,7 +4116,7 @@ function generateAddictionDisplay() {
 
 
     adding_string += "</div></div>";
-    $('#addiction').append(adding_string);
+    sel_addiction.append(adding_string);
 
 
 }
@@ -4125,7 +4125,7 @@ function generateAddictionDisplay() {
 // If we are sending in a specific object index, only show for that one AI
 function generateAiManagementDisplay(object_index = -1) {
 
-    if (!$("#ai_management").is(":visible")) {
+    if (!sel_ai_management.is(":visible")) {
         return false;
     }
 
@@ -4133,7 +4133,7 @@ function generateAiManagementDisplay(object_index = -1) {
         return false;
     }
 
-    $('#ai_management').empty();
+    sel_ai_management.empty();
 
     let html_string = "";
     html_string += "<div class='message is-info message-inline'><div class='message-body'>";
@@ -4168,11 +4168,11 @@ function generateAiManagementDisplay(object_index = -1) {
     html_string += "</div></div>";
 
 
-    $('#click_menu').empty();
-    $('#click_menu').hide();
+    sel_click_menu.empty();
+    sel_click_menu.hide();
 
-    $('#ai_management').empty();
-    $('#ai_management').append(html_string);
+    sel_ai_management.empty();
+    sel_ai_management.append(html_string);
 
 
 }
@@ -4323,7 +4323,7 @@ function generateAssemblyListItemFloor(floor_type, floor_assembly_linkers, coord
 // I THINK We are just using printAssemblyList now??????
 function generateCanAssembleListDeprecated() {
     console.log("%c In generateCanAssembleList. We think this is deprecated", log_danger);
-    $('#can_assemble_list').empty();
+    sel_can_assemble_list.empty();
     can_assemble_list = [];
 
     let player_can_build_something = false;
@@ -4448,14 +4448,14 @@ function generateCanAssembleListDeprecated() {
 
                 html_string += "</td></tr></table>";
 
-                $('#can_assemble_list').append(html_string);
+                sel_can_assemble_list.append(html_string);
             }
         }
     }
 
 
-    if ($('#can_assemble_list').is(':empty')) {
-        $('#can_assemble_list').append("We have a <a target='_blank' href='../site/tutorial'>tutorial</a> that can help you get started");
+    if (sel_can_assemble_list.is(':empty')) {
+        sel_can_assemble_list.append("We have a <a target='_blank' href='../site/tutorial'>tutorial</a> that can help you get started");
     }
 
 }
@@ -4463,7 +4463,7 @@ function generateCanAssembleListDeprecated() {
 function generateEquipmentDisplay() {
 
     // If our inventory isn't visible, don't show anything
-    if (!$("#player_equipment").is(":visible")) {
+    if (!sel_player_equipment.is(":visible")) {
         return false;
     }
 
@@ -4569,23 +4569,23 @@ function generateEquipmentDisplay() {
 
     });
 
-    $('#player_equipment').empty();
-    $('#player_equipment').append(equipment_layout_string);
-    $('#equipment_augment').append(augment_string);
-    $('#equipment_head').append(head_string);
-    $('#equipment_left_arm').append(left_arm_string);
-    $('#equipment_body').append(body_string);
-    $('#equipment_right_arm').append(right_arm_string);
-    $('#equipment_legs').append(legs_string);
+    sel_player_equipment.empty();
+    sel_player_equipment.append(equipment_layout_string);
+    sel_equipment_augment.append(augment_string);
+    sel_equipment_head.append(head_string);
+    sel_equipment_left_arm.append(left_arm_string);
+    sel_equipment_body.append(body_string);
+    sel_equipment_right_arm.append(right_arm_string);
+    sel_equipment_legs.append(legs_string);
 
     // For each slot, show how full it is
 
-    $('#equipment_augment').append("<br>" + augment_capacity_used + "/Infinite Cap Used");
-    $('#equipment_head').append("<br>" + head_capacity_used + "/5 Cap Used");
-    $('#equipment_left_arm').append("<br>" + left_arm_capacity_used + "/3 Cap Used");
-    $('#equipment_body').append("<br>" + body_capacity_used + "/7 Cap Used");
-    $('#equipment_right_arm').append("<br>" + right_arm_capacity_used + "/3 Cap Used");
-    $('#equipment_legs').append("<br>" + legs_capacity_used + "/4 Cap Used");
+    sel_equipment_augment.append("<br>" + augment_capacity_used + "/Infinite Cap Used");
+    sel_equipment_head.append("<br>" + head_capacity_used + "/5 Cap Used");
+    sel_equipment_left_arm.append("<br>" + left_arm_capacity_used + "/3 Cap Used");
+    sel_equipment_body.append("<br>" + body_capacity_used + "/7 Cap Used");
+    sel_equipment_right_arm.append("<br>" + right_arm_capacity_used + "/3 Cap Used");
+    sel_equipment_legs.append("<br>" + legs_capacity_used + "/4 Cap Used");
 
     // and show stats on the body type
     let body_index = objects.findIndex(function (obj) { return obj && obj.id === players[client_player_index].body_id; });
@@ -4660,7 +4660,7 @@ function generateEquipmentDisplay() {
 function generateInventoryDisplay() {
 
     // If our inventory isn't visible, don't show anything
-    if (!$("#inventory").is(":visible")) {
+    if (!sel_inventory.is(":visible")) {
         return false;
     }
 
@@ -4670,7 +4670,7 @@ function generateInventoryDisplay() {
     }
 
     //console.log("%c Generating inventory display", log_success);
-    $('#inventory').empty();
+    sel_inventory.empty();
 
     inventory_items.forEach(function (inventory_item, i) {
         // Only use our inventory items for the main display
@@ -4785,7 +4785,7 @@ function generateInventoryDisplay() {
 
         // End wrapper div
         adding_string += "</div>";
-        $('#inventory').append(adding_string);
+        sel_inventory.append(adding_string);
 
         */
     });
@@ -4923,7 +4923,7 @@ function generateInventoryItemDisplay(inventory_item_index) {
         $("#inventory_item_" + inventory_items[inventory_item_index].id).append(adding_string);
     } else {
         //console.log("Appending new inventory item");
-        $('#inventory').append(adding_string);
+        sel_inventory.append(adding_string);
     }
 
 
@@ -4932,7 +4932,7 @@ function generateInventoryItemDisplay(inventory_item_index) {
 
 function generateNonAiManagementDisplay(object_index = -1) {
 
-    if (!$("#object_management").is(":visible")) {
+    if (!sel_object_management.is(":visible")) {
         return false;
     }
 
@@ -4942,7 +4942,7 @@ function generateNonAiManagementDisplay(object_index = -1) {
 
     console.log("In generateNonAiManagementDisplay with object_index: " + object_index);
 
-    $('#object_management').empty();
+    sel_object_management.empty();
 
     let html_string = "";
     html_string += "<div class='message is-info message-inline'><div class='message-body'>";
@@ -4999,11 +4999,11 @@ function generateNonAiManagementDisplay(object_index = -1) {
     html_string += "</div></div>";
 
 
-    $('#click_menu').empty();
-    $('#click_menu').hide();
+    sel_click_menu.empty();
+    sel_click_menu.hide();
 
-    $('#object_management').empty();
-    $('#object_management').append(html_string);
+    sel_object_management.empty();
+    sel_object_management.append(html_string);
 
     if (object_index !== -1) {
         $("#objectcolor_" + objects[object_index].id).spectrum({
@@ -5019,7 +5019,7 @@ function generateManagementOptionsDisplay() {
 
     console.log("In generateManagementOptionsDisplay");
 
-    if (!$("#management_options").is(":visible")) {
+    if (!sel_management_options.is(":visible")) {
         return false;
     }
 
@@ -5035,8 +5035,8 @@ function generateManagementOptionsDisplay() {
     html_string += " <button class='button is-success' id='showtaskoptions'>Tasks</button> ";
     html_string += "</div></div>";
 
-    $('#management_options').empty();
-    $('#management_options').append(html_string);
+    sel_management_options.empty();
+    sel_management_options.append(html_string);
 }
 
 function generateAreaDisplay(area_id) {
@@ -5142,7 +5142,7 @@ function generateAreaDisplay(area_id) {
 
 function generateAreaManagementDisplay() {
 
-    if (!$("#area_management").is(":visible")) {
+    if (!sel_area_management.is(":visible")) {
         return false;
     }
 
@@ -5179,15 +5179,15 @@ function generateAreaManagementDisplay() {
 
     html_string += "</div></div>";
 
-    $('#area_management').empty();
-    $('#area_management').append(html_string);
+    sel_area_management.empty();
+    sel_area_management.append(html_string);
 }
 
 
 // Basic info for the local market
 function generateMarketDisplay() {
 
-    if (!$("#market").is(":visible")) {
+    if (!sel_market.is(":visible")) {
         return false;
     }
 
@@ -5259,8 +5259,8 @@ function generateMarketDisplay() {
 
     html_string += "</div></div>";
 
-    $('#market').empty();
-    $('#market').append(html_string);
+    sel_market.empty();
+    sel_market.append(html_string);
 }
 
 function generateMarketLinkerDisplay(market_linker_id) {
@@ -5544,7 +5544,7 @@ function generateObjectDisplay(object_id) {
 
 function generateShipManagementDisplay() {
 
-    if (!$("#ship_management").is(":visible")) {
+    if (!sel_ship_management.is(":visible")) {
         return false;
     }
 
@@ -5589,8 +5589,8 @@ function generateShipManagementDisplay() {
 
     html_string += "</div></div>";
 
-    $('#ship_management').empty();
-    $('#ship_management').append(html_string);
+    sel_ship_management.empty();
+    sel_ship_management.append(html_string);
 }
 
 function generateTakeBuyMenu(object_id) {
@@ -5718,16 +5718,16 @@ function generateTakeBuyMenu(object_id) {
 
         take_string += "</div>";
 
-        $('#click_menu').append(take_string);
+        sel_click_menu.append(take_string);
 
-        $('#click_menu').append("<br>");
+        sel_click_menu.append("<br>");
 
 }
 
 
 function generateTaskDisplay() {
 
-    if (!$("#task_management").is(":visible")) {
+    if (!sel_task_management.is(":visible")) {
         return false;
     }
 
@@ -5742,7 +5742,7 @@ function generateTaskDisplay() {
 
     
 
-    $('#task_management').empty();
+    sel_task_management.empty();
 
     let html_string = "";
     html_string += "<div class='message is-info message-inline'><div class='message-body'>";
@@ -5785,10 +5785,10 @@ function generateTaskDisplay() {
     html_string += "</div></div>";
 
 
-    $('#click_menu').empty();
-    $('#click_menu').hide();
+    sel_click_menu.empty();
+    sel_click_menu.hide();
 
-    $('#task_management').append(html_string);
+    sel_task_management.append(html_string);
 
 
 }
@@ -9924,12 +9924,12 @@ function showClickMenu(pointer) {
 
     //console.log("%c Showing click menu at " + mouse_x + "x" + mouse_y, log_warning);
 
-    $('#click_menu').css({
+    sel_click_menu.css({
         'top': mouse_y, 'left': mouse_x, 'position': 'absolute', 'max-height': '400px', 'max-width': '640px',
         'overflow-y': 'scroll', 'overflow-x': 'scroll', 'padding': '10px'
     }).fadeIn('fast');
 
-    $('#click_menu').empty();
+    sel_click_menu.empty();
 
     //console.log("Got tile x, tile y of click as: " + tile_x + "," + tile_y);
 
@@ -10046,15 +10046,15 @@ function showClickMenu(pointer) {
             });
 
             if (player_is_attacking) {
-                $('#click_menu').append("<button id='attackstop_player_" + coord.player_id + "' " +
+                sel_click_menu.append("<button id='attackstop_player_" + coord.player_id + "' " +
                     "player_id='" + coord.player_id + " class='button is-warning is-small'>Stop Attacking Player</button>");
             } else {
 
-                $('#click_menu').append("<button id='attack_player_" + coord.player_id + "' " +
+                sel_click_menu.append("<button id='attack_player_" + coord.player_id + "' " +
                     "player_id='" + coord.player_id + "' class='button is-warning is-small' source='player-generic'>Attack Player</button>");
             }
 
-            $('#click_menu').append("<br><a target='_blank' href='../player/view/" + players[other_player_index].id + "'>View Profile</a>");
+            sel_click_menu.append("<br><a target='_blank' href='../player/view/" + players[other_player_index].id + "'>View Profile</a>");
         }
 
 
@@ -10072,8 +10072,8 @@ function showClickMenu(pointer) {
 
                     if (object_types[object_type_index].drop_requires_floor_type_class === 'galaxy') {
 
-                        $('#click_menu').append("<br>" + object_types[object_type_index].name + ": ");
-                        $('#click_menu').append(
+                        sel_click_menu.append("<br>" + object_types[object_type_index].name + ": ");
+                        sel_click_menu.append(
                             "<button id='drop_" + inventory_item.id + "' x='" + tile_x + "' y='" + tile_y + "' class='button is-default'>Drop</button>"
                         );
                     }
@@ -10157,7 +10157,7 @@ function showClickMenu(pointer) {
 
                             inventory_options_string += "</div>";
 
-                            $('#click_menu').append(inventory_options_string);
+                            sel_click_menu.append(inventory_options_string);
 
 
 
@@ -10171,7 +10171,7 @@ function showClickMenu(pointer) {
 
                         if (floor_type_index !== -1) {
 
-                            $('#click_menu').append("<button id='replacefloor_" + inventory_item.id + "' " +
+                            sel_click_menu.append("<button id='replacefloor_" + inventory_item.id + "' " +
                                 "x='" + tile_x + "' y='" + tile_y + "' class='button is-default'>Replace Floor: " + floor_types[floor_type_index].name + "</button><br>")
                         }
                     }
@@ -10188,8 +10188,8 @@ function showClickMenu(pointer) {
 
                     if(floor_type_index !== -1) {
 
-                        $('#click_menu').append(floor_types[floor_type_index].name + ": ");
-                        $('#click_menu').append("<button id='replacefloor_" + inventory_item.id + "' " +
+                        sel_click_menu.append(floor_types[floor_type_index].name + ": ");
+                        sel_click_menu.append("<button id='replacefloor_" + inventory_item.id + "' " +
                             "x='" + tile_x + "' y='" + tile_y + "' class='btn btn-default'>Replace Floor</button><br>")
                     }
                 }
@@ -10207,7 +10207,7 @@ function showClickMenu(pointer) {
             let planet_index = planets.findIndex(function (obj) { return obj && obj.id === coord.planet_id; });
             if (planet_index !== -1 && planets[planet_index].player_id === client_player_id) {
 
-                $('#click_menu').append("<button id='manage_areas' class='button is-default'>Manage Areas</button>");
+                sel_click_menu.append("<button id='manage_areas' class='button is-default'>Manage Areas</button>");
 
 
                 // If the coord doesn't already have an area, give us the option to add it to an area
@@ -10216,7 +10216,7 @@ function showClickMenu(pointer) {
                     for (let i = 0; i < areas.length; i++) {
                         console.log("Checking area id: " + areas[i].id);
                         if (areas[i] && areas[i].owner_id === players[client_player_index].id && areas[i].planet_id === planets[planet_index].id) {
-                            $('#click_menu').append("<button id='addtoarea_" + coord.id + "' planet_coord_id='"
+                            sel_click_menu.append("<button id='addtoarea_" + coord.id + "' planet_coord_id='"
                                 + coord.id + "' area_id='" + areas[i].id + "' class='button is-default'>Add To Area: " + areas[i].name + "</button>");
                         }
                     }
@@ -10249,8 +10249,8 @@ function showClickMenu(pointer) {
 
                             if (floor_type_index !== -1) {
 
-                                $('#click_menu').append(floor_types[floor_type_index].name + ": ");
-                                $('#click_menu').append("<button id='replacefloor_" + inventory_item.id + "' " +
+                                sel_click_menu.append(floor_types[floor_type_index].name + ": ");
+                                sel_click_menu.append("<button id='replacefloor_" + inventory_item.id + "' " +
                                     "x='" + tile_x + "' y='" + tile_y + "' class='button is-default'>Add Floor</button><br>")
                             }
                         }
@@ -10285,11 +10285,11 @@ function showClickMenuFloor(coord) {
 
 
             if (repairing_linker_index === -1) {
-                $('#click_menu').append("<button id='repair_" + coord.id + "' " +
+                sel_click_menu.append("<button id='repair_" + coord.id + "' " +
                     "coord_id='" + coord.id + "' class='button is-success'>" +
                     "Repair</button><br>");
             } else {
-                $('#click_menu').append("<button id='repairstop_" + coord.id + "' " +
+                sel_click_menu.append("<button id='repairstop_" + coord.id + "' " +
                     "coord_id='" + coord.id + "' class='button is-warning is-small'>" +
                     "Stop Repairing</button>");
             }
@@ -10319,26 +10319,26 @@ function showClickMenuMonster(coord) {
         });
 
         if (player_is_attacking) {
-            $('#click_menu').append("<button id='attackstop_monster_" + monsters[monster_index].id + "' " +
+            sel_click_menu.append("<button id='attackstop_monster_" + monsters[monster_index].id + "' " +
                 "monster_id='" + monsters[monster_index].id + "' class='button is-warning is-small'>" +
                 "Stop Attacking " + monster_types[monster_type_index].name + "</button><br>");
         } else {
 
             // Generally, a monster's base attack is about 10% of HP - give it some wiggle room with / 8 instead of a straight / 10
             if(monster_types[monster_type_index].hp && monster_types[monster_type_index].hp / 8 > (players[client_player_index].max_hp) ) {
-                $('#click_menu').append("<div class='notification is-danger' style='padding:10px;'>WARNING: This monster can kill you in 1 hit</div><br>");
+                sel_click_menu.append("<div class='notification is-danger' style='padding:10px;'>WARNING: This monster can kill you in 1 hit</div><br>");
             }
 
 
 
-            $('#click_menu').append("<button id='attack_" + monsters[monster_index].id + "' " +
+            sel_click_menu.append("<button id='attack_" + monsters[monster_index].id + "' " +
                 "monster_id='" + monsters[monster_index].id + "' class='button is-warning is-small'>" +
                 "Attack " + monster_types[monster_type_index].name + "</button><br>");
         }
 
         // It's also possible that the monster type is something that spawns stuff
         if (monsters[monster_index].has_spawned_object) {
-            $('#click_menu').append("<button class='button is-default' id='pickup_" + coord.monster_id +
+            sel_click_menu.append("<button class='button is-default' id='pickup_" + coord.monster_id +
                 "' monster_id='" + coord.monster_id + "'>Harvest " + monster_types[monster_type_index].name + "</button><br>");
         }
 
@@ -10365,7 +10365,7 @@ function showClickMenuNpc(coord) {
     });
 
     if (player_is_attacking) {
-        $('#click_menu').append("<button id='attackstop_" + npcs[npc_index].id +
+        sel_click_menu.append("<button id='attackstop_" + npcs[npc_index].id +
             "' npc_id='" + npcs[npc_index].id + "' class='button is-warning is-small'>Stop Attacking</button>");
     } else {
 
@@ -10373,7 +10373,7 @@ function showClickMenuNpc(coord) {
         if (current_view === 'galaxy' && !npcs[npc_index].ship_id) {
             // no pod attack
         } else {
-            $('#click_menu').append("<button id='attack_" + npcs[npc_index].id + "' npc_id='" +
+            sel_click_menu.append("<button id='attack_" + npcs[npc_index].id + "' npc_id='" +
                 npcs[npc_index].id + "' class='button is-warning is-small'>Attack NPC " + npcs[npc_index].name + "</button><br>");
         }
 
@@ -10382,32 +10382,32 @@ function showClickMenuNpc(coord) {
 
     if (!npcs[npc_index].enslaved_to_player_id && !npcs[npc_index].enslaved_to_npc_id) {
         // We can ask the npc if they want to work for us on our ship
-        $('#click_menu').append("<button id='work' class='button'>Invite To Work On Ship (Testing)</button><br>");
+        sel_click_menu.append("<button id='work' class='button'>Invite To Work On Ship (Testing)</button><br>");
     }
     else if (npcs[npc_index].enslaved_to_player_id && npcs[npc_index].enslaved_to_player_id === client_player_id) {
-        $('#click_menu').append("<button id='work_order_or_enslavement_order'>Force To Work On Ship</button><br>");
+        sel_click_menu.append("<button id='work_order_or_enslavement_order'>Force To Work On Ship</button><br>");
     } else {
-        $('#click_menu').append(npcs[npc_index].name + " isn't interested in you");
+        sel_click_menu.append(npcs[npc_index].name + " isn't interested in you");
     }
 
 
     // If the NPC wants something, we can potentially give them some of that to increase our relationship with them
     if (npcs[npc_index].wants_object_type_id) {
         let wanted_object_type_index = object_types.findIndex(function (obj) { return obj && obj.id === npcs[npc_index].wants_object_type_id; });
-        $('#click_menu').append(npcs[npc_index].name + " wants " + object_types[wanted_object_type_index].name);
+        sel_click_menu.append(npcs[npc_index].name + " wants " + object_types[wanted_object_type_index].name);
 
         // Go through our inventory and, if we have some, give us the option of giving them to the npc
         for (let i = 0; i < inventory_items.length; i++) {
             if (typeof inventory_items[i] !== 'undefined' && inventory_items[i].player_id === client_player_id &&
                 inventory_items[i].object_type_id === npcs[npc_index].wants_object_type_id) {
-                $('#click_menu').append("<button id='givenpc_" + inventory_items[i].id + "' npc_id='" +
+                sel_click_menu.append("<button id='givenpc_" + inventory_items[i].id + "' npc_id='" +
                     npcs[npc_index].id + "' inventory_item_id='" + inventory_items[i].id +
                     "' class='button is-success is-small'>Give " + npcs[npc_index].name + " a " +
                     object_types[wanted_object_type_index].name + "</button>");
             }
         }
     } else {
-        $('#click_menu').append("<br>" + npcs[npc_index].name + " has no desires<br>");
+        sel_click_menu.append("<br>" + npcs[npc_index].name + " has no desires<br>");
     }
 
     // and buying inventory
@@ -10420,7 +10420,7 @@ function showClickMenuNpc(coord) {
 
                 let inventory_object_type_index = getObjectTypeIndex(inventory_items[i].object_type_id);
 
-                $('#click_menu').append("<img style='width:28px;'" +
+                sel_click_menu.append("<img style='width:28px;'" +
                 " src='../images/" + urlName(object_types[inventory_object_type_index].name) + ".png'>" +
                 "<button class='button is-small' id='buy_" + inventory_items[i].id + "' npc_id='" + npcs[npc_index].id + "' " +
                 " inventory_item_id='" + inventory_items[i].id + "'>Buy $" + inventory_items[i].price + "</button><br>");
@@ -10434,7 +10434,7 @@ function showClickMenuNpc(coord) {
 
     if(debug_mode) {
         if(npc_inventory_item_count === 0) {
-            $('#click_menu').append("<br>No inventory items");
+            sel_click_menu.append("<br>No inventory items");
         }               
     }
 
@@ -10468,7 +10468,7 @@ function showClickMenuObject(coord) {
 
     // If the object type is a stairs, and the player is standing on the coord, let them move onto it to move up
     if(object_types[object_type_index].is_portal && coord.id === client_player_info.coord.id) {
-        $('#click_menu').append("<button id='moveportal' class='button is-default'>Go Back</button>");
+        sel_click_menu.append("<button id='moveportal' class='button is-default'>Go Back</button>");
         
     }
 
@@ -10479,7 +10479,7 @@ function showClickMenuObject(coord) {
 
         // TODO probably should find a better way of distinguishing between things that are mined over time, or insta-picked up
         if (objects[object_index].has_spawned_object && !object_types[object_type_index].can_be_mined) {
-            $('#click_menu').append("<button class='button is-default' id='pickup_" + coord.object_id + "' object_id='" + coord.object_id + "'>Harvest</button><br>");
+            sel_click_menu.append("<button class='button is-default' id='pickup_" + coord.object_id + "' object_id='" + coord.object_id + "'>Harvest</button><br>");
 
         }
 
@@ -10497,19 +10497,19 @@ function showClickMenuObject(coord) {
 
         if (is_mining) {
             if(coord.object_id) {
-                $('#click_menu').append("<button id='minestop_object_" + coord.object_id + "' object_id='" + coord.object_id +
+                sel_click_menu.append("<button id='minestop_object_" + coord.object_id + "' object_id='" + coord.object_id +
                 "' class='button is-default is-small'>Stop Mining</button><br>");
             } else if(coord.belongs_to_object_id) {
-                $('#click_menu').append("<button id='minestop_object_" + coord.belongs_to_object_id + "' object_id='" + coord.belongs_to_object_id +
+                sel_click_menu.append("<button id='minestop_object_" + coord.belongs_to_object_id + "' object_id='" + coord.belongs_to_object_id +
                 "' class='button is-default is-small'>Stop Mining</button><br>");
             }
             
         } else if (objects[object_index].has_spawned_object) {
             if(coord.object_id) {
-                $('#click_menu').append("<button id='mine_object_" + coord.object_id + "' object_id='" + coord.object_id +
+                sel_click_menu.append("<button id='mine_object_" + coord.object_id + "' object_id='" + coord.object_id +
                 "' class='button is-default is-small'>Mine</button><br>");
             } else if(coord.belongs_to_object_id) {
-                $('#click_menu').append("<button id='mine_object_" + coord.belongs_to_object_id + "' object_id='" + coord.belongs_to_object_id +
+                sel_click_menu.append("<button id='mine_object_" + coord.belongs_to_object_id + "' object_id='" + coord.belongs_to_object_id +
                 "' class='button is-default is-small'>Mine</button><br>");
             }
             
@@ -10556,16 +10556,16 @@ function showClickMenuObject(coord) {
                 // Turns out claiming pods is a mess (non-abandoned pods everywhere)
                 if(object_types[object_type_index].id !== 114) {
 
-                    $('#click_menu').append("<button id='claimship_" + objects[object_index].id +
+                    sel_click_menu.append("<button id='claimship_" + objects[object_index].id +
                     "' class='button is-info is-small'>Claim Ship</button><br>");
                 }
                 
 
                 if(objects[client_ship_index].object_type_id === 114) {
-                    $('#click_menu').append("<button id='switchship_" + objects[object_index].id +
+                    sel_click_menu.append("<button id='switchship_" + objects[object_index].id +
                     "' class='button is-warning is-small'>Claim and Switch To Ship (Abandons Pod)</button><br>");
                 } else {
-                    $('#click_menu').append("<button id='switchship_" + objects[object_index].id +
+                    sel_click_menu.append("<button id='switchship_" + objects[object_index].id +
                     "' class='button is-warning is-small'>Claim and Switch To Ship</button><br>");
                 }
                 
@@ -10576,19 +10576,19 @@ function showClickMenuObject(coord) {
 
             // If we are in a pod, it will be abandoned, otherwise it will still be our ship
             if(objects[client_ship_index].object_type_id === 114) {
-                $('#click_menu').append("<button id='switchship_" + objects[object_index].id + "' object_id='" + objects[object_index].id +
+                sel_click_menu.append("<button id='switchship_" + objects[object_index].id + "' object_id='" + objects[object_index].id +
                 "' class='button is-warning is-small'>Switch To (Abandons Pod)</button>");
             } else {
 
         
 
 
-                $('#click_menu').append("<button id='switchship_" + objects[object_index].id + "' object_id='" + objects[object_index].id +
+                sel_click_menu.append("<button id='switchship_" + objects[object_index].id + "' object_id='" + objects[object_index].id +
                 "' class='button is-warning is-small'>Switch To</button>");
 
                 // Only show the Dock At Azure Planet button if the ship is not dockable itself
                 if(!object_types[object_type_index].is_dockable) {
-                    $('#click_menu').append("<button id='dockcommand_" + objects[object_index].id + "' object_id='" + objects[object_index].id +
+                    sel_click_menu.append("<button id='dockcommand_" + objects[object_index].id + "' object_id='" + objects[object_index].id +
                     "' class='button is-warning is-small'>Dock At Azure Planet</button><br>");
                 }
                 
@@ -10616,10 +10616,10 @@ function showClickMenuObject(coord) {
         // I think we don't need these here
         /*
         if(player_is_attacking) {
-            $('#click_menu').append("<button id='attackstop_object_" + coord.object_id + "' " +
+            sel_click_menu.append("<button id='attackstop_object_" + coord.object_id + "' " +
                 "object_id='" + coord.object_id + " class='btn btn-warning btn-sm'>Stop Attacking</button>");
         } else {
-            $('#click_menu').append("<button id='attack_object_" + coord.object_id + "' " +
+            sel_click_menu.append("<button id='attack_object_" + coord.object_id + "' " +
                 "object_id='" + coord.object_id + "' class='btn btn-warning btn-sm' source='ship_options'>Attack</button>");
             attack_object_shown = true;
         }
@@ -10628,7 +10628,7 @@ function showClickMenuObject(coord) {
         // If it's Our ship, we can also set a destination
         if (coord.object_id === players[client_player_index].ship_id || coord.belongs_to_object_id === players[client_player_index].ship_id) {
 
-            $('#click_menu').append("<button class='button is-info' id='showautopilot' " +
+            sel_click_menu.append("<button class='button is-info' id='showautopilot' " +
                 "top='" + mouse_y + "' left='" + mouse_x + "'>Set Autopilot Destination</button>");
         }
 
@@ -10637,7 +10637,7 @@ function showClickMenuObject(coord) {
         // Gotta make sure the ships are close enough to each other
 
         // Not actually sure I want to go that route, and just focus on is_dockable stuff
-        //$('#click_menu').append("<button class='button' id='moveairlock_" + objects[object_index].id + "'>Move Through Airlocks</button>");
+        //sel_click_menu.append("<button class='button' id='moveairlock_" + objects[object_index].id + "'>Move Through Airlocks</button>");
 
 
 
@@ -10650,7 +10650,7 @@ function showClickMenuObject(coord) {
 
         // For now just limit the ability add rules to the person that created the object
         if(objects[object_index].player_id === client_player_id) {
-            $('#click_menu').append("<button id='manage_" + objects[object_index].id +
+            sel_click_menu.append("<button id='manage_" + objects[object_index].id +
                 "' object_id='" + objects[object_index].id + "' class='button is-default is-small'>Manage</button>");
         }
     }
@@ -10680,7 +10680,7 @@ function showClickMenuObject(coord) {
 
             if (showing_elevator_levels.length > 0) {
                 for (let i = 0; i < showing_elevator_levels.length; i++) {
-                    $('#click_menu').append("<button id='use_elevator_" + showing_elevator_levels[i].object_id + "'>Head To Level " + showing_elevator_levels[i].level + "</button><br>");
+                    sel_click_menu.append("<button id='use_elevator_" + showing_elevator_levels[i].object_id + "'>Head To Level " + showing_elevator_levels[i].level + "</button><br>");
                 }
             }
         }
@@ -10717,11 +10717,11 @@ function showClickMenuObject(coord) {
         }
 
         if (repairing_linker_index === -1 && show_repair_option) {
-            $('#click_menu').append("<button id='repair_" + coord.id + "' " +
+            sel_click_menu.append("<button id='repair_" + coord.id + "' " +
                 "coord_id='" + coord.id + "' class='button is-success'>" +
                 "Repair</button><br>");
         } else if (repairing_linker_index !== -1) {
-            $('#click_menu').append("<button id='repairstop_" + coord.id + "' " +
+            sel_click_menu.append("<button id='repairstop_" + coord.id + "' " +
                 "coord_id='" + coord.id + "' class='button is-warning is-small'>" +
                 "Stop Repairing</button>");
         }
@@ -10770,10 +10770,10 @@ function showClickMenuObject(coord) {
 
                 put_in_string += "</div>";
 
-                $('#click_menu').append(put_in_string);
+                sel_click_menu.append(put_in_string);
 
                 /*
-                $('#click_menu').append("<img style='width:28px;' src='../" + urlName(object_types[object_type_index].name) + ".png'>" +
+                sel_click_menu.append("<img style='width:28px;' src='../" + urlName(object_types[object_type_index].name) + ".png'>" +
                     "<button id='place_" + inventory_item.id + "' class='button is-default' storage_object_id='" + objects[object_index].id + "' " +
                     " inventory_item_id='" + inventory_item.id + "'>Put In</button><br>");
                 */
@@ -10787,7 +10787,7 @@ function showClickMenuObject(coord) {
     // Commented out: && objects[object_index].player_id === player_id
     // Reason: We are going to do multiple tiers of things that can have inventory. Higher tiers will be 'smart' with rules
     if (object_types[object_type_index].is_converter) {
-        $('#click_menu').append("<div>");
+        sel_click_menu.append("<div>");
 
         
         let conversion_linkers = object_type_conversion_linkers.filter(linker => linker.object_type_id === object_types[object_type_index].id);
@@ -10797,7 +10797,7 @@ function showClickMenuObject(coord) {
 
 
                 if (conversion_linker.input_type === "hp") {
-                    $('#click_menu').append("<button class='button is-default' id='convert_hp' converter_object_id='" + objects[object_index].id + "'>Get paid for some life force</button>");
+                    sel_click_menu.append("<button class='button is-default' id='convert_hp' converter_object_id='" + objects[object_index].id + "'>Get paid for some life force</button>");
                 }
 
                 if (conversion_linker.input_type === "object_type") {
@@ -10808,7 +10808,7 @@ function showClickMenuObject(coord) {
                     player_inventory_items.forEach(function (inventory_item) {
                         let item_object_type_index = object_types.findIndex(function (obj) { return obj && obj.id === inventory_item.object_type_id; });
                         if (item_object_type_index !== -1 && object_types[item_object_type_index].id === conversion_linker.input_object_type_id) {
-                            $('#click_menu').append(object_types[item_object_type_index].name +
+                            sel_click_menu.append(object_types[item_object_type_index].name +
                                 "<button class='button is-default' id='convert_" + inventory_item.id + "' converter_object_id='" + objects[object_index].id + "' " +
                                 " inventory_item_id='" + inventory_item.id + "'>Convert</button><br>");
                         }
@@ -10820,7 +10820,7 @@ function showClickMenuObject(coord) {
 
 
 
-        $('#click_menu').append("</div>");
+        sel_click_menu.append("</div>");
     }
 
 
@@ -10832,7 +10832,7 @@ function showClickMenuObject(coord) {
         for (let i = 0; i < can_be_dropped_object_types.length; i++) {
             let inventory_item_index = inventory_items.findIndex(function (obj) { return obj && obj.player_id === client_player_id && obj.object_type_id === can_be_dropped_object_types[i].id; });
             if (inventory_item_index !== -1) {
-                $('#click_menu').append(can_be_dropped_object_types[i].name + " <button id='drop_" + inventory_items[inventory_item_index].id + "_1' x='" + coord.tile_x +
+                sel_click_menu.append(can_be_dropped_object_types[i].name + " <button id='drop_" + inventory_items[inventory_item_index].id + "_1' x='" + coord.tile_x +
                     "' y='" + coord.tile_y + "' amount='1' class='button is-default is-small'>Place On</button>");
             }
         }
@@ -10922,7 +10922,7 @@ function showClickMenuObject(coord) {
     
     
     
-                    $('#click_menu').append(html_string);
+                    sel_click_menu.append(html_string);
     
                 }
             }
@@ -10951,7 +10951,7 @@ function showClickMenuObject(coord) {
                     if (research_linker_index !== -1 && player_research_linkers[research_linker_index].researches_completed >= object_types[inventory_item_object_type_index].research_times_required) {
     
                     } else if (object_types[inventory_item_object_type_index].can_be_researched) {
-                        $('#click_menu').append(object_types[inventory_item_object_type_index].name +
+                        sel_click_menu.append(object_types[inventory_item_object_type_index].name +
                             "<button id='research_" + inventory_item.id + "' object_id='" + objects[object_index].id +
                             "' class='button is-default is-small'>Research</button><br>");
                     }
@@ -10967,11 +10967,11 @@ function showClickMenuObject(coord) {
     // FORGE
     if (objects[object_index].object_type_id === 177) {
 
-        $('#click_menu').append("<div style='margin-bottom:10px;'>");
+        sel_click_menu.append("<div style='margin-bottom:10px;'>");
 
         printAssemblyList(objects[object_index], coord);
 
-        $('#click_menu').append("</div>");
+        sel_click_menu.append("</div>");
 
     }
 
@@ -11041,7 +11041,7 @@ function showClickMenuObject(coord) {
 
                             // 1. Its our auto doc
                             if (objects[object_index].player_id && client_player_id && objects[object_index].player_id === client_player_id) {
-                                $('#click_menu').append("<img style='width:32px; height:32px;' " +
+                                sel_click_menu.append("<img style='width:32px; height:32px;' " +
                                     "src='../images/" + urlName(object_types[inventory_item_object_type_index].name) + ".png'> " +
                                     "<button id='equip_" + inventory_items[i].id + "_" + object_type_equipment_linkers[j].equip_slot +
                                     "' inventory_item_id='" + inventory_items[i].id + "' equip_slot='" + object_type_equipment_linkers[j].equip_slot + "' " +
@@ -11052,7 +11052,7 @@ function showClickMenuObject(coord) {
                             if (objects[object_index].npc_id && object_npc_index !== -1) {
                                 let npc_surgery_level = 1 + Math.floor(difficult_level_modifier * Math.sqrt(npcs[object_npc_index].surgery_skill_points));
 
-                                $('#click_menu').append("<img style='width:32px; height:32px;' " +
+                                sel_click_menu.append("<img style='width:32px; height:32px;' " +
                                     "src='../images/" + urlName(object_types[inventory_item_object_type_index].name) + ".png'> " +
                                     "<button id='equip_" + inventory_items[i].id + "_" + object_type_equipment_linkers[j].equip_slot +
                                     "' inventory_item_id='" + inventory_items[i].id + "' equip_slot='" + object_type_equipment_linkers[j].equip_slot + "' " +
@@ -11074,7 +11074,7 @@ function showClickMenuObject(coord) {
 
     //  AUTO DOC Show some cool auto doc implanting options
     if (objects[object_index].object_type_id === 376) {
-        $('#click_menu').append("<button class='button is-info' id='viewchange_virtual' newview='virtual'>Enter Virtual Realm</button>");
+        sel_click_menu.append("<button class='button is-info' id='viewchange_virtual' newview='virtual'>Enter Virtual Realm</button>");
 
     }
 
@@ -11082,7 +11082,7 @@ function showClickMenuObject(coord) {
     /*
     if(objects[object_index].object_type_id === 185) {
         if(objects[object_index].player_id === player_id) {
-            $('#click_menu').append("<button id='manage_" + objects[object_index].id + "' object_id='" + objects[object_index].id + "'>Manage</button>");
+            sel_click_menu.append("<button id='manage_" + objects[object_index].id + "' object_id='" + objects[object_index].id + "'>Manage</button>");
         }
 
     }
@@ -11092,17 +11092,17 @@ function showClickMenuObject(coord) {
 
     // Switch Body Options
     if (object_types[object_type_index].race_id) {
-        $('#click_menu').append("<button id='switchbody_" + objects[object_index].id +
+        sel_click_menu.append("<button id='switchbody_" + objects[object_index].id +
             "_nomove' move_inventory='no' class='button is-warning is-small'>Switch To Body</button>");
 
-        $('#click_menu').append("<button id='switchbody_" + objects[object_index].id +
+        sel_click_menu.append("<button id='switchbody_" + objects[object_index].id +
             "_yesmove' move_inventory='yes' class='button is-warning is-small'>Switch to Body and Move Inventory</button>");
     }
 
 
     // Pick Up
     if (object_types[object_type_index].can_pick_up) {
-        $('#click_menu').append("<button id='pickup_" + coord.object_id + "' class='button is-default is-small' object_id='" + coord.object_id + "'>Pick Up</button><br>");
+        sel_click_menu.append("<button id='pickup_" + coord.object_id + "' class='button is-default is-small' object_id='" + coord.object_id + "'>Pick Up</button><br>");
     }
 
 
@@ -11110,7 +11110,7 @@ function showClickMenuObject(coord) {
     if (objects[object_index].player_id === client_player_id) {
         let options_string = "<br><button class='button is-default is-small is-primary' id='manage_" + objects[object_index].id + "' object_id='" + objects[object_index].id + "'>Manage</button>";
 
-        $('#click_menu').append(options_string);
+        sel_click_menu.append(options_string);
     }
 
     // Salvaging
@@ -11157,7 +11157,7 @@ function showClickMenuObject(coord) {
 
         if (player_is_attacking) {
             console.log("Player is attacking the object");
-            $('#click_menu').append("<button id='attackstop_object_" + objects[object_index].id + "' " +
+            sel_click_menu.append("<button id='attackstop_object_" + objects[object_index].id + "' " +
                 "object_id='" + objects[object_index].id + "' class='button is-warning is-small'>" +
                 "Stop Attacking</button>");
         } else {
@@ -11165,11 +11165,11 @@ function showClickMenuObject(coord) {
             // It's our object, we can do whatever we want with it!
             if (objects[object_index].player_id && objects[object_index].player_id === client_player_id) {
 
-                $('#click_menu').append("<br><button id='attack_" + objects[object_index].id + "' object_id='" + objects[object_index].id +
+                sel_click_menu.append("<br><button id='attack_" + objects[object_index].id + "' object_id='" + objects[object_index].id +
                     "' class='button is-warning is-small' source='object_type_can_be_attacked'>Attack " +
                     object_types[object_type_index].name + "</button>");
 
-                $('#click_menu').append("<br><button id='destroy_" + objects[object_index].id + "' object_id='" + objects[object_index].id +
+                sel_click_menu.append("<br><button id='destroy_" + objects[object_index].id + "' object_id='" + objects[object_index].id +
                     "' class='button is-danger is-small is-pulled-right' source='object_type_can_be_attacked'>Destroy " +
                     object_types[object_type_index].name + "</button>");
             }
@@ -11187,11 +11187,11 @@ function showClickMenuObject(coord) {
                 }
 
                 if(!pod_in_galaxy) {
-                    $('#click_menu').append("<br><button id='attack_" + objects[object_index].id + "' object_id='" + objects[object_index].id +
+                    sel_click_menu.append("<br><button id='attack_" + objects[object_index].id + "' object_id='" + objects[object_index].id +
                     "' class='button is-warning is-small' source='object_type_can_be_attacked'>Attack " +
                     object_types[object_type_index].name + "</button><br>");
                 } else {
-                    $('#click_menu').append("<br><a target='_blank' href='../site/tutorial/ship-building'>Build A Better Ship To Attack</a>");
+                    sel_click_menu.append("<br><a target='_blank' href='../site/tutorial/ship-building'>Build A Better Ship To Attack</a>");
                 }
                 
             }
@@ -11231,11 +11231,11 @@ function showClickMenuObjectType(coord) {
 
 
             if (repairing_linker_index === -1) {
-                $('#click_menu').append("<button id='repair_" + coord.id + "' " +
+                sel_click_menu.append("<button id='repair_" + coord.id + "' " +
                     "coord_id='" + coord.id + "' class='button is-success'>" +
                     "Repair</button><br>");
             } else {
-                $('#click_menu').append("<button id='repairstop_" + coord.id + "' " +
+                sel_click_menu.append("<button id='repairstop_" + coord.id + "' " +
                     "coord_id='" + coord.id + "' class='button is-warning is-small'>" +
                     "Stop Repairing</button>");
             }
@@ -11260,7 +11260,7 @@ function showClickMenuObjectType(coord) {
 
             html_string += ">Pick Up</button>";
 
-            $('#click_menu').append(html_string);
+            sel_click_menu.append(html_string);
         }
 
         // Salvaging
@@ -11276,14 +11276,14 @@ function showClickMenuObjectType(coord) {
         // If the object type is a stairs, and the player is standing on the coord, let them move onto it to move up
         if(object_types[object_type_index].is_stairs && coord.id === client_player_info.coord.id) {
             console.log("Player right clicked on stairs that they are on");
-            $('#click_menu').append("<button id='moveupstairs' class='button is-default'>Move Up Stairs</button>");
+            sel_click_menu.append("<button id='moveupstairs' class='button is-default'>Move Up Stairs</button>");
             
         }
 
         // If the object type is a stairs, and the player is standing on the coord, let them move onto it to move up
         if(object_types[object_type_index].is_hole && coord.id === client_player_info.coord.id) {
             console.log("Player right clicked on hole that they are on");
-            $('#click_menu').append("<button id='moveupstairs' class='button is-default'>Move Down Hole</button>");
+            sel_click_menu.append("<button id='moveupstairs' class='button is-default'>Move Down Hole</button>");
             
         }
 
@@ -11291,13 +11291,13 @@ function showClickMenuObjectType(coord) {
         // There is no object to keep track of a current HP for
         if (object_types[object_type_index].can_be_attacked) {
             if (current_view === 'planet') {
-                $('#click_menu').append("<br><br><button id='destroy_" + coord.id + "' planet_coord_id='" +
+                sel_click_menu.append("<br><br><button id='destroy_" + coord.id + "' planet_coord_id='" +
                     coord.id + "' class='button is-danger is-small'>Destroy " + object_types[object_type_index].name + "</button>");
             } else if (current_view === 'ship') {
-                $('#click_menu').append("<br><br><button id='destroy_" + coord.id + "' ship_coord_id='"
+                sel_click_menu.append("<br><br><button id='destroy_" + coord.id + "' ship_coord_id='"
                     + coord.id + "' class='button is-danger is-small'>Destroy " + object_types[object_type_index].name + "</button>");
             } else if (current_view === 'galaxy') {
-                $('#click_menu').append("<br><br><button id='destroy_" + coord.id + "' coord_id='" +
+                sel_click_menu.append("<br><br><button id='destroy_" + coord.id + "' coord_id='" +
                     coord.id + "' class='button is-danger is-small'>Destroy " + object_types[object_type_index].name + "</button>");
             }
 
@@ -11328,7 +11328,7 @@ function showClickMenuObjectType(coord) {
                 // Not doing is_ship_wall right now
                 /*
                 if(inventory_item_object_type_index !== -1 && object_types[inventory_item_object_type_index].is_ship_wall) {
-                    $("#click_menu").append("<button id='replaceshipwall_" + inventory_items[i].id +
+                    sel_click_menu.append("<button id='replaceshipwall_" + inventory_items[i].id +
                         "' inventory_item_id='" + inventory_items[i].id + "' ship_coord_id='" + coord.id + "'>" +
                         "Replace ship wall with " + object_types[inventory_item_object_type_index].name + "</button>");
                 }
@@ -11380,7 +11380,7 @@ function showClickMenuPlanet(coord) {
 
     if (player_is_attacking) {
         console.log("Player is attacking the planet");
-        $('#click_menu').append("<button id='attackstop_planet_" + planet_id + "' " +
+        sel_click_menu.append("<button id='attackstop_planet_" + planet_id + "' " +
             "planet_id='" + planet_id + "' class='button is-warning is-small'>" +
             "Stop Attacking</button>");
     } else {
@@ -11393,7 +11393,7 @@ function showClickMenuPlanet(coord) {
         }
 
         // Can't just use coord.planet_id here because the coord could be a belongs_to_planet_id coord
-        $('#click_menu').append("<br><button id='attack_planet_" + planet_id + "' planet_id='" + planet_id +
+        sel_click_menu.append("<br><button id='attack_planet_" + planet_id + "' planet_id='" + planet_id +
             "' class='button is-warning is-small' source='planet_attack'>" + attack_text + "</button><br>");
 
     }
@@ -11445,7 +11445,7 @@ function showClickMenuShipEngine(coord) {
         ship_engine_string += "You can install a ship engine here. Build ship engines in a Manufacturer!";
     }
 
-    $('#click_menu').append(ship_engine_string);
+    sel_click_menu.append(ship_engine_string);
 }
 
 
@@ -11492,7 +11492,7 @@ function showClickMenuShipWeapon(coord) {
         ship_weapon_string += "You can install a ship weapon here. Build ship weapons in a Forge!";
     }
 
-    $('#click_menu').append(ship_weapon_string);
+    sel_click_menu.append(ship_weapon_string);
 
 }
 
@@ -11538,12 +11538,12 @@ function showInventoryOptions(inventory_item_id) {
     //let mouse_y = event.clientY;
 
 
-    $('#click_menu').css({
+    sel_click_menu.css({
         'top': mouse_y, 'left': mouse_x, 'position': 'absolute', 'max-height': '400px', 'max-width': '600px',
         'overflow-y': 'scroll', 'overflow-x': 'scroll', 'padding': '10px'
     }).fadeIn('fast');
 
-    $('#click_menu').empty();
+    sel_click_menu.empty();
 
     let inventory_item_index = inventory_items.findIndex(function (obj) { return obj && obj.id === inventory_item_id; });
 
@@ -11616,7 +11616,7 @@ function showInventoryOptions(inventory_item_id) {
     }
 
     adding_string += "<br><button id='trash_" + inventory_items[inventory_item_index].id + "' class='button is-danger is-small is-pulled-right'><span class='glyphicon glyphicon-trash'></span> Trash</button>";
-    $('#click_menu').append(adding_string);
+    sel_click_menu.append(adding_string);
 }
 
 
@@ -11669,7 +11669,7 @@ function showSalvageOption(object_index, object_type_index, coord = {}) {
 
     if (is_being_salvaged) {
 
-        $('#click_menu').append("<button id='salvagestop_" + salvaging_linkers[salvaging_linker_index].id + 
+        sel_click_menu.append("<button id='salvagestop_" + salvaging_linkers[salvaging_linker_index].id + 
         "' salvaging_linker_id='" + salvaging_linkers[salvaging_linker_index].id +
         "' class='button is-warning is-small'>Stop Salvaging</button><br>");
         
@@ -11682,16 +11682,16 @@ function showSalvageOption(object_index, object_type_index, coord = {}) {
             let player_ship_index = objects.findIndex(function (obj) { return obj && obj.id === players[client_player_index].ship_id; });
             if (player_ship_index !== -1 && objects[player_ship_index].object_type_id === 114) {
                 player_can_salvage = false;
-                $('#click_menu').append("<a target='_blank' href='../site/tutorial/ship-building'>Build A Better Ship To Salvage</a>");
+                sel_click_menu.append("<a target='_blank' href='../site/tutorial/ship-building'>Build A Better Ship To Salvage</a>");
             }
         }
 
         if (player_can_salvage) {
             if(object_index !== -1) {
-                $('#click_menu').append("<button id='salvage_object_" + objects[object_index].id + "' object_id='" + objects[object_index].id +
+                sel_click_menu.append("<button id='salvage_object_" + objects[object_index].id + "' object_id='" + objects[object_index].id +
                 "' class='button is-default is-small is-info'>Salvage</button><br>");
             } else {
-                $('#click_menu').append("<button id='salvage_coord_" + coord.id + "' coord_id='" + coord.id + "' coord_type='" + coord_type +
+                sel_click_menu.append("<button id='salvage_coord_" + coord.id + "' coord_id='" + coord.id + "' coord_type='" + coord_type +
                 "' class='button is-default is-small is-info'>Salvage</button><br>");
             }
             
@@ -11702,7 +11702,7 @@ function showSalvageOption(object_index, object_type_index, coord = {}) {
 
 
 function switchChat(new_chat_tab) {
-    if(new_chat_tab == 'local') {
+    if(new_chat_tab === 'local') {
         current_chat = 'local';
         $('#chat_global').hide();
         $('#chatswitch_global').attr('disabled', false);
