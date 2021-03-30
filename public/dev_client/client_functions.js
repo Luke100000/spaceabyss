@@ -4483,31 +4483,31 @@ function generateEquipmentDisplay() {
 
 
 
-    let augment_string = "";
+    let augment_string = "<br/>";
     let augment_capacity_used = 0;
-    let head_string = "";
+    let head_string = "<br/>";
     let head_capacity_used = 0;
-    let left_arm_string = "";
+    let left_arm_string = "<br/>";
     let left_arm_capacity_used = 0;
-    let body_string = "";
+    let body_string = "<br/>";
     let body_capacity_used = 0;
-    let right_arm_string = "";
+    let right_arm_string = "<br/>";
     let right_arm_capacity_used = 0;
-    let legs_string = "";
+    let legs_string = "<br/>";
     let legs_capacity_used = 0;
 
 
-    let equipment_layout_string = "<div style='display:flex;'>";
+    let equipment_layout_string = "<div style='display:inline-flex;align-items:center;'>";
     equipment_layout_string += "<div id='equipment_augment' class='player_equipment'><span class='has-text-centered'><strong>Augments</strong></span><br></div>";
     equipment_layout_string += "<div id='equipment_head' class='player_equipment'><strong>Head</strong></div>";
-    equipment_layout_string += "</div><div style='display:flex;'>";
+    equipment_layout_string += "</div><br/><div style='display:inline-flex;align-items:center;'>";
     equipment_layout_string += "<div id='equipment_left_arm' class='player_equipment'><strong>Left Arm</strong></div>";
     equipment_layout_string += "<div id='equipment_body' class='player_equipment'><strong>Body</strong></div>";
     equipment_layout_string += "<div id='equipment_right_arm' class='player_equipment'><strong>Right Arm</strong></div>";
-    equipment_layout_string += "</div><div style='display:flex;'>";
+    equipment_layout_string += "</div><br/><div style='display:inline-flex;align-items:center;'>";
     equipment_layout_string += "<div id='equipment_legs' class='player_equipment'><strong>Legs</strong></div>";
-    equipment_layout_string += "</div><div style='display:flex;'>";
-    equipment_layout_string += "<div id='equipment_body_type' class='player_equipment'><strong>Body Type</strong></div>";
+    equipment_layout_string += "</div><br/><div style='display:inline-flex;align-items:center;'>";
+    equipment_layout_string += "<div id='equipment_body_type' class='player_equipment'><strong>Body Type </strong></div>";
     equipment_layout_string += "<div id='equipment_skins' class='player_equipment'><strong>Skins Purchased</strong></div>";
     equipment_layout_string += "</div>";
     
@@ -4531,26 +4531,36 @@ function generateEquipmentDisplay() {
                 return false;
             }
 
-            let equipment_linker_string = "<br>";
+            let equipment_linker_string = "<table><tr>"
 
+            //amount, if present
             if (equipment_linker.amount > 1) {
-                equipment_linker_string += equipment_linker.amount + " ";
+                equipment_linker_string += "<td style='vertical-align:middle;'>" + equipment_linker.amount + "x</td>";
             }
 
-            equipment_linker_string += " <img title='" + object_types[object_type_index].name + "' style='width:32px; height:32px;' " +
-                " src='../images/" + urlName(object_types[object_type_index].name) + ".png'>";
+            //image
+            equipment_linker_string += "<td style='vertical-align:middle;'><img title='" + object_types[object_type_index].name +
+                "' style='width:64px; height:64px;vertical-align:middle;' " +
+                " src='/images/" + urlName(object_types[object_type_index].name) + ".png'></td>";
 
-            equipment_linker_string += " ( ";
+            equipment_linker_string += "<td style='vertical-align:middle;'>"
+
+            //attack
             if (object_types[object_type_index].attack_strength) {
-                equipment_linker_string += " + " + object_types[object_type_index].attack_strength + " attack";
+                equipment_linker_string += "+ " + object_types[object_type_index].attack_strength + " attack <br />";
             }
 
+            //defence
             if (object_types[object_type_index].defense) {
-                equipment_linker_string += " + " + object_types[object_type_index].defense + " defense";
+                equipment_linker_string += "+ " + object_types[object_type_index].defense + " defense <br />";
             }
-            equipment_linker_string += " )";
-            equipment_linker_string += "<button class='button is-warning is-small' id='unequip_" + equipment_linker.id +
-                "' equipment_linker_id='" + equipment_linker.id + "'>Unequip</button>";
+
+            //unequip
+            equipment_linker_string += "<center></center><button style='display:inline;' class='button is-warning is-small' id='unequip_" + equipment_linker.id +
+                "' equipment_linker_id='" + equipment_linker.id + "'>Unequip</button></center>";
+
+            equipment_linker_string += "</td>"
+            equipment_linker_string += "</tr></table>"
 
             if (equipment_linker.equip_slot === 'augment') {
                 augment_string += equipment_linker_string;
@@ -4571,10 +4581,6 @@ function generateEquipmentDisplay() {
                 legs_string += equipment_linker_string;
                 legs_capacity_used += object_type_equipment_linkers[object_linker_index].capacity_used;
             }
-
-
-
-
         }
 
     });
@@ -4589,13 +4595,12 @@ function generateEquipmentDisplay() {
     $('#equipment_legs').append(legs_string);
 
     // For each slot, show how full it is
-
-    $('#equipment_augment').append("<br>" + augment_capacity_used + "/Infinite Cap Used");
-    $('#equipment_head').append("<br>" + head_capacity_used + "/5 Cap Used");
-    $('#equipment_left_arm').append("<br>" + left_arm_capacity_used + "/3 Cap Used");
-    $('#equipment_body').append("<br>" + body_capacity_used + "/7 Cap Used");
-    $('#equipment_right_arm').append("<br>" + right_arm_capacity_used + "/3 Cap Used");
-    $('#equipment_legs').append("<br>" + legs_capacity_used + "/4 Cap Used");
+    $('#equipment_augment').append(augment_capacity_used + "/Infinite Cap Used");
+    $('#equipment_head').append(head_capacity_used + "/5 Cap Used");
+    $('#equipment_left_arm').append(left_arm_capacity_used + "/3 Cap Used");
+    $('#equipment_body').append(body_capacity_used + "/7 Cap Used");
+    $('#equipment_right_arm').append(right_arm_capacity_used + "/3 Cap Used");
+    $('#equipment_legs').append(legs_capacity_used + "/4 Cap Used");
 
     // and show stats on the body type
     let body_index = objects.findIndex(function (obj) { return obj && obj.id === players[client_player_index].body_id; });
