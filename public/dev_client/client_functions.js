@@ -4556,7 +4556,7 @@ function generateEquipmentDisplay() {
             }
 
             //unequip
-            equipment_linker_string += "<center></center><button style='display:inline;' class='button is-warning is-small' id='unequip_" + equipment_linker.id +
+            equipment_linker_string += "<center><button style='display:inline;' class='button is-warning is-small' id='unequip_" + equipment_linker.id +
                 "' equipment_linker_id='" + equipment_linker.id + "'>Unequip</button></center>";
 
             equipment_linker_string += "</td>"
