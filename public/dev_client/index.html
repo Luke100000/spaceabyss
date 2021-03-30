@@ -1,4 +1,3 @@
-<!--suppress ALL -->
 <script type="text/javascript">
     // Get settings from cookies on the client
     var debug_mode = false;
@@ -34,6 +33,7 @@
     let debug_username = urlParams.get('username')
     let debug_email = urlParams.get('email')
     let debug_password = urlParams.get('password')
+
 </script>
 
 <!-- <script src="https://space.alphacoders.com:8010/socket.io/socket.io.js"></script>-->
@@ -41,6 +41,7 @@
 
 <script type="text/javascript">
     var connected = false;
+    var socket = false;
 
     //phase.io might need some extra time to load its stuff
     //the connected var is in most cases set to true once all data has been received
@@ -57,10 +58,8 @@
             socket.emit('login_data', {player_name: username, email: email, password: password});
         }
     }
-</script>
 
-<script type="text/javascript">
-    var socket = false;
+
     if(io) {
         //socket = io.connect('space.alphacoders.com:8010', { secure: true });
         socket = io.connect('localhost:8010', {secure: true});
@@ -95,13 +94,13 @@
       
     
 
-    <script src="client_functions_0.2.41.js"></script>
-    <script src="client_network_0.2.41.js"></script>
-    <script src="client_click_0.2.41.js"></script>
-    <script src="effects_0.2.41.js"></script>
-    <script src="monster_0.2.41.js"></script>
-    <script src="planet_0.2.41.js"></script>
-    <script src="player_0.2.41.js"></script>
+    <script src="client_functions.js"></script>
+    <script src="client_network.js"></script>
+    <script src="client_click.js"></script>
+    <script src="effects.js"></script>
+    <script src="monster.js"></script>
+    <script src="planet.js"></script>
+    <script src="player.js"></script>
 
 
     <link href="../bulma-0.7.2/css/bulma.min.css" rel="stylesheet" media="screen">
@@ -155,7 +154,7 @@
         }
 
         div.chat-container {
-            order: 3; display:none;
+            display:block; order: 3; display:none;
         }
 
         div.flex-wrapper {
@@ -208,9 +207,10 @@
         }
     </style>
 </head>
-
-
 <body style="background-image: url('../images/void.png'); background-repeat: repeat;">
+
+
+
 <div id="login_container">
 
     <div class="columns">
@@ -326,6 +326,7 @@
                 <button id="chatswitch_system" class="button is-default">System</button>
                 <button id="help" class="button is-success">Help</button>
                 <button id="messages" class="button is-default"><i class="fas fa-envelope"></i></button>
+                </ul>
             </div>
             <div class="chat" id="chat_local">
                 <p>This is local chat - your current planet, or the galaxy</p>
@@ -346,19 +347,21 @@
                 <button onclick="submitChatMessage(); return false;" type="submit">Send</button>
             </form>
         </div>
-    </div>
 
+
+
+    </div>
     <div style="flex: 1; order: 2; margin-left:10px; margin-top:10px; height: 100vh; overflow-y: scroll;">
 
         <!-- Our line of buttons! -->
         <script type="text/javascript">
+
             function setButton(button, enabled) {
                 let b = document.getElementById("button_" + button);
                 if (b) {
                     let style = b.style;
                     if (enabled) {
-                        style.backgroundColor = "#23d160"
-                        style.borderColor = "#189042"
+                        style.backgroundColor = "#85d1a0"
                     } else {
                         style.backgroundColor = "#ffffff"
                         style.borderColor = "#dbdbdb"
@@ -367,87 +370,107 @@
             }
 
             function toggleAssembleDisplay() {
+
+
                 if(sel_can_assemble_list.is(":visible")) {
                     sel_can_assemble_list.hide();
                     sel_can_assemble_list.empty();
-                    setButton("assemble", false)
+                    setButton("assemble", false);
+
                 } else {
                     sel_can_assemble_list.show();
                     printAssemblyList();
-                    setButton("assemble", true)
+                    setButton("assemble", true);
                 }
+
             }
 
             function toggleFactionDisplay() {
+
+
                 if(sel_faction.is(":visible")) {
                     sel_faction.hide();
                     sel_faction.empty();
-                    setButton("faction", false)
+                    setButton("faction", false);
+
                 } else {
                     sel_faction.show();
                     generateFactionDisplay();
-                    setButton("faction", true)
+                    setButton("faction", true);
                 }
+
             }
 
             function toggleInventoryDisplay() {
+
                 if(sel_inventory.is(":visible")) {
                     sel_inventory.hide();
                     sel_inventory.empty();
-                    setButton("inventory", false)
+                    setButton("inventory", false);
+
                 } else {
                     sel_inventory.show();
                     generateInventoryDisplay();
-                    setButton("inventory", true)
+                    setButton("inventory", true);
                 }
+
             }
 
             function toggleManagementOptionsDisplay() {
                 if(sel_management_options.is(":visible")) {
                     sel_management_options.hide();
                     sel_management_options.empty();
-                    setButton("management_options", false)
+                    setButton("management_options", false);
+
                 } else {
                     sel_management_options.show();
+
                     generateManagementOptionsDisplay();
-                    setButton("management_options", true)
+                    setButton("management_options", true);
+
                 }
             }
 
             function toggleManagementDisplay(object_index = -1) {
+
+
                 if(sel_management.is(":visible")) {
                     sel_management.hide();
                     sel_management.empty();
+                    setButton("management", false);
                     
-                    //sel_area_management.hide();
-                    //sel_area_management.empty();
+                    //$('#area_management').hide();
+                    //$('#area_management').empty();
 
-                    //sel_ship_management.hide();
-                    //sel_ship_management.empty();
+                    //$('#ship_management').hide();
+                    //$('#ship_management').empty();
 
-                    setButton("management", false)
                 } else {
                     sel_management.show();
-                    //sel_area_management.show();
-                    //sel_ship_management.show();
+                    //$('#area_management').show();
+                    //$('#ship_management').show();
 
                     generateNonAiManagementDisplay(object_index);
+                    setButton("management", true);
                     //generateAreaManagementDisplay();
                     //generateShipManagementDisplay();
-
-                    setButton("management", true)
                 }
+
             }
 
             function toggleAiManagementDisplay(object_index = -1) {
                 if(sel_ai_management.is(":visible")) {
                     sel_ai_management.hide();
                     sel_ai_management.empty();
-                    setButton("ai_management", false)
+                    setButton("ai_management", false);
+
+
                 } else {
                     sel_ai_management.show();
+
                     generateAiManagementDisplay(object_index);
-                    setButton("ai_management", true)
+                    setButton("ai_management", true);
+
                 }
             }
 
@@ -455,72 +478,90 @@
                 if(sel_area_management.is(":visible")) {
                     sel_area_management.hide();
                     sel_area_management.empty();
-                    setButton("area_management", false)
+                    setButton("area_management", false);
+
+
                 } else {
                     sel_area_management.show();
+
                     generateAreaManagementDisplay();
-                    setButton("area_management", true)
+                    setButton("area_management", true);
+
                 }
             }
 
             function togglePlayerEquipmentDisplay() {
+
                 if(sel_player_equipment.is(":visible")) {
                     sel_player_equipment.hide();
                     sel_player_equipment.empty();
-                    setButton("equipment", false)
+                    setButton("equipment", false);
+
                 } else {
                     sel_player_equipment.show();
                     generateEquipmentDisplay();
-                    setButton("equipment", true)
+                    setButton("equipment", true);
                 }
+
             }
 
             function togglePlayerInfoDisplay() {
+
                 console.log("in togglePlayerInfoDisplay");
 
                 if(sel_player_stats.is(":visible")) {
                     sel_player_stats.hide();
                     sel_player_stats.empty();
-                    setButton("player_stats", false)
+                    setButton("player_stats", false);
+
                 } else {
                     sel_player_stats.show();
                     generatePlayerInfoDisplay();
-                    setButton("player_stats", true)
+                    setButton("player_stats", true);
                 }
+
             }
 
             function toggleRelationshipDisplay() {
+
+
                 if(sel_relationships.is(":visible")) {
                     sel_relationships.hide();
                     sel_relationships.empty();
-                    setButton("relationships", false)
+                    setButton("relationships", false);
+
                 } else {
                     sel_relationships.show();
                     generateRelationshipDisplay();
-                    setButton("relationships", true)
+                    setButton("relationships", true);
                 }
+
             }
 
             function toggleResearchDisplay() {
+
+
                 if(sel_research.is(":visible")) {
                     sel_research.hide();
                     sel_research.empty();
                     sel_discoveries.empty();
-                    setButton("research", false)
+                    setButton("research", false);
+
                 } else {
                     sel_research.show();
                     generateResearchDisplay();
-                    setButton("research", true)
+                    setButton("research", true);
                 }
+
             }
 
             function toggleSettingsDisplay() {
                 if(sel_settings.is(":visible")) {
                     sel_settings.hide();
-                    setButton("settings", false)
+                    setButton("settings", false);
                 } else {
                     sel_settings.show();
-                    setButton("settings", true)
+                    setButton("settings", true);
                 }
             }
 
@@ -529,97 +570,126 @@
 
         <div class="main-button-wrapper" style="margin-bottom:10px;">
             <a id="button_inventory" class="button is-default main-button" onclick="toggleInventoryDisplay();">
-                <i class="fas fa-backpack fa-2x" title="Inventory"></i>
+                <i class="fal fa-backpack fa-2x" class="main-icon"></i>
             </a>
 
             <a id="button_equipment" class="button is-default main-button" onclick="togglePlayerEquipmentDisplay();">
-                <i class="fas fa-helmet-battle fa-2x" title="Equipment"></i>
+                <i class="fas fa-helmet-battle fa-2x" class="main-icon"></i>
             </a>
 
             <a id="button_player_stats" class="button is-default main-button" onclick="togglePlayerInfoDisplay();">
-                <i class="fas fa-book fa-2x" title="Player"></i>
+                <i class="fas fa-book fa-2x" class="main-icon"></i>
             </a>
 
             <a id="button_assemble" class="button is-default main-button" onclick="toggleAssembleDisplay();">
-                <i class="fas fa-industry-alt fa-2x" title="Assemble"></i>
+                <i class="fas fa-industry-alt fa-2x" class="main-icon"></i>
             </a>
 
             <a id="button_research" class="button is-default main-button" onclick="toggleResearchDisplay();">
-                <i class="fas fa-vials fa-2x" title="Research"></i>
+                <i class="fad fa-vials fa-2x" class="main-icon"></i>
             </a>
 
             <!--
             <a id="button_relationships" class="button is-default main-button" onclick="toggleRelationshipDisplay();">
-                <i class="fas fa-heartbeat fa-2x" title="Relationships"></i>
+                <i class="fas fa-heartbeat fa-2x" class="main-icon"></i>
             </a>
             -->
 
-            <a id="button_management_options" class="button is-default main-button"
-               onclick="toggleManagementOptionsDisplay();">
-                <i class="fas fa-tasks fa-2x" title="Management"></i>
+            <a id="button_management_options" class="button is-default main-button" onclick="toggleManagementOptionsDisplay();">
+                <i class="fas fa-tasks fa-2x" class="main-icon"></i>
             </a>
 
             <a id="button_faction" class="button is-default main-button" onclick="toggleFactionDisplay();">
-                <i class="fas fa-users-crown fa-2x" title="Factions"></i>
+                <i class="fad fa-users-crown fa-2x" class="main-icon"></i>
             </a>
 
             <a id="button_settings" class="button is-default main-button" onclick="toggleSettingsDisplay();">
-                <i class="fas fa-cogs fa-2x" title="Settings"></i>
+                <i class="fad fad fa-cogs fa-2x" class="main-icon"></i>
             </a>
+
+
         </div>
         
+
+
 
         <!-- The content of our buttons! -->
         <div>
             <div id="launch" style="display:inline; margin-top:10px; padding:10px;"></div>
             <div id="fuel" style="display:inline; margin-top:10px; padding:10px;"></div>
 
+            <!-- starts out invisible, and is opened once the player is logged in -->
             <div id="inventory" style="display:none;margin-bottom:10px;"></div>
 
-            <div class="white-text" id="addiction"></div>
+            <div id="addiction" class="white-text">
 
-            <div class="white-text" id="eating_data"></div>
+            </div>
+
+            <div id="eating_data" class="white-text">
+
+            </div>
 
             <!-- starts out invisible -->
             <div id="player_equipment" style="display:none;"></div>
 
-            <div class="white-text" id="player_stats" style="display:none;"></div>
+            <div id="player_stats" class="white-text" style="display:none;"></div>
 
-            <div class="white-text" id="can_assemble_list" style="display:none;"></div>
+            <div id="can_assemble_list" class="white-text" style="display:none;"></div>
 
-            <div class="white-text" id="research" style="display:none;"></div>
+            <div id="research" class="white-text" style="display:none;"></div>
             <div id="discoveries"></div>
 
-            <div class="white-text" id="relationships" style="display:none;"></div>
+            <div id="relationships" class="white-text" style="display:none;"></div>
 
-            <div class="white-text" id="management_options" style="display:none;"></div>
+            <div id="management_options" class="white-text" style="display:none;"></div>
 
             <div id="object_management" style="display:none; margin-top:10px; margin-left:10px;"></div>
+
+
             <div id="ai_management" style="display:none; margin-top:10px; margin-left:10px;"></div>
+
             <div id="ship_management" style="display:none; margin-top:10px; margin-left:10px;"></div>
+            
             <div id="area_management" style="display:none; margin-top:10px; margin-left:10px;"></div>
 
             <div id="market" style="display:none;"></div>
 
-            <div class="white-text" id="faction" style="display:none;"></div>
+            <div id="faction" class="white-text" style="display:none;"></div>
 
             <div id="task_management" style="display:none; margin-top:10px; margin-left:10px;"></div>
 
-            <div id="other_player_data"></div>
+            <div id="other_player_data">
 
-            <div id="attack_box"></div>
+            </div>
+            <div id="attack_box">
 
-            <div id="trade"></div>
+            </div>
 
-            <div id="planet_data"></div>
 
-            <div class="white-text" id="coord_data"></div>
 
-            <div id="object_inventory"></div>
 
-            <div id="admin_data"></div>
 
-            <div class="white-text" id="settings" style="display:none">
+            <div id="trade">
+
+            </div>
+
+
+            <div id="planet_data">
+
+            </div>
+
+            <div id="coord_data" class="white-text">
+
+            </div>
+            <div id="object_inventory">
+            </div>
+
+            <div id="admin_data">
+
+            </div>
+
+
+            <div id="settings" class="white-text" style="display:none">
                 <div id="players_connected">Grabbing # Of Players Connected</div>
                 <br>
                 <div id="ping">Ping</div>
@@ -629,93 +699,61 @@
                 <button id="clear_tiles">Clear Tiles</button>
 
 
-                <div id="debug_mode"></div>
-                <div id="sound"></div>
-                <div id="notify_on_new_player"></div>
+
+                <div id="debug_mode">
+
+                </div>
+
+                <div id="sound">
+
+                </div>
+                <div id="notify_on_new_player">
+
+                </div>
             </div>
+
         </div>
+
+
 
     </div>
 
+
+
+
+
+
 </div>
-
-
-<div id="click_menu" style="background-color:white; border-radius:5px; padding:3px; display:none;"></div>
-
-
-<script>
-    //JQuery selectors
-
-    //misc
-    const sel_coord_data = $("#coord_data");
-    const sel_launch = $("#launch");
-    const sel_fuel = $("#fuel");
-    const sel_messages = $("#messages");
-    const sel_eating_data = $("#eating_data");
-    const sel_addiction = $("#addiction");
-    const sel_can_assemble_list  = $("#can_assemble_list ");
-
-    //click menu
-    const sel_click_menu = $("#click_menu");
-
-    //windows
-    const sel_faction = $("#faction");
-    const sel_inventory = $("#inventory");
-    const sel_player_stats = $("#player_stats");
-    const sel_research = $("#research");
-    const sel_settings = $("#settings");
-    const sel_discoveries = $("#discoveries");
-    const sel_relationships = $("#relationships");
-    const sel_market = $("#market");
-
-    //settings
-    const sel_players_connected = $("#players_connected");
-    const sel_ping = $("#ping");
-    const sel_notify_on_new_player = $("#notify_on_new_player");
-    const sel_debug_mode = $("#debug_mode");
-    const sel_sound = $("#sound");
-
-    //equipment
-    const sel_player_equipment = $("#player_equipment");
-    const sel_equipment_augment = $("#equipment_augment");
-    const sel_equipment_head = $("#equipment_head");
-    const sel_equipment_left_arm = $("#equipment_left_arm");
-    const sel_equipment_body = $("#equipment_body");
-    const sel_equipment_right_arm = $("#equipment_right_arm");
-    const sel_equipment_legs = $("#equipment_legs");
-
-    //management
-    const sel_management = $("#management");
-    const sel_management_options = $("#management_options");
-    const sel_area_management = $("#area_management");
-    const sel_ship_management = $("#ship_management");
-    const sel_ai_management = $("#ai_management");
-    const sel_object_management = $("#object_management");
-    const sel_task_management = $("#task_management");
-</script>
-
 
 <script type="text/javascript">
     if(debug_mode) {
-        sel_debug_mode.append("Debug Mode True <button id=\"debug_mode\">Toggle Debug Mode</button>");
+        $('#debug_mode').append("Debug Mode True <button id=\"debug_mode\">Toggle Debug Mode</button>");
     } else {
-        sel_debug_mode.append("Debug Mode False <button id=\"debug_mode\">Toggle Debug Mode</button>");
+        $('#debug_mode').append("Debug Mode False <button id=\"debug_mode\">Toggle Debug Mode</button>");
     }
 
     if(notify_on_new_player) {
-        sel_notify_on_new_player.append("Notify when new player joins: True <button id=\"notifynewplayer\">Set to False</button>");
+        $('#notify_on_new_player').append("Notify when new player joins: True <button id=\"notifynewplayer\">Set to False</button>");
     } else {
-        sel_notify_on_new_player.append("Notify when new player joins: False <button id=\"notifynewplayer\">Set to True</button>");
+        $('#notify_on_new_player').append("Notify when new player joins: False <button id=\"notifynewplayer\">Set to True</button>");
     }
 
     if(play_sounds) {
-        sel_sound.append("Sound ON");
-        sel_sound.append("<button id=\"sound\">Toggle Sound</button>");
+        $('#sound').append("Sound ON");
+        $('#sound').append("<button id=\"sound\">Toggle Sound</button>");
     } else {
-        sel_sound.append("Sound OFF");
-        sel_sound.append("<button id=\"sound\">Toggle Sound</button>");
+        $('#sound').append("Sound OFF");
+        $('#sound').append("<button id=\"sound\">Toggle Sound</button>");
     }
+
 </script>
+
+
+
+<div id="click_menu" style="background-color:white; border-radius:5px; padding:3px; display:none;">
+
+</div>
+
 
 </body>
 </html>
@@ -723,9 +761,27 @@
 
 <script>
 
+    const sel_can_assemble_list  = $("#can_assemble_list")
+    const sel_faction = $("#faction")
+    const sel_inventory = $("#inventory")
+    const sel_management_options = $("#management_options")
+    const sel_management = $("#management")
+    const sel_area_management = $("#area_management")
+    const sel_ship_management = $("#ship_management")
+    const sel_ai_management = $("#ai_management")
+    const sel_player_equipment = $("#player_equipment")
+    const sel_player_stats = $("#player_stats")
+    const sel_research = $("#research")
+    const sel_settings = $("#settings")
+    const sel_discoveries = $("#discoveries")
+    const sel_relationships = $("#relationships")
+
+    const sel_click_menu = $("#click_menu")
+    const sel_chat_new = $('#chat_new')
+
     var camera;
     var logged_in = false;
-
+    
     var mouse_x;
     var mouse_y;
     var move_delay = 500;
@@ -2575,9 +2631,9 @@
                     console.log("Worldpoint to tile_x/y: " + tile_x + "," + tile_y);
 
                     // If the click menu is visible, we are just closing it
-                    if(sel_click_menu.is(":visible")) {
+                    if($("#click_menu").is(":visible")) {
                         console.log("Closing click menu");
-                        sel_click_menu.hide();
+                        $("#click_menu").hide();
                         return;
                     }
 
