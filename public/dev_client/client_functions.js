@@ -2704,7 +2704,7 @@ function generateResearchDisplay() {
 
         adding_string += "<div id='player_research_linker_" + linker.id + "'>";
 
-        adding_string += object_types[research_object_type_index].name + ": Completed " + linker.researches_completed;
+        adding_string += "<b>" + object_types[research_object_type_index].name + "</b>: Completed " + linker.researches_completed;
         adding_string += "/" + object_types[research_object_type_index].research_times_required;
 
         if (linker.researches_completed >= object_types[research_object_type_index].research_times_required) {
